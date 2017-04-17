@@ -12,7 +12,11 @@ const USER_AGENT       = nconf.get('agent');
 
 function login(socket, line) {
   if (line.charAt(0) !== '{') {
-    throw new Error(line);
+    if (/^[A-Z]+ \//.test(line)) {
+      throw new Error(line);
+    }
+
+    throw new Error('Invalid data');
   }
 
   const packet = JSON.parse(line);

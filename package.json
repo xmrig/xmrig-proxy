@@ -1,0 +1,29 @@
+{
+  "name": "xmrig-proxy",
+  "version": "0.1.0",
+  "description": "XMRig Proxy",
+  "main": "index.js",
+  "scripts": {
+    "start": "bash app.sh start",
+    "stop": "bash app.sh stop",
+    "restart": "bash app.sh stop && bash app.sh start",
+    "update": "bash app.sh update",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xmrig/xmrig-proxy.git"
+  },
+  "author": "XMRig <support@xmrig.com> (https://xmrig.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/xmrig/xmrig-proxy/issues"
+  },
+  "homepage": "https://github.com/xmrig/xmrig-proxy#readme",
+  "dependencies": {
+    "bluebird": "3.5.0",
+    "nconf": "0.8.4",
+    "uuid": "3.0.1",
+    "winston": "2.3.1"
+  }
+}

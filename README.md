@@ -6,11 +6,12 @@ Extremely high performance Monero (XMR) Stratum protocol proxy, can easily handl
 
 * Compatible with any Monero and AEON pools, strongly recommended use pool with fixed diff feature.
 * Any miner with nicehash support, `--nicehash` option for [XMRig](https://github.com/xmrig/xmrig).
+* [Comparison](https://github.com/xmrig/xmrig-proxy/wiki/Comparison) with other proxies.
 
 ## Download
 * Binary releases: https://github.com/xmrig/xmrig-proxy/releases
 * Git tree: https://github.com/xmrig/xmrig-proxy.git
-  * Clone with `git clone https://github.com/xmrig/xmrig-proxy.git` [Build instructions](https://github.com/xmrig/xmrig-proxy/wiki/Build).
+  * Clone with `git clone https://github.com/xmrig/xmrig-proxy.git` :hammer: [Build instructions](https://github.com/xmrig/xmrig-proxy/wiki/Build).
   
 ## Usage
 :boom: If you use Linux and want handle more than **1000 connections**, you need [increase limits of open files](https://github.com/xmrig/xmrig-proxy/wiki/Ubuntu-setup).

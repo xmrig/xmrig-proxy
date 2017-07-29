@@ -13,6 +13,7 @@ Extremely high performance Monero (XMR) Stratum protocol proxy, can easily handl
   * Clone with `git clone https://github.com/xmrig/xmrig-proxy.git` [Build instructions](https://github.com/xmrig/xmrig-proxy/wiki/Build).
   
 ## Usage
+:boom: If you use Linux and want handle more than **1000 connections**, you need [increase limits of open files](https://github.com/xmrig/xmrig-proxy/wiki/Ubuntu-setup).
 ### Basic example
 ```
 xmrig-proxy.exe -o pool.minemonero.pro:5555 -u YOUR_WALLET -p x --bind 0.0.0.0:3333 --bind 0.0.0.0:5555 

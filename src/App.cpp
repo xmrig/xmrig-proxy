@@ -1,0 +1,176 @@
+/* XMRig
+ * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
+ * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
+ * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
+ * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
+ * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
+ * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ *
+ *
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+#include <stdlib.h>
+#include <uv.h>
+
+
+#include "App.h"
+#include "Console.h"
+#include "log/ConsoleLog.h"
+#include "log/FileLog.h"
+#include "log/Log.h"
+#include "Options.h"
+#include "proxy/Proxy.h"
+#include "Summary.h"
+#include "version.h"
+
+
+#ifdef HAVE_SYSLOG_H
+#   include "log/SysLog.h"
+#endif
+
+
+App *App::m_self = nullptr;
+
+
+
+App::App(int argc, char **argv) :
+    m_console(nullptr),
+    m_proxy(nullptr),
+    m_options(nullptr)
+{
+    m_self = this;
+    m_options = Options::parse(argc, argv);
+
+    Log::init();
+
+    if (!m_options->background()) {
+        Log::add(new ConsoleLog(m_options->colors()));
+        m_console = new Console(this);
+    }
+
+    if (m_options->logFile()) {
+        Log::add(new FileLog(m_options->logFile()));
+    }
+
+#   ifdef HAVE_SYSLOG_H
+    if (m_options->syslog()) {
+        Log::add(new SysLog());
+    }
+#   endif
+
+    m_proxy = new Proxy(m_options);
+
+    uv_signal_init(uv_default_loop(), &m_signal);
+}
+
+
+App::~App()
+{
+    delete m_console;
+}
+
+
+int App::exec()
+{
+    if (!m_options->isReady()) {
+        return 0;
+    }
+
+    uv_signal_start(&m_signal, App::onSignal, SIGHUP);
+    uv_signal_start(&m_signal, App::onSignal, SIGTERM);
+    uv_signal_start(&m_signal, App::onSignal, SIGINT);
+
+    background();
+
+    Summary::print();
+
+    m_proxy->connect();
+
+    const int r = uv_run(uv_default_loop(), UV_RUN_DEFAULT);
+    uv_loop_close(uv_default_loop());
+
+    free(m_proxy);
+    free(m_options);
+
+    return r;
+}
+
+
+void App::onConsoleCommand(char command)
+{
+    switch (command) {
+#   ifdef APP_DEVEL
+    case 's':
+    case 'S':
+        m_proxy->printState();
+        break;
+#   endif
+
+    case 'v':
+    case 'V':
+        Options::i()->toggleVerbose();
+        LOG_NOTICE("verbose: %d", Options::i()->verbose());
+        break;
+
+    case 'h':
+    case 'H':
+        m_proxy->printHashrate();
+        break;
+
+    case 'c':
+    case 'C':
+        m_proxy->printConnections();
+        break;
+
+    case 3:
+        LOG_WARN("Ctrl+C received, exiting");
+        close();
+        break;
+
+    default:
+        break;
+    }
+}
+
+
+void App::close()
+{
+    uv_stop(uv_default_loop());
+}
+
+
+void App::onSignal(uv_signal_t *handle, int signum)
+{
+    switch (signum)
+    {
+    case SIGHUP:
+        LOG_WARN("SIGHUP received, exiting");
+        break;
+
+    case SIGTERM:
+        LOG_WARN("SIGTERM received, exiting");
+        break;
+
+    case SIGINT:
+        LOG_WARN("SIGINT received, exiting");
+        break;
+
+    default:
+        break;
+    }
+
+    m_self->close();
+}

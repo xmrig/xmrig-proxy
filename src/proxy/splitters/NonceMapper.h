@@ -1,0 +1,100 @@
+/* XMRig
+ * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
+ * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
+ * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
+ * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
+ * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
+ * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ *
+ *
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#ifndef __NONCEMAPPER_H__
+#define __NONCEMAPPER_H__
+
+
+#include <map>
+#include <uv.h>
+#include <vector>
+
+
+#include "interfaces/IStrategyListener.h"
+#include "net/Job.h"
+
+
+class IStrategy;
+class JobResult;
+class LoginRequest;
+class Miner;
+class Options;
+class Url;
+
+
+class SubmitCtx
+{
+public:
+    inline SubmitCtx() : id(0), minerId(0) {}
+    inline SubmitCtx(int64_t id, int64_t minerId) : id(id), minerId(minerId) {}
+
+    int64_t id;
+    int64_t minerId;
+};
+
+
+class NonceMapper : public IStrategyListener
+{
+public:
+    NonceMapper(size_t id, const Options *options, const char *agent);
+    ~NonceMapper();
+
+    bool add(Miner *miner, const LoginRequest &request);
+    void connect();
+    void gc();
+    void remove(const Miner *miner);
+    void submit(Miner *miner, const JobResult &request);
+
+    inline bool isActive() const    { return m_active; }
+    inline bool isSuspended() const { return m_suspended; }
+
+
+#   ifdef APP_DEVEL
+    void printState();
+#   endif
+
+protected:
+    void onActive(Client *client) override;
+    void onJob(Client *client, const Job &job) override;
+    void onPause(IStrategy *strategy) override;
+    void onResultAccepted(Client *client, int64_t seq, uint32_t diff, uint64_t ms, const char *error) override;
+
+private:
+    int nextIndex(int start) const;
+    void suspend();
+
+    bool m_active;
+    bool m_suspended;
+    const char *m_agent;
+    const Options *m_options;
+    IStrategy *m_strategy;
+    Job m_job;
+    size_t m_id;
+    std::map<int64_t, Miner*> m_miners;
+    std::map<int64_t, SubmitCtx> m_results;
+    std::vector<int64_t> m_used;
+    uint8_t m_index;
+};
+
+
+#endif /* __NONCEMAPPER_H__ */

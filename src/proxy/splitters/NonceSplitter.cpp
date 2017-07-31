@@ -32,7 +32,7 @@
 #include "proxy/splitters/NonceSplitter.h"
 
 
-#define LABEL(x)     " \x1B[01;30m" x ":\x1B[0m "
+#define LABEL(x) " \x1B[01;30m" x ":\x1B[0m "
 
 
 NonceSplitter::NonceSplitter(const Options *options, const char *agent) :

@@ -37,6 +37,7 @@ set(HEADERS
     src/proxy/Server.h
     src/proxy/splitters/NonceMapper.h
     src/proxy/splitters/NonceSplitter.h
+    src/proxy/splitters/NonceStorage.h
     src/proxy/Uuid.h
     src/Summary.h
     src/version.h
@@ -64,6 +65,7 @@ set(SOURCES
     src/proxy/Server.cpp
     src/proxy/splitters/NonceMapper.cpp
     src/proxy/splitters/NonceSplitter.cpp
+    src/proxy/splitters/NonceStorage.cpp
     src/Summary.cpp
     src/xmrig.cpp
    )

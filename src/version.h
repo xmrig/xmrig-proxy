@@ -27,13 +27,13 @@
 #define APP_ID        "xmrig-proxy"
 #define APP_NAME      "xmrig-proxy"
 #define APP_DESC      "Monero (XMR) Stratum proxy"
-#define APP_VERSION   "2.2.0"
+#define APP_VERSION   "2.3.0-dev"
 #define APP_DOMAIN    "xmrig.com"
 #define APP_SITE      "www.xmrig.com"
 #define APP_COPYRIGHT "Copyright (C) 2016-2017 xmrig.com"
 
 #define APP_VER_MAJOR  2
-#define APP_VER_MINOR  2
+#define APP_VER_MINOR  3
 #define APP_VER_BUILD  0
 #define APP_VER_REV    0
 

@@ -35,20 +35,18 @@
 #include "Options.h"
 #include "proxy/Counters.h"
 #include "proxy/JobResult.h"
-#include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
 #include "proxy/splitters/NonceMapper.h"
+#include "proxy/splitters/NonceStorage.h"
 
 
 NonceMapper::NonceMapper(size_t id, const Options *options, const char *agent) :
-    m_active(false),
     m_suspended(false),
     m_agent(agent),
     m_options(options),
-    m_id(id),
-    m_used(256, 0),
-    m_index(std::rand() % 256)
+    m_id(id)
 {
+    m_storage = new NonceStorage();
     const std::vector<Url*> &pools = options->pools();
 
     if (pools.size() > 1) {
@@ -63,13 +61,13 @@ NonceMapper::NonceMapper(size_t id, const Options *options, const char *agent) :
 NonceMapper::~NonceMapper()
 {
     delete m_strategy;
+    delete m_storage;
 }
 
 
 bool NonceMapper::add(Miner *miner, const LoginRequest &request)
 {
-    const int index = nextIndex(request.clientType() == LoginRequest::XMRig20Client ? 1 : 0);
-    if (index == -1) {
+    if (!m_storage->add(miner, request)) {
         return false;
     }
 
@@ -77,17 +75,13 @@ bool NonceMapper::add(Miner *miner, const LoginRequest &request)
         connect();
     }
 
-    miner->setFixedByte(index);
-
-    m_index = index;
-    m_used[index] = miner->id();
-    m_miners[miner->id()] = miner;
-
-    if (m_active) {
-        miner->setJob(m_job);
-    }
-
     return true;
+}
+
+
+bool NonceMapper::isActive() const
+{
+    return m_storage->isActive();
 }
 
 
@@ -102,14 +96,8 @@ void NonceMapper::connect()
 
 void NonceMapper::gc()
 {
-    if (m_suspended || m_id == 0) {
+    if (m_suspended || m_id == 0 || m_storage->isUsed()) {
         return;
-    }
-
-    for (const int64_t v : m_used) {
-        if (v > 0) {
-            return;
-        }
     }
 
     suspend();
@@ -118,27 +106,22 @@ void NonceMapper::gc()
 
 void NonceMapper::remove(const Miner *miner)
 {
-    m_used[miner->fixedByte()] = -miner->id();
-
-    auto it = m_miners.find(miner->id());
-    if (it != m_miners.end()) {
-        m_miners.erase(it);
-    }
+    m_storage->remove(miner);
 }
 
 
 void NonceMapper::submit(Miner *miner, const JobResult &request)
 {
-    if (!m_active) {
+    if (!m_storage->isActive()) {
         return miner->reject(request.id, "Bad gateway");
     }
 
-    if (strncmp(m_job.id(), request.jobId, 64) != 0) {
+    if (strncmp(m_storage->job().id(), request.jobId, 64) != 0) {
         return miner->reject(request.id, "Invalid job id");
     }
 
     JobResult req = request;
-    req.diff = m_job.diff();
+    req.diff = m_storage->job().diff();
 
     m_results[m_strategy->submit(req)] = SubmitCtx(request.id, miner->id());
 }
@@ -151,29 +134,14 @@ void NonceMapper::printState()
         return;
     }
 
-    int available = 0;
-    int dead      = 0;
-
-    for (const int64_t v : m_used) {
-        if (v == 0) {
-            available++;
-        }
-        else if (v < 0) {
-            dead++;
-        }
-    }
-
-    int miners = 256 - available - dead;
-
-    LOG_INFO("#%03u - \x1B[32m%03d \x1B[33m%03d \x1B[35m%03d\x1B[0m - 0x%02hhX, % 5.1f%%",
-             m_id, available, dead, miners, m_index, (double) miners / 256 * 100.0);
+    m_storage->printState(m_id);
 }
 #endif
 
 
 void NonceMapper::onActive(Client *client)
 {
-    m_active = true;
+    m_storage->setActive(true);
 
     LOG_INFO("#%03u \x1B[01;37muse pool \x1B[01;36m%s:%d \x1B[01;30m%s", m_id, client->host(), client->port(), client->ip());
 }
@@ -185,28 +153,13 @@ void NonceMapper::onJob(Client *client, const Job &job)
         LOG_INFO("#%03u \x1B[01;35mnew job\x1B[0m from \x1B[01;37m%s:%d\x1B[0m diff \x1B[01;37m%d", m_id, client->host(), client->port(), job.diff());
     }
 
-    for (size_t i = 0; i < m_used.size(); ++i) {
-        if (m_used[i] < 0) {
-            m_used[i] = 0;
-        }
-    }
-
-    m_job = job;
-
-    for (size_t i = 0; i < m_used.size(); ++i) {
-        const size_t index = m_used[i];
-        Miner *miner = index > 0 ? m_miners[index] : nullptr;
-
-        if (miner) {
-            miner->setJob(m_job);
-        }
-    }
+    m_storage->setJob(job);
 }
 
 
 void NonceMapper::onPause(IStrategy *strategy)
 {
-    m_active = false;
+    m_storage->setActive(false);
 
     if (!m_suspended) {
         LOG_ERR("#%03u no active pools, stop", m_id);
@@ -228,7 +181,7 @@ void NonceMapper::onResultAccepted(Client *client, int64_t seq, uint32_t diff, u
 
     const SubmitCtx &ctx = m_results[seq];
 
-    Miner *miner = m_miners[ctx.minerId];
+    Miner *miner = m_storage->miner(ctx.minerId);
     if (miner) {
         if (error) {
             miner->reject(ctx.id, error, false);
@@ -245,33 +198,12 @@ void NonceMapper::onResultAccepted(Client *client, int64_t seq, uint32_t diff, u
 }
 
 
-int NonceMapper::nextIndex(int start) const
-{
-    for (size_t i = m_index; i < m_used.size(); ++i) {
-        if (m_used[i] == 0) {
-            return i;
-        }
-    }
-
-    for (size_t i = start; i < m_index; ++i) {
-        if (m_used[i] == 0) {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
-
 void NonceMapper::suspend()
 {
     m_suspended = true;
-    m_active    = false;
-    Counters::remove(Counters::Upstream);
-
-    for (size_t i = 0; i < m_used.size(); ++i) {
-        m_used[i] = 0;
-    }
-
+    m_storage->setActive(false);
+    m_storage->reset();
     m_strategy->stop();
+
+    Counters::remove(Counters::Upstream);
 }

@@ -21,75 +21,51 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __NONCEMAPPER_H__
-#define __NONCEMAPPER_H__
+#ifndef __NONCESTORAGE_H__
+#define __NONCESTORAGE_H__
 
 
 #include <map>
-#include <uv.h>
 #include <vector>
 
 
-#include "interfaces/IStrategyListener.h"
 #include "net/Job.h"
 
 
-class IStrategy;
-class JobResult;
 class LoginRequest;
 class Miner;
-class NonceStorage;
-class Options;
-class Url;
 
 
-class SubmitCtx
+class NonceStorage
 {
 public:
-    inline SubmitCtx() : id(0), minerId(0) {}
-    inline SubmitCtx(int64_t id, int64_t minerId) : id(id), minerId(minerId) {}
-
-    int64_t id;
-    int64_t minerId;
-};
-
-
-class NonceMapper : public IStrategyListener
-{
-public:
-    NonceMapper(size_t id, const Options *options, const char *agent);
-    ~NonceMapper();
+    NonceStorage();
+    ~NonceStorage();
 
     bool add(Miner *miner, const LoginRequest &request);
-    bool isActive() const;
-    void connect();
-    void gc();
+    bool isUsed() const;
+    Miner *miner(int64_t id);
     void remove(const Miner *miner);
-    void submit(Miner *miner, const JobResult &request);
+    void reset();
+    void setJob(const Job &job);
 
-    inline bool isSuspended() const { return m_suspended; }
+    inline bool isActive() const       { return m_active; }
+    inline const Job &job() const      { return m_job; }
+    inline void setActive(bool active) { m_active = active; }
 
 #   ifdef APP_DEVEL
-    void printState();
+    void printState(size_t id);
 #   endif
 
-protected:
-    void onActive(Client *client) override;
-    void onJob(Client *client, const Job &job) override;
-    void onPause(IStrategy *strategy) override;
-    void onResultAccepted(Client *client, int64_t seq, uint32_t diff, uint64_t ms, const char *error) override;
-
 private:
-    void suspend();
+    int nextIndex(int start) const;
 
-    bool m_suspended;
-    const char *m_agent;
-    const Options *m_options;
-    IStrategy *m_strategy;
-    NonceStorage *m_storage;
-    size_t m_id;
-    std::map<int64_t, SubmitCtx> m_results;
+    bool m_active;
+    Job m_job;
+    std::map<int64_t, Miner*> m_miners;
+    std::vector<int64_t> m_used;
+    uint8_t m_index;
 };
 
 
-#endif /* __NONCEMAPPER_H__ */
+#endif /* __NONCESTORAGE_H__ */

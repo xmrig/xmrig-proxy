@@ -45,6 +45,7 @@ Miner::Miner() :
     m_recvBufPos(0),
     m_mapperId(-1),
     m_state(WaitLoginState),
+    m_realmId(0),
     m_expire(uv_now(uv_default_loop()) + kLoginTimeout),
     m_rx(0),
     m_timestamp(uv_now(uv_default_loop())),
@@ -57,7 +58,7 @@ Miner::Miner() :
     m_socket.data = this;
     uv_tcp_init(uv_default_loop(), &m_socket);
 
-    m_recvBuf.base = static_cast<char*>(malloc(kRecvBufSize));
+    m_recvBuf.base = new char[kRecvBufSize];
     m_recvBuf.len  = kRecvBufSize;
 
     memset(m_recvBuf.base, 0, kRecvBufSize);
@@ -71,7 +72,7 @@ Miner::~Miner()
     Counters::remove(Counters::Connection);
 
     m_socket.data = nullptr;
-    free(m_recvBuf.base);
+    delete [] m_recvBuf.base;
 }
 
 

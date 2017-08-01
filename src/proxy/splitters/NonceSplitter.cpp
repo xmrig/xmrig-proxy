@@ -101,7 +101,7 @@ void NonceSplitter::printConnections()
     LOG_INFO("\x1B[01;32m* \x1B[01;37mupstreams\x1B[0m" LABEL("active") "%s%d\x1B[0m" LABEL("sleep") "\x1B[01;37m%d\x1B[0m" LABEL("error") "%s%d\x1B[0m" LABEL("total") "\x1B[01;37m%d",
              active ? "\x1B[01;32m" : "\x1B[01;31m", active, suspended, error ? "\x1B[01;31m" : "\x1B[01;37m", error, m_upstreams.size());
 
-    LOG_INFO("\x1B[01;32m* \x1B[01;37mminers   \x1B[0m" LABEL("active") "%s%d\x1B[0m" LABEL("max") "\x1B[01;37m%d\x1B[0m" LABEL("efficiency") "%s%3.1f%%",
+    LOG_INFO("\x1B[01;32m* \x1B[01;37mminers   \x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("max") "\x1B[01;37m%" PRIu64 "\x1B[0m" LABEL("efficiency") "%s%3.1f%%",
              Counters::miners() ? "\x1B[01;32m" : "\x1B[01;31m", Counters::miners(), Counters::minersMax(), (efficiency > 80.0 ? "\x1B[01;32m" : (efficiency < 30.0 ? "\x1B[01;31m" : "\x1B[01;33m")), efficiency);
 }
 

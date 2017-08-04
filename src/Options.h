@@ -45,7 +45,6 @@ public:
 
     inline bool background() const                 { return m_background; }
     inline bool colors() const                     { return m_colors; }
-    inline bool isReady() const                    { return m_ready; }
     inline bool syslog() const                     { return m_syslog; }
     inline bool verbose() const                    { return m_verbose; }
     inline const char *logFile() const             { return m_logFile; }
@@ -62,6 +61,8 @@ public:
 private:
     Options(int argc, char **argv);
     ~Options();
+
+    inline bool isReady() const { return m_ready; }
 
     static Options *m_self;
 

@@ -53,6 +53,9 @@ App::App(int argc, char **argv) :
 {
     m_self = this;
     m_options = Options::parse(argc, argv);
+    if (!m_options) {
+        return;
+    }
 
     Log::init();
 
@@ -85,7 +88,7 @@ App::~App()
 
 int App::exec()
 {
-    if (!m_options->isReady()) {
+    if (!m_options) {
         return 0;
     }
 

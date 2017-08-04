@@ -202,7 +202,7 @@ bool Miner::parseRequest(int64_t id, const char *method, const json_t *params)
             return true;
         }
 
-        if (request.isCompatible(m_fixedByte)) {
+        if (!request.isCompatible(m_fixedByte)) {
             reject(id, "Invalid nonce; is miner not compatible with NiceHash?");
             return false;
         }

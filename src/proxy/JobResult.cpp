@@ -49,20 +49,22 @@ JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, const cha
 }
 
 
-bool JobResult::isValid(uint8_t fixedByte) const
+bool JobResult::isCompatible(uint8_t fixedByte) const
 {
-    if (!nonce || !result) {
-        return false;
-    }
-
-    if (strlen(nonce) != 8 || strlen(jobId) == 0 || strlen(result) != 64) {
-        return false;
-    }
-
     uint8_t n[4];
     if (!Job::fromHex(nonce, 8, n)) {
         return false;
     }
 
     return n[3] == fixedByte;
+}
+
+
+bool JobResult::isValid() const
+{
+    if (!nonce || !result) {
+        return false;
+    }
+
+    return strlen(nonce) == 8 && strlen(jobId) > 0 && strlen(result) == 64;
 }

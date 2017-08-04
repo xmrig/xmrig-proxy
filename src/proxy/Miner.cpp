@@ -197,9 +197,14 @@ bool Miner::parseRequest(int64_t id, const char *method, const json_t *params)
         }
 
         JobResult request(id, json_string_value(json_object_get(params, "job_id")), json_string_value(json_object_get(params, "nonce")), json_string_value(json_object_get(params, "result")));
-        if (!request.isValid(m_fixedByte)) {
+        if (!request.isValid()) {
             reject(id, "Low difficulty share");
             return true;
+        }
+
+        if (request.isCompatible(m_fixedByte)) {
+            reject(id, "Invalid nonce; is miner not compatible with NiceHash?");
+            return false;
         }
 
         m_listener->onMinerSubmit(this, request);

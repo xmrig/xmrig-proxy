@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.0)
 project(xmrig-proxy)
 
 
+option(WITH_GOOGLE_BREAKPAD "Use Google Breakpad" OFF)
+
+
 include (CheckIncludeFile)
 
 
@@ -131,6 +134,11 @@ if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
 
     #set(CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -gdwarf-2")
 
+    if (WITH_GOOGLE_BREAKPAD)
+        set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -g")
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g")
+    endif()
+
 elseif (CMAKE_CXX_COMPILER_ID MATCHES MSVC)
 
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /Ox /Ot /Oi /MT /GL")
@@ -152,6 +160,13 @@ if (HAVE_SYSLOG_H)
     set(SOURCES_SYSLOG src/log/SysLog.h src/log/SysLog.cpp)
 endif()
 
+if (WITH_GOOGLE_BREAKPAD)
+    include_directories(/usr/local/include/breakpad)
+    set(GOOGLE_BREAKPAD_LIBS breakpad_client)
+else()
+    add_definitions(/DXMRIG_NO_GOOGLE_BREAKPAD)
+endif()
+
 include_directories(src)
 include_directories(src/3rdparty)
 include_directories(src/3rdparty/jansson)
@@ -160,4 +175,4 @@ include_directories(${UV_INCLUDE_DIR})
 add_subdirectory(src/3rdparty/jansson)
 
 add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_SYSLOG})
-target_link_libraries(${CMAKE_PROJECT_NAME} jansson ${UV_LIBRARIES} ${EXTRA_LIBS})
+target_link_libraries(${CMAKE_PROJECT_NAME} jansson ${UV_LIBRARIES} ${EXTRA_LIBS} ${GOOGLE_BREAKPAD_LIBS})

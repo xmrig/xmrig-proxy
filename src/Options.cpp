@@ -60,6 +60,7 @@ Options:\n\
   -R, --retry-pause=N   time to pause between retries (default: 5)\n\
       --verbose         verbose output\n\
   -B, --background      run the miner in the background\n\
+  -c, --config=FILE     load a JSON-format configuration file\n\
   -l, --log-file=FILE   log all output to a file\n"
 # ifdef HAVE_SYSLOG_H
 "\
@@ -288,6 +289,10 @@ bool Options::parseArg(int key, const char *arg)
     case 'h': /* --help */
         showUsage(0);
         return false;
+
+    case 'c': /* --config */
+        parseConfig(arg);
+        break;
 
     default:
         showUsage(1);

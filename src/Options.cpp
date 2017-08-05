@@ -361,7 +361,7 @@ bool Options::parseBoolean(int key, bool enable)
         break;
 
     case 1008: /* --verbose */
-        m_verbose = true;
+        m_verbose = enable;
         break;
 
     case 2000: /* colors */

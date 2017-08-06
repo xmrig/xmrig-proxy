@@ -66,9 +66,16 @@ void NonceSplitter::gc()
 
 void NonceSplitter::login(Miner *miner, const LoginRequest &request)
 {
-    for (size_t i = 0; i < m_upstreams.size(); ++i) {
-        if (m_upstreams[i]->add(miner, request)) {
-            miner->setMapperId(i);
+    // try reuse active upstreams.
+    for (NonceMapper *mapper : m_upstreams) {
+        if (!mapper->isSuspended() && mapper->add(miner, request)) {
+            return;
+        }
+    }
+
+    // try reuse suspended upstreams.
+    for (NonceMapper *mapper : m_upstreams) {
+        if (mapper->isSuspended() && mapper->add(miner, request)) {
             return;
         }
     }

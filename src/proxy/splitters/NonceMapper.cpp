@@ -75,13 +75,14 @@ bool NonceMapper::add(Miner *miner, const LoginRequest &request)
         connect();
     }
 
+    miner->setMapperId(m_id);
     return true;
 }
 
 
 bool NonceMapper::isActive() const
 {
-    return m_storage->isActive();
+    return m_storage->isActive() && !m_suspended;
 }
 
 

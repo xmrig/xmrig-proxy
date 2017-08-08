@@ -55,7 +55,6 @@ Options:\n\
   -O, --userpass=U:P    username:password pair for mining server\n\
   -u, --user=USERNAME   username for mining server\n\
   -p, --pass=PASSWORD   password for mining server\n\
-  -k, --keepalive       send keepalived for prevent timeout (need pool support)\n\
   -r, --retries=N       number of times to retry before switch to backup server (default: 5)\n\
   -R, --retry-pause=N   time to pause between retries (default: 5)\n\
       --verbose         verbose output\n\

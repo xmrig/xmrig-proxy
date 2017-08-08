@@ -9,8 +9,7 @@
         {
             "url": "pool.minemonero.pro:5555",
             "user": "",
-            "pass": "x",
-            "keepalive": true
+            "pass": "x"
         }
     ],
     "bind": [

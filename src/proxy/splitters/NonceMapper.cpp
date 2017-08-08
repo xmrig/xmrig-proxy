@@ -128,6 +128,12 @@ void NonceMapper::submit(Miner *miner, const JobResult &request)
 }
 
 
+void NonceMapper::tick(uint64_t now)
+{
+    m_strategy->tick(now);
+}
+
+
 #ifdef APP_DEVEL
 void NonceMapper::printState()
 {

@@ -109,6 +109,10 @@ int App::exec()
     free(m_proxy);
     free(m_options);
 
+#   ifdef APP_DEVEL
+    printf("exit code: %d\n", r);
+#   endif
+
     return r;
 }
 

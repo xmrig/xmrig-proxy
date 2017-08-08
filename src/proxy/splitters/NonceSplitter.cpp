@@ -39,6 +39,10 @@ NonceSplitter::NonceSplitter(const Options *options, const char *agent) :
     m_agent(agent),
     m_options(options)
 {
+    m_timer.data = this;
+    uv_timer_init(uv_default_loop(), &m_timer);
+
+    uv_timer_start(&m_timer, NonceSplitter::onTick, kTickInterval, kTickInterval);
 }
 
 
@@ -133,3 +137,19 @@ void NonceSplitter::printState()
     }
 }
 #endif
+
+
+void NonceSplitter::onTick(uv_timer_t *handle)
+{
+    static_cast<NonceSplitter*>(handle->data)->tick();
+}
+
+
+void NonceSplitter::tick()
+{
+    const uint64_t now = uv_now(uv_default_loop());
+
+    for (NonceMapper *mapper : m_upstreams) {
+        mapper->tick(now);
+    }
+}

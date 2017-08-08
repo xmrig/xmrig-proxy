@@ -25,6 +25,7 @@
 #define __NONCESPLITTER_H__
 
 
+#include <uv.h>
 #include <vector>
 
 
@@ -54,9 +55,16 @@ protected:
 #   endif
 
 private:
+    constexpr static int kTickInterval = 1 * 1000;
+
+    static void onTick(uv_timer_t *handle);
+
+    void tick();
+
     const char *m_agent;
     const Options *m_options;
     std::vector<NonceMapper*> m_upstreams;
+    uv_timer_t m_timer;
 };
 
 

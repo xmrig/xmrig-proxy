@@ -311,7 +311,7 @@ bool Options::parseArg(int key, uint64_t arg)
             return false;
         }
 
-        m_retries = arg;
+        m_retries = (int) arg;
         break;
 
     case 'R': /* --retry-pause */
@@ -320,7 +320,7 @@ bool Options::parseArg(int key, uint64_t arg)
             return false;
         }
 
-        m_retryPause = arg;
+        m_retryPause = (int) arg;
         break;
 
     case 1003: /* --donate-level */
@@ -329,7 +329,7 @@ bool Options::parseArg(int key, uint64_t arg)
             return false;
         }
 
-        m_donateLevel = arg;
+        m_donateLevel = (int) arg;
         break;
 
     default:

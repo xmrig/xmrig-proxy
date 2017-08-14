@@ -106,7 +106,7 @@ void NonceSplitter::printConnections()
         }
     }
 
-    const int error = m_upstreams.size() - active - suspended;
+    const int error = (int) m_upstreams.size() - active - suspended;
     double efficiency = (double) Counters::miners() / (active * 256) * 100.0;
 
     LOG_INFO("\x1B[01;32m* \x1B[01;37mupstreams\x1B[0m" LABEL("active") "%s%d\x1B[0m" LABEL("sleep") "\x1B[01;37m%d\x1B[0m" LABEL("error") "%s%d\x1B[0m" LABEL("total") "\x1B[01;37m%d",

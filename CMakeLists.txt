@@ -76,8 +76,6 @@ set(SOURCES
 if (WIN32)
     set(SOURCES_OS
         res/app.rc
-        src/3rdparty/winansi.cpp
-        src/3rdparty/winansi.h
         src/App_win.cpp
         src/proxy/Proxy_win.cpp
         src/proxy/Uuid_win.cpp
@@ -143,6 +141,8 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES MSVC)
 
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /Ox /Ot /Oi /MT /GL")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Ox /Ot /Oi /MT /GL")
+    add_definitions(/D_CRT_SECURE_NO_WARNINGS)
+    add_definitions(/D_CRT_NONSTDC_NO_WARNINGS)
 
 elseif (CMAKE_CXX_COMPILER_ID MATCHES Clang)
 

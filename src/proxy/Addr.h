@@ -61,7 +61,7 @@ public:
         memcpy(m_host, addr, size - 1);
         m_host[size - 1] = '\0';
 
-        m_port = strtol(port, nullptr, 10);
+        m_port = (uint16_t) strtol(port, nullptr, 10);
     }
 
 

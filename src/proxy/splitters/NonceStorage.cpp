@@ -147,13 +147,13 @@ int NonceStorage::nextIndex(int start) const
 {
     for (size_t i = m_index; i < m_used.size(); ++i) {
         if (m_used[i] == 0) {
-            return i;
+            return (int) i;
         }
     }
 
     for (size_t i = start; i < m_index; ++i) {
         if (m_used[i] == 0) {
-            return i;
+            return (int) i;
         }
     }
 

@@ -118,7 +118,7 @@ void Miner::send(char *data)
     }
 
     const size_t size = strlen(data);
-    uv_buf_t buf = uv_buf_init(data, size);
+    uv_buf_t buf = uv_buf_init(data, (unsigned int) size);
 
     uv_write_t *req = new uv_write_t;
     req->data = buf.base;
@@ -308,7 +308,7 @@ void Miner::onAllocBuffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *
     auto miner = getMiner(handle->data);
 
     buf->base = &miner->m_recvBuf.base[miner->m_recvBufPos];
-    buf->len  = miner->m_recvBuf.len - miner->m_recvBufPos;
+    buf->len  = miner->m_recvBuf.len - (ULONG) miner->m_recvBufPos;
 }
 
 

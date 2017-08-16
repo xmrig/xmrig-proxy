@@ -25,6 +25,7 @@
 #define __JOB_H__
 
 
+#include <stddef.h>
 #include <stdint.h>
 
 

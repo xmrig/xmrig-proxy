@@ -48,6 +48,7 @@ public:
     inline bool syslog() const                     { return m_syslog; }
     inline bool verbose() const                    { return m_verbose; }
     inline const char *logFile() const             { return m_logFile; }
+    inline const char *userAgent() const           { return m_userAgent; }
     inline const std::vector<Addr*> &addrs() const { return m_addrs; }
     inline const std::vector<Url*> &pools() const  { return m_pools; }
     inline int donateLevel() const                 { return m_donateLevel; }
@@ -56,7 +57,7 @@ public:
     inline void setVerbose(bool verbose)           { m_verbose = verbose; }
     inline void toggleVerbose()                    { m_verbose = !m_verbose; }
 
-    const char *algoName() const;
+    inline static void release()                   { delete m_self; }
 
 private:
     Options(int argc, char **argv);
@@ -81,6 +82,7 @@ private:
     bool m_syslog;
     bool m_verbose;
     char *m_logFile;
+    char *m_userAgent;
     int m_donateLevel;
     int m_retries;
     int m_retryPause;

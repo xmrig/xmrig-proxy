@@ -32,6 +32,7 @@
 #include "log/FileLog.h"
 #include "log/Log.h"
 #include "Options.h"
+#include "Platform.h"
 #include "proxy/Proxy.h"
 #include "Summary.h"
 #include "version.h"
@@ -74,6 +75,8 @@ App::App(int argc, char **argv) :
     }
 #   endif
 
+    Platform::init(m_options->userAgent());
+
     m_proxy = new Proxy(m_options);
 
     uv_signal_init(uv_default_loop(), &m_signal);
@@ -106,8 +109,8 @@ int App::exec()
     uv_loop_close(uv_default_loop());
     uv_tty_reset_mode();
 
-    free(m_proxy);
-    free(m_options);
+    Options::release();
+    Platform::release();
 
 #   ifdef APP_DEVEL
     printf("exit code: %d\n", r);

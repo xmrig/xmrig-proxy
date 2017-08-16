@@ -25,14 +25,15 @@
 #pragma warning(disable:4244)
 #endif
 
-#include <ctime>
 #include <inttypes.h>
 #include <memory>
+#include <time.h>
 
 
 #include "Counters.h"
 #include "log/Log.h"
 #include "Options.h"
+#include "Platform.h"
 #include "proxy/Miner.h"
 #include "proxy/Miners.h"
 #include "proxy/Proxy.h"
@@ -43,11 +44,10 @@
 Proxy::Proxy(const Options *options) :
     m_options(options)
 {
-    std::srand(std::time(0) ^ (uintptr_t) this);
+    srand(time(0) ^ (uintptr_t) this);
 
-    m_agent = userAgent();
     m_miners = new Miners();
-    m_splitter = new NonceSplitter(options, m_agent);
+    m_splitter = new NonceSplitter(options, Platform::userAgent());
 
     m_timer.data = this;
     uv_timer_init(uv_default_loop(), &m_timer);
@@ -56,7 +56,6 @@ Proxy::Proxy(const Options *options) :
 
 Proxy::~Proxy()
 {
-    free(m_agent);
 }
 
 

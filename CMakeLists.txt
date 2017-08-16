@@ -29,6 +29,7 @@ set(HEADERS
     src/net/strategies/SinglePoolStrategy.h
     src/net/Url.h
     src/Options.h
+    src/Platform.h
     src/proxy/Addr.h
     src/proxy/Counters.h
     src/proxy/Hashrate.h
@@ -58,6 +59,7 @@ set(SOURCES
     src/net/strategies/SinglePoolStrategy.cpp
     src/net/Url.cpp
     src/Options.cpp
+    src/Platform.cpp
     src/proxy/Counters.cpp
     src/proxy/Hashrate.cpp
     src/proxy/JobResult.cpp
@@ -77,7 +79,7 @@ if (WIN32)
     set(SOURCES_OS
         res/app.rc
         src/App_win.cpp
-        src/proxy/Proxy_win.cpp
+        src/Platform_win.cpp
         src/proxy/Uuid_win.cpp
         )
 
@@ -86,12 +88,12 @@ if (WIN32)
 elseif (APPLE)
     set(SOURCES_OS
         src/App_unix.cpp
-        src/proxy/Proxy_mac.cpp
+        src/Platform_mac.cpp
         )
 else()
     set(SOURCES_OS
         src/App_unix.cpp
-        src/proxy/Proxy_unix.cpp
+        src/Platform_unix.cpp
         src/proxy/Uuid_unix.cpp
         )
 

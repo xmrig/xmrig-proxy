@@ -21,59 +21,25 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __PROXY_H__
-#define __PROXY_H__
+#ifndef __PLATFORM_H__
+#define __PLATFORM_H__
 
 
-#include <vector>
-#include <uv.h>
-
-
-#include "interfaces/IMinerListener.h"
-#include "interfaces/IServerListener.h"
-
-
-class ISplitter;
-class Miners;
-class Options;
-class Server;
-class Url;
-
-
-class Proxy : public IServerListener, public IMinerListener
+class Platform
 {
 public:
-    Proxy(const Options *options);
-    ~Proxy();
+    static const char *defaultConfigName();
+    static void init(const char *userAgent);
+    static void release();
+    static void setProcessPriority(int priority);
+    static void setThreadPriority(int priority);
 
-    void connect();
-    void printConnections();
-    void printHashrate();
-
-#   ifdef APP_DEVEL
-    void printState();
-#   endif
-
-protected:
-    void onMinerClose(Miner *miner) override;
-    void onMinerLogin(Miner *miner, const LoginRequest &request) override;
-    void onMinerSubmit(Miner *miner, const JobResult &request) override;
-    void onNewMinerAccepted(Miner *miner) override;
+    static inline const char *userAgent() { return m_userAgent; }
 
 private:
-    constexpr static int kTickInterval = 60 * 1000;
-
-    void bind(const char *ip, uint16_t port);
-    void gc();
-
-    static void onTimer(uv_timer_t *handle);
-
-    const Options *m_options;
-    ISplitter *m_splitter;
-    Miners *m_miners;
-    std::vector<Server*> m_servers;
-    uv_timer_t m_timer;
+    static char *m_defaultConfigName;
+    static char *m_userAgent;
 };
 
 
-#endif /* __PROXY_H__ */
+#endif /* __PLATFORM_H__ */

@@ -36,6 +36,7 @@
 
 #include "net/Url.h"
 #include "Options.h"
+#include "Platform.h"
 #include "version.h"
 
 
@@ -58,6 +59,7 @@ Options:\n\
   -r, --retries=N       number of times to retry before switch to backup server (default: 5)\n\
   -R, --retry-pause=N   time to pause between retries (default: 5)\n\
       --verbose         verbose output\n\
+      --user-agent      set custom user-agent string for pool\n\
   -B, --background      run the miner in the background\n\
   -c, --config=FILE     load a JSON-format configuration file\n\
   -l, --log-file=FILE   log all output to a file\n"
@@ -89,8 +91,9 @@ static struct option const options[] = {
     { "syslog",        0, nullptr, 'S'  },
     { "url",           1, nullptr, 'o'  },
     { "user",          1, nullptr, 'u'  },
+    { "user-agent",    1, nullptr, 1008 },
     { "userpass",      1, nullptr, 'O'  },
-    { "verbose",       0, nullptr, 1008 },
+    { "verbose",       0, nullptr, 1100 },
     { "version",       0, nullptr, 'V'  },
     { 0, 0, 0, 0 }
 };
@@ -98,13 +101,14 @@ static struct option const options[] = {
 
 static struct option const config_options[] = {
     { "background",    0, nullptr, 'B'  },
+    { "colors",        0, nullptr, 2000 },
     { "donate-level",  1, nullptr, 1003 },
     { "log-file",      1, nullptr, 'l'  },
     { "retries",       1, nullptr, 'r'  },
     { "retry-pause",   1, nullptr, 'R'  },
     { "syslog",        0, nullptr, 'S'  },
-    { "verbose",       0, nullptr, 1008 },
-    { "colors",        0, nullptr, 2000 },
+    { "user-agent",    1, nullptr, 1008 },
+    { "verbose",       0, nullptr, 1100 },
     { 0, 0, 0, 0 }
 };
 
@@ -117,34 +121,6 @@ static struct option const pool_options[] = {
     { "keepalive",     0, nullptr ,'k'  },
     { 0, 0, 0, 0 }
 };
-
-
-static char *defaultConfigName()
-{
-    size_t size = 512;
-    char *buf = new char[size];
-
-    if (uv_exepath(buf, &size) < 0) {
-        delete [] buf;
-        return nullptr;
-    }
-
-    if (size < 500) {
-#       ifdef WIN32
-        char *p = strrchr(buf, '\\');
-#       else
-        char *p = strrchr(buf, '/');
-#       endif
-
-        if (p) {
-            strcpy(p + 1, "config.json");
-            return buf;
-        }
-    }
-
-    delete [] buf;
-    return nullptr;
-}
 
 
 Options *Options::parse(int argc, char **argv)
@@ -167,6 +143,7 @@ Options::Options(int argc, char **argv) :
     m_syslog(false),
     m_verbose(false),
     m_logFile(nullptr),
+    m_userAgent(nullptr),
     m_retries(5),
     m_retryPause(5)
 {
@@ -191,9 +168,7 @@ Options::Options(int argc, char **argv) :
     }
 
     if (!m_pools[0]->isValid()) {
-        char *fileName = defaultConfigName();
-        parseConfig(fileName);
-        delete [] fileName;
+        parseConfig(Platform::defaultConfigName());
     }
 
     if (!m_pools[0]->isValid()) {
@@ -277,9 +252,11 @@ bool Options::parseArg(int key, const char *arg)
     case 'B':  /* --background */
     case 'k':  /* --keepalive */
     case 'S':  /* --syslog */
-    case 1002: /* --no-color */
-    case 1008: /* --verbose */
+    case 1100: /* --verbose */
         return parseBoolean(key, true);
+
+    case 1002: /* --no-color */
+        return parseBoolean(key, false);
 
     case 'V': /* --version */
         showVersion();
@@ -291,6 +268,11 @@ bool Options::parseArg(int key, const char *arg)
 
     case 'c': /* --config */
         parseConfig(arg);
+        break;
+
+    case 1008: /* --user-agent */
+        free(m_userAgent);
+        m_userAgent = strdup(arg);
         break;
 
     default:
@@ -359,7 +341,7 @@ bool Options::parseBoolean(int key, bool enable)
         m_colors = enable;
         break;
 
-    case 1008: /* --verbose */
+    case 1100: /* --verbose */
         m_verbose = enable;
         break;
 
@@ -389,8 +371,18 @@ Url *Options::parseUrl(const char *arg) const
 
 void Options::parseConfig(const char *fileName)
 {
+    uv_fs_t req;
+    const int fd = uv_fs_open(uv_default_loop(), &req, fileName, O_RDONLY, 0644, nullptr);
+    if (fd < 0) {
+        fprintf(stderr, "unable to open %s: %s\n", fileName, uv_strerror(fd));
+        return;
+    }
+
     json_error_t err;
-    json_t *config = json_load_file(fileName, 0, &err);
+    json_t *config = json_loadfd(fd, 0, &err);
+
+    uv_fs_close(uv_default_loop(), &req, fd, nullptr);
+    uv_fs_req_cleanup(&req);
 
     if (!json_is_object(config)) {
         if (config) {

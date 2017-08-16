@@ -22,29 +22,41 @@
  */
 
 
-#include <stdlib.h>
+#include <string.h>
+#include <uv.h>
 
 
-#include "proxy/Proxy.h"
-#include "version.h"
+#include "Platform.h"
 
 
-char *Proxy::userAgent()
+char *Platform::m_defaultConfigName = nullptr;
+char *Platform::m_userAgent         = nullptr;
+
+
+const char *Platform::defaultConfigName()
 {
-    const size_t max = 128;
+    size_t size = 520;
 
-    char *buf = static_cast<char*>(malloc(max));
-    int length = snprintf(buf, max, "%s/%s (Linux ", APP_NAME, APP_VERSION);
+    if (m_defaultConfigName == nullptr) {
+        m_defaultConfigName = new char[size];
+    }
 
-#   if defined(__x86_64__)
-    length += snprintf(buf + length, max - length, "x86_64) libuv/%s", uv_version_string());
-#   else
-    length += snprintf(buf + length, max - length, "i686) libuv/%s", uv_version_string());
-#   endif
+    if (uv_exepath(m_defaultConfigName, &size) < 0) {
+        return nullptr;
+    }
 
-#   ifdef __GNUC__
-    length += snprintf(buf + length, max - length, " gcc/%d.%d.%d", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
-#   endif
+    if (size < 500) {
+#       ifdef WIN32
+        char *p = strrchr(m_defaultConfigName, '\\');
+#       else
+        char *p = strrchr(m_defaultConfigName, '/');
+#       endif
 
-    return buf;
+        if (p) {
+            strcpy(p + 1, "config.json");
+            return m_defaultConfigName;
+        }
+    }
+
+    return nullptr;
 }

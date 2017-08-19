@@ -22,9 +22,20 @@
  */
 
  
+#include <CoreFoundation/CFUUID.h>
+#include <string.h>
+
+
 #include "proxy/Uuid.h"
 
 
 void Uuid::create(char *out, size_t size)
 {
+    CFUUIDRef id = CFUUIDCreate(nullptr);
+    CFStringRef str = CFUUIDCreateString(nullptr, id);
+
+    strncpy(out, CFStringGetCStringPtr(str, kCFStringEncodingASCII), size);
+
+    CFRelease(str);
+    CFRelease(id);
 }

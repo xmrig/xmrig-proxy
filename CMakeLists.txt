@@ -91,6 +91,9 @@ elseif (APPLE)
         src/Platform_mac.cpp
         src/proxy/Uuid_mac.cpp
         )
+
+    find_library(CFLIB CoreFoundation)
+    set(EXTRA_LIBS ${CFLIB})
 else()
     set(SOURCES_OS
         src/App_unix.cpp

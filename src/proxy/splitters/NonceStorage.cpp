@@ -33,7 +33,7 @@
 NonceStorage::NonceStorage() :
     m_active(false),
     m_used(256, 0),
-    m_index(std::rand() % 256)
+    m_index(rand() % 256)
 {
 }
 

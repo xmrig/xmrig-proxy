@@ -89,6 +89,7 @@ elseif (APPLE)
     set(SOURCES_OS
         src/App_unix.cpp
         src/Platform_mac.cpp
+        src/proxy/Uuid_mac.cpp
         )
 else()
     set(SOURCES_OS

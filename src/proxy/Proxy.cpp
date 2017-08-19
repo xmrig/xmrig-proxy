@@ -41,8 +41,7 @@
 #include "proxy/splitters/NonceSplitter.h"
 
 
-Proxy::Proxy(const Options *options) :
-    m_options(options)
+Proxy::Proxy(const Options *options)
 {
     srand(time(0) ^ (uintptr_t) this);
 

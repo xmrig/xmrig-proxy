@@ -68,7 +68,6 @@ private:
 
     static void onTimer(uv_timer_t *handle);
 
-    const Options *m_options;
     ISplitter *m_splitter;
     Miners *m_miners;
     std::vector<Server*> m_servers;

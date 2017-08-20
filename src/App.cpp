@@ -112,10 +112,6 @@ int App::exec()
     Options::release();
     Platform::release();
 
-#   ifdef APP_DEVEL
-    printf("exit code: %d\n", r);
-#   endif
-
     return r;
 }
 

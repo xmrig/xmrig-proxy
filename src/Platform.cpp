@@ -21,63 +21,42 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ADDR_H__
-#define __ADDR_H__
 
-
-#include <stdint.h>
 #include <string.h>
-#include <stdlib.h>
+#include <uv.h>
 
 
-class Addr
+#include "Platform.h"
+
+
+char *Platform::m_defaultConfigName = nullptr;
+char *Platform::m_userAgent         = nullptr;
+
+
+const char *Platform::defaultConfigName()
 {
-public:
-    constexpr static uint16_t kDefaultPort = 3333;
+    size_t size = 520;
 
-
-    inline Addr() :
-        m_host(nullptr),
-        m_port(kDefaultPort)
-    {}
-
-
-    inline Addr(const char *addr) :
-        m_host(nullptr),
-        m_port(kDefaultPort)
-    {
-        if (!addr) {
-            return;
-        }
-
-        const char *port = strchr(addr, ':');
-        if (!port) {
-            m_host = strdup(addr);
-            return;
-        }
-
-        const size_t size = port++ - addr + 1;
-        m_host = static_cast<char*>(malloc(size));
-        memcpy(m_host, addr, size - 1);
-        m_host[size - 1] = '\0';
-
-        m_port = (uint16_t) strtol(port, nullptr, 10);
+    if (m_defaultConfigName == nullptr) {
+        m_defaultConfigName = new char[size];
     }
 
-
-    inline ~Addr()
-    {
-        free(m_host);
+    if (uv_exepath(m_defaultConfigName, &size) < 0) {
+        return nullptr;
     }
 
+    if (size < 500) {
+#       ifdef WIN32
+        char *p = strrchr(m_defaultConfigName, '\\');
+#       else
+        char *p = strrchr(m_defaultConfigName, '/');
+#       endif
 
-    inline bool isValid() const     { return m_host && m_port > 0; }
-    inline const char *host() const { return m_host; }
-    inline uint16_t port() const    { return m_port; }
+        if (p) {
+            strcpy(p + 1, "config.json");
+            return m_defaultConfigName;
+        }
+    }
 
-private:
-    char *m_host;
-    uint16_t m_port;
-};
-
-#endif /* __ADDR_H__ */
+    return nullptr;
+}

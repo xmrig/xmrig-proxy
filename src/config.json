@@ -1,0 +1,18 @@
+{
+    "background": false,
+    "log-file": null,
+    "retries": 5,
+    "retry-pause": 5,
+    "syslog": false,
+    "verbose": false,
+    "pools": [
+        {
+            "url": "pool.minemonero.pro:5555",
+            "user": "",
+            "pass": "x"
+        }
+    ],
+    "bind": [
+        "0.0.0.0:3333"
+    ]
+}

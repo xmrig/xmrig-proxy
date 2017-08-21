@@ -66,6 +66,7 @@ public:
     void gc();
     void remove(const Miner *miner);
     void submit(Miner *miner, const JobResult &request);
+    void tick(uint64_t now);
 
     inline bool isSuspended() const { return m_suspended; }
 

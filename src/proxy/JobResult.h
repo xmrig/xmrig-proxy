@@ -43,7 +43,8 @@ public:
 
     JobResult(int64_t id, const char *jobId, const char *nonce, const char *result);
 
-    bool isValid(uint8_t fixedByte) const;
+    bool isCompatible(uint8_t fixedByte) const;
+    bool isValid() const;
 
     char jobId[64];
     const char *nonce;

@@ -25,14 +25,16 @@
 #define __OPTIONS_H__
 
 
-#include <vector>
+#include <jansson.h>
 #include <stdint.h>
+#include <vector>
 
 
 #include "proxy/Addr.h"
 
 
 class Url;
+struct option;
 
 
 class Options
@@ -43,29 +45,34 @@ public:
 
     inline bool background() const                 { return m_background; }
     inline bool colors() const                     { return m_colors; }
-    inline bool isReady() const                    { return m_ready; }
     inline bool syslog() const                     { return m_syslog; }
     inline bool verbose() const                    { return m_verbose; }
     inline const char *logFile() const             { return m_logFile; }
+    inline const char *userAgent() const           { return m_userAgent; }
     inline const std::vector<Addr*> &addrs() const { return m_addrs; }
     inline const std::vector<Url*> &pools() const  { return m_pools; }
     inline int donateLevel() const                 { return m_donateLevel; }
-    inline int printTime() const                   { return m_printTime; }
     inline int retries() const                     { return m_retries; }
     inline int retryPause() const                  { return m_retryPause; }
     inline void setVerbose(bool verbose)           { m_verbose = verbose; }
     inline void toggleVerbose()                    { m_verbose = !m_verbose; }
 
-    const char *algoName() const;
+    inline static void release()                   { delete m_self; }
 
 private:
     Options(int argc, char **argv);
     ~Options();
 
+    inline bool isReady() const { return m_ready; }
+
     static Options *m_self;
 
-    bool parseArg(int key, char *arg);
+    bool parseArg(int key, const char *arg);
+    bool parseArg(int key, uint64_t arg);
+    bool parseBoolean(int key, bool enable);
     Url *parseUrl(const char *arg) const;
+    void parseConfig(const char *fileName);
+    void parseJSON(const struct option *option, json_t *object);
     void showUsage(int status) const;
     void showVersion(void);
 
@@ -75,8 +82,8 @@ private:
     bool m_syslog;
     bool m_verbose;
     char *m_logFile;
+    char *m_userAgent;
     int m_donateLevel;
-    int m_printTime;
     int m_retries;
     int m_retryPause;
     std::vector<Addr*> m_addrs;

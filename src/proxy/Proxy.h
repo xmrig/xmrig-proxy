@@ -66,11 +66,8 @@ private:
     void bind(const char *ip, uint16_t port);
     void gc();
 
-    static char *userAgent();
     static void onTimer(uv_timer_t *handle);
 
-    char *m_agent;
-    const Options *m_options;
     ISplitter *m_splitter;
     Miners *m_miners;
     std::vector<Server*> m_servers;

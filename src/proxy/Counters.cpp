@@ -27,6 +27,7 @@
 
 #include "Counters.h"
 #include "log/Log.h"
+#include "Options.h"
 
 
 Hashrate Counters::m_hashrate[2];
@@ -51,7 +52,8 @@ void Counters::accept(Counters::Stores store, size_t id, uint32_t diff, uint64_t
     tick.accepted++;
 
     if (verbose) {
-        LOG_INFO("#%03u \x1B[01;32maccepted\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m \x1B[01;30m(%" PRIu64 " ms)",
+        LOG_INFO(Options::i()->colors() ? "#%03u \x1B[01;32maccepted\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m \x1B[01;30m(%" PRIu64 " ms)"
+                                        : "#%03u accepted (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff %u (%" PRIu64 " ms)"  ,
                  id, m_hashrate[0].accepted, m_hashrate[0].rejected[0], m_hashrate[0].rejected[1], diff, ms);
     }
 }
@@ -82,7 +84,8 @@ void Counters::reject(Stores store, const char *ip, const char *message)
 void Counters::reject(Stores store, size_t id, uint32_t diff, uint64_t ms, const char *error)
 {
     m_hashrate[store].rejected[0]++;
-    LOG_INFO("#%03u \x1B[01;31mrejected\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m \x1B[31m\"%s\"\x1B[0m \x1B[01;30m(%" PRId64 " ms)",
+    LOG_INFO(Options::i()->colors() ? "#%03u \x1B[01;31mrejected\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m \x1B[31m\"%s\"\x1B[0m \x1B[01;30m(%" PRId64 " ms)"
+                                    : "#%03u rejected (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff %u \"%s\" (%" PRId64 " ms)",
              id, m_hashrate[0].accepted, m_hashrate[0].rejected[0], m_hashrate[0].rejected[1], diff, error, ms);
 }
 

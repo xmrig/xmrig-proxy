@@ -21,63 +21,25 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ADDR_H__
-#define __ADDR_H__
+#ifndef __PLATFORM_H__
+#define __PLATFORM_H__
 
 
-#include <stdint.h>
-#include <string.h>
-#include <stdlib.h>
-
-
-class Addr
+class Platform
 {
 public:
-    constexpr static uint16_t kDefaultPort = 3333;
+    static const char *defaultConfigName();
+    static void init(const char *userAgent);
+    static void release();
+    static void setProcessPriority(int priority);
+    static void setThreadPriority(int priority);
 
-
-    inline Addr() :
-        m_host(nullptr),
-        m_port(kDefaultPort)
-    {}
-
-
-    inline Addr(const char *addr) :
-        m_host(nullptr),
-        m_port(kDefaultPort)
-    {
-        if (!addr) {
-            return;
-        }
-
-        const char *port = strchr(addr, ':');
-        if (!port) {
-            m_host = strdup(addr);
-            return;
-        }
-
-        const size_t size = port++ - addr + 1;
-        m_host = static_cast<char*>(malloc(size));
-        memcpy(m_host, addr, size - 1);
-        m_host[size - 1] = '\0';
-
-        m_port = (uint16_t) strtol(port, nullptr, 10);
-    }
-
-
-    inline ~Addr()
-    {
-        free(m_host);
-    }
-
-
-    inline bool isValid() const     { return m_host && m_port > 0; }
-    inline const char *host() const { return m_host; }
-    inline uint16_t port() const    { return m_port; }
+    static inline const char *userAgent() { return m_userAgent; }
 
 private:
-    char *m_host;
-    uint16_t m_port;
+    static char *m_defaultConfigName;
+    static char *m_userAgent;
 };
 
-#endif /* __ADDR_H__ */
+
+#endif /* __PLATFORM_H__ */

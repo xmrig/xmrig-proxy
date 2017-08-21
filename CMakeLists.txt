@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.0)
 project(xmrig-proxy)
 
 
+option(WITH_GOOGLE_BREAKPAD "Use Google Breakpad" OFF)
+
+
 include (CheckIncludeFile)
 
 
@@ -26,6 +29,7 @@ set(HEADERS
     src/net/strategies/SinglePoolStrategy.h
     src/net/Url.h
     src/Options.h
+    src/Platform.h
     src/proxy/Addr.h
     src/proxy/Counters.h
     src/proxy/Hashrate.h
@@ -55,6 +59,7 @@ set(SOURCES
     src/net/strategies/SinglePoolStrategy.cpp
     src/net/Url.cpp
     src/Options.cpp
+    src/Platform.cpp
     src/proxy/Counters.cpp
     src/proxy/Hashrate.cpp
     src/proxy/JobResult.cpp
@@ -73,10 +78,8 @@ set(SOURCES
 if (WIN32)
     set(SOURCES_OS
         res/app.rc
-        src/3rdparty/winansi.cpp
-        src/3rdparty/winansi.h
         src/App_win.cpp
-        src/proxy/Proxy_win.cpp
+        src/Platform_win.cpp
         src/proxy/Uuid_win.cpp
         )
 
@@ -85,12 +88,16 @@ if (WIN32)
 elseif (APPLE)
     set(SOURCES_OS
         src/App_unix.cpp
-        src/proxy/Proxy_mac.cpp
+        src/Platform_mac.cpp
+        src/proxy/Uuid_mac.cpp
         )
+
+    find_library(CFLIB CoreFoundation)
+    set(EXTRA_LIBS ${CFLIB})
 else()
     set(SOURCES_OS
         src/App_unix.cpp
-        src/proxy/Proxy_unix.cpp
+        src/Platform_unix.cpp
         src/proxy/Uuid_unix.cpp
         )
 
@@ -131,10 +138,17 @@ if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
 
     #set(CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -gdwarf-2")
 
+    if (WITH_GOOGLE_BREAKPAD)
+        set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -g")
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g")
+    endif()
+
 elseif (CMAKE_CXX_COMPILER_ID MATCHES MSVC)
 
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /Ox /Ot /Oi /MT /GL")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Ox /Ot /Oi /MT /GL")
+    add_definitions(/D_CRT_SECURE_NO_WARNINGS)
+    add_definitions(/D_CRT_NONSTDC_NO_WARNINGS)
 
 elseif (CMAKE_CXX_COMPILER_ID MATCHES Clang)
 
@@ -152,6 +166,13 @@ if (HAVE_SYSLOG_H)
     set(SOURCES_SYSLOG src/log/SysLog.h src/log/SysLog.cpp)
 endif()
 
+if (WITH_GOOGLE_BREAKPAD)
+    include_directories(/usr/local/include/breakpad)
+    set(GOOGLE_BREAKPAD_LIBS breakpad_client)
+else()
+    add_definitions(/DXMRIG_NO_GOOGLE_BREAKPAD)
+endif()
+
 include_directories(src)
 include_directories(src/3rdparty)
 include_directories(src/3rdparty/jansson)
@@ -160,4 +181,4 @@ include_directories(${UV_INCLUDE_DIR})
 add_subdirectory(src/3rdparty/jansson)
 
 add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_SYSLOG})
-target_link_libraries(${CMAKE_PROJECT_NAME} jansson ${UV_LIBRARIES} ${EXTRA_LIBS})
+target_link_libraries(${CMAKE_PROJECT_NAME} jansson ${UV_LIBRARIES} ${EXTRA_LIBS} ${GOOGLE_BREAKPAD_LIBS})

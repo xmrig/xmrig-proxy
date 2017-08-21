@@ -75,13 +75,14 @@ bool NonceMapper::add(Miner *miner, const LoginRequest &request)
         connect();
     }
 
+    miner->setMapperId(m_id);
     return true;
 }
 
 
 bool NonceMapper::isActive() const
 {
-    return m_storage->isActive();
+    return m_storage->isActive() && !m_suspended;
 }
 
 
@@ -127,6 +128,12 @@ void NonceMapper::submit(Miner *miner, const JobResult &request)
 }
 
 
+void NonceMapper::tick(uint64_t now)
+{
+    m_strategy->tick(now);
+}
+
+
 #ifdef APP_DEVEL
 void NonceMapper::printState()
 {
@@ -143,14 +150,16 @@ void NonceMapper::onActive(Client *client)
 {
     m_storage->setActive(true);
 
-    LOG_INFO("#%03u \x1B[01;37muse pool \x1B[01;36m%s:%d \x1B[01;30m%s", m_id, client->host(), client->port(), client->ip());
+    LOG_INFO(m_options->colors() ? "#%03u \x1B[01;37muse pool \x1B[01;36m%s:%d \x1B[01;30m%s" : "#%03u use pool %s:%d %s",
+             m_id, client->host(), client->port(), client->ip());
 }
 
 
 void NonceMapper::onJob(Client *client, const Job &job)
 {
     if (m_options->verbose()) {
-        LOG_INFO("#%03u \x1B[01;35mnew job\x1B[0m from \x1B[01;37m%s:%d\x1B[0m diff \x1B[01;37m%d", m_id, client->host(), client->port(), job.diff());
+        LOG_INFO(m_options->colors() ? "#%03u \x1B[01;35mnew job\x1B[0m from \x1B[01;37m%s:%d\x1B[0m diff \x1B[01;37m%d" : "#%03u new job from %s:%d diff %d",
+                 m_id, client->host(), client->port(), job.diff());
     }
 
     m_storage->setJob(job);

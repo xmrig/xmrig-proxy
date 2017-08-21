@@ -39,6 +39,10 @@ NonceSplitter::NonceSplitter(const Options *options, const char *agent) :
     m_agent(agent),
     m_options(options)
 {
+    m_timer.data = this;
+    uv_timer_init(uv_default_loop(), &m_timer);
+
+    uv_timer_start(&m_timer, NonceSplitter::onTick, kTickInterval, kTickInterval);
 }
 
 
@@ -66,9 +70,16 @@ void NonceSplitter::gc()
 
 void NonceSplitter::login(Miner *miner, const LoginRequest &request)
 {
-    for (size_t i = 0; i < m_upstreams.size(); ++i) {
-        if (m_upstreams[i]->add(miner, request)) {
-            miner->setMapperId(i);
+    // try reuse active upstreams.
+    for (NonceMapper *mapper : m_upstreams) {
+        if (!mapper->isSuspended() && mapper->add(miner, request)) {
+            return;
+        }
+    }
+
+    // try reuse suspended upstreams.
+    for (NonceMapper *mapper : m_upstreams) {
+        if (mapper->isSuspended() && mapper->add(miner, request)) {
             return;
         }
     }
@@ -95,14 +106,23 @@ void NonceSplitter::printConnections()
         }
     }
 
-    const int error = m_upstreams.size() - active - suspended;
+    const int error = (int) m_upstreams.size() - active - suspended;
     double efficiency = (double) Counters::miners() / (active * 256) * 100.0;
 
-    LOG_INFO("\x1B[01;32m* \x1B[01;37mupstreams\x1B[0m" LABEL("active") "%s%d\x1B[0m" LABEL("sleep") "\x1B[01;37m%d\x1B[0m" LABEL("error") "%s%d\x1B[0m" LABEL("total") "\x1B[01;37m%d",
-             active ? "\x1B[01;32m" : "\x1B[01;31m", active, suspended, error ? "\x1B[01;31m" : "\x1B[01;37m", error, m_upstreams.size());
+    if (m_options->colors()) {
+        LOG_INFO("\x1B[01;32m* \x1B[01;37mupstreams\x1B[0m" LABEL("active") "%s%d\x1B[0m" LABEL("sleep") "\x1B[01;37m%d\x1B[0m" LABEL("error") "%s%d\x1B[0m" LABEL("total") "\x1B[01;37m%d",
+                 active ? "\x1B[01;32m" : "\x1B[01;31m", active, suspended, error ? "\x1B[01;31m" : "\x1B[01;37m", error, m_upstreams.size());
 
-    LOG_INFO("\x1B[01;32m* \x1B[01;37mminers   \x1B[0m" LABEL("active") "%s%d\x1B[0m" LABEL("max") "\x1B[01;37m%d\x1B[0m" LABEL("efficiency") "%s%3.1f%%",
-             Counters::miners() ? "\x1B[01;32m" : "\x1B[01;31m", Counters::miners(), Counters::minersMax(), (efficiency > 80.0 ? "\x1B[01;32m" : (efficiency < 30.0 ? "\x1B[01;31m" : "\x1B[01;33m")), efficiency);
+        LOG_INFO("\x1B[01;32m* \x1B[01;37mminers   \x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("max") "\x1B[01;37m%" PRIu64 "\x1B[0m" LABEL("efficiency") "%s%3.1f%%",
+                 Counters::miners() ? "\x1B[01;32m" : "\x1B[01;31m", Counters::miners(), Counters::minersMax(), (efficiency > 80.0 ? "\x1B[01;32m" : (efficiency < 30.0 ? "\x1B[01;31m" : "\x1B[01;33m")), efficiency);
+    }
+    else {
+        LOG_INFO("* upstreams: active %d sleep %d error %d total %d",
+                 active, suspended, error, m_upstreams.size());
+
+        LOG_INFO("* miners:    active %" PRIu64 " max %" PRIu64 " efficiency %3.1f%%",
+                 Counters::miners(), Counters::minersMax(), efficiency);
+    }
 }
 
 
@@ -126,3 +146,19 @@ void NonceSplitter::printState()
     }
 }
 #endif
+
+
+void NonceSplitter::onTick(uv_timer_t *handle)
+{
+    static_cast<NonceSplitter*>(handle->data)->tick();
+}
+
+
+void NonceSplitter::tick()
+{
+    const uint64_t now = uv_now(uv_default_loop());
+
+    for (NonceMapper *mapper : m_upstreams) {
+        mapper->tick(now);
+    }
+}

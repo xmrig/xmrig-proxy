@@ -21,19 +21,21 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <stdlib.h>
-
-#include "proxy/Proxy.h"
-#include "version.h"
+ 
+#include <CoreFoundation/CFUUID.h>
+#include <string.h>
 
 
-char *Proxy::userAgent()
+#include "proxy/Uuid.h"
+
+
+void Uuid::create(char *out, size_t size)
 {
-    const size_t max = 128;
+    CFUUIDRef id = CFUUIDCreate(nullptr);
+    CFStringRef str = CFUUIDCreateString(nullptr, id);
 
-    char *buf = static_cast<char*>(malloc(max));
-    snprintf(buf, max, "%s/%s (Macintosh; Intel Mac OS X) libuv/%s clang/%d.%d.%d", APP_NAME, APP_VERSION, uv_version_string(), __clang_major__, __clang_minor__, __clang_patchlevel__);
+    strncpy(out, CFStringGetCStringPtr(str, kCFStringEncodingASCII), size);
 
-    return buf;
+    CFRelease(str);
+    CFRelease(id);
 }

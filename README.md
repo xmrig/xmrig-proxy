@@ -8,7 +8,7 @@ Extremely high performance Monero (XMR) Stratum protocol proxy, can easily handl
 * Any miner with nicehash support, `--nicehash` option for [XMRig](https://github.com/xmrig/xmrig).
 * [Comparison](https://github.com/xmrig/xmrig-proxy/wiki/Comparison) with other proxies.
 
-:warning: :warning: :warning: Nicehash support must be enabled on miner side, it mandatory. :warning: :warning: :warning:
+:warning: :warning: :warning: **Nicehash support must be enabled on miner side, it mandatory.** :warning: :warning: :warning:
 
 ## Why?
 This proxy designed and created for handle donation traffic from XMRig. No one other solution works fine with high connection/disconnection rate.

@@ -106,6 +106,7 @@ endif()
 
 add_definitions(/DXMRIG_PROXY_PROJECT)
 add_definitions(/DUNICODE)
+add_definitions(/D__STDC_FORMAT_MACROS)
 add_definitions(/DAPP_DEVEL)
 #add_definitions(/DAPP_DEBUG)
 
@@ -129,7 +130,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
 
     if (WIN32)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
-        add_definitions(/D__STDC_FORMAT_MACROS)
     else()
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
     endif()

@@ -18,6 +18,7 @@ set(HEADERS
     src/Console.h
     src/interfaces/IClientListener.h
     src/interfaces/IConsoleListener.h
+    src/interfaces/IEvent.h
     src/interfaces/ILogBackend.h
     src/interfaces/IMinerListener.h
     src/interfaces/IServerListener.h
@@ -36,6 +37,8 @@ set(HEADERS
     src/Platform.h
     src/proxy/Addr.h
     src/proxy/Counters.h
+    src/proxy/events/Event.h
+    src/proxy/events/Events.h
     src/proxy/Hashrate.h
     src/proxy/JobResult.h
     src/proxy/JobResult.h
@@ -71,6 +74,9 @@ set(SOURCES
     src/Options.cpp
     src/Platform.cpp
     src/proxy/Counters.cpp
+    src/proxy/events/ConnectionEvent.h
+    src/proxy/events/Event.cpp
+    src/proxy/events/Events.cpp
     src/proxy/Hashrate.cpp
     src/proxy/JobResult.cpp
     src/proxy/LoginRequest.cpp

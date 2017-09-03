@@ -24,6 +24,7 @@
 
 #include "interfaces/IServerListener.h"
 #include "log/Log.h"
+#include "proxy/events/ConnectionEvent.h"
 #include "proxy/Miner.h"
 #include "proxy/Server.h"
 
@@ -70,10 +71,11 @@ void Server::onConnection(uv_stream_t *server, int status)
         return;
     }
 
-    if (miner->accept(server)) {
-        instance->m_listener->onNewMinerAccepted(miner);
-    }
-    else {
+    if (!miner->accept(server)) {
         delete miner;
+        return;
     }
+
+    ConnectionEvent::start(miner);
+    instance->m_listener->onNewMinerAccepted(miner);
 }

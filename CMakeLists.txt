@@ -3,6 +3,7 @@ project(xmrig-proxy)
 
 
 option(WITH_GOOGLE_BREAKPAD "Use Google Breakpad" OFF)
+option(WITH_HTTPD           "HTTP REST API"       ON)
 
 
 include (CheckIncludeFile)
@@ -10,6 +11,9 @@ include (CheckIncludeFile)
 
 set(HEADERS
     src/3rdparty/align.h
+    src/api/Api.h
+    src/api/ApiState.h
+    src/api/NetworkState.h
     src/App.h
     src/Console.h
     src/interfaces/IClientListener.h
@@ -48,8 +52,13 @@ set(HEADERS
    )
 
 set(SOURCES
+    src/api/Api.cpp
+    src/api/ApiState.cpp
+    src/api/NetworkState.cpp
     src/App.cpp
     src/Console.cpp
+    src/crypto/c_keccak.c
+    src/crypto/c_keccak.h
     src/log/ConsoleLog.cpp
     src/log/FileLog.cpp
     src/log/Log.cpp
@@ -57,6 +66,7 @@ set(SOURCES
     src/net/Job.cpp
     src/net/strategies/FailoverStrategy.cpp
     src/net/strategies/SinglePoolStrategy.cpp
+    src/net/SubmitResult.cpp
     src/net/Url.cpp
     src/Options.cpp
     src/Platform.cpp
@@ -173,6 +183,16 @@ else()
     add_definitions(/DXMRIG_NO_GOOGLE_BREAKPAD)
 endif()
 
+find_package(MHD)
+if (WITH_HTTPD AND MHD_FOUND)
+    include_directories(${MHD_INCLUDE_DIRS})
+
+    set(HTTPD_SOURCES src/api/Httpd.h src/api/Httpd.cpp)
+else()
+    add_definitions(/DXMRIG_NO_HTTPD)
+    add_definitions(/DXMRIG_NO_API)
+endif()
+
 include_directories(src)
 include_directories(src/3rdparty)
 include_directories(src/3rdparty/jansson)
@@ -180,5 +200,5 @@ include_directories(${UV_INCLUDE_DIR})
 
 add_subdirectory(src/3rdparty/jansson)
 
-add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_SYSLOG})
-target_link_libraries(${CMAKE_PROJECT_NAME} jansson ${UV_LIBRARIES} ${EXTRA_LIBS} ${GOOGLE_BREAKPAD_LIBS})
+add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_SYSLOG} ${HTTPD_SOURCES})
+target_link_libraries(${CMAKE_PROJECT_NAME} jansson ${UV_LIBRARIES} ${MHD_LIBRARY} ${EXTRA_LIBS} ${GOOGLE_BREAKPAD_LIBS})

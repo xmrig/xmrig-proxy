@@ -14,5 +14,10 @@
     ],
     "bind": [
         "0.0.0.0:3333"
-    ]
+    ],
+    "api": {
+        "port": 0,
+        "access-token": null,
+        "worker-id": null
+    }
 }

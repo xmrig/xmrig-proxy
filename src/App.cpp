@@ -26,6 +26,7 @@
 #include <uv.h>
 
 
+#include "api/Api.h"
 #include "App.h"
 #include "Console.h"
 #include "log/ConsoleLog.h"
@@ -42,6 +43,9 @@
 #   include "log/SysLog.h"
 #endif
 
+#ifndef XMRIG_NO_HTTPD
+#   include "api/Httpd.h"
+#endif
 
 App *App::m_self = nullptr;
 
@@ -102,6 +106,15 @@ int App::exec()
     background();
 
     Summary::print();
+
+#   ifndef XMRIG_NO_API
+    Api::start();
+#   endif
+
+#   ifndef XMRIG_NO_HTTPD
+    m_httpd = new Httpd(m_options->apiPort(), m_options->apiToken());
+    m_httpd->start();
+#   endif
 
     m_proxy->connect();
 

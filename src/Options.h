@@ -47,10 +47,13 @@ public:
     inline bool colors() const                     { return m_colors; }
     inline bool syslog() const                     { return m_syslog; }
     inline bool verbose() const                    { return m_verbose; }
+    inline const char *apiToken() const            { return m_apiToken; }
+    inline const char *apiWorkerId() const         { return m_apiWorkerId; }
     inline const char *logFile() const             { return m_logFile; }
     inline const char *userAgent() const           { return m_userAgent; }
     inline const std::vector<Addr*> &addrs() const { return m_addrs; }
     inline const std::vector<Url*> &pools() const  { return m_pools; }
+    inline int apiPort() const                     { return m_apiPort; }
     inline int donateLevel() const                 { return m_donateLevel; }
     inline int retries() const                     { return m_retries; }
     inline int retryPause() const                  { return m_retryPause; }
@@ -81,8 +84,11 @@ private:
     bool m_ready;
     bool m_syslog;
     bool m_verbose;
+    char *m_apiToken;
+    char *m_apiWorkerId;
     char *m_logFile;
     char *m_userAgent;
+    int m_apiPort;
     int m_donateLevel;
     int m_retries;
     int m_retryPause;

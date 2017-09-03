@@ -176,19 +176,19 @@ void NonceMapper::onPause(IStrategy *strategy)
 }
 
 
-void NonceMapper::onResultAccepted(Client *client, int64_t seq, uint32_t diff, uint64_t ms, const char *error)
+void NonceMapper::onResultAccepted(Client *client, const SubmitResult &result, const char *error)
 {
     if (error) {
-        Counters::reject(Counters::Primary, m_id, diff, ms, error);
+        Counters::reject(Counters::Primary, m_id, result.diff, result.elapsed, error);
     } else {
-        Counters::accept(Counters::Primary, m_id, diff, ms, m_options->verbose());
+        Counters::accept(Counters::Primary, m_id, result.diff, result.elapsed, m_options->verbose());
     }
 
-    if (!m_results.count(seq)) {
+    if (!m_results.count(result.seq)) {
         return;
     }
 
-    const SubmitCtx &ctx = m_results[seq];
+    const SubmitCtx &ctx = m_results[result.seq];
 
     Miner *miner = m_storage->miner(ctx.minerId);
     if (miner) {
@@ -200,7 +200,7 @@ void NonceMapper::onResultAccepted(Client *client, int64_t seq, uint32_t diff, u
         }
     }
 
-    auto it = m_results.find(seq);
+    auto it = m_results.find(result.seq);
     if (it != m_results.end()) {
         m_results.erase(it);
     }

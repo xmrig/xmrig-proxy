@@ -78,7 +78,7 @@ protected:
     void onActive(Client *client) override;
     void onJob(Client *client, const Job &job) override;
     void onPause(IStrategy *strategy) override;
-    void onResultAccepted(Client *client, int64_t seq, uint32_t diff, uint64_t ms, const char *error) override;
+    void onResultAccepted(Client *client, const SubmitResult &result, const char *error) override;
 
 private:
     void suspend();

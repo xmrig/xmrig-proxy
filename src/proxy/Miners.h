@@ -29,25 +29,32 @@
 #include <uv.h>
 
 
+#include "interfaces/IEventListener.h"
+
+
 class Miner;
 
 
-class Miners
+class Miners : public IEventListener
 {
 public:
-  Miners();
-  ~Miners();
+    Miners();
+    ~Miners();
 
-  void add(Miner *miner);
-  void remove(Miner *miner);
+    void remove(Miner *miner);
+
+protected:
+    void onEvent(IEvent *event) override;
+    void onRejectedEvent(IEvent *event) override;
 
 private:
-  constexpr static int kTickInterval = 1 * 1000;
+    constexpr static int kTickInterval = 1 * 1000;
 
-  void tick();
+    void add(Miner *miner);
+    void tick();
 
-  std::map<int64_t, Miner*> m_miners;
-  uv_timer_t m_timer;
+    std::map<int64_t, Miner*> m_miners;
+    uv_timer_t m_timer;
 };
 
 

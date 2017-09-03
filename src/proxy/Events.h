@@ -21,11 +21,26 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef __EVENTS_H__
+#define __EVENTS_H__
 
-#include "proxy/events/Events.h"
+
+#include <map>
+#include <vector>
 
 
-bool Events::exec(IEvent *event)
+#include "interfaces/IEvent.h"
+#include "interfaces/IEventListener.h"
+
+
+class Events
 {
-    return false;
-}
+public:
+    static bool exec(IEvent *event);
+    static void subscribe(IEvent::Type type, IEventListener *listener);
+
+private:
+    static std::map<IEvent::Type, std::vector<IEventListener*> > m_listeners;
+};
+
+#endif /* __EVENTS_H__ */

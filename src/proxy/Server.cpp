@@ -22,16 +22,14 @@
  */
 
 
-#include "interfaces/IServerListener.h"
 #include "log/Log.h"
 #include "proxy/events/ConnectionEvent.h"
 #include "proxy/Miner.h"
 #include "proxy/Server.h"
 
 
-Server::Server(const char *ip, uint16_t port, IServerListener *listener) :
+Server::Server(const char *ip, uint16_t port) :
     m_ip(ip),
-    m_listener(listener),
     m_port(port)
 {
     uv_tcp_init(uv_default_loop(), &m_server);
@@ -77,5 +75,4 @@ void Server::onConnection(uv_stream_t *server, int status)
     }
 
     ConnectionEvent::start(miner);
-    instance->m_listener->onNewMinerAccepted(miner);
 }

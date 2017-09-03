@@ -21,17 +21,28 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __EVENTS_H__
-#define __EVENTS_H__
+
+#include "proxy/Events.h"
 
 
-#include "interfaces/IEvent.h"
+std::map<IEvent::Type, std::vector<IEventListener*> > Events::m_listeners;
 
 
-class Events
+bool Events::exec(IEvent *event)
 {
-public:
-    static bool exec(IEvent *event);
-};
+    std::vector<IEventListener*> &listeners = m_listeners[event->type()];
+    for (IEventListener *listener : listeners) {
+        event->isRejected() ? listener->onRejectedEvent(event) : listener->onEvent(event);
+    }
 
-#endif /* __EVENTS_H__ */
+    const bool rejected = event->isRejected();
+    event->~IEvent();
+
+    return !rejected;
+}
+
+
+void Events::subscribe(IEvent::Type type, IEventListener *listener)
+{
+    m_listeners[type].push_back(listener);
+}

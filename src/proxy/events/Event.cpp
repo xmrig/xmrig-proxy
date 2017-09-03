@@ -22,8 +22,8 @@
  */
 
 
+#include "proxy/Events.h"
 #include "proxy/events/Event.h"
-#include "proxy/events/Events.h"
 
 
 char Event::m_buf[4096];

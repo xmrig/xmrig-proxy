@@ -29,8 +29,8 @@
 #include <uv.h>
 
 
+#include "interfaces/IEventListener.h"
 #include "interfaces/IMinerListener.h"
-#include "interfaces/IServerListener.h"
 
 
 class ISplitter;
@@ -40,7 +40,7 @@ class Server;
 class Url;
 
 
-class Proxy : public IServerListener, public IMinerListener
+class Proxy : public IMinerListener, public IEventListener
 {
 public:
     Proxy(const Options *options);
@@ -55,10 +55,11 @@ public:
 #   endif
 
 protected:
+    void onEvent(IEvent *event) override;
     void onMinerClose(Miner *miner) override;
     void onMinerLogin(Miner *miner, const LoginRequest &request) override;
     void onMinerSubmit(Miner *miner, const JobResult &request) override;
-    void onNewMinerAccepted(Miner *miner) override;
+    void onRejectedEvent(IEvent *event) override;
 
 private:
     constexpr static int kTickInterval = 60 * 1000;

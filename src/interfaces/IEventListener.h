@@ -21,20 +21,21 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ISERVERLISTENER_H__
-#define __ISERVERLISTENER_H__
+#ifndef __IEVENTLISTENER_H__
+#define __IEVENTLISTENER_H__
 
 
-class Miner;
+class IEvent;
 
 
-class IServerListener
+class IEventListener
 {
 public:
-    virtual ~IServerListener() {}
+    virtual ~IEventListener() {}
 
-    virtual void onNewMinerAccepted(Miner *miner) = 0;
+    virtual void onEvent(IEvent *event)         = 0;
+    virtual void onRejectedEvent(IEvent *event) = 0;
 };
 
 
-#endif // __ISERVERLISTENER_H__
+#endif // __IEVENTLISTENER_H__

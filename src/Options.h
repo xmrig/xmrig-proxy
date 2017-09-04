@@ -45,6 +45,7 @@ public:
 
     inline bool background() const                 { return m_background; }
     inline bool colors() const                     { return m_colors; }
+    inline bool isDebug() const                    { return m_debug; }
     inline bool syslog() const                     { return m_syslog; }
     inline bool verbose() const                    { return m_verbose; }
     inline const char *apiToken() const            { return m_apiToken; }
@@ -81,6 +82,7 @@ private:
 
     bool m_background;
     bool m_colors;
+    bool m_debug;
     bool m_ready;
     bool m_syslog;
     bool m_verbose;

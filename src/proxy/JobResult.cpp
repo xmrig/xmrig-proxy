@@ -77,9 +77,9 @@ uint64_t JobResult::actualDiff() const
 {
     if (!m_actualDiff) {
         uint8_t data[32];
-        Job::fromHex(result, sizeof(data), data);
+        Job::fromHex(result, sizeof(data) * 2, data);
 
-        m_actualDiff = Job::toDiff(reinterpret_cast<const uint64_t*>(result)[3]);
+        m_actualDiff = Job::toDiff(reinterpret_cast<const uint64_t*>(data)[3]);
     }
 
     return m_actualDiff;

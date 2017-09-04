@@ -77,9 +77,13 @@ static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:";
 
 
 static struct option const options[] = {
+    { "api-access-token", 1, nullptr, 4001 },
+    { "api-port",         1, nullptr, 4000 },
+    { "api-worker-id",    1, nullptr, 4002 },
     { "background",       0, nullptr, 'B'  },
     { "bind",             1, nullptr, 'b'  },
     { "config",           1, nullptr, 'c'  },
+    { "debug",            0, nullptr, 1101 },
     { "donate-level",     1, nullptr, 1003 },
     { "help",             0, nullptr, 'h'  },
     { "keepalive",        0, nullptr ,'k'  },
@@ -95,9 +99,6 @@ static struct option const options[] = {
     { "userpass",         1, nullptr, 'O'  },
     { "verbose",          0, nullptr, 1100 },
     { "version",          0, nullptr, 'V'  },
-    { "api-port",         1, nullptr, 4000 },
-    { "api-access-token", 1, nullptr, 4001 },
-    { "api-worker-id",    1, nullptr, 4002 },
     { 0, 0, 0, 0 }
 };
 
@@ -105,6 +106,7 @@ static struct option const options[] = {
 static struct option const config_options[] = {
     { "background",    0, nullptr, 'B'  },
     { "colors",        0, nullptr, 2000 },
+    { "debug",         0, nullptr, 1101 },
     { "donate-level",  1, nullptr, 1003 },
     { "log-file",      1, nullptr, 'l'  },
     { "retries",       1, nullptr, 'r'  },
@@ -150,6 +152,7 @@ Options *Options::parse(int argc, char **argv)
 Options::Options(int argc, char **argv) :
     m_background(false),
     m_colors(true),
+    m_debug(false),
     m_ready(false),
     m_syslog(false),
     m_verbose(false),
@@ -279,6 +282,7 @@ bool Options::parseArg(int key, const char *arg)
     case 'k':  /* --keepalive */
     case 'S':  /* --syslog */
     case 1100: /* --verbose */
+    case 1101: /* --debug */
         return parseBoolean(key, true);
 
     case 1002: /* --no-color */
@@ -375,6 +379,10 @@ bool Options::parseBoolean(int key, bool enable)
 
     case 1100: /* --verbose */
         m_verbose = enable;
+        break;
+
+    case 1101: /* --debug */
+        m_debug = enable;
         break;
 
     case 2000: /* colors */

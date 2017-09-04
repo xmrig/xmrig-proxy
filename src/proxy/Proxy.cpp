@@ -67,7 +67,7 @@ Proxy::Proxy(const Options *options)
 
     Events::subscribe(IEvent::SubmitType, m_splitter);
 
-    m_debug = new ProxyDebug();
+    m_debug = new ProxyDebug(options->isDebug());
 }
 
 
@@ -101,6 +101,12 @@ void Proxy::printHashrate()
     LOG_INFO(Options::i()->colors() ? "\x1B[01;32m* \x1B[01;37mspeed\x1B[0m \x1B[01;30m(1m) \x1B[01;36m%03.1f\x1B[0m, \x1B[01;30m(10m) \x1B[01;36m%03.1f\x1B[0m, \x1B[01;30m(1h) \x1B[01;36m%03.1f\x1B[0m, \x1B[01;30m(12h) \x1B[01;36m%03.1f\x1B[0m, \x1B[01;30m(24h) \x1B[01;36m%03.1f KH/s"
                                     : "* speed (1m) %03.1f, (10m) %03.1f, (1h) %03.1f, (12h) %03.1f, (24h) %03.1f KH/s",
              Counters::hashrate(60), Counters::hashrate(600), Counters::hashrate(3600), Counters::hashrate(3600 * 12), Counters::hashrate(3600 * 24));
+}
+
+
+void Proxy::toggleDebug()
+{
+    m_debug->toggle();
 }
 
 

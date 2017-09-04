@@ -155,6 +155,11 @@ void App::onConsoleCommand(char command)
         m_proxy->printConnections();
         break;
 
+    case 'd':
+    case 'D':
+        m_proxy->toggleDebug();
+        break;
+
     case 3:
         LOG_WARN("Ctrl+C received, exiting");
         close();

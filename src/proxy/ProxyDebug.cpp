@@ -25,18 +25,20 @@
 #include <inttypes.h>
 
 
+#include "log/Log.h"
 #include "proxy/Events.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/ConnectionEvent.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"
-#include "proxy/ProxyDebug.h"
-#include "log/Log.h"
-#include "proxy/Miner.h"
+#include "proxy/JobResult.h"
 #include "proxy/LoginRequest.h"
+#include "proxy/Miner.h"
+#include "proxy/ProxyDebug.h"
 
 
-ProxyDebug::ProxyDebug()
+ProxyDebug::ProxyDebug(bool enabled) :
+    m_enabled(enabled)
 {
     Events::subscribe(IEvent::ConnectionType, this);
     Events::subscribe(IEvent::CloseType, this);
@@ -52,6 +54,10 @@ ProxyDebug::~ProxyDebug()
 
 void ProxyDebug::onEvent(IEvent *event)
 {
+    if (!m_enabled) {
+        return;
+    }
+
     switch (event->type())
     {
     case IEvent::ConnectionType: {
@@ -72,6 +78,12 @@ void ProxyDebug::onEvent(IEvent *event)
         }
         break;
 
+    case IEvent::SubmitType: {
+            auto e = static_cast<SubmitEvent*>(event);
+            LOG_INFO("[debug] submit <Miner id=%" PRId64 ", ip=%s>, <Job actualDiff=%" PRIu64 ">", e->miner()->id(), e->miner()->ip(), e->request.actualDiff());
+        }
+        break;
+
 
     default:
         break;
@@ -81,6 +93,10 @@ void ProxyDebug::onEvent(IEvent *event)
 
 void ProxyDebug::onRejectedEvent(IEvent *event)
 {
+    if (!m_enabled) {
+        return;
+    }
+
     switch (event->type())
     {
     case IEvent::ConnectionType: {

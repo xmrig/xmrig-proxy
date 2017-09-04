@@ -31,12 +31,17 @@
 class ProxyDebug : public IEventListener
 {
 public:
-    ProxyDebug();
+    ProxyDebug(bool enabled);
     ~ProxyDebug();
+
+    inline void toggle() { m_enabled = !m_enabled; }
 
 protected:
     void onEvent(IEvent *event) override;
     void onRejectedEvent(IEvent *event) override;
+
+private:
+    bool m_enabled;
 };
 
 

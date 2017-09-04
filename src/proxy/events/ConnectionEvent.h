@@ -25,13 +25,10 @@
 #define __CONNECTIONEVENT_H__
 
 
-#include "proxy/events/Event.h"
+#include "proxy/events/MinerEvent.h"
 
 
-class Miner;
-
-
-class ConnectionEvent : public Event
+class ConnectionEvent : public MinerEvent
 {
 public:
     static inline bool start(Miner *miner)
@@ -39,22 +36,10 @@ public:
         return exec(new (m_buf) ConnectionEvent(miner));
     }
 
-    inline Miner *miner() const { return m_miner; }
 
 protected:
-    inline ConnectionEvent(Miner *miner) :
-        Event(ConnectionType),
-        m_miner(miner)
-    {}
-
-    inline bool isRejected() const override { return m_rejected; }
-    inline Type type() const override       { return m_type; }
-
-    bool m_rejected;
-    Type m_type;
-
-private:
-    Miner *m_miner;
+    inline ConnectionEvent(Miner *miner) : MinerEvent(ConnectionType, miner) {}
 };
+
 
 #endif /* __CONNECTIONEVENT_H__ */

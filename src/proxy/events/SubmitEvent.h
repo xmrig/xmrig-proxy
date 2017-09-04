@@ -21,26 +21,33 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __IEVENT_H__
-#define __IEVENT_H__
+#ifndef __SUBMITEVENT_H__
+#define __SUBMITEVENT_H__
 
 
-class IEvent
+#include "proxy/events/MinerEvent.h"
+
+
+class JobResult;
+
+
+class SubmitEvent : public MinerEvent
 {
 public:
-    enum Type {
-        ConnectionType,
-        CloseType,
-        LoginType,
-        SubmitType
-    };
+    static inline bool start(Miner *miner, const JobResult &request)
+    {
+        return exec(new (m_buf) SubmitEvent(miner, request));
+    }
 
-    virtual ~IEvent() {}
 
-    virtual bool isRejected() const = 0;
-    virtual Type type() const       = 0;
-    virtual void reject()           = 0;
+    const JobResult &request;
+
+
+protected:
+    inline SubmitEvent(Miner *miner, const JobResult &request)
+        : MinerEvent(LoginType, miner),
+          request(request)
+    {}
 };
 
-
-#endif // __IEVENT_H__
+#endif /* __SUBMITEVENT_H__ */

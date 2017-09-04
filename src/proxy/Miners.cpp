@@ -26,6 +26,7 @@
 
 
 #include "log/Log.h"
+#include "proxy/events/CloseEvent.h"
 #include "proxy/events/ConnectionEvent.h"
 #include "proxy/Miner.h"
 #include "proxy/Miners.h"
@@ -44,15 +45,6 @@ Miners::~Miners()
 }
 
 
-void Miners::remove(Miner *miner)
-{
-    auto it = m_miners.find(miner->id());
-    if (it != m_miners.end()) {
-        m_miners.erase(it);
-    }
-}
-
-
 void Miners::onEvent(IEvent *event)
 {
     switch (event->type())
@@ -61,21 +53,28 @@ void Miners::onEvent(IEvent *event)
         add(static_cast<ConnectionEvent*>(event)->miner());
         break;
 
+    case IEvent::CloseType:
+        remove(static_cast<CloseEvent*>(event)->miner());
+        break;
+
     default:
         break;
     }
 }
 
 
-void Miners::onRejectedEvent(IEvent *event)
-{
-
-}
-
-
 void Miners::add(Miner *miner)
 {
     m_miners[miner->id()] = miner;
+}
+
+
+void Miners::remove(Miner *miner)
+{
+    auto it = m_miners.find(miner->id());
+    if (it != m_miners.end()) {
+        m_miners.erase(it);
+    }
 }
 
 

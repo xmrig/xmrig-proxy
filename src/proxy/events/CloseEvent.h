@@ -21,26 +21,24 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __IEVENT_H__
-#define __IEVENT_H__
+#ifndef __CLOSEEVENT_H__
+#define __CLOSEEVENT_H__
 
 
-class IEvent
+#include "proxy/events/MinerEvent.h"
+
+
+class CloseEvent : public MinerEvent
 {
 public:
-    enum Type {
-        ConnectionType,
-        CloseType,
-        LoginType,
-        SubmitType
-    };
+    static inline bool start(Miner *miner)
+    {
+        return exec(new (m_buf) CloseEvent(miner));
+    }
 
-    virtual ~IEvent() {}
 
-    virtual bool isRejected() const = 0;
-    virtual Type type() const       = 0;
-    virtual void reject()           = 0;
+protected:
+    inline CloseEvent(Miner *miner) : MinerEvent(CloseType, miner) {}
 };
 
-
-#endif // __IEVENT_H__
+#endif /* __CLOSEEVENT_H__ */

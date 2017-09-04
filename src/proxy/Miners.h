@@ -41,16 +41,15 @@ public:
     Miners();
     ~Miners();
 
-    void remove(Miner *miner);
-
 protected:
     void onEvent(IEvent *event) override;
-    void onRejectedEvent(IEvent *event) override;
+    inline void onRejectedEvent(IEvent *event) override {}
 
 private:
     constexpr static int kTickInterval = 1 * 1000;
 
     void add(Miner *miner);
+    void remove(Miner *miner);
     void tick();
 
     std::map<int64_t, Miner*> m_miners;

@@ -45,7 +45,7 @@ public:
 
 protected:
     inline SubmitEvent(Miner *miner, const JobResult &request)
-        : MinerEvent(LoginType, miner),
+        : MinerEvent(SubmitType, miner),
           request(request)
     {}
 };

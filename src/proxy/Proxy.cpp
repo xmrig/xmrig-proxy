@@ -60,6 +60,11 @@ Proxy::Proxy(const Options *options)
     Events::subscribe(IEvent::ConnectionType, m_miners);
 
     Events::subscribe(IEvent::CloseType, m_miners);
+    Events::subscribe(IEvent::CloseType, m_splitter);
+
+    Events::subscribe(IEvent::LoginType, m_splitter);
+
+    Events::subscribe(IEvent::SubmitType, m_splitter);
 }
 
 
@@ -123,26 +128,18 @@ void Proxy::onEvent(IEvent *event)
 void Proxy::onMinerClose(Miner *miner)
 {
     CloseEvent::start(miner);
-
-    if (miner->mapperId() >= 0) {
-        m_splitter->remove(miner);
-    }
 }
 
 
 void Proxy::onMinerLogin(Miner *miner, const LoginRequest &request)
 {
     LoginEvent::start(miner, request);
-
-    m_splitter->login(miner, request);
 }
 
 
 void Proxy::onMinerSubmit(Miner *miner, const JobResult &request)
 {
     SubmitEvent::start(miner, request);
-
-    m_splitter->submit(miner, request);
 }
 
 

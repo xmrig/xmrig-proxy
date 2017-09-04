@@ -22,7 +22,6 @@ set(HEADERS
     src/interfaces/IEventListener.h
     src/interfaces/ILogBackend.h
     src/interfaces/IMinerListener.h
-    src/interfaces/ISplitter.h
     src/interfaces/IStrategy.h
     src/interfaces/IStrategyListener.h
     src/log/ConsoleLog.h

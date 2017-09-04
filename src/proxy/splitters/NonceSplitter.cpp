@@ -21,12 +21,16 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <assert.h>
 #include <inttypes.h>
 
 
 #include "log/Log.h"
 #include "Options.h"
 #include "proxy/Counters.h"
+#include "proxy/events/CloseEvent.h"
+#include "proxy/events/LoginEvent.h"
+#include "proxy/events/SubmitEvent.h"
 #include "proxy/Miner.h"
 #include "proxy/splitters/NonceMapper.h"
 #include "proxy/splitters/NonceSplitter.h"
@@ -68,27 +72,6 @@ void NonceSplitter::gc()
 }
 
 
-void NonceSplitter::login(Miner *miner, const LoginRequest &request)
-{
-    // try reuse active upstreams.
-    for (NonceMapper *mapper : m_upstreams) {
-        if (!mapper->isSuspended() && mapper->add(miner, request)) {
-            return;
-        }
-    }
-
-    // try reuse suspended upstreams.
-    for (NonceMapper *mapper : m_upstreams) {
-        if (mapper->isSuspended() && mapper->add(miner, request)) {
-            return;
-        }
-    }
-
-    connect();
-    login(miner, request);
-}
-
-
 void NonceSplitter::printConnections()
 {
     int active    = 0;
@@ -126,18 +109,6 @@ void NonceSplitter::printConnections()
 }
 
 
-void NonceSplitter::remove(Miner *miner)
-{
-    m_upstreams[miner->mapperId()]->remove(miner);
-}
-
-
-void NonceSplitter::submit(Miner *miner, const JobResult &request)
-{
-    m_upstreams[miner->mapperId()]->submit(miner, request);
-}
-
-
 #ifdef APP_DEVEL
 void NonceSplitter::printState()
 {
@@ -148,9 +119,70 @@ void NonceSplitter::printState()
 #endif
 
 
+void NonceSplitter::onEvent(IEvent *event)
+{
+    switch (event->type())
+    {
+    case IEvent::CloseType:
+        remove(static_cast<CloseEvent*>(event)->miner());
+        break;
+
+    case IEvent::LoginType:
+        login(static_cast<LoginEvent*>(event));
+        break;
+
+    case IEvent::SubmitType:
+        submit(static_cast<SubmitEvent*>(event));
+        break;
+
+    default:
+        break;
+    }
+}
+
+
 void NonceSplitter::onTick(uv_timer_t *handle)
 {
     static_cast<NonceSplitter*>(handle->data)->tick();
+}
+
+
+void NonceSplitter::login(LoginEvent *event)
+{
+    // try reuse active upstreams.
+    for (NonceMapper *mapper : m_upstreams) {
+        if (!mapper->isSuspended() && mapper->add(event->miner(), event->request)) {
+            return;
+        }
+    }
+
+    // try reuse suspended upstreams.
+    for (NonceMapper *mapper : m_upstreams) {
+        if (mapper->isSuspended() && mapper->add(event->miner(), event->request)) {
+            return;
+        }
+    }
+
+    connect();
+    login(event);
+}
+
+
+void NonceSplitter::remove(Miner *miner)
+{
+    if (miner->mapperId() < 0) {
+        return;
+    }
+
+    m_upstreams[miner->mapperId()]->remove(miner);
+}
+
+
+void NonceSplitter::submit(SubmitEvent *event)
+{
+    assert(event->miner()->mapperId() >= 0);
+
+    m_upstreams[event->miner()->mapperId()]->submit(event->miner(), event->request);
 }
 
 

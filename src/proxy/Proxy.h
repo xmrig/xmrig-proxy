@@ -33,8 +33,8 @@
 #include "interfaces/IMinerListener.h"
 
 
-class ISplitter;
 class Miners;
+class NonceSplitter;
 class Options;
 class Server;
 class Url;
@@ -69,8 +69,8 @@ private:
 
     static void onTimer(uv_timer_t *handle);
 
-    ISplitter *m_splitter;
     Miners *m_miners;
+    NonceSplitter *m_splitter;
     std::vector<Server*> m_servers;
     uv_timer_t m_timer;
 };

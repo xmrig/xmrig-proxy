@@ -21,61 +21,23 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __PROXY_H__
-#define __PROXY_H__
-
-
-#include <vector>
-#include <uv.h>
+#ifndef __PROXYDEBUG_H__
+#define __PROXYDEBUG_H__
 
 
 #include "interfaces/IEventListener.h"
-#include "interfaces/IMinerListener.h"
 
 
-class Miners;
-class NonceSplitter;
-class Options;
-class ProxyDebug;
-class Server;
-class Url;
-
-
-class Proxy : public IMinerListener, public IEventListener
+class ProxyDebug : public IEventListener
 {
 public:
-    Proxy(const Options *options);
-    ~Proxy();
-
-    void connect();
-    void printConnections();
-    void printHashrate();
-
-#   ifdef APP_DEVEL
-    void printState();
-#   endif
+    ProxyDebug();
+    ~ProxyDebug();
 
 protected:
     void onEvent(IEvent *event) override;
-    void onMinerClose(Miner *miner) override;
-    void onMinerLogin(Miner *miner, const LoginRequest &request) override;
-    void onMinerSubmit(Miner *miner, const JobResult &request) override;
     void onRejectedEvent(IEvent *event) override;
-
-private:
-    constexpr static int kTickInterval = 60 * 1000;
-
-    void bind(const char *ip, uint16_t port);
-    void gc();
-
-    static void onTimer(uv_timer_t *handle);
-
-    Miners *m_miners;
-    NonceSplitter *m_splitter;
-    ProxyDebug *m_debug;
-    std::vector<Server*> m_servers;
-    uv_timer_t m_timer;
 };
 
 
-#endif /* __PROXY_H__ */
+#endif /* __PROXYDEBUG_H__ */

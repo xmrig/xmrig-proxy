@@ -74,5 +74,5 @@ void Server::onConnection(uv_stream_t *server, int status)
         return;
     }
 
-    ConnectionEvent::start(miner);
+    ConnectionEvent::start(miner, instance->m_port);
 }

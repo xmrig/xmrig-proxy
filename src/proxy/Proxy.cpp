@@ -42,6 +42,7 @@
 #include "proxy/Miner.h"
 #include "proxy/Miners.h"
 #include "proxy/Proxy.h"
+#include "proxy/ProxyDebug.h"
 #include "proxy/Server.h"
 #include "proxy/splitters/NonceSplitter.h"
 
@@ -50,7 +51,7 @@ Proxy::Proxy(const Options *options)
 {
     srand(time(0) ^ (uintptr_t) this);
 
-    m_miners = new Miners();
+    m_miners   = new Miners();
     m_splitter = new NonceSplitter(options, Platform::userAgent());
 
     m_timer.data = this;
@@ -65,6 +66,8 @@ Proxy::Proxy(const Options *options)
     Events::subscribe(IEvent::LoginType, m_splitter);
 
     Events::subscribe(IEvent::SubmitType, m_splitter);
+
+    m_debug = new ProxyDebug();
 }
 
 

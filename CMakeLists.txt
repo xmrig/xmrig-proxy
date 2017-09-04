@@ -49,6 +49,7 @@ set(HEADERS
     src/proxy/Miner.h
     src/proxy/Miners.h
     src/proxy/Proxy.h
+    src/proxy/ProxyDebug.h
     src/proxy/Server.h
     src/proxy/splitters/NonceMapper.h
     src/proxy/splitters/NonceSplitter.h
@@ -87,6 +88,7 @@ set(SOURCES
     src/proxy/Miner.cpp
     src/proxy/Miners.cpp
     src/proxy/Proxy.cpp
+    src/proxy/ProxyDebug.cpp
     src/proxy/Server.cpp
     src/proxy/splitters/NonceMapper.cpp
     src/proxy/splitters/NonceSplitter.cpp

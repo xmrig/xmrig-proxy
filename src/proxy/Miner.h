@@ -31,6 +31,7 @@
 
 class IMinerListener;
 class Job;
+class RejectEvent;
 
 
 class Miner
@@ -46,7 +47,7 @@ public:
     Miner();
     ~Miner();
     bool accept(uv_stream_t *server);
-    void reject(int64_t id, const char *message, bool log = true);
+    void reject(RejectEvent *event);
     void send(char *data);
     void setJob(Job &job);
     void success(int64_t id, const char *status);
@@ -74,6 +75,7 @@ private:
     bool parseRequest(int64_t id, const char *method, const json_t *params);
     void heartbeat();
     void parse(char *line, size_t len);
+    void replyWithError(int64_t id, const char *message);
     void setState(State state);
     void shutdown(bool had_error);
 

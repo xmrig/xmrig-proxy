@@ -34,6 +34,8 @@
 #include "net/Url.h"
 #include "Options.h"
 #include "proxy/Counters.h"
+#include "proxy/Error.h"
+#include "proxy/events/RejectEvent.h"
 #include "proxy/JobResult.h"
 #include "proxy/Miner.h"
 #include "proxy/splitters/NonceMapper.h"
@@ -114,11 +116,11 @@ void NonceMapper::remove(const Miner *miner)
 void NonceMapper::submit(Miner *miner, const JobResult &request)
 {
     if (!m_storage->isActive()) {
-        return miner->reject(request.id, "Bad gateway");
+        return miner->reject(RejectEvent::create(miner, request.id, Error::BadGateway));
     }
 
     if (strncmp(m_storage->job().id(), request.jobId, 64) != 0) {
-        return miner->reject(request.id, "Invalid job id");
+        return miner->reject(RejectEvent::create(miner, request.id, Error::InvalidJobId));
     }
 
     JobResult req = request;
@@ -193,7 +195,7 @@ void NonceMapper::onResultAccepted(Client *client, const SubmitResult &result, c
     Miner *miner = m_storage->miner(ctx.minerId);
     if (miner) {
         if (error) {
-            miner->reject(ctx.id, error, false);
+            miner->reject(RejectEvent::create(miner, ctx.id, error));
         }
         else {
             miner->success(ctx.id, "OK");

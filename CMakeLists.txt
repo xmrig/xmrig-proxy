@@ -42,6 +42,7 @@ set(HEADERS
     src/proxy/events/Event.h
     src/proxy/events/LoginEvent.h
     src/proxy/events/MinerEvent.h
+    src/proxy/events/RejectEvent.h
     src/proxy/events/SubmitEvent.h
     src/proxy/Hashrate.h
     src/proxy/JobResult.h

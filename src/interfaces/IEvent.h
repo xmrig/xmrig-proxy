@@ -32,7 +32,9 @@ public:
         ConnectionType,
         CloseType,
         LoginType,
-        SubmitType
+        SubmitType,
+        AcceptType,
+        RejectType
     };
 
     virtual ~IEvent() {}

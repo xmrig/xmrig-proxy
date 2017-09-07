@@ -21,51 +21,23 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __PROXY_H__
-#define __PROXY_H__
+#ifndef __ERROR_H__
+#define __ERROR_H__
 
 
-#include <vector>
-#include <uv.h>
-
-
-class Miners;
-class NonceSplitter;
-class Options;
-class ProxyDebug;
-class Server;
-class Url;
-
-
-class Proxy
+class Error
 {
 public:
-    Proxy(const Options *options);
-    ~Proxy();
+    enum Type {
+        BadGateway,
+        InvalidJobId,
+        InvalidMethod,
+        InvalidNonce,
+        LowDifficulty,
+        Unauthenticated
+    };
 
-    void connect();
-    void printConnections();
-    void printHashrate();
-    void toggleDebug();
-
-#   ifdef APP_DEVEL
-    void printState();
-#   endif
-
-private:
-    constexpr static int kTickInterval = 60 * 1000;
-
-    void bind(const char *ip, uint16_t port);
-    void gc();
-
-    static void onTimer(uv_timer_t *handle);
-
-    Miners *m_miners;
-    NonceSplitter *m_splitter;
-    ProxyDebug *m_debug;
-    std::vector<Server*> m_servers;
-    uv_timer_t m_timer;
+    static const char *toString(Type type);
 };
 
-
-#endif /* __PROXY_H__ */
+#endif /* __ERROR_H__ */

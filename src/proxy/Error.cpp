@@ -21,24 +21,44 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __IMINERLISTENER_H__
-#define __IMINERLISTENER_H__
+
+#include "proxy/Error.h"
 
 
-class JobResult;
-class LoginRequest;
-class Miner;
+static const char *kBadGateway      = "Bad gateway";
+static const char *kInvalidJobId    = "Invalid job id";
+static const char *kInvalidMethod   = "Invalid method";
+static const char *kInvalidNonce    = "Invalid nonce; is miner not compatible with NiceHash?";
+static const char *kLowDifficulty   = "Low difficulty share";
+static const char *kUnauthenticated = "Unauthenticated";
+static const char *kUnknownError    = "Unknown error";
 
 
-class IMinerListener
+const char *Error::toString(Type type)
 {
-public:
-    virtual ~IMinerListener() {}
+    switch (type)
+    {
+    case BadGateway:
+        return kBadGateway;
 
-    virtual void onMinerClose(Miner *miner) = 0;
-    virtual void onMinerLogin(Miner *miner, const LoginRequest &request) = 0;
-    virtual void onMinerSubmit(Miner *miner, const JobResult &request) = 0;
-};
+    case InvalidJobId:
+        return kInvalidJobId;
 
+    case InvalidMethod:
+        return kInvalidMethod;
 
-#endif // __IMINERLISTENER_H__
+    case InvalidNonce:
+        return kInvalidNonce;
+
+    case LowDifficulty:
+        return kLowDifficulty;
+
+    case Unauthenticated:
+        return kUnauthenticated;
+
+    default:
+        break;
+    }
+
+    return kUnknownError;
+}

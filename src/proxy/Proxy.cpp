@@ -35,10 +35,7 @@
 #include "Options.h"
 #include "Platform.h"
 #include "proxy/Events.h"
-#include "proxy/events/CloseEvent.h"
 #include "proxy/events/ConnectionEvent.h"
-#include "proxy/events/LoginEvent.h"
-#include "proxy/events/SubmitEvent.h"
 #include "proxy/Miner.h"
 #include "proxy/Miners.h"
 #include "proxy/Proxy.h"
@@ -57,7 +54,6 @@ Proxy::Proxy(const Options *options)
     m_timer.data = this;
     uv_timer_init(uv_default_loop(), &m_timer);
 
-    Events::subscribe(IEvent::ConnectionType, this);
     Events::subscribe(IEvent::ConnectionType, m_miners);
 
     Events::subscribe(IEvent::CloseType, m_miners);
@@ -118,43 +114,6 @@ void Proxy::printState()
     LOG_NOTICE("---------------------------------");
 }
 #endif
-
-
-void Proxy::onEvent(IEvent *event)
-{
-    switch (event->type())
-    {
-    case IEvent::ConnectionType:
-        static_cast<ConnectionEvent*>(event)->miner()->setListener(this);
-        break;
-
-    default:
-        break;
-    }
-}
-
-
-void Proxy::onMinerClose(Miner *miner)
-{
-    CloseEvent::start(miner);
-}
-
-
-void Proxy::onMinerLogin(Miner *miner, const LoginRequest &request)
-{
-    LoginEvent::start(miner, request);
-}
-
-
-void Proxy::onMinerSubmit(Miner *miner, const JobResult &request)
-{
-    SubmitEvent::start(miner, request);
-}
-
-
-void Proxy::onRejectedEvent(IEvent *event)
-{
-}
 
 
 void Proxy::bind(const char *ip, uint16_t port)

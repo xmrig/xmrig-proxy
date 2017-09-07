@@ -63,7 +63,6 @@ public:
     inline uint8_t fixedByte() const                  { return m_fixedByte; }
     inline void close()                               { shutdown(true); }
     inline void setFixedByte(uint8_t fixedByte)       { m_fixedByte = fixedByte; }
-    inline void setListener(IMinerListener *listener) { m_listener = listener; }
     inline void setMapperId(ssize_t mapperId)         { m_mapperId = mapperId; }
     inline void setRealmId(uint32_t realmId)          { m_realmId = realmId; }
 
@@ -86,7 +85,6 @@ private:
 
     char m_ip[17];
     char m_rpcId[37];
-    IMinerListener *m_listener;
     int64_t m_id;
     int64_t m_loginId;
     size_t m_recvBufPos;

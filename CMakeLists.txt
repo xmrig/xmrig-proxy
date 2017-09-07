@@ -21,7 +21,6 @@ set(HEADERS
     src/interfaces/IEvent.h
     src/interfaces/IEventListener.h
     src/interfaces/ILogBackend.h
-    src/interfaces/IMinerListener.h
     src/interfaces/IStrategy.h
     src/interfaces/IStrategyListener.h
     src/log/ConsoleLog.h
@@ -36,6 +35,7 @@ set(HEADERS
     src/Platform.h
     src/proxy/Addr.h
     src/proxy/Counters.h
+    src/proxy/Error.h
     src/proxy/Events.h
     src/proxy/events/CloseEvent.h
     src/proxy/events/ConnectionEvent.h
@@ -79,6 +79,7 @@ set(SOURCES
     src/Options.cpp
     src/Platform.cpp
     src/proxy/Counters.cpp
+    src/proxy/Error.cpp
     src/proxy/Events.cpp
     src/proxy/events/ConnectionEvent.h
     src/proxy/events/Event.cpp

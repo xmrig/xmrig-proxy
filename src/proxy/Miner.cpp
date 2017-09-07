@@ -26,9 +26,11 @@
 
 
 #include "Counters.h"
-#include "interfaces/IMinerListener.h"
 #include "log/Log.h"
 #include "net/Job.h"
+#include "proxy/events/CloseEvent.h"
+#include "proxy/events/LoginEvent.h"
+#include "proxy/events/SubmitEvent.h"
 #include "proxy/JobResult.h"
 #include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
@@ -39,7 +41,6 @@ static int64_t nextId = 0;
 
 
 Miner::Miner() :
-    m_listener(nullptr),
     m_id(++nextId),
     m_loginId(0),
     m_recvBufPos(0),
@@ -166,7 +167,7 @@ void Miner::success(int64_t id, const char *status)
 
 bool Miner::parseRequest(int64_t id, const char *method, const json_t *params)
 {
-    if (!method || !json_is_object(params) || !m_listener) {
+    if (!method || !json_is_object(params)) {
         return false;
     }
 
@@ -176,7 +177,7 @@ bool Miner::parseRequest(int64_t id, const char *method, const json_t *params)
             LoginRequest request(id, json_string_value(json_object_get(params, "login")), json_string_value(json_object_get(params, "pass")), json_string_value(json_object_get(params, "agent")));
             m_loginId = id;
 
-            m_listener->onMinerLogin(this, request);
+            LoginEvent::start(this, request);
             return true;
         }
 
@@ -207,7 +208,7 @@ bool Miner::parseRequest(int64_t id, const char *method, const json_t *params)
             return false;
         }
 
-        m_listener->onMinerSubmit(this, request);
+        SubmitEvent::start(this, request);
         return true;
     }
 
@@ -297,9 +298,7 @@ void Miner::shutdown(bool had_error)
         delete req;
     });
 
-    if (m_listener) {
-        m_listener->onMinerClose(this);
-    }
+    CloseEvent::start(this);
 }
 
 

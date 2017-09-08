@@ -27,6 +27,7 @@
 
 #include "log/Log.h"
 #include "proxy/Events.h"
+#include "proxy/events/AcceptEvent.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/ConnectionEvent.h"
 #include "proxy/events/LoginEvent.h"
@@ -35,6 +36,7 @@
 #include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
 #include "proxy/ProxyDebug.h"
+#include "net/SubmitResult.h"
 
 
 ProxyDebug::ProxyDebug(bool enabled) :
@@ -44,6 +46,7 @@ ProxyDebug::ProxyDebug(bool enabled) :
     Events::subscribe(IEvent::CloseType, this);
     Events::subscribe(IEvent::LoginType, this);
     Events::subscribe(IEvent::SubmitType, this);
+    Events::subscribe(IEvent::AcceptType, this);
 }
 
 
@@ -84,6 +87,13 @@ void ProxyDebug::onEvent(IEvent *event)
         }
         break;
 
+    case IEvent::AcceptType: {
+            auto e = static_cast<AcceptEvent*>(event);
+            LOG_INFO("[debug] accepted <Miner id=%" PRId64 ", ip=%s>, <Result diff=%u, actualDiff=%" PRIu64 ", elapsed=%" PRIu64 ">",
+                     e->miner() ? e->miner()->id() : -1, e->miner() ? e->miner()->ip() : "?.?.?.?", e->result.diff, e->result.actualDiff, e->result.elapsed);
+        }
+        break;
+
 
     default:
         break;
@@ -120,6 +130,13 @@ void ProxyDebug::onRejectedEvent(IEvent *event)
     case IEvent::SubmitType: {
             auto e = static_cast<SubmitEvent*>(event);
             LOG_ERR("[error] submit <Miner id=%" PRId64 ", ip=%s>, message=%s", e->miner()->id(), e->miner()->ip(), e->message());
+        }
+        break;
+
+    case IEvent::AcceptType: {
+            auto e = static_cast<AcceptEvent*>(event);
+            LOG_ERR("[error] rejected <Miner id=%" PRId64 ", ip=%s>, <Result diff=%u, elapsed=%" PRIu64 ">, error=%s",
+                     e->miner() ? e->miner()->id() : -1, e->miner() ? e->miner()->ip() : "?.?.?.?", e->result.diff, e->result.elapsed, e->error());
         }
         break;
 

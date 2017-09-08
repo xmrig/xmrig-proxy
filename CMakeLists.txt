@@ -37,6 +37,7 @@ set(HEADERS
     src/proxy/Counters.h
     src/proxy/Error.h
     src/proxy/Events.h
+    src/proxy/events/AcceptEvent.h
     src/proxy/events/CloseEvent.h
     src/proxy/events/ConnectionEvent.h
     src/proxy/events/Event.h

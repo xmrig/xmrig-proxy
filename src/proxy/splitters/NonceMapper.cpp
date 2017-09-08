@@ -35,6 +35,7 @@
 #include "Options.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"
+#include "proxy/events/AcceptEvent.h"
 #include "proxy/events/SubmitEvent.h"
 #include "proxy/JobResult.h"
 #include "proxy/Miner.h"
@@ -181,6 +182,8 @@ void NonceMapper::onPause(IStrategy *strategy)
 void NonceMapper::onResultAccepted(Client *client, const SubmitResult &result, const char *error)
 {
     const SubmitCtx ctx = submitCtx(result.seq);
+
+    AcceptEvent::start(ctx.miner, result, error);
 
     if (error) {
         Counters::reject(Counters::Primary, m_id, result.diff, result.elapsed, error);

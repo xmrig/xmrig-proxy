@@ -23,7 +23,6 @@
 
 
 #include <string.h>
-#include <uv.h>
 
 
 #include "proxy/Hashrate.h"
@@ -33,8 +32,7 @@
 Hashrate::Hashrate() :
     accepted(0),
     shares(0),
-    m_tickShares(0),
-    m_datetime(0)
+    m_tickShares(0)
 {
     memset(rejected, 0, sizeof(rejected));
 }
@@ -58,8 +56,6 @@ void Hashrate::add(uint32_t diff)
 {
     shares += diff;
     m_tickShares += diff;
-
-    m_datetime = uv_now(uv_default_loop());
 }
 
 

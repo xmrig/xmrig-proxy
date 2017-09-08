@@ -46,11 +46,12 @@ class Url;
 class SubmitCtx
 {
 public:
-    inline SubmitCtx() : id(0), minerId(0) {}
-    inline SubmitCtx(int64_t id, int64_t minerId) : id(id), minerId(minerId) {}
+    inline SubmitCtx() : id(0), minerId(0), miner(nullptr) {}
+    inline SubmitCtx(int64_t id, int64_t minerId) : id(id), minerId(minerId), miner(nullptr) {}
 
     int64_t id;
     int64_t minerId;
+    Miner *miner;
 };
 
 
@@ -81,6 +82,7 @@ protected:
     void onResultAccepted(Client *client, const SubmitResult &result, const char *error) override;
 
 private:
+    SubmitCtx submitCtx(int64_t seq);
     void suspend();
 
     bool m_suspended;

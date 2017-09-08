@@ -29,6 +29,9 @@
 #include <uv.h>
 
 
+#include "proxy/Stats.h"
+
+
 class Miners;
 class NonceSplitter;
 class Options;
@@ -53,17 +56,22 @@ public:
 #   endif
 
 private:
-    constexpr static int kTickInterval = 60 * 1000;
+    constexpr static int kTickInterval = 60;
+    constexpr static int kGCInterval   = 60;
 
     void bind(const char *ip, uint16_t port);
     void gc();
+    void tick();
 
+    static void onTick(uv_timer_t *handle);
     static void onTimer(uv_timer_t *handle);
 
     Miners *m_miners;
     NonceSplitter *m_splitter;
     ProxyDebug *m_debug;
+    Stats m_stats;
     std::vector<Server*> m_servers;
+    uint64_t m_ticks;
     uv_timer_t m_timer;
 };
 

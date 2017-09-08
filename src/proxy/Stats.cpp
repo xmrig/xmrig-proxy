@@ -22,33 +22,57 @@
  */
 
 
-#include "proxy/Events.h"
+#include "log/Log.h"
+
+#include "api/Api.h"
+#include "proxy/events/LoginEvent.h"
+#include "proxy/Stats.h"
 
 
-std::map<IEvent::Type, std::vector<IEventListener*> > Events::m_listeners;
-
-
-bool Events::exec(IEvent *event)
+Stats::Stats()
 {
-    std::vector<IEventListener*> &listeners = m_listeners[event->type()];
-    for (IEventListener *listener : listeners) {
-        event->isRejected() ? listener->onRejectedEvent(event) : listener->onEvent(event);
+}
+
+
+Stats::~Stats()
+{
+}
+
+
+void Stats::tick(uint64_t ticks)
+{
+    ticks++;
+
+#   ifndef XMRIG_NO_API
+    Api::tick(m_data);
+#   endif
+}
+
+
+void Stats::onEvent(IEvent *event)
+{
+    switch (event->type())
+    {
+    case IEvent::ConnectionType:
+        m_data.connections++;
+        m_data.miners++;
+
+        if (m_data.miners > m_data.maxMiners) {
+            m_data.maxMiners = m_data.miners;
+        }
+        break;
+
+    case IEvent::CloseType:
+        m_data.connections--;
+        m_data.miners--;
+        break;
+
+    default:
+        break;
     }
-
-    const bool rejected = event->isRejected();
-    event->~IEvent();
-
-    return !rejected;
 }
 
 
-void Events::stop()
+void Stats::onRejectedEvent(IEvent *event)
 {
-    m_listeners.clear();
-}
-
-
-void Events::subscribe(IEvent::Type type, IEventListener *listener)
-{
-    m_listeners[type].push_back(listener);
 }

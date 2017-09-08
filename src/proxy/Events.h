@@ -37,6 +37,7 @@ class Events
 {
 public:
     static bool exec(IEvent *event);
+    static void stop();
     static void subscribe(IEvent::Type type, IEventListener *listener);
 
 private:

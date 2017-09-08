@@ -25,6 +25,9 @@
 #define __EVENT_H__
 
 
+#include <new>
+
+
 #include "interfaces/IEvent.h"
 
 

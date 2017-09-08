@@ -81,3 +81,15 @@ void Api::tick(const NetworkState &network)
     m_state->tick(network);
     uv_mutex_unlock(&m_mutex);
 }
+
+
+void Api::tick(const StatsData &data)
+{
+    if (!m_state) {
+        return;
+    }
+
+    uv_mutex_lock(&m_mutex);
+    m_state->tick(data);
+    uv_mutex_unlock(&m_mutex);
+}

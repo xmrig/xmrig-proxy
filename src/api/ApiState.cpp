@@ -81,6 +81,7 @@ const char *ApiState::get(const char *url, size_t *size) const
 
     getIdentify(reply);
     getMiner(reply);
+    getMinersSummary(reply);
     getResults(reply);
     getConnection(reply);
 
@@ -91,6 +92,12 @@ const char *ApiState::get(const char *url, size_t *size) const
 void ApiState::tick(const NetworkState &network)
 {
     m_network = network;
+}
+
+
+void ApiState::tick(const StatsData &data)
+{
+    m_stats = data;
 }
 
 
@@ -160,6 +167,16 @@ void ApiState::getMiner(json_t *reply) const
     json_object_set(reply, "kind",      json_string(APP_KIND));
     json_object_set(reply, "ua",        json_string(Platform::userAgent()));
     json_object_set(reply, "donate",    json_integer(Options::i()->donateLevel()));
+}
+
+
+void ApiState::getMinersSummary(json_t *reply) const
+{
+    json_t *miners = json_object();
+    json_object_set(reply, "miners", miners);
+
+    json_object_set(miners, "now", json_integer(m_stats.miners));
+    json_object_set(miners, "max", json_integer(m_stats.maxMiners));
 }
 
 

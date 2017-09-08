@@ -27,6 +27,7 @@
 
 #include "api/NetworkState.h"
 #include "jansson.h"
+#include "proxy/StatsData.h"
 
 
 class Hashrate;
@@ -40,6 +41,7 @@ public:
 
     const char *get(const char *url, size_t *size) const;
     void tick(const NetworkState &results);
+    void tick(const StatsData &data);
 
 private:
     const char *finalize(json_t *reply, size_t *size) const;
@@ -47,12 +49,14 @@ private:
     void getConnection(json_t *reply) const;
     void getIdentify(json_t *reply) const;
     void getMiner(json_t *reply) const;
+    void getMinersSummary(json_t *reply) const;
     void getResults(json_t *reply) const;
 
     char m_id[17];
     char m_workerId[128];
     mutable char m_buf[4096];
     NetworkState m_network;
+    StatsData m_stats;
 };
 
 #endif /* __APISTATE_H__ */

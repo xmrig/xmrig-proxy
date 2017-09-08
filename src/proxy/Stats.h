@@ -21,34 +21,34 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include "proxy/Events.h"
-
-
-std::map<IEvent::Type, std::vector<IEventListener*> > Events::m_listeners;
+#ifndef __STATS_H__
+#define __STATS_H__
 
 
-bool Events::exec(IEvent *event)
+#include <stdint.h>
+
+
+#include "interfaces/IEventListener.h"
+#include "proxy/StatsData.h"
+
+
+class Stats : public IEventListener
 {
-    std::vector<IEventListener*> &listeners = m_listeners[event->type()];
-    for (IEventListener *listener : listeners) {
-        event->isRejected() ? listener->onRejectedEvent(event) : listener->onEvent(event);
-    }
+public:
+    Stats();
+    ~Stats();
 
-    const bool rejected = event->isRejected();
-    event->~IEvent();
+    void tick(uint64_t ticks);
 
-    return !rejected;
-}
+    inline const StatsData &data() const { return m_data; }
+
+protected:
+    void onEvent(IEvent *event) override;
+    void onRejectedEvent(IEvent *event) override;
+
+private:
+    StatsData m_data;
+};
 
 
-void Events::stop()
-{
-    m_listeners.clear();
-}
-
-
-void Events::subscribe(IEvent::Type type, IEventListener *listener)
-{
-    m_listeners[type].push_back(listener);
-}
+#endif /* __STATS_H__ */

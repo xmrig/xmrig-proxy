@@ -42,9 +42,11 @@
 #include "proxy/ProxyDebug.h"
 #include "proxy/Server.h"
 #include "proxy/splitters/NonceSplitter.h"
+#include "proxy/Stats.h"
 
 
-Proxy::Proxy(const Options *options)
+Proxy::Proxy(const Options *options) :
+    m_ticks(0)
 {
     srand(time(0) ^ (uintptr_t) this);
 
@@ -55,11 +57,14 @@ Proxy::Proxy(const Options *options)
     uv_timer_init(uv_default_loop(), &m_timer);
 
     Events::subscribe(IEvent::ConnectionType, m_miners);
+    Events::subscribe(IEvent::ConnectionType, &m_stats);
 
     Events::subscribe(IEvent::CloseType, m_miners);
     Events::subscribe(IEvent::CloseType, m_splitter);
+    Events::subscribe(IEvent::CloseType, &m_stats);
 
     Events::subscribe(IEvent::LoginType, m_splitter);
+    Events::subscribe(IEvent::LoginType, &m_stats);
 
     Events::subscribe(IEvent::SubmitType, m_splitter);
 
@@ -69,6 +74,11 @@ Proxy::Proxy(const Options *options)
 
 Proxy::~Proxy()
 {
+    Events::stop();
+
+    delete m_miners;
+    delete m_splitter;
+    delete m_debug;
 }
 
 
@@ -82,7 +92,7 @@ void Proxy::connect()
     }
 
     Counters::start();
-    uv_timer_start(&m_timer, Proxy::onTimer, kTickInterval, kTickInterval);
+    uv_timer_start(&m_timer, Proxy::onTick, 1000, 1000);
 }
 
 
@@ -132,6 +142,24 @@ void Proxy::bind(const char *ip, uint16_t port)
 void Proxy::gc()
 {
     m_splitter->gc();
+}
+
+
+void Proxy::tick()
+{
+    m_stats.tick(m_ticks);
+
+    m_ticks++;
+
+    if ((m_ticks % kGCInterval) == 0) {
+        gc();
+    }
+}
+
+
+void Proxy::onTick(uv_timer_t *handle)
+{
+    static_cast<Proxy*>(handle->data)->tick();
 }
 
 

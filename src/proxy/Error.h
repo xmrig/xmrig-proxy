@@ -28,7 +28,8 @@
 class Error
 {
 public:
-    enum Type {
+    enum Code {
+        NoError,
         BadGateway,
         InvalidJobId,
         InvalidMethod,
@@ -37,7 +38,7 @@ public:
         Unauthenticated
     };
 
-    static const char *toString(Type type);
+    static const char *toString(Code code);
 };
 
 #endif /* __ERROR_H__ */

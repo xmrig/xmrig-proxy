@@ -35,7 +35,7 @@
 #include "Options.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"
-#include "proxy/events/RejectEvent.h"
+#include "proxy/events/SubmitEvent.h"
 #include "proxy/JobResult.h"
 #include "proxy/Miner.h"
 #include "proxy/splitters/NonceMapper.h"
@@ -113,20 +113,20 @@ void NonceMapper::remove(const Miner *miner)
 }
 
 
-void NonceMapper::submit(Miner *miner, const JobResult &request)
+void NonceMapper::submit(SubmitEvent *event)
 {
     if (!m_storage->isActive()) {
-        return miner->reject(RejectEvent::create(miner, request.id, Error::BadGateway));
+        return event->reject(Error::BadGateway);
     }
 
-    if (strncmp(m_storage->job().id(), request.jobId, 64) != 0) {
-        return miner->reject(RejectEvent::create(miner, request.id, Error::InvalidJobId));
+    if (strncmp(m_storage->job().id(), event->request.jobId, 64) != 0) {
+        return event->reject(Error::InvalidJobId);
     }
 
-    JobResult req = request;
+    JobResult req = event->request;
     req.diff = m_storage->job().diff();
 
-    m_results[m_strategy->submit(req)] = SubmitCtx(request.id, miner->id());
+    m_results[m_strategy->submit(req)] = SubmitCtx(req.id, event->miner()->id());
 }
 
 
@@ -193,7 +193,7 @@ void NonceMapper::onResultAccepted(Client *client, const SubmitResult &result, c
     }
 
     if (error) {
-        ctx.miner->reject(RejectEvent::create(ctx.miner, ctx.id, error));
+        ctx.miner->replyWithError(ctx.id, error);
     }
     else {
         ctx.miner->success(ctx.id, "OK");

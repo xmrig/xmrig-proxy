@@ -42,6 +42,9 @@ public:
     inline Type type() const override       { return m_type; }
     inline void reject() override           { m_rejected = true; }
 
+    inline bool start()                     { return exec(this); }
+
+protected:
     bool m_rejected;
     Type m_type;
 

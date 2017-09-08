@@ -182,7 +182,7 @@ void NonceSplitter::submit(SubmitEvent *event)
 {
     assert(event->miner()->mapperId() >= 0);
 
-    m_upstreams[event->miner()->mapperId()]->submit(event->miner(), event->request);
+    m_upstreams[event->miner()->mapperId()]->submit(event);
 }
 
 

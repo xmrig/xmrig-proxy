@@ -34,9 +34,9 @@ static const char *kUnauthenticated = "Unauthenticated";
 static const char *kUnknownError    = "Unknown error";
 
 
-const char *Error::toString(Type type)
+const char *Error::toString(Code code)
 {
-    switch (type)
+    switch (code)
     {
     case BadGateway:
         return kBadGateway;

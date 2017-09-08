@@ -33,8 +33,7 @@ public:
         CloseType,
         LoginType,
         SubmitType,
-        AcceptType,
-        RejectType
+        AcceptType
     };
 
     virtual ~IEvent() {}

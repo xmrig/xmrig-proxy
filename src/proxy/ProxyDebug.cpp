@@ -113,7 +113,13 @@ void ProxyDebug::onRejectedEvent(IEvent *event)
 
     case IEvent::CloseType: {
             auto e = static_cast<CloseEvent*>(event);
-            LOG_INFO("[debug] close <Miner id=%" PRId64 ", ip=%s>", e->miner()->id(), e->miner()->ip());
+            LOG_ERR("[error] close <Miner id=%" PRId64 ", ip=%s>", e->miner()->id(), e->miner()->ip());
+        }
+        break;
+
+    case IEvent::SubmitType: {
+            auto e = static_cast<SubmitEvent*>(event);
+            LOG_ERR("[error] submit <Miner id=%" PRId64 ", ip=%s>, message=%s", e->miner()->id(), e->miner()->ip(), e->message());
         }
         break;
 

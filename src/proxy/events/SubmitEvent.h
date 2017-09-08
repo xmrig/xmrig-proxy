@@ -26,6 +26,7 @@
 
 
 #include "proxy/events/MinerEvent.h"
+#include "proxy/Error.h"
 
 
 class JobResult;
@@ -34,20 +35,30 @@ class JobResult;
 class SubmitEvent : public MinerEvent
 {
 public:
-    static inline bool start(Miner *miner, const JobResult &request)
+    static inline SubmitEvent *create(Miner *miner, const JobResult &request)
     {
-        return exec(new (m_buf) SubmitEvent(miner, request));
+        return new (m_buf) SubmitEvent(miner, request);
     }
 
 
     const JobResult &request;
 
 
+    inline bool isRejected() const override { return m_error != Error::NoError; }
+    inline const char *message() const      { return Error::toString(m_error); }
+    inline Error::Code error() const        { return m_error; }
+    inline void reject(Error::Code error)   { m_error  = error; }
+
+
 protected:
     inline SubmitEvent(Miner *miner, const JobResult &request)
         : MinerEvent(SubmitType, miner),
-          request(request)
+          request(request),
+          m_error(Error::NoError)
     {}
+
+private:
+    Error::Code m_error;
 };
 
 #endif /* __SUBMITEVENT_H__ */

@@ -47,7 +47,7 @@ public:
     Miner();
     ~Miner();
     bool accept(uv_stream_t *server);
-    void reject(RejectEvent *event);
+    void replyWithError(int64_t id, const char *message);
     void send(char *data);
     void setJob(Job &job);
     void success(int64_t id, const char *status);
@@ -75,7 +75,6 @@ private:
     bool parseRequest(int64_t id, const char *method, const json_t *params);
     void heartbeat();
     void parse(char *line, size_t len);
-    void replyWithError(int64_t id, const char *message);
     void setState(State state);
     void shutdown(bool had_error);
 

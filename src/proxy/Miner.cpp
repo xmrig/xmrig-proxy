@@ -32,7 +32,6 @@
 #include "proxy/Events.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
-#include "proxy/events/RejectEvent.h"
 #include "proxy/events/SubmitEvent.h"
 #include "proxy/JobResult.h"
 #include "proxy/LoginRequest.h"
@@ -100,10 +99,13 @@ bool Miner::accept(uv_stream_t *server)
 }
 
 
-void Miner::reject(RejectEvent *event)
+void Miner::replyWithError(int64_t id, const char *message)
 {
-    replyWithError(event->id(), event->message());
-    Events::exec(event);
+    const size_t size = 64 + strlen(message);
+    char *req = static_cast<char*>(malloc(size));
+
+    snprintf(req, size, "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"error\":{\"code\":-1,\"message\":\"%s\"}}\n", id, message);
+    send(req);
 }
 
 
@@ -189,22 +191,24 @@ bool Miner::parseRequest(int64_t id, const char *method, const json_t *params)
 
         const char *rpcId = json_string_value(json_object_get(params, "id"));
         if (!rpcId || strncmp(m_rpcId, rpcId, sizeof(m_rpcId)) != 0) {
-            reject(RejectEvent::create(this, id, Error::Unauthenticated));
+            replyWithError(id, Error::toString(Error::Unauthenticated));
             return true;
         }
 
         JobResult request(id, json_string_value(json_object_get(params, "job_id")), json_string_value(json_object_get(params, "nonce")), json_string_value(json_object_get(params, "result")));
+        SubmitEvent *event = SubmitEvent::create(this, request);
+
         if (!request.isValid()) {
-            reject(RejectEvent::create(this, id, Error::LowDifficulty));
-            return true;
+            event->reject(Error::LowDifficulty);
+        }
+        else if (!request.isCompatible(m_fixedByte)) {
+            event->reject(Error::InvalidNonce);
         }
 
-        if (!request.isCompatible(m_fixedByte)) {
-            reject(RejectEvent::create(this, id, Error::InvalidNonce));
-            return false;
+        if (!event->start()) {
+            replyWithError(id, event->message());
         }
 
-        SubmitEvent::start(this, request);
         return true;
     }
 
@@ -253,16 +257,6 @@ void Miner::parse(char *line, size_t len)
     }
 
     json_decref(val);
-}
-
-
-void Miner::replyWithError(int64_t id, const char *message)
-{
-    const size_t size = 64 + strlen(message);
-    char *req = static_cast<char*>(malloc(size));
-
-    snprintf(req, size, "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"error\":{\"code\":-1,\"message\":\"%s\"}}\n", id, message);
-    send(req);
 }
 
 

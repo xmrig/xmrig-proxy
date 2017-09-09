@@ -31,8 +31,6 @@
 
 
 uint64_t Counters::m_counters[3]  = { 0 };
-uint64_t Counters::m_minersMax    = 0;
-uv_timer_t Counters::m_timer;
 
 Counters::Tick Counters::tick;
 
@@ -78,20 +76,6 @@ void Counters::add(CounterTypes type)
 void Counters::remove(CounterTypes type)
 {
     m_counters[type]--;
-}
-
-
-void Counters::start()
-{
-    uv_timer_init(uv_default_loop(), &m_timer);
-    uv_timer_start(&m_timer, Counters::onTick, Hashrate::kTickTime * 1000, Hashrate::kTickTime * 1000);
-}
-
-
-void Counters::onTick(uv_timer_t *handle)
-{
-//    m_hashrate[0].tick();
-//    m_hashrate[1].tick();
 }
 
 

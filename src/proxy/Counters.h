@@ -67,7 +67,6 @@ public:
 //    static void reject(Stores store, const char *ip, const char *message);
 //    static void reject(Stores store, size_t id, uint32_t diff, uint64_t ms, const char *error);
     static void remove(CounterTypes type);
-    static void start();
 
     static Tick tick;
 
@@ -77,12 +76,7 @@ public:
     }
 
 private:
-    static void onTick(uv_timer_t *handle);
-
-//    static Hashrate m_hashrate[2];
     static uint64_t m_counters[3];
-    static uint64_t m_minersMax;
-    static uv_timer_t m_timer;
 };
 
 #endif /* __COUNTERS_H__ */

@@ -94,7 +94,6 @@ void Proxy::connect()
         bind(addr->host(), addr->port());
     }
 
-    Counters::start();
     uv_timer_start(&m_timer, Proxy::onTick, 1000, 1000);
 }
 

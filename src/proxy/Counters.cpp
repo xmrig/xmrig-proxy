@@ -62,14 +62,6 @@ void Counters::accept(Counters::Stores store, size_t id, uint32_t diff, uint64_t
 void Counters::add(CounterTypes type)
 {
     m_counters[type]++;
-
-    if (type == Miner) {
-        tick.added++;
-
-        if (m_counters[type] > m_minersMax) {
-            m_minersMax = m_counters[type];
-        }
-    }
 }
 
 
@@ -93,10 +85,6 @@ void Counters::reject(Stores store, size_t id, uint32_t diff, uint64_t ms, const
 void Counters::remove(CounterTypes type)
 {
     m_counters[type]--;
-
-    if (type == Miner) {
-        tick.removed++;
-    }
 }
 
 

@@ -145,6 +145,18 @@ void Proxy::gc()
 }
 
 
+void Proxy::print()
+{
+
+    LOG_INFO(Options::i()->colors() ? "\x1B[01;36m%03.1f KH/s\x1B[0m, shares: \x1B[01;37m%" PRIu64 "\x1B[0m/%s%" PRIu64 "\x1B[0m +%" PRIu64 ", upstreams: \x1B[01;37m%" PRIu64 "\x1B[0m, miners: \x1B[01;37m%" PRIu64 "\x1B[0m (max \x1B[01;37m%" PRIu64 "\x1B[0m) +%u/-%u"
+                                    : "%03.1f KH/s, shares: %" PRIu64 "/%s%" PRIu64 " +%" PRIu64 ", upstreams: %" PRIu64 ", miners: %" PRIu64 " (max %" PRIu64 " +%u/-%u",
+             Counters::hashrate(60), Counters::accepted(), Options::i()->colors() ? (Counters::rejected() ? "\x1B[31m" : "\x1B[01;37m") : "", Counters::rejected(),
+             Counters::tick.accepted, Counters::upstreams(), m_stats.data().miners, m_stats.data().maxMiners, Counters::tick.added, Counters::tick.removed, m_stats.data().maxMiners);
+
+    Counters::reset();
+}
+
+
 void Proxy::tick()
 {
     m_stats.tick(m_ticks);
@@ -154,23 +166,14 @@ void Proxy::tick()
     if ((m_ticks % kGCInterval) == 0) {
         gc();
     }
+
+    if ((m_ticks % kPrintInterval) == 0) {
+        print();
+    }
 }
 
 
 void Proxy::onTick(uv_timer_t *handle)
 {
     static_cast<Proxy*>(handle->data)->tick();
-}
-
-
-void Proxy::onTimer(uv_timer_t *handle)
-{
-    static_cast<Proxy*>(handle->data)->gc();
-
-    LOG_INFO(Options::i()->colors() ? "\x1B[01;36m%03.1f KH/s\x1B[0m, shares: \x1B[01;37m%" PRIu64 "\x1B[0m/%s%" PRIu64 "\x1B[0m +%" PRIu64 ", upstreams: \x1B[01;37m%" PRIu64 "\x1B[0m, miners: \x1B[01;37m%" PRIu64 "\x1B[0m (max \x1B[01;37m%" PRIu64 "\x1B[0m) +%u/-%u"
-                                    : "%03.1f KH/s, shares: %" PRIu64 "/%s%" PRIu64 " +%" PRIu64 ", upstreams: %" PRIu64 ", miners: %" PRIu64 " (max %" PRIu64 " +%u/-%u",
-             Counters::hashrate(60), Counters::accepted(), Options::i()->colors() ? (Counters::rejected() ? "\x1B[31m" : "\x1B[01;37m") : "", Counters::rejected(),
-             Counters::tick.accepted, Counters::upstreams(), Counters::miners(), Counters::minersMax(), Counters::tick.added, Counters::tick.removed, Counters::minersMax());
-
-    Counters::reset();
 }

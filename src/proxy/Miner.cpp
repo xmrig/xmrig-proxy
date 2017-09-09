@@ -65,15 +65,11 @@ Miner::Miner() :
     m_recvBuf.len  = kRecvBufSize;
 
     memset(m_recvBuf.base, 0, kRecvBufSize);
-
-    Counters::add(Counters::Connection);
 }
 
 
 Miner::~Miner()
 {
-    Counters::remove(Counters::Connection);
-
     m_socket.data = nullptr;
     delete [] m_recvBuf.base;
 }
@@ -268,11 +264,6 @@ void Miner::setState(State state)
 
     if (state == ReadyState) {
         heartbeat();
-        Counters::add(Counters::Miner);
-    }
-
-    if (state == ClosingState && m_state == ReadyState) {
-        Counters::remove(Counters::Miner);
     }
 
     m_state = state;

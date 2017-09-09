@@ -40,8 +40,6 @@ public:
     };
 
     enum CounterTypes {
-        Connection,
-        Miner,
         Upstream
     };
 
@@ -63,9 +61,6 @@ public:
 
 
     inline static uint64_t accepted()    { return m_hashrate[0].accepted + m_hashrate[1].accepted; }
-    inline static uint64_t connections() { return m_counters[Connection]; }
-    inline static uint64_t miners()      { return m_counters[Miner]; }
-    inline static uint64_t minersMax()   { return m_minersMax; }
     inline static uint64_t rejected()    { return m_hashrate[0].rejected[0] + m_hashrate[1].rejected[0]; }
     inline static uint64_t rejected2()   { return m_hashrate[0].rejected[1] + m_hashrate[1].rejected[1];; }
     inline static uint64_t upstreams()   { return m_counters[Upstream]; }

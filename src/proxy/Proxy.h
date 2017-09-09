@@ -56,11 +56,12 @@ public:
 #   endif
 
 private:
-    constexpr static int kTickInterval = 60;
-    constexpr static int kGCInterval   = 60;
+    constexpr static int kPrintInterval = 60;
+    constexpr static int kGCInterval    = 60;
 
     void bind(const char *ip, uint16_t port);
     void gc();
+    void print();
     void tick();
 
     static void onTick(uv_timer_t *handle);

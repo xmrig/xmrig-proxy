@@ -28,7 +28,8 @@
 #include "proxy/Stats.h"
 
 
-Stats::Stats()
+Stats::Stats() :
+    m_hashrate(4)
 {
     m_data.startTime = uv_now(uv_default_loop());
 }
@@ -43,9 +44,19 @@ void Stats::tick(uint64_t ticks)
 {
     ticks++;
 
-#   ifndef XMRIG_NO_API
-    Api::tick(m_data);
-#   endif
+    if ((ticks % m_hashrate.tickTime()) == 0) {
+        m_hashrate.tick();
+
+#       ifndef XMRIG_NO_API
+        m_data.hashrate[0] = hashrate(60);
+        m_data.hashrate[1] = hashrate(600);
+        m_data.hashrate[2] = hashrate(3600);
+        m_data.hashrate[3] = hashrate(3600 * 12);
+        m_data.hashrate[4] = hashrate(3600 * 24);
+
+        Api::tick(m_data);
+#       endif
+    }
 }
 
 
@@ -97,6 +108,8 @@ void Stats::onRejectedEvent(IEvent *event)
 
 void Stats::add(const SubmitResult &result)
 {
+    m_hashrate.add(result.diff);
+
     m_data.accepted++;
     m_data.hashes += result.diff;
 

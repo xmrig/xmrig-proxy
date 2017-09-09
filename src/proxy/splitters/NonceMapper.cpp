@@ -185,12 +185,6 @@ void NonceMapper::onResultAccepted(Client *client, const SubmitResult &result, c
 
     AcceptEvent::start(ctx.miner, result, error);
 
-    if (error) {
-        Counters::reject(Counters::Primary, m_id, result.diff, result.elapsed, error);
-    } else {
-        Counters::accept(Counters::Primary, m_id, result.diff, result.elapsed, m_options->verbose());
-    }
-
     if (!ctx.miner) {
         return;
     }

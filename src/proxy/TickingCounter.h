@@ -21,47 +21,51 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef __TICKINGCOUNTER_H__
+#define __TICKINGCOUNTER_H__
 
-#include <string.h>
+
+#include <stdint.h>
 #include <stdio.h>
+#include <vector>
 
 
-#include "proxy/Hashrate.h"
-
-
-
-Hashrate::Hashrate() :
-    accepted(0),
-    shares(0),
-    m_tickShares(0)
+template <class T> class TickingCounter
 {
-    memset(rejected, 0, sizeof(rejected));
-}
+public:
+    inline TickingCounter(size_t tickTime) :
+        m_tickTime(tickTime),
+        m_pending(0)
+    {}
 
 
-double Hashrate::calc(size_t seconds)
-{
-    const size_t ticks = seconds / kTickTime;
-    const size_t size  = m_data.size();
+    inline double calc(size_t seconds) const
+    {
+        const size_t ticks = seconds / m_tickTime;
+        const size_t size  = m_data.size();
 
-    uint64_t count = 0;
-    for (size_t i = size < ticks ? 0 : (size - ticks); i < size; ++i) {
-        count += m_data[i];
+        uint64_t count = 0;
+        for (size_t i = size < ticks ? 0 : (size - ticks); i < size; ++i) {
+            count += m_data[i];
+        }
+
+        if (count == 0) {
+            return 0.0;
+        }
+
+        return (double) count / (ticks * m_tickTime * 1000);
     }
 
-    return (double) count / (ticks * kTickTime * 1000);
-}
+
+    inline size_t tickTime() const { return m_tickTime; }
+    inline void add(T count)       { m_pending += count; }
+    inline void tick()             { m_data.push_back(m_pending); m_pending = 0; }
+
+private:
+    size_t m_tickTime;
+    std::vector<T> m_data;
+    T m_pending;
+};
 
 
-void Hashrate::add(uint32_t diff)
-{
-    shares += diff;
-    m_tickShares += diff;
-}
-
-
-void Hashrate::tick()
-{
-    m_data.push_back(m_tickShares);
-    m_tickShares = 0;
-}
+#endif /* __TICKINGCOUNTER_H__ */

@@ -44,7 +44,7 @@ public:
 private:
     const char *finalize(json_t *reply, size_t *size) const;
     void genId();
-    void getConnection(json_t *reply) const;
+    void getHashrate(json_t *reply) const;
     void getIdentify(json_t *reply) const;
     void getMiner(json_t *reply) const;
     void getMinersSummary(json_t *reply) const;

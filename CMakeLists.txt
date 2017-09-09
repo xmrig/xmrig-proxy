@@ -52,6 +52,7 @@ set(HEADERS
     src/proxy/Server.h
     src/proxy/Stats.h
     src/proxy/StatsData.h
+    src/proxy/TickingCounter.h
     src/proxy/splitters/NonceMapper.h
     src/proxy/splitters/NonceSplitter.h
     src/proxy/splitters/NonceStorage.h

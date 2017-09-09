@@ -81,6 +81,7 @@ const char *ApiState::get(const char *url, size_t *size) const
 
     getIdentify(reply);
     getMiner(reply);
+    getHashrate(reply);
     getMinersSummary(reply);
     getResults(reply);
 //    getConnection(reply);
@@ -132,6 +133,20 @@ void ApiState::genId()
     }
 
     uv_free_interface_addresses(interfaces, count);
+}
+
+
+void ApiState::getHashrate(json_t *reply) const
+{
+    json_t *hashrate = json_object();
+    json_t *total    = json_array();
+
+    json_object_set(reply,    "hashrate", hashrate);
+    json_object_set(hashrate, "total",    total);
+
+    for (size_t i = 0; i < sizeof(m_stats.hashrate) / sizeof(m_stats.hashrate[0]); i++) {
+        json_array_append(total, json_real(normalize(m_stats.hashrate[i])));
+    }
 }
 
 

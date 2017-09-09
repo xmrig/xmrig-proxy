@@ -77,6 +77,7 @@ public:
     }
 
 
+    double hashrate[5] { 0.0 };
     std::array<uint64_t, 10> topDiff { { } };
     std::vector<uint16_t> latency;
     uint64_t accepted;

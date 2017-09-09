@@ -30,6 +30,7 @@
 
 #include "interfaces/IEventListener.h"
 #include "proxy/StatsData.h"
+#include "proxy/TickingCounter.h"
 
 
 class SubmitResult;
@@ -43,7 +44,8 @@ public:
 
     void tick(uint64_t ticks);
 
-    inline const StatsData &data() const { return m_data; }
+    inline const StatsData &data() const      { return m_data; }
+    inline double hashrate(int seconds) const { return m_hashrate.calc(seconds); }
 
 protected:
     void onEvent(IEvent *event) override;
@@ -54,6 +56,7 @@ private:
 
 
     StatsData m_data;
+    TickingCounter<uint32_t> m_hashrate;
 };
 
 

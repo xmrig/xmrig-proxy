@@ -22,15 +22,15 @@
  */
 
 
-#include "log/Log.h"
-
 #include "api/Api.h"
-#include "proxy/events/LoginEvent.h"
+#include "net/SubmitResult.h"
+#include "proxy/events/AcceptEvent.h"
 #include "proxy/Stats.h"
 
 
 Stats::Stats()
 {
+    m_data.startTime = uv_now(uv_default_loop());
 }
 
 
@@ -67,6 +67,10 @@ void Stats::onEvent(IEvent *event)
         m_data.miners--;
         break;
 
+    case IEvent::AcceptType:
+        add(static_cast<AcceptEvent*>(event)->result);
+        break;
+
     default:
         break;
     }
@@ -75,4 +79,32 @@ void Stats::onEvent(IEvent *event)
 
 void Stats::onRejectedEvent(IEvent *event)
 {
+    switch (event->type())
+    {
+    case IEvent::SubmitType:
+        m_data.invalid++;
+        break;
+
+    case IEvent::AcceptType:
+        m_data.rejected++;
+        break;
+
+    default:
+        break;
+    }
+}
+
+
+void Stats::add(const SubmitResult &result)
+{
+    m_data.accepted++;
+    m_data.hashes += result.diff;
+
+    const size_t ln = m_data.topDiff.size() - 1;
+    if (result.actualDiff > m_data.topDiff[ln]) {
+        m_data.topDiff[ln] = result.actualDiff;
+        std::sort(m_data.topDiff.rbegin(), m_data.topDiff.rend());
+    }
+
+    m_data.latency.push_back(result.elapsed > 0xFFFF ? 0xFFFF : (uint16_t) result.elapsed);
 }

@@ -83,15 +83,9 @@ const char *ApiState::get(const char *url, size_t *size) const
     getMiner(reply);
     getMinersSummary(reply);
     getResults(reply);
-    getConnection(reply);
+//    getConnection(reply);
 
     return finalize(reply, size);
-}
-
-
-void ApiState::tick(const NetworkState &network)
-{
-    m_network = network;
 }
 
 
@@ -141,17 +135,17 @@ void ApiState::genId()
 }
 
 
-void ApiState::getConnection(json_t *reply) const
-{
-    json_t *connection = json_object();
+//void ApiState::getConnection(json_t *reply) const
+//{
+//    json_t *connection = json_object();
 
-    json_object_set(reply,      "connection", connection);
-    json_object_set(connection, "pool",       json_string(m_network.pool));
-    json_object_set(connection, "uptime",     json_integer(m_network.connectionTime()));
-    json_object_set(connection, "ping",       json_integer(m_network.latency()));
-    json_object_set(connection, "failures",   json_integer(m_network.failures));
-    json_object_set(connection, "error_log",  json_array());
-}
+//    json_object_set(reply,      "connection", connection);
+//    json_object_set(connection, "pool",       json_string(m_network.pool));
+//    json_object_set(connection, "uptime",     json_integer(m_network.connectionTime()));
+//    json_object_set(connection, "ping",       json_integer(m_network.latency()));
+//    json_object_set(connection, "failures",   json_integer(m_network.failures));
+//    json_object_set(connection, "error_log",  json_array());
+//}
 
 
 void ApiState::getIdentify(json_t *reply) const
@@ -167,6 +161,7 @@ void ApiState::getMiner(json_t *reply) const
     json_object_set(reply, "kind",      json_string(APP_KIND));
     json_object_set(reply, "ua",        json_string(Platform::userAgent()));
     json_object_set(reply, "donate",    json_integer(Options::i()->donateLevel()));
+    json_object_set(reply, "uptime",    json_integer(m_stats.uptime()));
 }
 
 
@@ -186,15 +181,16 @@ void ApiState::getResults(json_t *reply) const
     json_t *best    = json_array();
 
     json_object_set(reply,   "results",      results);
-    json_object_set(results, "diff_current", json_integer(m_network.diff));
-    json_object_set(results, "shares_good",  json_integer(m_network.accepted));
-    json_object_set(results, "shares_total", json_integer(m_network.accepted + m_network.rejected));
-    json_object_set(results, "avg_time",     json_integer(m_network.avgTime()));
-    json_object_set(results, "hashes_total", json_integer(m_network.total));
+    json_object_set(results, "accepted",  json_integer(m_stats.accepted));
+    json_object_set(results, "rejected", json_integer(m_stats.rejected));
+    json_object_set(results, "invalid", json_integer(m_stats.invalid));
+    json_object_set(results, "avg_time",     json_integer(m_stats.avgTime()));
+    json_object_set(results, "latency",       json_integer(m_stats.avgLatency()));
+    json_object_set(results, "hashes_total", json_integer(m_stats.hashes));
     json_object_set(results, "best",         best);
     json_object_set(results, "error_log",    json_array());
 
-    for (size_t i = 0; i < m_network.topDiff.size(); ++i) {
-        json_array_append(best, json_integer(m_network.topDiff[i]));
+    for (size_t i = 0; i < m_stats.topDiff.size(); ++i) {
+        json_array_append(best, json_integer(m_stats.topDiff[i]));
     }
 }

@@ -32,6 +32,9 @@
 #include "proxy/StatsData.h"
 
 
+class SubmitResult;
+
+
 class Stats : public IEventListener
 {
 public:
@@ -47,6 +50,9 @@ protected:
     void onRejectedEvent(IEvent *event) override;
 
 private:
+    void add(const SubmitResult &result);
+
+
     StatsData m_data;
 };
 

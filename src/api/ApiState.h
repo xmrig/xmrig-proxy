@@ -25,7 +25,6 @@
 #define __APISTATE_H__
 
 
-#include "api/NetworkState.h"
 #include "jansson.h"
 #include "proxy/StatsData.h"
 
@@ -40,7 +39,6 @@ public:
     ~ApiState();
 
     const char *get(const char *url, size_t *size) const;
-    void tick(const NetworkState &results);
     void tick(const StatsData &data);
 
 private:
@@ -55,7 +53,6 @@ private:
     char m_id[17];
     char m_workerId[128];
     mutable char m_buf[4096];
-    NetworkState m_network;
     StatsData m_stats;
 };
 

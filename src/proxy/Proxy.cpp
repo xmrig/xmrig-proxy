@@ -67,6 +67,9 @@ Proxy::Proxy(const Options *options) :
     Events::subscribe(IEvent::LoginType, &m_stats);
 
     Events::subscribe(IEvent::SubmitType, m_splitter);
+    Events::subscribe(IEvent::SubmitType, &m_stats);
+
+    Events::subscribe(IEvent::AcceptType, &m_stats);
 
     m_debug = new ProxyDebug(options->isDebug());
 }

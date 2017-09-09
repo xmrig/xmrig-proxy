@@ -25,7 +25,6 @@
 #define __NONCESPLITTER_H__
 
 
-#include <uv.h>
 #include <vector>
 
 
@@ -36,17 +35,19 @@ class LoginEvent;
 class NonceMapper;
 class Options;
 class SubmitEvent;
+class Stats;
 
 
 class NonceSplitter : public IEventListener
 {
 public:
-    NonceSplitter(const Options *options, const char *agent);
+    NonceSplitter(Stats &stats);
     ~NonceSplitter();
 
     void connect();
     void gc();
     void printConnections();
+    void tick();
 
 #   ifdef APP_DEVEL
     void printState();
@@ -64,12 +65,9 @@ private:
     void login(LoginEvent *event);
     void remove(Miner *miner);
     void submit(SubmitEvent *event);
-    void tick();
 
-    const char *m_agent;
-    const Options *m_options;
+    const Stats &m_stats;
     std::vector<NonceMapper*> m_upstreams;
-    uv_timer_t m_timer;
 };
 
 

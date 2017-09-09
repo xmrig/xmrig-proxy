@@ -51,7 +51,7 @@ Proxy::Proxy(const Options *options) :
     srand(time(0) ^ (uintptr_t) this);
 
     m_miners   = new Miners();
-    m_splitter = new NonceSplitter(options, Platform::userAgent());
+    m_splitter = new NonceSplitter(m_stats);
 
     m_timer.data = this;
     uv_timer_init(uv_default_loop(), &m_timer);
@@ -149,7 +149,6 @@ void Proxy::gc()
 
 void Proxy::print()
 {
-
     LOG_INFO(Options::i()->colors() ? "\x1B[01;36m%03.1f KH/s\x1B[0m, shares: \x1B[01;37m%" PRIu64 "\x1B[0m/%s%" PRIu64 "\x1B[0m +%" PRIu64 ", upstreams: \x1B[01;37m%" PRIu64 "\x1B[0m, miners: \x1B[01;37m%" PRIu64 "\x1B[0m (max \x1B[01;37m%" PRIu64 "\x1B[0m) +%u/-%u"
                                     : "%03.1f KH/s, shares: %" PRIu64 "/%s%" PRIu64 " +%" PRIu64 ", upstreams: %" PRIu64 ", miners: %" PRIu64 " (max %" PRIu64 " +%u/-%u",
              m_stats.hashrate(600), m_stats.data().accepted, Options::i()->colors() ? (m_stats.data().rejected ? "\x1B[31m" : "\x1B[01;37m") : "", m_stats.data().rejected,
@@ -172,6 +171,8 @@ void Proxy::tick()
     if ((m_ticks % kPrintInterval) == 0) {
         print();
     }
+
+    m_splitter->tick();
 }
 
 

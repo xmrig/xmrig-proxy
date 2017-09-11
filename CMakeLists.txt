@@ -43,7 +43,6 @@ set(HEADERS
     src/proxy/events/LoginEvent.h
     src/proxy/events/MinerEvent.h
     src/proxy/events/SubmitEvent.h
-    src/proxy/Hashrate.h
     src/proxy/JobResult.h
     src/proxy/Miner.h
     src/proxy/Miners.h
@@ -84,7 +83,6 @@ set(SOURCES
     src/proxy/Events.cpp
     src/proxy/events/ConnectionEvent.h
     src/proxy/events/Event.cpp
-    src/proxy/Hashrate.cpp
     src/proxy/JobResult.cpp
     src/proxy/LoginRequest.cpp
     src/proxy/Miner.cpp

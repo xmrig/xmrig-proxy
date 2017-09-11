@@ -92,8 +92,6 @@ bool NonceMapper::isActive() const
 void NonceMapper::connect()
 {
     m_suspended = false;
-    Counters::add(Counters::Upstream);
-
     m_strategy->connect();
 }
 
@@ -222,6 +220,4 @@ void NonceMapper::suspend()
     m_storage->setActive(false);
     m_storage->reset();
     m_strategy->stop();
-
-    Counters::remove(Counters::Upstream);
 }

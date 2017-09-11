@@ -23,8 +23,10 @@
 
 
 #include "api/Api.h"
+#include "Counters.h"
 #include "net/SubmitResult.h"
 #include "proxy/events/AcceptEvent.h"
+#include "proxy/splitters/NonceSplitter.h"
 #include "proxy/Stats.h"
 
 
@@ -40,7 +42,7 @@ Stats::~Stats()
 }
 
 
-void Stats::tick(uint64_t ticks)
+void Stats::tick(uint64_t ticks, const NonceSplitter &splitter)
 {
     ticks++;
 
@@ -54,6 +56,7 @@ void Stats::tick(uint64_t ticks)
         m_data.hashrate[3] = hashrate(3600 * 12);
         m_data.hashrate[4] = hashrate(3600 * 24);
 
+        m_data.upstreams = splitter.activeUpstreams();
         Api::tick(m_data);
 #       endif
     }
@@ -71,11 +74,15 @@ void Stats::onEvent(IEvent *event)
         if (m_data.miners > m_data.maxMiners) {
             m_data.maxMiners = m_data.miners;
         }
+
+        Counters::added++;
         break;
 
     case IEvent::CloseType:
         m_data.connections--;
         m_data.miners--;
+
+        Counters::removed++;
         break;
 
     case IEvent::AcceptType:
@@ -112,6 +119,8 @@ void Stats::add(const SubmitResult &result)
 
     m_data.accepted++;
     m_data.hashes += result.diff;
+
+    Counters::accepted++;
 
     const size_t ln = m_data.topDiff.size() - 1;
     if (result.actualDiff > m_data.topDiff[ln]) {

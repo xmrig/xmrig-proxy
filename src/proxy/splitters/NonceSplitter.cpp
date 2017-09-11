@@ -52,6 +52,20 @@ NonceSplitter::~NonceSplitter()
 }
 
 
+uint32_t NonceSplitter::activeUpstreams() const
+{
+    uint32_t active = 0;
+
+    for (const NonceMapper *mapper : m_upstreams) {
+        if (mapper->isActive()) {
+            active++;
+        }
+    }
+
+    return active;
+}
+
+
 void NonceSplitter::connect()
 {
     auto upstream = new NonceMapper(m_upstreams.size(), Options::i(), Platform::userAgent());
@@ -74,7 +88,7 @@ void NonceSplitter::printConnections()
     int active    = 0;
     int suspended = 0;
 
-    for (NonceMapper *mapper : m_upstreams) {
+    for (const NonceMapper *mapper : m_upstreams) {
         if (mapper->isActive()) {
             active++;
             continue;

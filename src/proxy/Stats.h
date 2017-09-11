@@ -33,6 +33,7 @@
 #include "proxy/TickingCounter.h"
 
 
+class NonceSplitter;
 class SubmitResult;
 
 
@@ -42,7 +43,7 @@ public:
     Stats();
     ~Stats();
 
-    void tick(uint64_t ticks);
+    void tick(uint64_t ticks, const NonceSplitter &splitter);
 
     inline const StatsData &data() const      { return m_data; }
     inline double hashrate(int seconds) const { return m_hashrate.calc(seconds); }

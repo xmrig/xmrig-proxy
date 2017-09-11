@@ -185,8 +185,9 @@ void ApiState::getMinersSummary(json_t *reply) const
     json_t *miners = json_object();
     json_object_set(reply, "miners", miners);
 
-    json_object_set(miners, "now", json_integer(m_stats.miners));
-    json_object_set(miners, "max", json_integer(m_stats.maxMiners));
+    json_object_set(miners, "now",      json_integer(m_stats.miners));
+    json_object_set(miners, "max",      json_integer(m_stats.maxMiners));
+    json_object_set(reply, "upstreams", json_integer(m_stats.upstreams));
 }
 
 
@@ -195,15 +196,15 @@ void ApiState::getResults(json_t *reply) const
     json_t *results = json_object();
     json_t *best    = json_array();
 
-    json_object_set(reply,   "results",      results);
-    json_object_set(results, "accepted",  json_integer(m_stats.accepted));
-    json_object_set(results, "rejected", json_integer(m_stats.rejected));
-    json_object_set(results, "invalid", json_integer(m_stats.invalid));
-    json_object_set(results, "avg_time",     json_integer(m_stats.avgTime()));
+    json_object_set(reply,   "results",       results);
+    json_object_set(results, "accepted",      json_integer(m_stats.accepted));
+    json_object_set(results, "rejected",      json_integer(m_stats.rejected));
+    json_object_set(results, "invalid",       json_integer(m_stats.invalid));
+    json_object_set(results, "avg_time",      json_integer(m_stats.avgTime()));
     json_object_set(results, "latency",       json_integer(m_stats.avgLatency()));
-    json_object_set(results, "hashes_total", json_integer(m_stats.hashes));
-    json_object_set(results, "best",         best);
-    json_object_set(results, "error_log",    json_array());
+    json_object_set(results, "hashes_total",  json_integer(m_stats.hashes));
+    json_object_set(results, "best",          best);
+    json_object_set(results, "error_log",     json_array());
 
     for (size_t i = 0; i < m_stats.topDiff.size(); ++i) {
         json_array_append(best, json_integer(m_stats.topDiff[i]));

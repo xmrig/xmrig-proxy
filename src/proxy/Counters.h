@@ -25,58 +25,23 @@
 #define __COUNTERS_H__
 
 
-#include <uv.h>
-
-
-#include "proxy/Hashrate.h"
+#include <stdint.h>
 
 
 class Counters
 {
 public:
-    enum Stores {
-        Primary,
-        Secondary
-    };
-
-    enum CounterTypes {
-        Upstream
-    };
-
-    class Tick
-    {
-    public:
-        inline Tick() : added(0), removed(0), accepted(0) {}
-
-        uint32_t added;
-        uint32_t removed;
-        uint64_t accepted;
-
-        inline void reset() {
-            added    = 0;
-            removed  = 0;
-            accepted = 0;
-        }
-    };
-
-
-    inline static uint64_t upstreams()   { return m_counters[Upstream]; }
-
-//    static void accept(Stores store, size_t id, uint32_t diff, uint64_t ms, bool verbose);
-    static void add(CounterTypes type);
-//    static void reject(Stores store, const char *ip, const char *message);
-//    static void reject(Stores store, size_t id, uint32_t diff, uint64_t ms, const char *error);
-    static void remove(CounterTypes type);
-
-    static Tick tick;
-
     static inline void reset()
     {
-        tick.reset();
+        added    = 0;
+        removed  = 0;
+        accepted = 0;
     }
 
-private:
-    static uint64_t m_counters[3];
+
+    static uint32_t added;
+    static uint32_t removed;
+    static uint64_t accepted;
 };
 
 #endif /* __COUNTERS_H__ */

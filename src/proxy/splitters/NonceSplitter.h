@@ -25,6 +25,7 @@
 #define __NONCESPLITTER_H__
 
 
+#include <stdint.h>
 #include <vector>
 
 
@@ -44,6 +45,7 @@ public:
     NonceSplitter(Stats &stats);
     ~NonceSplitter();
 
+    uint32_t activeUpstreams() const;
     void connect();
     void gc();
     void printConnections();

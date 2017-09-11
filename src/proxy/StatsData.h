@@ -42,7 +42,8 @@ public:
         maxMiners(0),
         miners(0),
         rejected(0),
-        startTime(0)
+        startTime(0),
+        upstreams(0)
     {
     }
 
@@ -88,6 +89,7 @@ public:
     uint64_t miners;
     uint64_t rejected;
     uint64_t startTime;
+    uint64_t upstreams;
 };
 
 

@@ -22,17 +22,12 @@
  */
 
 
-#include <inttypes.h>
-
-
 #include "Counters.h"
-#include "log/Log.h"
-#include "Options.h"
 
 
-uint64_t Counters::m_counters[3]  = { 0 };
-
-Counters::Tick Counters::tick;
+uint32_t Counters::added    = 0;
+uint32_t Counters::removed  = 0;
+uint64_t Counters::accepted = 0;
 
 
 //void Counters::accept(Counters::Stores store, size_t id, uint32_t diff, uint64_t ms, bool verbose)
@@ -50,12 +45,6 @@ Counters::Tick Counters::tick;
 //}
 
 
-void Counters::add(CounterTypes type)
-{
-    m_counters[type]++;
-}
-
-
 //void Counters::reject(Stores store, const char *ip, const char *message)
 //{
 //    m_hashrate[store].rejected[1]++;
@@ -71,12 +60,6 @@ void Counters::add(CounterTypes type)
 //                                    : "#%03u rejected (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff %u \"%s\" (%" PRId64 " ms)",
 //             id, m_hashrate[0].accepted, m_hashrate[0].rejected[0], m_hashrate[0].rejected[1], diff, error, ms);
 //}
-
-
-void Counters::remove(CounterTypes type)
-{
-    m_counters[type]--;
-}
 
 
 

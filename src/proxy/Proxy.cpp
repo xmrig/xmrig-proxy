@@ -151,8 +151,8 @@ void Proxy::print()
 {
     LOG_INFO(Options::i()->colors() ? "\x1B[01;36m%03.1f KH/s\x1B[0m, shares: \x1B[01;37m%" PRIu64 "\x1B[0m/%s%" PRIu64 "\x1B[0m +%" PRIu64 ", upstreams: \x1B[01;37m%" PRIu64 "\x1B[0m, miners: \x1B[01;37m%" PRIu64 "\x1B[0m (max \x1B[01;37m%" PRIu64 "\x1B[0m) +%u/-%u"
                                     : "%03.1f KH/s, shares: %" PRIu64 "/%s%" PRIu64 " +%" PRIu64 ", upstreams: %" PRIu64 ", miners: %" PRIu64 " (max %" PRIu64 " +%u/-%u",
-             m_stats.hashrate(600), m_stats.data().accepted, Options::i()->colors() ? (m_stats.data().rejected ? "\x1B[31m" : "\x1B[01;37m") : "", m_stats.data().rejected,
-             Counters::tick.accepted, Counters::upstreams(), m_stats.data().miners, m_stats.data().maxMiners, Counters::tick.added, Counters::tick.removed, m_stats.data().maxMiners);
+             m_stats.hashrate(60), m_stats.data().accepted, Options::i()->colors() ? (m_stats.data().rejected ? "\x1B[31m" : "\x1B[01;37m") : "", m_stats.data().rejected,
+             Counters::accepted, m_splitter->activeUpstreams(), m_stats.data().miners, m_stats.data().maxMiners, Counters::added, Counters::removed, m_stats.data().maxMiners);
 
     Counters::reset();
 }
@@ -160,7 +160,7 @@ void Proxy::print()
 
 void Proxy::tick()
 {
-    m_stats.tick(m_ticks);
+    m_stats.tick(m_ticks, *m_splitter);
 
     m_ticks++;
 

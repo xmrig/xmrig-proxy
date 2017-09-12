@@ -35,9 +35,9 @@ class SubmitResult;
 class AcceptEvent : public MinerEvent
 {
 public:
-    static inline bool start(Miner *miner, const SubmitResult &result, const char *error = nullptr)
+    static inline bool start(size_t mapperId, Miner *miner, const SubmitResult &result, const char *error = nullptr)
     {
-        return exec(new (m_buf) AcceptEvent(miner, result, error));
+        return exec(new (m_buf) AcceptEvent(mapperId, miner, result, error));
     }
 
 
@@ -46,17 +46,21 @@ public:
 
     inline bool isRejected() const override { return m_error != nullptr; }
     inline const char *error() const        { return m_error; }
+    inline size_t mapperId() const          { return m_mapperId; }
 
 
 protected:
-    inline AcceptEvent(Miner *miner, const SubmitResult &result, const char *error)
+    inline AcceptEvent(size_t mapperId, Miner *miner, const SubmitResult &result, const char *error)
         : MinerEvent(AcceptType, miner),
           result(result),
-          m_error(error)
+          m_error(error),
+          m_mapperId(mapperId)
     {}
+
 
 private:
     const char *m_error;
+    size_t m_mapperId;
 };
 
 #endif /* __ACCEPTEVENT_H__ */

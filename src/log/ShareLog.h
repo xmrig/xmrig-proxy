@@ -21,10 +21,29 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef __SHARELOG_H__
+#define __SHARELOG_H__
 
-#include "Counters.h"
+
+#include "interfaces/IEventListener.h"
 
 
-uint32_t Counters::added    = 0;
-uint32_t Counters::removed  = 0;
-uint64_t Counters::accepted = 0;
+class Stats;
+
+
+class ShareLog : public IEventListener
+{
+public:
+    ShareLog(const Stats &stats);
+    ~ShareLog();
+
+protected:
+    void onEvent(IEvent *event) override;
+    void onRejectedEvent(IEvent *event) override;
+
+private:
+    const Stats &m_stats;
+};
+
+
+#endif /* __SHARELOG_H__ */

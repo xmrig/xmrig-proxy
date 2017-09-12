@@ -25,6 +25,7 @@ set(HEADERS
     src/log/ConsoleLog.h
     src/log/FileLog.h
     src/log/Log.h
+    src/log/ShareLog.h
     src/net/Client.h
     src/net/Job.h
     src/net/strategies/FailoverStrategy.h
@@ -70,6 +71,7 @@ set(SOURCES
     src/log/ConsoleLog.cpp
     src/log/FileLog.cpp
     src/log/Log.cpp
+    src/log/ShareLog.cpp
     src/net/Client.cpp
     src/net/Job.cpp
     src/net/strategies/FailoverStrategy.cpp

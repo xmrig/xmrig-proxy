@@ -37,6 +37,7 @@ class NonceSplitter;
 class Options;
 class ProxyDebug;
 class Server;
+class ShareLog;
 class Url;
 
 
@@ -70,6 +71,7 @@ private:
     Miners *m_miners;
     NonceSplitter *m_splitter;
     ProxyDebug *m_debug;
+    ShareLog *m_shareLog;
     Stats m_stats;
     std::vector<Server*> m_servers;
     uint64_t m_ticks;

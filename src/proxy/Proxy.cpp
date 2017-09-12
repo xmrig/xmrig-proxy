@@ -32,6 +32,7 @@
 
 #include "Counters.h"
 #include "log/Log.h"
+#include "log/ShareLog.h"
 #include "Options.h"
 #include "Platform.h"
 #include "proxy/Events.h"
@@ -52,6 +53,7 @@ Proxy::Proxy(const Options *options) :
 
     m_miners   = new Miners();
     m_splitter = new NonceSplitter(m_stats);
+    m_shareLog = new ShareLog(m_stats);
 
     m_timer.data = this;
     uv_timer_init(uv_default_loop(), &m_timer);
@@ -70,6 +72,7 @@ Proxy::Proxy(const Options *options) :
     Events::subscribe(IEvent::SubmitType, &m_stats);
 
     Events::subscribe(IEvent::AcceptType, &m_stats);
+    Events::subscribe(IEvent::AcceptType, m_shareLog);
 
     m_debug = new ProxyDebug(options->isDebug());
 }

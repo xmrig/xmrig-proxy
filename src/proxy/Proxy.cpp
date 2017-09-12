@@ -31,6 +31,7 @@
 
 
 #include "Counters.h"
+#include "log/AccessLog.h"
 #include "log/Log.h"
 #include "log/ShareLog.h"
 #include "Options.h"
@@ -51,9 +52,10 @@ Proxy::Proxy(const Options *options) :
 {
     srand(time(0) ^ (uintptr_t) this);
 
-    m_miners   = new Miners();
-    m_splitter = new NonceSplitter(m_stats);
-    m_shareLog = new ShareLog(m_stats);
+    m_miners    = new Miners();
+    m_splitter  = new NonceSplitter(m_stats);
+    m_shareLog  = new ShareLog(m_stats);
+    m_accessLog = new AccessLog(m_stats);
 
     m_timer.data = this;
     uv_timer_init(uv_default_loop(), &m_timer);
@@ -64,9 +66,11 @@ Proxy::Proxy(const Options *options) :
     Events::subscribe(IEvent::CloseType, m_miners);
     Events::subscribe(IEvent::CloseType, m_splitter);
     Events::subscribe(IEvent::CloseType, &m_stats);
+    Events::subscribe(IEvent::CloseType, m_accessLog);
 
     Events::subscribe(IEvent::LoginType, m_splitter);
     Events::subscribe(IEvent::LoginType, &m_stats);
+    Events::subscribe(IEvent::LoginType, m_accessLog);
 
     Events::subscribe(IEvent::SubmitType, m_splitter);
     Events::subscribe(IEvent::SubmitType, &m_stats);
@@ -84,6 +88,7 @@ Proxy::~Proxy()
 
     delete m_miners;
     delete m_splitter;
+    delete m_shareLog;
     delete m_debug;
 }
 

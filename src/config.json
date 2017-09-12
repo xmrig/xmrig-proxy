@@ -1,6 +1,7 @@
 {
     "background": false,
     "log-file": null,
+    "access-log-file": null,
     "retries": 5,
     "retry-pause": 5,
     "syslog": false,

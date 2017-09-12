@@ -73,10 +73,11 @@ Options:\n\
 ";
 
 
-static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:";
+static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:A:";
 
 
 static struct option const options[] = {
+    { "access-log-file",  1, nullptr, 'A'  },
     { "api-access-token", 1, nullptr, 4001 },
     { "api-port",         1, nullptr, 4000 },
     { "api-worker-id",    1, nullptr, 4002 },
@@ -104,16 +105,17 @@ static struct option const options[] = {
 
 
 static struct option const config_options[] = {
-    { "background",    0, nullptr, 'B'  },
-    { "colors",        0, nullptr, 2000 },
-    { "debug",         0, nullptr, 1101 },
-    { "donate-level",  1, nullptr, 1003 },
-    { "log-file",      1, nullptr, 'l'  },
-    { "retries",       1, nullptr, 'r'  },
-    { "retry-pause",   1, nullptr, 'R'  },
-    { "syslog",        0, nullptr, 'S'  },
-    { "user-agent",    1, nullptr, 1008 },
-    { "verbose",       0, nullptr, 1100 },
+    { "access-log-file",  1, nullptr, 'A'  },
+    { "background",       0, nullptr, 'B'  },
+    { "colors",           0, nullptr, 2000 },
+    { "debug",            0, nullptr, 1101 },
+    { "donate-level",     1, nullptr, 1003 },
+    { "log-file",         1, nullptr, 'l'  },
+    { "retries",          1, nullptr, 'r'  },
+    { "retry-pause",      1, nullptr, 'R'  },
+    { "syslog",           0, nullptr, 'S'  },
+    { "user-agent",       1, nullptr, 1008 },
+    { "verbose",          0, nullptr, 1100 },
     { 0, 0, 0, 0 }
 };
 
@@ -156,6 +158,7 @@ Options::Options(int argc, char **argv) :
     m_ready(false),
     m_syslog(false),
     m_verbose(false),
+    m_accessLog(nullptr),
     m_apiToken(nullptr),
     m_apiWorkerId(nullptr),
     m_logFile(nullptr),
@@ -260,6 +263,11 @@ bool Options::parseArg(int key, const char *arg)
     case 'l': /* --log-file */
         free(m_logFile);
         m_logFile = strdup(arg);
+        break;
+
+    case 'A': /* --access-log-file **/
+        free(m_accessLog);
+        m_accessLog = strdup(arg);
         break;
 
     case 4001: /* --access-token */

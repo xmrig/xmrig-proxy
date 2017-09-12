@@ -48,6 +48,7 @@ public:
     inline bool isDebug() const                    { return m_debug; }
     inline bool syslog() const                     { return m_syslog; }
     inline bool verbose() const                    { return m_verbose; }
+    inline const char *accessLog() const           { return m_accessLog; }
     inline const char *apiToken() const            { return m_apiToken; }
     inline const char *apiWorkerId() const         { return m_apiWorkerId; }
     inline const char *logFile() const             { return m_logFile; }
@@ -86,6 +87,7 @@ private:
     bool m_ready;
     bool m_syslog;
     bool m_verbose;
+    char *m_accessLog;
     char *m_apiToken;
     char *m_apiWorkerId;
     char *m_logFile;

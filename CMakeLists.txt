@@ -22,6 +22,7 @@ set(HEADERS
     src/interfaces/ILogBackend.h
     src/interfaces/IStrategy.h
     src/interfaces/IStrategyListener.h
+    src/log/AccessLog.h
     src/log/ConsoleLog.h
     src/log/FileLog.h
     src/log/Log.h
@@ -68,6 +69,7 @@ set(SOURCES
     src/Console.cpp
     src/crypto/c_keccak.c
     src/crypto/c_keccak.h
+    src/log/AccessLog.cpp
     src/log/ConsoleLog.cpp
     src/log/FileLog.cpp
     src/log/Log.cpp

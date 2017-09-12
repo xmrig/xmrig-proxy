@@ -21,64 +21,37 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __PROXY_H__
-#define __PROXY_H__
+#ifndef __ACCESSLOG_H__
+#define __ACCESSLOG_H__
 
 
-#include <vector>
 #include <uv.h>
 
 
-#include "proxy/Stats.h"
+#include "interfaces/IEventListener.h"
 
 
-class AccessLog;
-class Miners;
-class NonceSplitter;
-class Options;
-class ProxyDebug;
-class Server;
-class ShareLog;
-class Url;
+class Stats;
 
 
-class Proxy
+class AccessLog : public IEventListener
 {
 public:
-    Proxy(const Options *options);
-    ~Proxy();
+    AccessLog(const Stats &stats);
+    ~AccessLog();
 
-    void connect();
-    void printConnections();
-    void printHashrate();
-    void toggleDebug();
-
-#   ifdef APP_DEVEL
-    void printState();
-#   endif
+protected:
+    void onEvent(IEvent *event) override;
+    void onRejectedEvent(IEvent *event) override;
 
 private:
-    constexpr static int kPrintInterval = 10;
-    constexpr static int kGCInterval    = 60;
+    static void onWrite(uv_fs_t *req);
 
-    void bind(const char *ip, uint16_t port);
-    void gc();
-    void print();
-    void tick();
+    void write(const char *fmt, ...);
 
-    static void onTick(uv_timer_t *handle);
-    static void onTimer(uv_timer_t *handle);
-
-    AccessLog *m_accessLog;
-    Miners *m_miners;
-    NonceSplitter *m_splitter;
-    ProxyDebug *m_debug;
-    ShareLog *m_shareLog;
-    Stats m_stats;
-    std::vector<Server*> m_servers;
-    uint64_t m_ticks;
-    uv_timer_t m_timer;
+    const Stats &m_stats;
+    int m_file;
 };
 
 
-#endif /* __PROXY_H__ */
+#endif /* __ACCESSLOG_H__ */

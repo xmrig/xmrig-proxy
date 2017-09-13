@@ -60,7 +60,7 @@ public:
     inline uint64_t expire() const                    { return m_expire; }
     inline uint64_t rx() const                        { return m_rx; }
     inline uint64_t timestamp() const                 { return m_timestamp; }
-    inline uint64_t tx() const                        { return m_rx; }
+    inline uint64_t tx() const                        { return m_tx; }
     inline uint8_t fixedByte() const                  { return m_fixedByte; }
     inline void close()                               { shutdown(true); }
     inline void setFixedByte(uint8_t fixedByte)       { m_fixedByte = fixedByte; }

@@ -70,9 +70,14 @@ void AccessLog::onEvent(IEvent *event)
 
     case IEvent::CloseType: {
             auto e = static_cast<CloseEvent*>(event);
+            if (e->miner()->mapperId() == -1) {
+                break;
+            }
+
             const double time = (double)(uv_now(uv_default_loop()) - e->miner()->timestamp()) / 1000;
 
-            write("#%" PRId64 " close: %s, time: %03.1fs, count: %" PRIu64, e->miner()->id(), e->miner()->ip(), time, m_stats.data().miners);
+            write("#%" PRId64 " close: %s, time: %03.1fs, rx/tx: %" PRIu64 "/%" PRIu64 ", count: %" PRIu64,
+                  e->miner()->id(), e->miner()->ip(), time, e->miner()->rx(), e->miner()->tx(), m_stats.data().miners);
         }
         break;
 

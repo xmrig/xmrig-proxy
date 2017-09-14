@@ -21,36 +21,47 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __API_H__
-#define __API_H__
+#ifndef __WORKERS_H__
+#define __WORKERS_H__
 
 
-#include <uv.h>
+#include <map>
+#include <string>
 #include <vector>
 
 
+#include "interfaces/IEventListener.h"
 #include "proxy/workers/Worker.h"
 
 
-class ApiState;
-class Hashrate;
-class StatsData;
+class AcceptEvent;
+class CloseEvent;
+class LoginEvent;
+class SubmitEvent;
 
 
-class Api
+class Workers : public IEventListener
 {
 public:
-    static bool start();
-    static void release();
+    Workers();
+    ~Workers();
 
-    static const char *get(const char *url, size_t *size, int *status);
-    static void tick(const StatsData &data);
-    static void tick(const std::vector<Worker> &workers);
+    void tick(uint64_t ticks);
+
+protected:
+    void onEvent(IEvent *event) override;
+    void onRejectedEvent(IEvent *event) override;
 
 private:
-    static ApiState *m_state;
-    static char m_buf[32768];
-    static uv_mutex_t m_mutex;
+    void accept(const AcceptEvent *event);
+    void login(const LoginEvent *event);
+    void reject(const SubmitEvent *event);
+    void remove(const CloseEvent *event);
+
+    std::map<int64_t, size_t> m_miners;
+    std::map<std::string, size_t> m_map;
+    std::vector<Worker> m_workers;
 };
 
-#endif /* __API_H__ */
+
+#endif /* __WORKERS_H__ */

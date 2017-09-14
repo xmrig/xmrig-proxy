@@ -29,7 +29,7 @@
 
 
 ApiState *Api::m_state = nullptr;
-char Api::m_buf[4096];
+char Api::m_buf[32768];
 uv_mutex_t Api::m_mutex;
 
 
@@ -79,5 +79,17 @@ void Api::tick(const StatsData &data)
 
     uv_mutex_lock(&m_mutex);
     m_state->tick(data);
+    uv_mutex_unlock(&m_mutex);
+}
+
+
+void Api::tick(const std::vector<Worker> &workers)
+{
+    if (!m_state) {
+        return;
+    }
+
+    uv_mutex_lock(&m_mutex);
+    m_state->tick(workers);
     uv_mutex_unlock(&m_mutex);
 }

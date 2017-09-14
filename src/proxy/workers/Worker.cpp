@@ -21,36 +21,54 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __API_H__
-#define __API_H__
-
-
-#include <uv.h>
-#include <vector>
+#include <chrono>
 
 
 #include "proxy/workers/Worker.h"
+#include "net/SubmitResult.h"
 
 
-class ApiState;
-class Hashrate;
-class StatsData;
-
-
-class Api
+Worker::Worker() :
+    m_id(0),
+    m_hashrate(4),
+    m_accepted(0),
+    m_connections(0),
+    m_hashes(0),
+    m_invalid(0),
+    m_lastHash(0),
+    m_rejected(0)
 {
-public:
-    static bool start();
-    static void release();
+}
 
-    static const char *get(const char *url, size_t *size, int *status);
-    static void tick(const StatsData &data);
-    static void tick(const std::vector<Worker> &workers);
 
-private:
-    static ApiState *m_state;
-    static char m_buf[32768];
-    static uv_mutex_t m_mutex;
-};
+Worker::Worker(size_t id, const std::string &name, const std::string &ip) :
+    m_id(id),
+    m_ip(ip),
+    m_name(name),
+    m_hashrate(4),
+    m_accepted(0),
+    m_connections(1),
+    m_hashes(0),
+    m_invalid(0),
+    m_lastHash(0),
+    m_rejected(0)
+{
+}
 
-#endif /* __API_H__ */
+
+void Worker::add(const SubmitResult &result)
+{
+    m_accepted++;
+    m_hashes += result.diff;
+
+    m_hashrate.add(result.diff);
+
+    using namespace std::chrono;
+    m_lastHash = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+}
+
+
+void Worker::tick(uint64_t ticks)
+{
+    m_hashrate.tick();
+}

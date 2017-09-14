@@ -84,7 +84,7 @@ const char *ApiState::get(const char *url, size_t *size) const
     getHashrate(reply);
     getMinersSummary(reply);
     getResults(reply);
-//    getConnection(reply);
+    getWorkers(reply);
 
     return finalize(reply, size);
 }
@@ -93,6 +93,12 @@ const char *ApiState::get(const char *url, size_t *size) const
 void ApiState::tick(const StatsData &data)
 {
     m_stats = data;
+}
+
+
+void ApiState::tick(const std::vector<Worker> &workers)
+{
+    m_workers = workers;
 }
 
 
@@ -150,19 +156,6 @@ void ApiState::getHashrate(json_t *reply) const
 }
 
 
-//void ApiState::getConnection(json_t *reply) const
-//{
-//    json_t *connection = json_object();
-
-//    json_object_set(reply,      "connection", connection);
-//    json_object_set(connection, "pool",       json_string(m_network.pool));
-//    json_object_set(connection, "uptime",     json_integer(m_network.connectionTime()));
-//    json_object_set(connection, "ping",       json_integer(m_network.latency()));
-//    json_object_set(connection, "failures",   json_integer(m_network.failures));
-//    json_object_set(connection, "error_log",  json_array());
-//}
-
-
 void ApiState::getIdentify(json_t *reply) const
 {
     json_object_set(reply, "id",        json_string(m_id));
@@ -208,5 +201,32 @@ void ApiState::getResults(json_t *reply) const
 
     for (size_t i = 0; i < m_stats.topDiff.size(); ++i) {
         json_array_append(best, json_integer(m_stats.topDiff[i]));
+    }
+}
+
+
+void ApiState::getWorkers(json_t *reply) const
+{
+    json_t *workers = json_array();
+
+    json_object_set(reply, "workers", workers);
+
+    for (const Worker &worker : m_workers) {
+        json_t *array = json_array();
+        json_array_append(array, json_string(worker.name()));
+        json_array_append(array, json_string(worker.ip()));
+        json_array_append(array, json_integer(worker.connections()));
+        json_array_append(array, json_integer(worker.accepted()));
+        json_array_append(array, json_integer(worker.rejected()));
+        json_array_append(array, json_integer(worker.invalid()));
+        json_array_append(array, json_integer(worker.hashes()));
+        json_array_append(array, json_integer(worker.lastHash()));
+        json_array_append(array, json_real(normalize(worker.hashrate(60))));
+        json_array_append(array, json_real(normalize(worker.hashrate(600))));
+        json_array_append(array, json_real(normalize(worker.hashrate(3600))));
+        json_array_append(array, json_real(normalize(worker.hashrate(3600 * 12))));
+        json_array_append(array, json_real(normalize(worker.hashrate(3600 * 24))));
+
+        json_array_append(workers, array);
     }
 }

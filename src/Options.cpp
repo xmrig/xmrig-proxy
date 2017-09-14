@@ -51,25 +51,28 @@ Options *Options::m_self = nullptr;
 static char const usage[] = "\
 Usage: " APP_ID " [OPTIONS]\n\
 Options:\n\
-  -b, --bind=ADDR       bind to specified address, example \"0.0.0.0:3333\"\n\
-  -o, --url=URL         URL of mining server\n\
-  -O, --userpass=U:P    username:password pair for mining server\n\
-  -u, --user=USERNAME   username for mining server\n\
-  -p, --pass=PASSWORD   password for mining server\n\
-  -r, --retries=N       number of times to retry before switch to backup server (default: 5)\n\
-  -R, --retry-pause=N   time to pause between retries (default: 5)\n\
-      --verbose         verbose output\n\
-      --user-agent      set custom user-agent string for pool\n\
-  -B, --background      run the miner in the background\n\
-  -c, --config=FILE     load a JSON-format configuration file\n\
-  -l, --log-file=FILE   log all output to a file\n"
+  -b, --bind=ADDR          bind to specified address, example \"0.0.0.0:3333\"\n\
+  -o, --url=URL            URL of mining server\n\
+  -O, --userpass=U:P       username:password pair for mining server\n\
+  -u, --user=USERNAME      username for mining server\n\
+  -p, --pass=PASSWORD      password for mining server\n\
+  -r, --retries=N          number of times to retry before switch to backup server (default: 5)\n\
+  -R, --retry-pause=N      time to pause between retries (default: 5)\n\
+      --verbose            verbose output\n\
+      --user-agent=AGENT   set custom user-agent string for pool\n\
+  -B, --background         run the miner in the background\n\
+  -c, --config=FILE        load a JSON-format configuration file\n\
+  -l, --log-file=FILE      log all output to a file\n"
 # ifdef HAVE_SYSLOG_H
 "\
-  -S, --syslog          use system log for output messages\n"
+  -S, --syslog             use system log for output messages\n"
 # endif
 "\
-  -h, --help            display this help and exit\n\
-  -V, --version         output version information and exit\n\
+      --api-port=N         port for the miner API\n\
+      --api-access-token=T access token for API\n\
+      --api-worker-id=ID   custom worker-id for API\n\
+  -h, --help               display this help and exit\n\
+  -V, --version            output version information and exit\n\
 ";
 
 

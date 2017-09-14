@@ -68,6 +68,7 @@ Options:\n\
   -S, --syslog             use system log for output messages\n"
 # endif
 "\
+  -A  --access-log-file=N  log all workers access to a file\n\
       --api-port=N         port for the miner API\n\
       --api-access-token=T access token for API\n\
       --api-worker-id=ID   custom worker-id for API\n\

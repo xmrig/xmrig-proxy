@@ -25,73 +25,23 @@
 #define __COUNTERS_H__
 
 
-#include <uv.h>
-
-
-#include "proxy/Hashrate.h"
+#include <stdint.h>
 
 
 class Counters
 {
 public:
-    enum Stores {
-        Primary,
-        Secondary
-    };
-
-    enum CounterTypes {
-        Connection,
-        Miner,
-        Upstream
-    };
-
-    class Tick
-    {
-    public:
-        inline Tick() : added(0), removed(0), accepted(0) {}
-
-        uint32_t added;
-        uint32_t removed;
-        uint64_t accepted;
-
-        inline void reset() {
-            added    = 0;
-            removed  = 0;
-            accepted = 0;
-        }
-    };
-
-
-    inline static uint64_t accepted()    { return m_hashrate[0].accepted + m_hashrate[1].accepted; }
-    inline static uint64_t connections() { return m_counters[Connection]; }
-    inline static uint64_t miners()      { return m_counters[Miner]; }
-    inline static uint64_t minersMax()   { return m_minersMax; }
-    inline static uint64_t rejected()    { return m_hashrate[0].rejected[0] + m_hashrate[1].rejected[0]; }
-    inline static uint64_t rejected2()   { return m_hashrate[0].rejected[1] + m_hashrate[1].rejected[1];; }
-    inline static uint64_t upstreams()   { return m_counters[Upstream]; }
-
-    static double hashrate(size_t seconds);
-    static void accept(Stores store, size_t id, uint32_t diff, uint64_t ms, bool verbose);
-    static void add(CounterTypes type);
-    static void reject(Stores store, const char *ip, const char *message);
-    static void reject(Stores store, size_t id, uint32_t diff, uint64_t ms, const char *error);
-    static void remove(CounterTypes type);
-    static void start();
-
-    static Tick tick;
-
     static inline void reset()
     {
-        tick.reset();
+        added    = 0;
+        removed  = 0;
+        accepted = 0;
     }
 
-private:
-    static void onTick(uv_timer_t *handle);
 
-    static Hashrate m_hashrate[2];
-    static uint64_t m_counters[3];
-    static uint64_t m_minersMax;
-    static uv_timer_t m_timer;
+    static uint32_t added;
+    static uint32_t removed;
+    static uint64_t accepted;
 };
 
 #endif /* __COUNTERS_H__ */

@@ -1,6 +1,7 @@
 {
     "background": false,
     "log-file": null,
+    "access-log-file": null,
     "retries": 5,
     "retry-pause": 5,
     "syslog": false,
@@ -14,5 +15,10 @@
     ],
     "bind": [
         "0.0.0.0:3333"
-    ]
+    ],
+    "api": {
+        "port": 0,
+        "access-token": null,
+        "worker-id": null
+    }
 }

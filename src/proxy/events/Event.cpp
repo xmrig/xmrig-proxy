@@ -21,34 +21,15 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __HASHRATE_H__
-#define __HASHRATE_H__
+
+#include "proxy/Events.h"
+#include "proxy/events/Event.h"
 
 
-#include <stdint.h>
-#include <vector>
+char Event::m_buf[4096];
 
 
-class Hashrate
+bool Event::exec(IEvent *event)
 {
-public:
-    constexpr static size_t kTickTime = 4;
-
-    Hashrate();
-
-    uint64_t accepted;
-    uint64_t rejected[2];
-    uint64_t shares;
-
-    double calc(size_t seconds);
-    void add(uint32_t diff);
-    void tick();
-
-private:
-    std::vector<uint32_t> m_data;
-    uint32_t m_tickShares;
-    uint64_t m_datetime;
-};
-
-
-#endif /* __HASHRATE_H__ */
+    return Events::exec(event);
+}

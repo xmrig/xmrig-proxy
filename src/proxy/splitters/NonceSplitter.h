@@ -25,46 +25,51 @@
 #define __NONCESPLITTER_H__
 
 
-#include <uv.h>
+#include <stdint.h>
 #include <vector>
 
 
-#include "interfaces/ISplitter.h"
+#include "interfaces/IEventListener.h"
 
 
+class LoginEvent;
 class NonceMapper;
 class Options;
+class SubmitEvent;
+class Stats;
 
 
-class NonceSplitter : public ISplitter
+class NonceSplitter : public IEventListener
 {
 public:
-    NonceSplitter(const Options *options, const char *agent);
+    NonceSplitter(Stats &stats);
     ~NonceSplitter();
 
-protected:
-    void connect() override;
-    void gc() override;
-    void login(Miner *miner, const LoginRequest &request) override;
-    void printConnections() override;
-    void remove(Miner *miner) override;
-    void submit(Miner *miner, const JobResult &request) override;
+    uint32_t activeUpstreams() const;
+    void connect();
+    void gc();
+    void printConnections();
+    void tick();
 
 #   ifdef APP_DEVEL
-    void printState() override;
+    void printState();
 #   endif
+
+protected:
+    void onEvent(IEvent *event) override;
+    inline void onRejectedEvent(IEvent *event) override {}
 
 private:
     constexpr static int kTickInterval = 1 * 1000;
 
     static void onTick(uv_timer_t *handle);
 
-    void tick();
+    void login(LoginEvent *event);
+    void remove(Miner *miner);
+    void submit(SubmitEvent *event);
 
-    const char *m_agent;
-    const Options *m_options;
+    const Stats &m_stats;
     std::vector<NonceMapper*> m_upstreams;
-    uv_timer_t m_timer;
 };
 
 

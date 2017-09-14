@@ -40,17 +40,19 @@ class LoginRequest;
 class Miner;
 class NonceStorage;
 class Options;
+class SubmitEvent;
 class Url;
 
 
 class SubmitCtx
 {
 public:
-    inline SubmitCtx() : id(0), minerId(0) {}
-    inline SubmitCtx(int64_t id, int64_t minerId) : id(id), minerId(minerId) {}
+    inline SubmitCtx() : id(0), minerId(0), miner(nullptr) {}
+    inline SubmitCtx(int64_t id, int64_t minerId) : id(id), minerId(minerId), miner(nullptr) {}
 
     int64_t id;
     int64_t minerId;
+    Miner *miner;
 };
 
 
@@ -65,7 +67,7 @@ public:
     void connect();
     void gc();
     void remove(const Miner *miner);
-    void submit(Miner *miner, const JobResult &request);
+    void submit(SubmitEvent *event);
     void tick(uint64_t now);
 
     inline bool isSuspended() const { return m_suspended; }
@@ -78,9 +80,10 @@ protected:
     void onActive(Client *client) override;
     void onJob(Client *client, const Job &job) override;
     void onPause(IStrategy *strategy) override;
-    void onResultAccepted(Client *client, int64_t seq, uint32_t diff, uint64_t ms, const char *error) override;
+    void onResultAccepted(Client *client, const SubmitResult &result, const char *error) override;
 
 private:
+    SubmitCtx submitCtx(int64_t seq);
     void suspend();
 
     bool m_suspended;

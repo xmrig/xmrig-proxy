@@ -21,24 +21,31 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __IMINERLISTENER_H__
-#define __IMINERLISTENER_H__
+#ifndef __API_H__
+#define __API_H__
 
 
-class JobResult;
-class LoginRequest;
-class Miner;
+#include <uv.h>
 
 
-class IMinerListener
+class ApiState;
+class Hashrate;
+class StatsData;
+
+
+class Api
 {
 public:
-    virtual ~IMinerListener() {}
+    static bool start();
+    static void release();
 
-    virtual void onMinerClose(Miner *miner) = 0;
-    virtual void onMinerLogin(Miner *miner, const LoginRequest &request) = 0;
-    virtual void onMinerSubmit(Miner *miner, const JobResult &request) = 0;
+    static const char *get(const char *url, size_t *size, int *status);
+    static void tick(const StatsData &data);
+
+private:
+    static ApiState *m_state;
+    static char m_buf[4096];
+    static uv_mutex_t m_mutex;
 };
 
-
-#endif // __IMINERLISTENER_H__
+#endif /* __API_H__ */

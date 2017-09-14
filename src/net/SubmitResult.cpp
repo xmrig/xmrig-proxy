@@ -21,20 +21,24 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ISERVERLISTENER_H__
-#define __ISERVERLISTENER_H__
+
+#include <uv.h>
 
 
-class Miner;
+#include "net/SubmitResult.h"
 
 
-class IServerListener
+SubmitResult::SubmitResult(int64_t seq, uint32_t diff, uint64_t actualDiff) :
+    seq(seq),
+    diff(diff),
+    actualDiff(actualDiff),
+    elapsed(0)
 {
-public:
-    virtual ~IServerListener() {}
-
-    virtual void onNewMinerAccepted(Miner *miner) = 0;
-};
+    start = uv_hrtime();
+}
 
 
-#endif // __ISERVERLISTENER_H__
+void SubmitResult::done()
+{
+    elapsed = (uv_hrtime() - start) / 1000000;
+}

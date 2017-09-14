@@ -29,18 +29,20 @@
 #include <uv.h>
 
 
-#include "interfaces/IMinerListener.h"
-#include "interfaces/IServerListener.h"
+#include "proxy/Stats.h"
 
 
-class ISplitter;
+class AccessLog;
 class Miners;
+class NonceSplitter;
 class Options;
+class ProxyDebug;
 class Server;
+class ShareLog;
 class Url;
 
 
-class Proxy : public IServerListener, public IMinerListener
+class Proxy
 {
 public:
     Proxy(const Options *options);
@@ -49,28 +51,32 @@ public:
     void connect();
     void printConnections();
     void printHashrate();
+    void toggleDebug();
 
 #   ifdef APP_DEVEL
     void printState();
 #   endif
 
-protected:
-    void onMinerClose(Miner *miner) override;
-    void onMinerLogin(Miner *miner, const LoginRequest &request) override;
-    void onMinerSubmit(Miner *miner, const JobResult &request) override;
-    void onNewMinerAccepted(Miner *miner) override;
-
 private:
-    constexpr static int kTickInterval = 60 * 1000;
+    constexpr static int kPrintInterval = 10;
+    constexpr static int kGCInterval    = 60;
 
     void bind(const char *ip, uint16_t port);
     void gc();
+    void print();
+    void tick();
 
+    static void onTick(uv_timer_t *handle);
     static void onTimer(uv_timer_t *handle);
 
-    ISplitter *m_splitter;
+    AccessLog *m_accessLog;
     Miners *m_miners;
+    NonceSplitter *m_splitter;
+    ProxyDebug *m_debug;
+    ShareLog *m_shareLog;
+    Stats m_stats;
     std::vector<Server*> m_servers;
+    uint64_t m_ticks;
     uv_timer_t m_timer;
 };
 

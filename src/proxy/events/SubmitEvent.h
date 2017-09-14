@@ -21,31 +21,44 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ISPLITTER_H__
-#define __ISPLITTER_H__
+#ifndef __SUBMITEVENT_H__
+#define __SUBMITEVENT_H__
+
+
+#include "proxy/events/MinerEvent.h"
+#include "proxy/Error.h"
 
 
 class JobResult;
-class LoginRequest;
-class Miner;
 
 
-class ISplitter
+class SubmitEvent : public MinerEvent
 {
 public:
-    virtual ~ISplitter() {}
+    static inline SubmitEvent *create(Miner *miner, const JobResult &request)
+    {
+        return new (m_buf) SubmitEvent(miner, request);
+    }
 
-    virtual void connect() = 0;
-    virtual void gc() = 0;
-    virtual void login(Miner *miner, const LoginRequest &request) = 0;
-    virtual void printConnections() = 0;
-    virtual void remove(Miner *miner) = 0;
-    virtual void submit(Miner *miner, const JobResult &request) = 0;
 
-#   ifdef APP_DEVEL
-    virtual void printState() = 0;
-#   endif
+    const JobResult &request;
+
+
+    inline bool isRejected() const override { return m_error != Error::NoError; }
+    inline const char *message() const      { return Error::toString(m_error); }
+    inline Error::Code error() const        { return m_error; }
+    inline void reject(Error::Code error)   { m_error  = error; }
+
+
+protected:
+    inline SubmitEvent(Miner *miner, const JobResult &request)
+        : MinerEvent(SubmitType, miner),
+          request(request),
+          m_error(Error::NoError)
+    {}
+
+private:
+    Error::Code m_error;
 };
 
-
-#endif // __IWORKER_H__
+#endif /* __SUBMITEVENT_H__ */

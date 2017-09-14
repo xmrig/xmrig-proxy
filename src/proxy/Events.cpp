@@ -22,49 +22,33 @@
  */
 
 
-#include <string.h>
-#include <uv.h>
+#include "proxy/Events.h"
 
 
-#include "proxy/Hashrate.h"
+std::map<IEvent::Type, std::vector<IEventListener*> > Events::m_listeners;
 
 
-
-Hashrate::Hashrate() :
-    accepted(0),
-    shares(0),
-    m_tickShares(0),
-    m_datetime(0)
+bool Events::exec(IEvent *event)
 {
-    memset(rejected, 0, sizeof(rejected));
-}
-
-
-double Hashrate::calc(size_t seconds)
-{
-    const size_t ticks = seconds / kTickTime;
-    const size_t size  = m_data.size();
-
-    uint64_t count = 0;
-    for (size_t i = size < ticks ? 0 : (size - ticks); i < size; ++i) {
-        count += m_data[i];
+    std::vector<IEventListener*> &listeners = m_listeners[event->type()];
+    for (IEventListener *listener : listeners) {
+        event->isRejected() ? listener->onRejectedEvent(event) : listener->onEvent(event);
     }
 
-    return (double) count / (ticks * kTickTime * 1000);
+    const bool rejected = event->isRejected();
+    event->~IEvent();
+
+    return !rejected;
 }
 
 
-void Hashrate::add(uint32_t diff)
+void Events::stop()
 {
-    shares += diff;
-    m_tickShares += diff;
-
-    m_datetime = uv_now(uv_default_loop());
+    m_listeners.clear();
 }
 
 
-void Hashrate::tick()
+void Events::subscribe(IEvent::Type type, IEventListener *listener)
 {
-    m_data.push_back(m_tickShares);
-    m_tickShares = 0;
+    m_listeners[type].push_back(listener);
 }

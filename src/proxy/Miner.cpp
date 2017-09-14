@@ -26,9 +26,13 @@
 
 
 #include "Counters.h"
-#include "interfaces/IMinerListener.h"
 #include "log/Log.h"
 #include "net/Job.h"
+#include "proxy/Error.h"
+#include "proxy/Events.h"
+#include "proxy/events/CloseEvent.h"
+#include "proxy/events/LoginEvent.h"
+#include "proxy/events/SubmitEvent.h"
 #include "proxy/JobResult.h"
 #include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
@@ -39,7 +43,6 @@ static int64_t nextId = 0;
 
 
 Miner::Miner() :
-    m_listener(nullptr),
     m_id(++nextId),
     m_loginId(0),
     m_recvBufPos(0),
@@ -62,15 +65,11 @@ Miner::Miner() :
     m_recvBuf.len  = kRecvBufSize;
 
     memset(m_recvBuf.base, 0, kRecvBufSize);
-
-    Counters::add(Counters::Connection);
 }
 
 
 Miner::~Miner()
 {
-    Counters::remove(Counters::Connection);
-
     m_socket.data = nullptr;
     delete [] m_recvBuf.base;
 }
@@ -96,14 +95,10 @@ bool Miner::accept(uv_stream_t *server)
 }
 
 
-void Miner::reject(int64_t id, const char *message, bool log)
+void Miner::replyWithError(int64_t id, const char *message)
 {
     const size_t size = 64 + strlen(message);
     char *req = static_cast<char*>(malloc(size));
-
-    if (log) {
-        Counters::reject(Counters::Primary, m_ip, message);
-    }
 
     snprintf(req, size, "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"error\":{\"code\":-1,\"message\":\"%s\"}}\n", id, message);
     send(req);
@@ -166,7 +161,7 @@ void Miner::success(int64_t id, const char *status)
 
 bool Miner::parseRequest(int64_t id, const char *method, const json_t *params)
 {
-    if (!method || !json_is_object(params) || !m_listener) {
+    if (!method || !json_is_object(params)) {
         return false;
     }
 
@@ -176,7 +171,7 @@ bool Miner::parseRequest(int64_t id, const char *method, const json_t *params)
             LoginRequest request(id, json_string_value(json_object_get(params, "login")), json_string_value(json_object_get(params, "pass")), json_string_value(json_object_get(params, "agent")));
             m_loginId = id;
 
-            m_listener->onMinerLogin(this, request);
+            LoginEvent::start(this, request);
             return true;
         }
 
@@ -192,22 +187,24 @@ bool Miner::parseRequest(int64_t id, const char *method, const json_t *params)
 
         const char *rpcId = json_string_value(json_object_get(params, "id"));
         if (!rpcId || strncmp(m_rpcId, rpcId, sizeof(m_rpcId)) != 0) {
-            reject(id, "Unauthenticated");
+            replyWithError(id, Error::toString(Error::Unauthenticated));
             return true;
         }
 
         JobResult request(id, json_string_value(json_object_get(params, "job_id")), json_string_value(json_object_get(params, "nonce")), json_string_value(json_object_get(params, "result")));
+        SubmitEvent *event = SubmitEvent::create(this, request);
+
         if (!request.isValid()) {
-            reject(id, "Low difficulty share");
-            return true;
+            event->reject(Error::LowDifficulty);
+        }
+        else if (!request.isCompatible(m_fixedByte)) {
+            event->reject(Error::InvalidNonce);
         }
 
-        if (!request.isCompatible(m_fixedByte)) {
-            reject(id, "Invalid nonce; is miner not compatible with NiceHash?");
-            return false;
+        if (!event->start()) {
+            replyWithError(id, event->message());
         }
 
-        m_listener->onMinerSubmit(this, request);
         return true;
     }
 
@@ -217,7 +214,7 @@ bool Miner::parseRequest(int64_t id, const char *method, const json_t *params)
         return true;
     }
 
-    reject(id, "invalid method");
+    replyWithError(id, Error::toString(Error::InvalidMethod));
     return true;
 }
 
@@ -267,11 +264,6 @@ void Miner::setState(State state)
 
     if (state == ReadyState) {
         heartbeat();
-        Counters::add(Counters::Miner);
-    }
-
-    if (state == ClosingState && m_state == ReadyState) {
-        Counters::remove(Counters::Miner);
     }
 
     m_state = state;
@@ -297,9 +289,7 @@ void Miner::shutdown(bool had_error)
         delete req;
     });
 
-    if (m_listener) {
-        m_listener->onMinerClose(this);
-    }
+    CloseEvent::start(this);
 }
 
 

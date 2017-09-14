@@ -51,64 +51,75 @@ Options *Options::m_self = nullptr;
 static char const usage[] = "\
 Usage: " APP_ID " [OPTIONS]\n\
 Options:\n\
-  -b, --bind=ADDR       bind to specified address, example \"0.0.0.0:3333\"\n\
-  -o, --url=URL         URL of mining server\n\
-  -O, --userpass=U:P    username:password pair for mining server\n\
-  -u, --user=USERNAME   username for mining server\n\
-  -p, --pass=PASSWORD   password for mining server\n\
-  -r, --retries=N       number of times to retry before switch to backup server (default: 5)\n\
-  -R, --retry-pause=N   time to pause between retries (default: 5)\n\
-      --verbose         verbose output\n\
-      --user-agent      set custom user-agent string for pool\n\
-  -B, --background      run the miner in the background\n\
-  -c, --config=FILE     load a JSON-format configuration file\n\
-  -l, --log-file=FILE   log all output to a file\n"
+  -b, --bind=ADDR          bind to specified address, example \"0.0.0.0:3333\"\n\
+  -o, --url=URL            URL of mining server\n\
+  -O, --userpass=U:P       username:password pair for mining server\n\
+  -u, --user=USERNAME      username for mining server\n\
+  -p, --pass=PASSWORD      password for mining server\n\
+  -r, --retries=N          number of times to retry before switch to backup server (default: 5)\n\
+  -R, --retry-pause=N      time to pause between retries (default: 5)\n\
+      --verbose            verbose output\n\
+      --user-agent=AGENT   set custom user-agent string for pool\n\
+  -B, --background         run the miner in the background\n\
+  -c, --config=FILE        load a JSON-format configuration file\n\
+  -l, --log-file=FILE      log all output to a file\n"
 # ifdef HAVE_SYSLOG_H
 "\
-  -S, --syslog          use system log for output messages\n"
+  -S, --syslog             use system log for output messages\n"
 # endif
 "\
-  -h, --help            display this help and exit\n\
-  -V, --version         output version information and exit\n\
+  -A  --access-log-file=N  log all workers access to a file\n\
+      --api-port=N         port for the miner API\n\
+      --api-access-token=T access token for API\n\
+      --api-worker-id=ID   custom worker-id for API\n\
+  -h, --help               display this help and exit\n\
+  -V, --version            output version information and exit\n\
 ";
 
 
-static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:";
+static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:A:";
 
 
 static struct option const options[] = {
-    { "background",    0, nullptr, 'B'  },
-    { "bind",          1, nullptr, 'b'  },
-    { "config",        1, nullptr, 'c'  },
-    { "donate-level",  1, nullptr, 1003 },
-    { "help",          0, nullptr, 'h'  },
-    { "keepalive",     0, nullptr ,'k'  },
-    { "log-file",      1, nullptr, 'l'  },
-    { "no-color",      0, nullptr, 1002 },
-    { "pass",          1, nullptr, 'p'  },
-    { "retries",       1, nullptr, 'r'  },
-    { "retry-pause",   1, nullptr, 'R'  },
-    { "syslog",        0, nullptr, 'S'  },
-    { "url",           1, nullptr, 'o'  },
-    { "user",          1, nullptr, 'u'  },
-    { "user-agent",    1, nullptr, 1008 },
-    { "userpass",      1, nullptr, 'O'  },
-    { "verbose",       0, nullptr, 1100 },
-    { "version",       0, nullptr, 'V'  },
+    { "access-log-file",  1, nullptr, 'A'  },
+    { "api-access-token", 1, nullptr, 4001 },
+    { "api-port",         1, nullptr, 4000 },
+    { "api-worker-id",    1, nullptr, 4002 },
+    { "background",       0, nullptr, 'B'  },
+    { "bind",             1, nullptr, 'b'  },
+    { "config",           1, nullptr, 'c'  },
+    { "debug",            0, nullptr, 1101 },
+    { "donate-level",     1, nullptr, 1003 },
+    { "help",             0, nullptr, 'h'  },
+    { "keepalive",        0, nullptr ,'k'  },
+    { "log-file",         1, nullptr, 'l'  },
+    { "no-color",         0, nullptr, 1002 },
+    { "pass",             1, nullptr, 'p'  },
+    { "retries",          1, nullptr, 'r'  },
+    { "retry-pause",      1, nullptr, 'R'  },
+    { "syslog",           0, nullptr, 'S'  },
+    { "url",              1, nullptr, 'o'  },
+    { "user",             1, nullptr, 'u'  },
+    { "user-agent",       1, nullptr, 1008 },
+    { "userpass",         1, nullptr, 'O'  },
+    { "verbose",          0, nullptr, 1100 },
+    { "version",          0, nullptr, 'V'  },
     { 0, 0, 0, 0 }
 };
 
 
 static struct option const config_options[] = {
-    { "background",    0, nullptr, 'B'  },
-    { "colors",        0, nullptr, 2000 },
-    { "donate-level",  1, nullptr, 1003 },
-    { "log-file",      1, nullptr, 'l'  },
-    { "retries",       1, nullptr, 'r'  },
-    { "retry-pause",   1, nullptr, 'R'  },
-    { "syslog",        0, nullptr, 'S'  },
-    { "user-agent",    1, nullptr, 1008 },
-    { "verbose",       0, nullptr, 1100 },
+    { "access-log-file",  1, nullptr, 'A'  },
+    { "background",       0, nullptr, 'B'  },
+    { "colors",           0, nullptr, 2000 },
+    { "debug",            0, nullptr, 1101 },
+    { "donate-level",     1, nullptr, 1003 },
+    { "log-file",         1, nullptr, 'l'  },
+    { "retries",          1, nullptr, 'r'  },
+    { "retry-pause",      1, nullptr, 'R'  },
+    { "syslog",           0, nullptr, 'S'  },
+    { "user-agent",       1, nullptr, 1008 },
+    { "verbose",          0, nullptr, 1100 },
     { 0, 0, 0, 0 }
 };
 
@@ -119,6 +130,14 @@ static struct option const pool_options[] = {
     { "user",          1, nullptr, 'u'  },
     { "userpass",      1, nullptr, 'O'  },
     { "keepalive",     0, nullptr ,'k'  },
+    { 0, 0, 0, 0 }
+};
+
+
+static struct option const api_options[] = {
+    { "port",          1, nullptr, 4000 },
+    { "access-token",  1, nullptr, 4001 },
+    { "worker-id",     1, nullptr, 4002 },
     { 0, 0, 0, 0 }
 };
 
@@ -139,11 +158,17 @@ Options *Options::parse(int argc, char **argv)
 Options::Options(int argc, char **argv) :
     m_background(false),
     m_colors(true),
+    m_debug(false),
     m_ready(false),
     m_syslog(false),
     m_verbose(false),
+    m_accessLog(nullptr),
+    m_apiToken(nullptr),
+    m_apiWorkerId(nullptr),
     m_logFile(nullptr),
     m_userAgent(nullptr),
+    m_apiPort(0),
+    m_donateLevel(0),
     m_retries(5),
     m_retryPause(5)
 {
@@ -244,15 +269,32 @@ bool Options::parseArg(int key, const char *arg)
         m_logFile = strdup(arg);
         break;
 
+    case 'A': /* --access-log-file **/
+        free(m_accessLog);
+        m_accessLog = strdup(arg);
+        break;
+
+    case 4001: /* --access-token */
+        free(m_apiToken);
+        m_apiToken = strdup(arg);
+        break;
+
+    case 4002: /* --worker-id */
+        free(m_apiWorkerId);
+        m_apiWorkerId = strdup(arg);
+        break;
+
     case 'r':  /* --retries */
     case 'R':  /* --retry-pause */
     case 1003: /* --donate-level */
+    case 4000: /* --api-port */
         return parseArg(key, strtol(arg, nullptr, 10));
 
     case 'B':  /* --background */
     case 'k':  /* --keepalive */
     case 'S':  /* --syslog */
     case 1100: /* --verbose */
+    case 1101: /* --debug */
         return parseBoolean(key, true);
 
     case 1002: /* --no-color */
@@ -307,11 +349,16 @@ bool Options::parseArg(int key, uint64_t arg)
 
     case 1003: /* --donate-level */
         if (arg < 1 || arg > 99) {
-            showUsage(1);
-            return false;
+            return true;
         }
 
         m_donateLevel = (int) arg;
+        break;
+
+    case 4000: /* --api-port */
+        if (arg <= 65536) {
+            m_apiPort = (int) arg;
+        }
         break;
 
     default:
@@ -343,6 +390,10 @@ bool Options::parseBoolean(int key, bool enable)
 
     case 1100: /* --verbose */
         m_verbose = enable;
+        break;
+
+    case 1101: /* --debug */
+        m_debug = enable;
         break;
 
     case 2000: /* colors */
@@ -429,6 +480,13 @@ void Options::parseConfig(const char *fileName)
             if (json_is_string(value)) {
                 parseArg('b', json_string_value(value));
             }
+        }
+    }
+
+    json_t *api = json_object_get(config, "api");
+    if (json_is_object(api)) {
+        for (size_t i = 0; i < ARRAY_SIZE(api_options); i++) {
+            parseJSON(&api_options[i], api);
         }
     }
 

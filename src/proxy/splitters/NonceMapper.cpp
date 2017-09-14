@@ -34,6 +34,9 @@
 #include "net/Url.h"
 #include "Options.h"
 #include "proxy/Counters.h"
+#include "proxy/Error.h"
+#include "proxy/events/AcceptEvent.h"
+#include "proxy/events/SubmitEvent.h"
 #include "proxy/JobResult.h"
 #include "proxy/Miner.h"
 #include "proxy/splitters/NonceMapper.h"
@@ -89,8 +92,6 @@ bool NonceMapper::isActive() const
 void NonceMapper::connect()
 {
     m_suspended = false;
-    Counters::add(Counters::Upstream);
-
     m_strategy->connect();
 }
 
@@ -111,20 +112,20 @@ void NonceMapper::remove(const Miner *miner)
 }
 
 
-void NonceMapper::submit(Miner *miner, const JobResult &request)
+void NonceMapper::submit(SubmitEvent *event)
 {
     if (!m_storage->isActive()) {
-        return miner->reject(request.id, "Bad gateway");
+        return event->reject(Error::BadGateway);
     }
 
-    if (strncmp(m_storage->job().id(), request.jobId, 64) != 0) {
-        return miner->reject(request.id, "Invalid job id");
+    if (strncmp(m_storage->job().id(), event->request.jobId, 64) != 0) {
+        return event->reject(Error::InvalidJobId);
     }
 
-    JobResult req = request;
+    JobResult req = event->request;
     req.diff = m_storage->job().diff();
 
-    m_results[m_strategy->submit(req)] = SubmitCtx(request.id, miner->id());
+    m_results[m_strategy->submit(req)] = SubmitCtx(req.id, event->miner()->id());
 }
 
 
@@ -176,34 +177,40 @@ void NonceMapper::onPause(IStrategy *strategy)
 }
 
 
-void NonceMapper::onResultAccepted(Client *client, int64_t seq, uint32_t diff, uint64_t ms, const char *error)
+void NonceMapper::onResultAccepted(Client *client, const SubmitResult &result, const char *error)
 {
-    if (error) {
-        Counters::reject(Counters::Primary, m_id, diff, ms, error);
-    } else {
-        Counters::accept(Counters::Primary, m_id, diff, ms, m_options->verbose());
-    }
+    const SubmitCtx ctx = submitCtx(result.seq);
 
-    if (!m_results.count(seq)) {
+    AcceptEvent::start(m_id, ctx.miner, result, error);
+
+    if (!ctx.miner) {
         return;
     }
 
-    const SubmitCtx &ctx = m_results[seq];
-
-    Miner *miner = m_storage->miner(ctx.minerId);
-    if (miner) {
-        if (error) {
-            miner->reject(ctx.id, error, false);
-        }
-        else {
-            miner->success(ctx.id, "OK");
-        }
+    if (error) {
+        ctx.miner->replyWithError(ctx.id, error);
     }
+    else {
+        ctx.miner->success(ctx.id, "OK");
+    }
+}
+
+
+SubmitCtx NonceMapper::submitCtx(int64_t seq)
+{
+    if (!m_results.count(seq)) {
+        return SubmitCtx();
+    }
+
+    SubmitCtx ctx = m_results.at(seq);
+    ctx.miner = m_storage->miner(ctx.minerId);
 
     auto it = m_results.find(seq);
     if (it != m_results.end()) {
         m_results.erase(it);
     }
+
+    return std::move(ctx);
 }
 
 
@@ -213,6 +220,4 @@ void NonceMapper::suspend()
     m_storage->setActive(false);
     m_storage->reset();
     m_strategy->stop();
-
-    Counters::remove(Counters::Upstream);
 }

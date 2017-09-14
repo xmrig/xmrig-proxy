@@ -21,8 +21,10 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 #include "net/Job.h"
 #include "proxy/JobResult.h"
+
 
 #include <stdio.h>
 
@@ -31,7 +33,8 @@ JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, const cha
     nonce(nonce),
     result(result),
     id(id),
-    diff(0)
+    diff(0),
+    m_actualDiff(0)
 {
     *this->jobId = '\0';
 
@@ -67,4 +70,17 @@ bool JobResult::isValid() const
     }
 
     return strlen(nonce) == 8 && strlen(jobId) > 0 && strlen(result) == 64;
+}
+
+
+uint64_t JobResult::actualDiff() const
+{
+    if (!m_actualDiff) {
+        uint8_t data[32];
+        Job::fromHex(result, sizeof(data) * 2, data);
+
+        m_actualDiff = Job::toDiff(reinterpret_cast<const uint64_t*>(data)[3]);
+    }
+
+    return m_actualDiff;
 }

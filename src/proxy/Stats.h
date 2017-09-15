@@ -55,7 +55,6 @@ protected:
 private:
     void add(const SubmitResult &result);
 
-
     StatsData m_data;
     TickingCounter<uint32_t> m_hashrate;
 };

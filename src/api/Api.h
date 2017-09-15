@@ -26,6 +26,10 @@
 
 
 #include <uv.h>
+#include <vector>
+
+
+#include "proxy/workers/Worker.h"
 
 
 class ApiState;
@@ -39,12 +43,12 @@ public:
     static bool start();
     static void release();
 
-    static const char *get(const char *url, size_t *size, int *status);
+    static char *get(const char *url, int *status);
     static void tick(const StatsData &data);
+    static void tick(const std::vector<Worker> &workers);
 
 private:
     static ApiState *m_state;
-    static char m_buf[4096];
     static uv_mutex_t m_mutex;
 };
 

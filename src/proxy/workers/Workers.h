@@ -21,42 +21,47 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __APISTATE_H__
-#define __APISTATE_H__
+#ifndef __WORKERS_H__
+#define __WORKERS_H__
 
 
-#include "jansson.h"
-#include "proxy/StatsData.h"
+#include <map>
+#include <string>
+#include <vector>
+
+
+#include "interfaces/IEventListener.h"
 #include "proxy/workers/Worker.h"
 
 
-class Hashrate;
+class AcceptEvent;
+class CloseEvent;
+class LoginEvent;
+class SubmitEvent;
 
 
-class ApiState
+class Workers : public IEventListener
 {
 public:
-    ApiState();
-    ~ApiState();
+    Workers();
+    ~Workers();
 
-    char *get(const char *url, int *status) const;
-    void tick(const StatsData &data);
-    void tick(const std::vector<Worker> &workers);
+    void tick(uint64_t ticks);
+
+protected:
+    void onEvent(IEvent *event) override;
+    void onRejectedEvent(IEvent *event) override;
 
 private:
-    char *finalize(json_t *reply) const;
-    void genId();
-    void getHashrate(json_t *reply) const;
-    void getIdentify(json_t *reply) const;
-    void getMiner(json_t *reply) const;
-    void getMinersSummary(json_t *reply) const;
-    void getResults(json_t *reply) const;
-    void getWorkers(json_t *reply) const;
+    void accept(const AcceptEvent *event);
+    void login(const LoginEvent *event);
+    void reject(const SubmitEvent *event);
+    void remove(const CloseEvent *event);
 
-    char m_id[17];
-    char m_workerId[128];
-    StatsData m_stats;
+    std::map<int64_t, size_t> m_miners;
+    std::map<std::string, size_t> m_map;
     std::vector<Worker> m_workers;
 };
 
-#endif /* __APISTATE_H__ */
+
+#endif /* __WORKERS_H__ */

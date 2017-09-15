@@ -21,42 +21,54 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __APISTATE_H__
-#define __APISTATE_H__
+#include <chrono>
 
 
-#include "jansson.h"
-#include "proxy/StatsData.h"
 #include "proxy/workers/Worker.h"
+#include "net/SubmitResult.h"
 
 
-class Hashrate;
-
-
-class ApiState
+Worker::Worker() :
+    m_id(0),
+    m_hashrate(4),
+    m_accepted(0),
+    m_connections(0),
+    m_hashes(0),
+    m_invalid(0),
+    m_lastHash(0),
+    m_rejected(0)
 {
-public:
-    ApiState();
-    ~ApiState();
+}
 
-    char *get(const char *url, int *status) const;
-    void tick(const StatsData &data);
-    void tick(const std::vector<Worker> &workers);
 
-private:
-    char *finalize(json_t *reply) const;
-    void genId();
-    void getHashrate(json_t *reply) const;
-    void getIdentify(json_t *reply) const;
-    void getMiner(json_t *reply) const;
-    void getMinersSummary(json_t *reply) const;
-    void getResults(json_t *reply) const;
-    void getWorkers(json_t *reply) const;
+Worker::Worker(size_t id, const std::string &name, const std::string &ip) :
+    m_id(id),
+    m_ip(ip),
+    m_name(name),
+    m_hashrate(4),
+    m_accepted(0),
+    m_connections(1),
+    m_hashes(0),
+    m_invalid(0),
+    m_lastHash(0),
+    m_rejected(0)
+{
+}
 
-    char m_id[17];
-    char m_workerId[128];
-    StatsData m_stats;
-    std::vector<Worker> m_workers;
-};
 
-#endif /* __APISTATE_H__ */
+void Worker::add(const SubmitResult &result)
+{
+    m_accepted++;
+    m_hashes += result.diff;
+
+    m_hashrate.add(result.diff);
+
+    using namespace std::chrono;
+    m_lastHash = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+}
+
+
+void Worker::tick(uint64_t ticks)
+{
+    m_hashrate.tick();
+}

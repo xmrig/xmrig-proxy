@@ -40,6 +40,7 @@ class ProxyDebug;
 class Server;
 class ShareLog;
 class Url;
+class Workers;
 
 
 class Proxy
@@ -78,6 +79,7 @@ private:
     std::vector<Server*> m_servers;
     uint64_t m_ticks;
     uv_timer_t m_timer;
+    Workers *m_workers;
 };
 
 

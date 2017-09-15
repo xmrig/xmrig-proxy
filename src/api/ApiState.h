@@ -39,12 +39,12 @@ public:
     ApiState();
     ~ApiState();
 
-    const char *get(const char *url, size_t *size) const;
+    char *get(const char *url, int *status) const;
     void tick(const StatsData &data);
     void tick(const std::vector<Worker> &workers);
 
 private:
-    const char *finalize(json_t *reply, size_t *size) const;
+    char *finalize(json_t *reply) const;
     void genId();
     void getHashrate(json_t *reply) const;
     void getIdentify(json_t *reply) const;
@@ -55,7 +55,6 @@ private:
 
     char m_id[17];
     char m_workerId[128];
-    mutable char m_buf[32768];
     StatsData m_stats;
     std::vector<Worker> m_workers;
 };

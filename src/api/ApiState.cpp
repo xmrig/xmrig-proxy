@@ -75,7 +75,7 @@ ApiState::~ApiState()
 }
 
 
-const char *ApiState::get(const char *url, size_t *size) const
+char *ApiState::get(const char *url, int *status) const
 {
     json_t *reply = json_object();
 
@@ -86,7 +86,7 @@ const char *ApiState::get(const char *url, size_t *size) const
     getResults(reply);
     getWorkers(reply);
 
-    return finalize(reply, size);
+    return finalize(reply);
 }
 
 
@@ -102,12 +102,12 @@ void ApiState::tick(const std::vector<Worker> &workers)
 }
 
 
-const char *ApiState::finalize(json_t *reply, size_t *size) const
+char *ApiState::finalize(json_t *reply) const
 {
-    *size = json_dumpb(reply, m_buf, sizeof(m_buf) - 1, JSON_INDENT(4) | JSON_REAL_PRECISION(15));
-
+    char *buf = json_dumps(reply, JSON_INDENT(4) | JSON_REAL_PRECISION(15));
     json_decref(reply);
-    return m_buf;
+
+    return buf;
 }
 
 

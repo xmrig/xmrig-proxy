@@ -212,6 +212,10 @@ void ApiState::getWorkers(json_t *reply) const
     json_object_set(reply, "workers", workers);
 
     for (const Worker &worker : m_workers) {
+        if (worker.connections() == 0 && worker.lastHash() == 0) {
+            continue;
+        }
+
         json_t *array = json_array();
         json_array_append(array, json_string(worker.name()));
         json_array_append(array, json_string(worker.ip()));

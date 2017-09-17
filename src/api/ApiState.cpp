@@ -79,12 +79,17 @@ char *ApiState::get(const char *url, int *status) const
 {
     json_t *reply = json_object();
 
+    if (strncmp(url, "/workers.json", 13) == 0) {
+        getHashrate(reply);
+        getWorkers(reply);
+
+        return finalize(reply);
+    }
+
     getIdentify(reply);
     getMiner(reply);
-    getHashrate(reply);
     getMinersSummary(reply);
     getResults(reply);
-    getWorkers(reply);
 
     return finalize(reply);
 }

@@ -313,7 +313,7 @@ void Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
     miner->m_recvBufPos += nread;
 
     char* end;
-    char* start = miner->m_recvBuf.base;
+    char* start = buf->base;
     size_t remaining = miner->m_recvBufPos;
 
     while ((end = static_cast<char*>(memchr(start, '\n', remaining))) != nullptr) {
@@ -330,11 +330,11 @@ void Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
         return;
     }
 
-    if (start == miner->m_recvBuf.base) {
+    if (start == buf->base) {
         return;
     }
 
-    memcpy(miner->m_recvBuf.base, start, remaining);
+    memcpy(buf->base, start, remaining);
     miner->m_recvBufPos = remaining;
 }
 

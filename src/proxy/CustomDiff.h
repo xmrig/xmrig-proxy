@@ -21,68 +21,29 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __PROXY_H__
-#define __PROXY_H__
+#ifndef __CUSTOMDIFF_H__
+#define __CUSTOMDIFF_H__
 
 
-#include <vector>
-#include <uv.h>
+#include "interfaces/IEventListener.h"
 
 
-#include "proxy/CustomDiff.h"
-#include "proxy/Stats.h"
+class LoginEvent;
 
 
-class AccessLog;
-class Miners;
-class NonceSplitter;
-class Options;
-class ProxyDebug;
-class Server;
-class ShareLog;
-class Url;
-class Workers;
-
-
-class Proxy
+class CustomDiff : public IEventListener
 {
 public:
-    Proxy(const Options *options);
-    ~Proxy();
+    CustomDiff();
+    ~CustomDiff();
 
-    void connect();
-    void printConnections();
-    void printHashrate();
-    void toggleDebug();
-
-#   ifdef APP_DEVEL
-    void printState();
-#   endif
+protected:
+    void onEvent(IEvent *event) override;
+    inline void onRejectedEvent(IEvent *event) override {}
 
 private:
-    constexpr static int kPrintInterval = 10;
-    constexpr static int kGCInterval    = 60;
-
-    void bind(const char *ip, uint16_t port);
-    void gc();
-    void print();
-    void tick();
-
-    static void onTick(uv_timer_t *handle);
-    static void onTimer(uv_timer_t *handle);
-
-    AccessLog *m_accessLog;
-    CustomDiff m_customDiff;
-    Miners *m_miners;
-    NonceSplitter *m_splitter;
-    ProxyDebug *m_debug;
-    ShareLog *m_shareLog;
-    Stats m_stats;
-    std::vector<Server*> m_servers;
-    uint64_t m_ticks;
-    uv_timer_t m_timer;
-    Workers *m_workers;
+    void login(LoginEvent *event);
 };
 
 
-#endif /* __PROXY_H__ */
+#endif /* __CUSTOMDIFF_H__ */

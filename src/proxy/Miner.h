@@ -65,7 +65,7 @@ public:
     inline uint64_t tx() const                        { return m_tx; }
     inline uint8_t fixedByte() const                  { return m_fixedByte; }
     inline void close()                               { shutdown(true); }
-    inline void setcustomDiff(uint64_t diff)          { m_customDiff = diff; }
+    inline void setCustomDiff(uint64_t diff)          { m_customDiff = diff; }
     inline void setFixedByte(uint8_t fixedByte)       { m_fixedByte = fixedByte; }
     inline void setMapperId(ssize_t mapperId)         { m_mapperId = mapperId; }
 

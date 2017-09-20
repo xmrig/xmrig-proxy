@@ -36,6 +36,7 @@ set(HEADERS
     src/Platform.h
     src/proxy/Addr.h
     src/proxy/Counters.h
+    src/proxy/CustomDiff.h
     src/proxy/Error.h
     src/proxy/Events.h
     src/proxy/events/AcceptEvent.h
@@ -85,6 +86,7 @@ set(SOURCES
     src/Options.cpp
     src/Platform.cpp
     src/proxy/Counters.cpp
+    src/proxy/CustomDiff.cpp
     src/proxy/Error.cpp
     src/proxy/Events.cpp
     src/proxy/events/ConnectionEvent.h

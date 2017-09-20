@@ -71,6 +71,7 @@ Proxy::Proxy(const Options *options) :
     Events::subscribe(IEvent::CloseType, m_accessLog);
     Events::subscribe(IEvent::CloseType, m_workers);
 
+    Events::subscribe(IEvent::LoginType, &m_customDiff);
     Events::subscribe(IEvent::LoginType, m_splitter);
     Events::subscribe(IEvent::LoginType, &m_stats);
     Events::subscribe(IEvent::LoginType, m_accessLog);

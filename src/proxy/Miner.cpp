@@ -136,23 +136,25 @@ void Miner::setJob(Job &job)
 
     memcpy(job.rawBlob() + 84, req, 2);
 
+    m_diff = job.diff();
+    bool customDiff = false;
+
     char target[9];
-    if (m_customDiff) {
+    if (m_customDiff && m_customDiff < m_diff) {
         const uint64_t t = 0xFFFFFFFFFFFFFFFFULL / m_customDiff;
         Job::toHex(reinterpret_cast<const unsigned char *>(&t) + 4, 4, target);
         target[8] = '\0';
+        customDiff = true;
     }
-
-    m_diff = job.diff();
 
     if (m_state == WaitReadyState) {
         setState(ReadyState);
         snprintf(req, size, "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"result\":{\"id\":\"%s\",\"job\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx\",\"target\":\"%s\"},\"status\":\"OK\"}}\n",
-                 m_loginId, m_rpcId, job.rawBlob(), job.id(), m_fixedByte, m_customDiff ? target : job.rawTarget());
+                 m_loginId, m_rpcId, job.rawBlob(), job.id(), m_fixedByte, customDiff ? target : job.rawTarget());
     }
     else {
         snprintf(req, size, "{\"jsonrpc\":\"2.0\",\"method\":\"job\",\"params\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx\",\"target\":\"%s\"}}\n",
-                 job.rawBlob(), job.id(), m_fixedByte, m_customDiff ? target : job.rawTarget());
+                 job.rawBlob(), job.id(), m_fixedByte, customDiff ? target : job.rawTarget());
     }
 
     send(req);

@@ -21,68 +21,58 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __PROXY_H__
-#define __PROXY_H__
 
-
-#include <vector>
-#include <uv.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
 
 
 #include "proxy/CustomDiff.h"
-#include "proxy/Stats.h"
+#include "proxy/events/LoginEvent.h"
+#include "proxy/LoginRequest.h"
+#include "proxy/Miner.h"
 
 
-class AccessLog;
-class Miners;
-class NonceSplitter;
-class Options;
-class ProxyDebug;
-class Server;
-class ShareLog;
-class Url;
-class Workers;
-
-
-class Proxy
+CustomDiff::CustomDiff()
 {
-public:
-    Proxy(const Options *options);
-    ~Proxy();
-
-    void connect();
-    void printConnections();
-    void printHashrate();
-    void toggleDebug();
-
-#   ifdef APP_DEVEL
-    void printState();
-#   endif
-
-private:
-    constexpr static int kPrintInterval = 10;
-    constexpr static int kGCInterval    = 60;
-
-    void bind(const char *ip, uint16_t port);
-    void gc();
-    void print();
-    void tick();
-
-    static void onTick(uv_timer_t *handle);
-    static void onTimer(uv_timer_t *handle);
-
-    AccessLog *m_accessLog;
-    CustomDiff m_customDiff;
-    Miners *m_miners;
-    NonceSplitter *m_splitter;
-    ProxyDebug *m_debug;
-    ShareLog *m_shareLog;
-    Stats m_stats;
-    std::vector<Server*> m_servers;
-    uint64_t m_ticks;
-    uv_timer_t m_timer;
-    Workers *m_workers;
-};
+}
 
 
-#endif /* __PROXY_H__ */
+CustomDiff::~CustomDiff()
+{
+}
+
+
+void CustomDiff::onEvent(IEvent *event)
+{
+    switch (event->type())
+    {
+    case IEvent::LoginType:
+        login(static_cast<LoginEvent*>(event));
+        break;
+
+    default:
+        break;
+    }
+}
+
+
+
+void CustomDiff::login(LoginEvent *event)
+{
+    if (!event->request.login()) {
+        return;
+    }
+
+    const char *str = strrchr(event->request.login(), '+');
+    if (!str) {
+        return;
+    }
+
+    const unsigned long diff = strtoul(str + 1, nullptr, 10);
+    if (diff < 100 || diff >= INT_MAX) {
+        return;
+    }
+
+    event->miner()->setCustomDiff(diff);
+}

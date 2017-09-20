@@ -48,7 +48,8 @@ Miner::Miner() :
     m_recvBufPos(0),
     m_mapperId(-1),
     m_state(WaitLoginState),
-    m_realmId(0),
+    m_customDiff(0),
+    m_diff(0),
     m_expire(uv_now(uv_default_loop()) + kLoginTimeout),
     m_rx(0),
     m_timestamp(uv_now(uv_default_loop())),
@@ -135,14 +136,23 @@ void Miner::setJob(Job &job)
 
     memcpy(job.rawBlob() + 84, req, 2);
 
+    char target[9];
+    if (m_customDiff) {
+        const uint64_t t = 0xFFFFFFFFFFFFFFFFULL / m_customDiff;
+        Job::toHex(reinterpret_cast<const unsigned char *>(&t) + 4, 4, target);
+        target[8] = '\0';
+    }
+
+    m_diff = job.diff();
+
     if (m_state == WaitReadyState) {
         setState(ReadyState);
         snprintf(req, size, "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"result\":{\"id\":\"%s\",\"job\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx\",\"target\":\"%s\"},\"status\":\"OK\"}}\n",
-                 m_loginId, m_rpcId, job.rawBlob(), job.id(), m_fixedByte, job.rawTarget());
+                 m_loginId, m_rpcId, job.rawBlob(), job.id(), m_fixedByte, m_customDiff ? target : job.rawTarget());
     }
     else {
         snprintf(req, size, "{\"jsonrpc\":\"2.0\",\"method\":\"job\",\"params\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx\",\"target\":\"%s\"}}\n",
-                 job.rawBlob(), job.id(), m_fixedByte, job.rawTarget());
+                 job.rawBlob(), job.id(), m_fixedByte, m_customDiff ? target : job.rawTarget());
     }
 
     send(req);
@@ -194,11 +204,16 @@ bool Miner::parseRequest(int64_t id, const char *method, const json_t *params)
         JobResult request(id, json_string_value(json_object_get(params, "job_id")), json_string_value(json_object_get(params, "nonce")), json_string_value(json_object_get(params, "result")));
         SubmitEvent *event = SubmitEvent::create(this, request);
 
-        if (!request.isValid()) {
+        if (!request.isValid() || request.actualDiff() < diff()) {
             event->reject(Error::LowDifficulty);
         }
         else if (!request.isCompatible(m_fixedByte)) {
             event->reject(Error::InvalidNonce);
+        }
+
+        if (m_customDiff && request.actualDiff() < m_diff) {
+            success(id, "OK");
+            return true;
         }
 
         if (!event->start()) {

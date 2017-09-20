@@ -25,6 +25,7 @@
 #define __MINER_H__
 
 
+#include <algorithm>
 #include <jansson.h>
 #include <uv.h>
 
@@ -56,16 +57,17 @@ public:
     inline int64_t id() const                         { return m_id; }
     inline ssize_t mapperId() const                   { return m_mapperId; }
     inline State state() const                        { return m_state; }
-    inline uint32_t realmId() const                   { return m_realmId; }
+    inline uint64_t customDiff() const                { return m_customDiff; }
+    inline uint64_t diff() const                      { return (m_customDiff ? std::min(m_customDiff, m_diff) : m_diff); }
     inline uint64_t expire() const                    { return m_expire; }
     inline uint64_t rx() const                        { return m_rx; }
     inline uint64_t timestamp() const                 { return m_timestamp; }
     inline uint64_t tx() const                        { return m_tx; }
     inline uint8_t fixedByte() const                  { return m_fixedByte; }
     inline void close()                               { shutdown(true); }
+    inline void setcustomDiff(uint64_t diff)          { m_customDiff = diff; }
     inline void setFixedByte(uint8_t fixedByte)       { m_fixedByte = fixedByte; }
     inline void setMapperId(ssize_t mapperId)         { m_mapperId = mapperId; }
-    inline void setRealmId(uint32_t realmId)          { m_realmId = realmId; }
 
 private:
     constexpr static size_t kLoginTimeout  = 10 * 1000;
@@ -91,7 +93,8 @@ private:
     size_t m_recvBufPos;
     ssize_t m_mapperId;
     State m_state;
-    uint32_t m_realmId;
+    uint64_t m_customDiff;
+    uint64_t m_diff;
     uint64_t m_expire;
     uint64_t m_rx;
     uint64_t m_timestamp;

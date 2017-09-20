@@ -25,7 +25,6 @@
 #include <string.h>
 
 
-#include "log/Log.h"
 #include "net/Job.h"
 
 

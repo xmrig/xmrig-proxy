@@ -58,6 +58,7 @@ Options:\n\
   -p, --pass=PASSWORD      password for mining server\n\
   -r, --retries=N          number of times to retry before switch to backup server (default: 5)\n\
   -R, --retry-pause=N      time to pause between retries (default: 5)\n\
+      --diff=N             override pool diff\n\
       --verbose            verbose output\n\
       --user-agent=AGENT   set custom user-agent string for pool\n\
   -B, --background         run the miner in the background\n\
@@ -89,6 +90,7 @@ static struct option const options[] = {
     { "bind",             1, nullptr, 'b'  },
     { "config",           1, nullptr, 'c'  },
     { "debug",            0, nullptr, 1101 },
+    { "diff",             1, nullptr, 1102 },
     { "donate-level",     1, nullptr, 1003 },
     { "help",             0, nullptr, 'h'  },
     { "keepalive",        0, nullptr ,'k'  },
@@ -113,6 +115,7 @@ static struct option const config_options[] = {
     { "background",       0, nullptr, 'B'  },
     { "colors",           0, nullptr, 2000 },
     { "debug",            0, nullptr, 1101 },
+    { "diff",             1, nullptr, 1102 },
     { "donate-level",     1, nullptr, 1003 },
     { "log-file",         1, nullptr, 'l'  },
     { "retries",          1, nullptr, 'r'  },
@@ -170,7 +173,8 @@ Options::Options(int argc, char **argv) :
     m_apiPort(0),
     m_donateLevel(0),
     m_retries(5),
-    m_retryPause(5)
+    m_retryPause(5),
+    m_diff(0)
 {
     m_pools.push_back(new Url());
 
@@ -287,6 +291,7 @@ bool Options::parseArg(int key, const char *arg)
     case 'r':  /* --retries */
     case 'R':  /* --retry-pause */
     case 1003: /* --donate-level */
+    case 1102: /* --diff */
     case 4000: /* --api-port */
         return parseArg(key, strtol(arg, nullptr, 10));
 
@@ -358,6 +363,12 @@ bool Options::parseArg(int key, uint64_t arg)
     case 4000: /* --api-port */
         if (arg <= 65536) {
             m_apiPort = (int) arg;
+        }
+        break;
+
+    case 1102: /* --diff */
+        if (arg >= 100 && arg < INT_MAX) {
+            m_diff = arg;
         }
         break;
 

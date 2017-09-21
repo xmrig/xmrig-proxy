@@ -59,6 +59,7 @@ public:
     inline int donateLevel() const                 { return m_donateLevel; }
     inline int retries() const                     { return m_retries; }
     inline int retryPause() const                  { return m_retryPause; }
+    inline uint64_t diff() const                   { return m_diff; }
     inline void setVerbose(bool verbose)           { m_verbose = verbose; }
     inline void toggleVerbose()                    { m_verbose = !m_verbose; }
 
@@ -98,6 +99,7 @@ private:
     int m_retryPause;
     std::vector<Addr*> m_addrs;
     std::vector<Url*> m_pools;
+    uint64_t m_diff;
 };
 
 #endif /* __OPTIONS_H__ */

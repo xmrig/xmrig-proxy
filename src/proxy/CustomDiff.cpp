@@ -27,6 +27,7 @@
 #include <string.h>
 
 
+#include "Options.h"
 #include "proxy/CustomDiff.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/LoginRequest.h"
@@ -60,6 +61,8 @@ void CustomDiff::onEvent(IEvent *event)
 
 void CustomDiff::login(LoginEvent *event)
 {
+    event->miner()->setCustomDiff(Options::i()->diff());
+
     if (!event->request.login()) {
         return;
     }

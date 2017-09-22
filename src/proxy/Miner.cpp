@@ -130,7 +130,7 @@ void Miner::send(char *data)
 
 void Miner::setJob(Job &job)
 {
-    const size_t size = 384;
+    const size_t size = 512;
     char *req = static_cast<char*>(malloc(size));
     snprintf(req, 4, "%02hhx", m_fixedByte);
 

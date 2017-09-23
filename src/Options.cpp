@@ -23,6 +23,7 @@
 
 
 #include <jansson.h>
+#include <limits.h>
 #include <string.h>
 #include <uv.h>
 

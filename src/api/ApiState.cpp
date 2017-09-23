@@ -88,6 +88,7 @@ char *ApiState::get(const char *url, int *status) const
 
     getIdentify(reply);
     getMiner(reply);
+    getHashrate(reply);
     getMinersSummary(reply);
     getResults(reply);
 

@@ -70,7 +70,7 @@ void Server::onConnection(uv_stream_t *server, int status)
     }
 
     if (!miner->accept(server)) {
-        delete miner;
+        //delete miner;
         return;
     }
 

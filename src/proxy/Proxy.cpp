@@ -188,7 +188,7 @@ void Proxy::tick()
         print();
     }
 
-    m_splitter->tick();
+    m_splitter->tick(m_ticks);
     m_workers->tick(m_ticks);
 }
 

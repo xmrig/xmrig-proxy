@@ -21,53 +21,47 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __NONCESPLITTER_H__
-#define __NONCESPLITTER_H__
+#ifndef __DONATESTRATEGY_H__
+#define __DONATESTRATEGY_H__
 
 
-#include <stdint.h>
-#include <vector>
+#include "interfaces/IClientListener.h"
+#include "interfaces/IStrategy.h"
 
 
-#include "interfaces/IEventListener.h"
+class Client;
+class IStrategyListener;
+class Url;
 
 
-class LoginEvent;
-class Miner;
-class NonceMapper;
-class Options;
-class Stats;
-class SubmitEvent;
-
-
-class NonceSplitter : public IEventListener
+class DonateStrategy : public IStrategy, public IClientListener
 {
 public:
-    NonceSplitter(Stats &stats);
-    ~NonceSplitter();
+    DonateStrategy(const char *agent, IStrategyListener *listener);
+    bool reschedule();
 
-    uint32_t activeUpstreams() const;
-    void connect();
-    void gc();
-    void printConnections();
-    void tick(uint64_t ticks);
+    inline bool isActive() const override  { return m_active; }
+    inline void resume() override          {}
 
-#   ifdef APP_DEVEL
-    void printState();
-#   endif
+    int64_t submit(const JobResult &result) override;
+    void connect() override;
+    void stop() override;
+    void tick(uint64_t now) override;
 
 protected:
-    void onEvent(IEvent *event) override;
-    inline void onRejectedEvent(IEvent *event) override {}
+    void onClose(Client *client, int failures) override;
+    void onJobReceived(Client *client, const Job &job) override;
+    void onLoginSuccess(Client *client) override;
+    void onResultAccepted(Client *client, const SubmitResult &result, const char *error) override;
 
 private:
-    void login(LoginEvent *event);
-    void remove(Miner *miner);
-    void submit(SubmitEvent *event);
-
-    const Stats &m_stats;
-    std::vector<NonceMapper*> m_upstreams;
+    bool m_active;
+    bool m_suspended;
+    Client *m_client;
+    IStrategyListener *m_listener;
+    uint64_t m_donateTicks;
+    uint64_t m_target;
+    uint64_t m_ticks;
 };
 
-
-#endif /* __PROXY_H__ */
+#endif /* __SINGLEPOOLSTRATEGY_H__ */

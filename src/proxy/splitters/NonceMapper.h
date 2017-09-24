@@ -34,6 +34,7 @@
 #include "net/Job.h"
 
 
+class DonateStrategy;
 class IStrategy;
 class JobResult;
 class LoginRequest;
@@ -64,11 +65,11 @@ public:
 
     bool add(Miner *miner, const LoginRequest &request);
     bool isActive() const;
-    void connect();
     void gc();
     void remove(const Miner *miner);
+    void start();
     void submit(SubmitEvent *event);
-    void tick(uint64_t now);
+    void tick(uint64_t ticks, uint64_t now);
 
     inline bool isSuspended() const { return m_suspended; }
 
@@ -84,11 +85,13 @@ protected:
 
 private:
     SubmitCtx submitCtx(int64_t seq);
+    void connect();
     void suspend();
 
     bool m_suspended;
     const char *m_agent;
     const Options *m_options;
+    DonateStrategy *m_donate;
     IStrategy *m_strategy;
     NonceStorage *m_storage;
     size_t m_id;

@@ -60,7 +60,7 @@ public:
 #   endif
 
 private:
-    constexpr static int kPrintInterval = 10;
+    constexpr static int kPrintInterval = 60;
     constexpr static int kGCInterval    = 60;
 
     void bind(const char *ip, uint16_t port);

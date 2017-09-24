@@ -51,6 +51,7 @@ public:
     inline const char *accessLog() const           { return m_accessLog; }
     inline const char *apiToken() const            { return m_apiToken; }
     inline const char *apiWorkerId() const         { return m_apiWorkerId; }
+    inline const char *coin() const                { return m_userAgent; }
     inline const char *logFile() const             { return m_logFile; }
     inline const char *userAgent() const           { return m_userAgent; }
     inline const std::vector<Addr*> &addrs() const { return m_addrs; }
@@ -91,6 +92,7 @@ private:
     char *m_accessLog;
     char *m_apiToken;
     char *m_apiWorkerId;
+    char *m_coin;
     char *m_logFile;
     char *m_userAgent;
     int m_apiPort;

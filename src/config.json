@@ -4,6 +4,9 @@
     "access-log-file": null,
     "retries": 5,
     "retry-pause": 5,
+    "donate-level": 2,
+    "coin": "xmr",
+    "custom-diff": 0,
     "syslog": false,
     "verbose": false,
     "pools": [

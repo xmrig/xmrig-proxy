@@ -71,7 +71,7 @@ void NonceSplitter::connect()
     auto upstream = new NonceMapper(m_upstreams.size(), Options::i(), Platform::userAgent());
     m_upstreams.push_back(upstream);
 
-    upstream->connect();
+    upstream->start();
 }
 
 
@@ -120,12 +120,12 @@ void NonceSplitter::printConnections()
 }
 
 
-void NonceSplitter::tick()
+void NonceSplitter::tick(uint64_t ticks)
 {
     const uint64_t now = uv_now(uv_default_loop());
 
     for (NonceMapper *mapper : m_upstreams) {
-        mapper->tick(now);
+        mapper->tick(ticks, now);
     }
 }
 
@@ -159,12 +159,6 @@ void NonceSplitter::onEvent(IEvent *event)
     default:
         break;
     }
-}
-
-
-void NonceSplitter::onTick(uv_timer_t *handle)
-{
-    static_cast<NonceSplitter*>(handle->data)->tick();
 }
 
 

@@ -58,7 +58,7 @@ public:
     inline ssize_t mapperId() const                   { return m_mapperId; }
     inline State state() const                        { return m_state; }
     inline uint64_t customDiff() const                { return m_customDiff; }
-    inline uint64_t diff() const                      { return (m_customDiff ? std::min(m_customDiff, m_diff) : m_diff); }
+    inline uint64_t diff() const                      { return (m_customDiff ? (std::min)(m_customDiff, m_diff) : m_diff); }
     inline uint64_t expire() const                    { return m_expire; }
     inline uint64_t rx() const                        { return m_rx; }
     inline uint64_t timestamp() const                 { return m_timestamp; }

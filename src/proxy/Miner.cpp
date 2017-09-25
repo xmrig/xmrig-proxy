@@ -295,6 +295,9 @@ void Miner::shutdown(bool had_error)
 
     setState(ClosingState);
 
+    uv_read_stop(reinterpret_cast<uv_stream_t*>(&m_socket));
+    CloseEvent::start(this);
+
     uv_shutdown_t* req = new uv_shutdown_t;
     uv_shutdown(req, reinterpret_cast<uv_stream_t*>(&m_socket), [](uv_shutdown_t* req, int status) {
         if (uv_is_closing(reinterpret_cast<uv_handle_t*>(req->handle)) == 0) {
@@ -305,8 +308,6 @@ void Miner::shutdown(bool had_error)
 
         delete req;
     });
-
-    CloseEvent::start(this);
 }
 
 

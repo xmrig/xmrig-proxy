@@ -163,6 +163,10 @@ void NonceMapper::onActive(Client *client)
 {
     m_storage->setActive(true);
 
+    if (client->id() == -1) {
+        return;
+    }
+
     LOG_INFO(m_options->colors() ? "#%03u \x1B[01;37muse pool \x1B[01;36m%s:%d \x1B[01;30m%s" : "#%03u use pool %s:%d %s",
              m_id, client->host(), client->port(), client->ip());
 }

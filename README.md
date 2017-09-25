@@ -58,7 +58,8 @@ For failover you can add multiple pools, maximum count not limited.
 ```
 
 ## Donations
-Proxy at this moment does not contain any developer fee. It may added in future or not, anyway it will always free if you had less than 256 workers.
+
+Default donation fee is 2% can be reduced to 1% via `donate-level` option. Donation fee applyed only for second and more pool connection. If you use only one pool connection (up to 256 workers) there is no fee.
 
 * XMR: `48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzKt52XU5xvqgzYnDK9URnRoJMk1j8nLwEVsaSWJ4fhdUyZijBGUicoD`
 * BTC: `1P7ujsXeX7GxQwHNnJsRMgAdNkFZmNVqJT`

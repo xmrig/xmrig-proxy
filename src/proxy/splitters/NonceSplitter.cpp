@@ -101,21 +101,21 @@ void NonceSplitter::printConnections()
     }
 
     const int error    = (int) m_upstreams.size() - active - suspended;
-    const double ratio = active > 0 ? ((double) m_stats.data().miners / active) : 0;
+    const double ratio = active > 0 ? ((double) Counters::miners() / active) : 0;
 
     if (Options::i()->colors()) {
         LOG_INFO("\x1B[01;32m* \x1B[01;37mupstreams\x1B[0m" LABEL("active") "%s%d\x1B[0m" LABEL("sleep") "\x1B[01;37m%d\x1B[0m" LABEL("error") "%s%d\x1B[0m" LABEL("total") "\x1B[01;37m%d",
                  active ? "\x1B[01;32m" : "\x1B[01;31m", active, suspended, error ? "\x1B[01;31m" : "\x1B[01;37m", error, m_upstreams.size());
 
         LOG_INFO("\x1B[01;32m* \x1B[01;37mminers   \x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("max") "\x1B[01;37m%" PRIu64 "\x1B[0m" LABEL("ratio") "%s1:%3.1f",
-                 m_stats.data().miners ? "\x1B[01;32m" : "\x1B[01;31m", m_stats.data().miners, m_stats.data().maxMiners, (ratio > 200 ? "\x1B[01;32m" : "\x1B[01;33m"), ratio);
+                 Counters::miners() ? "\x1B[01;32m" : "\x1B[01;31m", Counters::miners(), Counters::maxMiners(), (ratio > 200 ? "\x1B[01;32m" : "\x1B[01;33m"), ratio);
     }
     else {
         LOG_INFO("* upstreams: active %d sleep %d error %d total %d",
                  active, suspended, error, m_upstreams.size());
 
         LOG_INFO("* miners:    active %" PRIu64 " max %" PRIu64 " ratio 1:%3.1f",
-                 m_stats.data().miners, m_stats.data().maxMiners, ratio);
+                 Counters::miners(), Counters::maxMiners(), ratio);
     }
 }
 

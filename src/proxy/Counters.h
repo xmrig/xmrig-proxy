@@ -33,15 +33,43 @@ class Counters
 public:
     static inline void reset()
     {
-        added    = 0;
-        removed  = 0;
-        accepted = 0;
+        m_added   = 0;
+        m_removed = 0;
+        accepted  = 0;
     }
 
 
-    static uint32_t added;
-    static uint32_t removed;
+    static inline void add()
+    {
+        m_miners++;
+        m_added++;
+
+        if (m_miners > m_maxMiners) {
+            m_maxMiners = m_miners;
+        }
+    }
+
+
+    static inline void remove()
+    {
+        m_miners--;
+        m_removed++;
+    }
+
+
+    static inline uint32_t added()     { return m_added; }
+    static inline uint32_t removed()   { return m_removed; }
+    static inline uint64_t maxMiners() { return m_maxMiners; }
+    static inline uint64_t miners()    { return m_miners; }
+
+
     static uint64_t accepted;
+
+private:
+    static uint32_t m_added;
+    static uint32_t m_removed;
+    static uint64_t m_maxMiners;
+    static uint64_t m_miners;
 };
 
 #endif /* __COUNTERS_H__ */

@@ -57,6 +57,8 @@ void Stats::tick(uint64_t ticks, const NonceSplitter &splitter)
         m_data.hashrate[4] = hashrate(3600 * 24);
 
         m_data.upstreams = splitter.activeUpstreams();
+        m_data.miners    = Counters::miners();
+        m_data.maxMiners = Counters::maxMiners();
         Api::tick(m_data);
 #       endif
     }
@@ -69,20 +71,10 @@ void Stats::onEvent(IEvent *event)
     {
     case IEvent::ConnectionType:
         m_data.connections++;
-        m_data.miners++;
-
-        if (m_data.miners > m_data.maxMiners) {
-            m_data.maxMiners = m_data.miners;
-        }
-
-        Counters::added++;
         break;
 
     case IEvent::CloseType:
         m_data.connections--;
-        m_data.miners--;
-
-        Counters::removed++;
         break;
 
     case IEvent::AcceptType:

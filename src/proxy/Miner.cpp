@@ -25,9 +25,9 @@
 #include <string.h>
 
 
-#include "Counters.h"
 #include "log/Log.h"
 #include "net/Job.h"
+#include "proxy/Counters.h"
 #include "proxy/Error.h"
 #include "proxy/Events.h"
 #include "proxy/events/CloseEvent.h"
@@ -109,7 +109,10 @@ void Miner::replyWithError(int64_t id, const char *message)
 void Miner::send(char *data)
 {
     LOG_DEBUG("[%s] send (%d bytes): \"%s\"", m_ip, strlen(data), data);
-    if (m_state != ReadyState) {
+
+    if (m_state != ReadyState || uv_is_writable(reinterpret_cast<uv_stream_t*>(&m_socket)) == 0) {
+        LOG_ERR("NOT WRITABLE");
+        free(data);
         return;
     }
 
@@ -281,6 +284,11 @@ void Miner::setState(State state)
 
     if (state == ReadyState) {
         heartbeat();
+        Counters::add();
+    }
+
+    if (state == ClosingState && m_state == ReadyState) {
+        Counters::remove();
     }
 
     m_state = state;

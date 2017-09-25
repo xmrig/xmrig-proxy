@@ -25,6 +25,8 @@
 #include "Counters.h"
 
 
-uint32_t Counters::added    = 0;
-uint32_t Counters::removed  = 0;
-uint64_t Counters::accepted = 0;
+uint32_t Counters::m_added     = 0;
+uint32_t Counters::m_removed   = 0;
+uint64_t Counters::accepted    = 0;
+uint64_t Counters::m_maxMiners = 0;
+uint64_t Counters::m_miners    = 0;

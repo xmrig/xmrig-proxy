@@ -2,8 +2,9 @@
  - New internal event based architecture to easily extend proxy features.
  - Added [HTTP API](https://github.com/xmrig/xmrig-proxy/wiki/API).
  - Added per worker statistics.
- - Added `access-log-file` option, to write to file log information about connection/disconnection of miners.
- - Added limited support to override pool diff, global via option `diff` or per worker `WORKER_ID+DIFF`.
+ - Added option `access-log-file`, to write to file log information about connection/disconnection of miners.
+ - Added limited support to override pool diff, global via option `custom-diff` or per worker `WORKER_ID+DIFF`.
+ - Added option `coin`, set it to `aeon` if use proxy for AEON (cryptonight-lite).
  - Added donation, default 2% configurable down to 1% as promised before, no fee if you use only one pool connection (up to 256 workers).
  - [#19](https://github.com/xmrig/xmrig-proxy/issues/19) Use ratio instead of efficiency in connections report.
 

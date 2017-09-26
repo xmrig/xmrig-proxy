@@ -111,7 +111,6 @@ void Miner::send(char *data)
     LOG_DEBUG("[%s] send (%d bytes): \"%s\"", m_ip, strlen(data), data);
 
     if (m_state != ReadyState || uv_is_writable(reinterpret_cast<uv_stream_t*>(&m_socket)) == 0) {
-        LOG_ERR("NOT WRITABLE");
         free(data);
         return;
     }

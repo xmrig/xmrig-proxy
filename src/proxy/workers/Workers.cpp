@@ -22,7 +22,12 @@
  */
 
 
+#include <inttypes.h>
+
+
 #include "api/Api.h"
+#include "log/Log.h"
+#include "Options.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
@@ -39,6 +44,34 @@ Workers::Workers()
 
 Workers::~Workers()
 {
+}
+
+
+void Workers::printWorkers()
+{
+    char workerName[24];
+    size_t size = 0;
+
+    Log::i()->text(Options::i()->colors() ? "\x1B[01;37m%-23s | %-15s | %-5s | %-8s | %-3s | %10s |" : "%-23s | %-15s | %-5s | %-8s | %-3s | %10s |",
+                   "WORKER NAME", "LAST IP", "COUNT", "ACCEPTED", "REJ", "10 MIN");
+
+    for (const Worker &worker : m_workers) {
+        const char *name = worker.name();
+        size = strlen(name);
+
+        if (size > sizeof(workerName) - 1) {
+            memcpy(workerName, name, 6);
+            memcpy(workerName + 6, "...", 3);
+            memcpy(workerName + 9, name + size - sizeof(workerName) + 10, sizeof(workerName) - 10);
+            workerName[sizeof(workerName) - 1] = '\0';
+        }
+        else {
+            strncpy(workerName, name, sizeof(workerName) - 1);
+        }
+
+        Log::i()->text("%-23s | %-15s | %5" PRIu64 " | %8" PRIu64 " | %3" PRIu64 " | %5.1f KH/s |",
+                       workerName, worker.ip(), worker.connections(), worker.accepted(), worker.rejected(), worker.hashrate(600));
+    }
 }
 
 

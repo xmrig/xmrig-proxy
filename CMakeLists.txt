@@ -206,8 +206,11 @@ else()
     add_definitions(/DXMRIG_NO_GOOGLE_BREAKPAD)
 endif()
 
-find_package(MHD)
-if (WITH_HTTPD AND MHD_FOUND)
+if (WITH_HTTPD)
+    find_package(MHD)
+endif()
+
+if (MHD_FOUND)
     include_directories(${MHD_INCLUDE_DIRS})
 
     set(HTTPD_SOURCES src/api/Httpd.h src/api/Httpd.cpp)

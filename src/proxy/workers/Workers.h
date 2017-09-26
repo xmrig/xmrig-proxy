@@ -46,6 +46,7 @@ public:
     Workers();
     ~Workers();
 
+    void printWorkers();
     void tick(uint64_t ticks);
 
 protected:

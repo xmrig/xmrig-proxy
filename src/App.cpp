@@ -160,6 +160,11 @@ void App::onConsoleCommand(char command)
         m_proxy->toggleDebug();
         break;
 
+    case 'w':
+    case 'W':
+        m_proxy->printWorkers();
+        break;
+
     case 3:
         LOG_WARN("Ctrl+C received, exiting");
         close();
@@ -194,7 +199,8 @@ void App::onSignal(uv_signal_t *handle, int signum)
         break;
 
     default:
-        break;
+        LOG_WARN("signal %d received, ignore", signum);
+        return;
     }
 
     m_self->close();

@@ -53,6 +53,7 @@ public:
     void connect();
     void printConnections();
     void printHashrate();
+    void printWorkers();
     void toggleDebug();
 
 #   ifdef APP_DEVEL

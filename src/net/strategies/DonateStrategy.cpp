@@ -134,14 +134,17 @@ void DonateStrategy::onClose(Client *client, int failures)
 
 void DonateStrategy::onJobReceived(Client *client, const Job &job)
 {
+    if (!isActive()) {
+        m_active = true;
+        m_listener->onActive(client);
+    }
+
     m_listener->onJob(client, job);
 }
 
 
 void DonateStrategy::onLoginSuccess(Client *client)
 {
-    m_active = true;
-    m_listener->onActive(client);
 }
 
 

@@ -102,10 +102,10 @@ static void print_api()
 static void print_commands()
 {
     if (Options::i()->colors()) {
-        Log::i()->text("\x1B[01;32m * \x1B[01;37mCOMMANDS:     \x1B[01;35mh\x1B[01;37mashrate, \x1B[01;35mc\x1B[01;37monnections, \x1B[01;35mv\x1B[01;37merbose");
+        Log::i()->text("\x1B[01;32m * \x1B[01;37mCOMMANDS:     \x1B[01;35mh\x1B[01;37mashrate, \x1B[01;35mc\x1B[01;37monnections, \x1B[01;35mv\x1B[01;37merbose, \x1B[01;35mw\x1B[01;37morkers");
     }
     else {
-        Log::i()->text(" * COMMANDS:     'h' hashrate, 'c' connections, 'v' verbose");
+        Log::i()->text(" * COMMANDS:     'h' hashrate, 'c' connections, 'v' verbose, 'w' workers");
     }
 }
 

@@ -62,17 +62,16 @@ Miner::Miner() :
     m_socket.data = this;
     uv_tcp_init(uv_default_loop(), &m_socket);
 
-    m_recvBuf.base = new char[kRecvBufSize];
-    m_recvBuf.len  = kRecvBufSize;
+    m_recvBuf.base = m_buf;
+    m_recvBuf.len  = sizeof(m_buf);
 
-    memset(m_recvBuf.base, 0, kRecvBufSize);
+    memset(m_buf, 0, sizeof(m_buf));
 }
 
 
 Miner::~Miner()
 {
     m_socket.data = nullptr;
-    delete [] m_recvBuf.base;
 }
 
 
@@ -330,7 +329,7 @@ void Miner::onAllocBuffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *
 void Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
 {
     auto miner = getMiner(stream->data);
-    if (nread < 0 || (size_t) nread > (kRecvBufSize - 8 - miner->m_recvBufPos)) {
+    if (nread < 0 || (size_t) nread > (sizeof(m_buf) - 8 - miner->m_recvBufPos)) {
         return miner->shutdown(nread != UV_EOF);;
     }
 
@@ -367,7 +366,7 @@ void Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
 void Miner::onTimeout(uv_timer_t *handle)
 {
     auto miner = getMiner(handle->data);
-    miner->m_recvBuf.base[kRecvBufSize - 1] = '\0';
+    miner->m_recvBuf.base[sizeof(m_buf) - 1] = '\0';
 
     LOG_ERR("SHUTDOWN %s %s", miner->m_ip, miner->m_recvBuf.base);
 

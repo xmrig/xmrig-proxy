@@ -140,6 +140,8 @@ void ApiState::genId()
 
             keccak(input, static_cast<int>(inSize), hash, sizeof(hash));
             Job::toHex(hash, 8, m_id);
+
+            delete [] input;
             break;
         }
     }
@@ -153,40 +155,40 @@ void ApiState::getHashrate(json_t *reply) const
     json_t *hashrate = json_object();
     json_t *total    = json_array();
 
-    json_object_set(reply,    "hashrate", hashrate);
-    json_object_set(hashrate, "total",    total);
+    json_object_set_new(reply,    "hashrate", hashrate);
+    json_object_set_new(hashrate, "total",    total);
 
     for (size_t i = 0; i < sizeof(m_stats.hashrate) / sizeof(m_stats.hashrate[0]); i++) {
-        json_array_append(total, json_real(normalize(m_stats.hashrate[i])));
+        json_array_append_new(total, json_real(normalize(m_stats.hashrate[i])));
     }
 }
 
 
 void ApiState::getIdentify(json_t *reply) const
 {
-    json_object_set(reply, "id",        json_string(m_id));
-    json_object_set(reply, "worker_id", json_string(m_workerId));
+    json_object_set_new(reply, "id",        json_string(m_id));
+    json_object_set_new(reply, "worker_id", json_string(m_workerId));
 }
 
 
 void ApiState::getMiner(json_t *reply) const
 {
-    json_object_set(reply, "version",   json_string(APP_VERSION));
-    json_object_set(reply, "kind",      json_string(APP_KIND));
-    json_object_set(reply, "ua",        json_string(Platform::userAgent()));
-    json_object_set(reply, "donate",    json_integer(Options::i()->donateLevel()));
-    json_object_set(reply, "uptime",    json_integer(m_stats.uptime()));
+    json_object_set_new(reply, "version",   json_string(APP_VERSION));
+    json_object_set_new(reply, "kind",      json_string(APP_KIND));
+    json_object_set_new(reply, "ua",        json_string(Platform::userAgent()));
+    json_object_set_new(reply, "donate",    json_integer(Options::i()->donateLevel()));
+    json_object_set_new(reply, "uptime",    json_integer(m_stats.uptime()));
 }
 
 
 void ApiState::getMinersSummary(json_t *reply) const
 {
     json_t *miners = json_object();
-    json_object_set(reply, "miners", miners);
+    json_object_set_new(reply, "miners", miners);
 
-    json_object_set(miners, "now",      json_integer(m_stats.miners));
-    json_object_set(miners, "max",      json_integer(m_stats.maxMiners));
-    json_object_set(reply, "upstreams", json_integer(m_stats.upstreams));
+    json_object_set_new(miners, "now",       json_integer(m_stats.miners));
+    json_object_set_new(miners, "max",       json_integer(m_stats.maxMiners));
+    json_object_set_new(reply,  "upstreams", json_integer(m_stats.upstreams));
 }
 
 
@@ -195,18 +197,18 @@ void ApiState::getResults(json_t *reply) const
     json_t *results = json_object();
     json_t *best    = json_array();
 
-    json_object_set(reply,   "results",       results);
-    json_object_set(results, "accepted",      json_integer(m_stats.accepted));
-    json_object_set(results, "rejected",      json_integer(m_stats.rejected));
-    json_object_set(results, "invalid",       json_integer(m_stats.invalid));
-    json_object_set(results, "avg_time",      json_integer(m_stats.avgTime()));
-    json_object_set(results, "latency",       json_integer(m_stats.avgLatency()));
-    json_object_set(results, "hashes_total",  json_integer(m_stats.hashes));
-    json_object_set(results, "best",          best);
-    json_object_set(results, "error_log",     json_array());
+    json_object_set_new(reply,   "results",       results);
+    json_object_set_new(results, "accepted",      json_integer(m_stats.accepted));
+    json_object_set_new(results, "rejected",      json_integer(m_stats.rejected));
+    json_object_set_new(results, "invalid",       json_integer(m_stats.invalid));
+    json_object_set_new(results, "avg_time",      json_integer(m_stats.avgTime()));
+    json_object_set_new(results, "latency",       json_integer(m_stats.avgLatency()));
+    json_object_set_new(results, "hashes_total",  json_integer(m_stats.hashes));
+    json_object_set_new(results, "best",          best);
+    json_object_set_new(results, "error_log",     json_array());
 
     for (size_t i = 0; i < m_stats.topDiff.size(); ++i) {
-        json_array_append(best, json_integer(m_stats.topDiff[i]));
+        json_array_append_new(best, json_integer(m_stats.topDiff[i]));
     }
 }
 
@@ -215,7 +217,7 @@ void ApiState::getWorkers(json_t *reply) const
 {
     json_t *workers = json_array();
 
-    json_object_set(reply, "workers", workers);
+    json_object_set_new(reply, "workers", workers);
 
     for (const Worker &worker : m_workers) {
         if (worker.connections() == 0 && worker.lastHash() == 0) {
@@ -223,20 +225,20 @@ void ApiState::getWorkers(json_t *reply) const
         }
 
         json_t *array = json_array();
-        json_array_append(array, json_string(worker.name()));
-        json_array_append(array, json_string(worker.ip()));
-        json_array_append(array, json_integer(worker.connections()));
-        json_array_append(array, json_integer(worker.accepted()));
-        json_array_append(array, json_integer(worker.rejected()));
-        json_array_append(array, json_integer(worker.invalid()));
-        json_array_append(array, json_integer(worker.hashes()));
-        json_array_append(array, json_integer(worker.lastHash()));
-        json_array_append(array, json_real(normalize(worker.hashrate(60))));
-        json_array_append(array, json_real(normalize(worker.hashrate(600))));
-        json_array_append(array, json_real(normalize(worker.hashrate(3600))));
-        json_array_append(array, json_real(normalize(worker.hashrate(3600 * 12))));
-        json_array_append(array, json_real(normalize(worker.hashrate(3600 * 24))));
+        json_array_append_new(array, json_string(worker.name()));
+        json_array_append_new(array, json_string(worker.ip()));
+        json_array_append_new(array, json_integer(worker.connections()));
+        json_array_append_new(array, json_integer(worker.accepted()));
+        json_array_append_new(array, json_integer(worker.rejected()));
+        json_array_append_new(array, json_integer(worker.invalid()));
+        json_array_append_new(array, json_integer(worker.hashes()));
+        json_array_append_new(array, json_integer(worker.lastHash()));
+        json_array_append_new(array, json_real(normalize(worker.hashrate(60))));
+        json_array_append_new(array, json_real(normalize(worker.hashrate(600))));
+        json_array_append_new(array, json_real(normalize(worker.hashrate(3600))));
+        json_array_append_new(array, json_real(normalize(worker.hashrate(3600 * 12))));
+        json_array_append_new(array, json_real(normalize(worker.hashrate(3600 * 24))));
 
-        json_array_append(workers, array);
+        json_array_append_new(workers, array);
     }
 }

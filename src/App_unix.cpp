@@ -35,7 +35,7 @@
 
 void App::background()
 {
-    signal(SIGPIPE, SIG_IGN);
+    //signal(SIGPIPE, SIG_IGN);
 
     if (!m_options->background()) {
         return;

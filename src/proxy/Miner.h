@@ -71,7 +71,6 @@ public:
 
 private:
     constexpr static size_t kLoginTimeout  = 10 * 1000;
-    constexpr static size_t kRecvBufSize   = 2048;
     constexpr static size_t kSocketTimeout = 60 * 10 * 1000;
 
     bool parseRequest(int64_t id, const char *method, const json_t *params);
@@ -86,6 +85,7 @@ private:
 
     static inline Miner *getMiner(void *data) { return static_cast<Miner*>(data); }
 
+    char m_buf[2048];
     char m_ip[17];
     char m_rpcId[37];
     int64_t m_id;

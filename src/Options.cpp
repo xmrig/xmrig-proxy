@@ -223,6 +223,23 @@ Options::Options(int argc, char **argv) :
 
 Options::~Options()
 {
+    for (Addr *addr : m_addrs) {
+        delete addr;
+    }
+
+    for (Url *url : m_pools) {
+        delete url;
+    }
+
+    m_addrs.clear();
+    m_pools.clear();
+
+    free(m_accessLog);
+    free(m_apiToken);
+    free(m_apiWorkerId);
+    free(m_coin);
+    free(m_logFile);
+    free(m_userAgent);
 }
 
 

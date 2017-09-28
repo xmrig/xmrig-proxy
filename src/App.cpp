@@ -56,7 +56,7 @@ App::App(int argc, char **argv) :
     m_proxy(nullptr),
     m_options(nullptr)
 {
-    m_self = this;
+    m_self    = this;
     m_options = Options::parse(argc, argv);
     if (!m_options) {
         return;
@@ -89,7 +89,16 @@ App::App(int argc, char **argv) :
 
 App::~App()
 {
+    uv_tty_reset_mode();
+
     delete m_console;
+    delete m_proxy;
+
+#   ifndef XMRIG_NO_HTTPD
+    delete m_httpd;
+#   endif
+
+    Log::release();
 }
 
 
@@ -120,7 +129,6 @@ int App::exec()
 
     const int r = uv_run(uv_default_loop(), UV_RUN_DEFAULT);
     uv_loop_close(uv_default_loop());
-    uv_tty_reset_mode();
 
     Options::release();
     Platform::release();

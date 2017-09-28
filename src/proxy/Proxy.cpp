@@ -96,6 +96,7 @@ Proxy::~Proxy()
     delete m_miners;
     delete m_splitter;
     delete m_shareLog;
+    delete m_accessLog;
     delete m_debug;
     delete m_workers;
 }

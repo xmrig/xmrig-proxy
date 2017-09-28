@@ -335,16 +335,16 @@ void Client::login()
     m_results.clear();
 
     json_t *req = json_object();
-    json_object_set(req, "id", json_integer(1));
-    json_object_set(req, "jsonrpc", json_string("2.0"));
-    json_object_set(req, "method", json_string("login"));
+    json_object_set_new(req, "id",      json_integer(1));
+    json_object_set_new(req, "jsonrpc", json_string("2.0"));
+    json_object_set_new(req, "method",  json_string("login"));
 
     json_t *params = json_object();
-    json_object_set(params, "login", json_string(m_url.user()));
-    json_object_set(params, "pass", json_string(m_url.password()));
-    json_object_set(params, "agent", json_string(m_agent));
+    json_object_set_new(params, "login", json_string(m_url.user()));
+    json_object_set_new(params, "pass",  json_string(m_url.password()));
+    json_object_set_new(params, "agent", json_string(m_agent));
 
-    json_object_set(req, "params", params);
+    json_object_set_new(req, "params", params);
 
     char *buf = json_dumps(req, JSON_COMPACT);
     const size_t size = strlen(buf);

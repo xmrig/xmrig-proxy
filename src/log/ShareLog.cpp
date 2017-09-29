@@ -50,14 +50,8 @@ void ShareLog::onEvent(IEvent *event)
     switch (event->type())
     {
     case IEvent::AcceptType:
-        if (Options::i()->verbose()) {
-            auto e = static_cast<AcceptEvent*>(event);
-            LOG_INFO(Options::i()->colors() ? "#%03u \x1B[01;32maccepted\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m \x1B[01;30m(%" PRIu64 " ms)"
-                                            : "#%03u accepted (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff %u (%" PRIu64 " ms)",
-                     e->mapperId(), m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, e->result.diff, e->result.elapsed);
-        }
+        accept(static_cast<AcceptEvent*>(event));
         break;
-
 
     default:
         break;
@@ -69,15 +63,35 @@ void ShareLog::onRejectedEvent(IEvent *event)
 {
     switch (event->type())
     {
-    case IEvent::AcceptType: {
-            auto e = static_cast<AcceptEvent*>(event);
-            LOG_INFO(Options::i()->colors() ? "#%03u \x1B[01;31mrejected\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m \x1B[31m\"%s\"\x1B[0m \x1B[01;30m(%" PRId64 " ms)"
-                                            : "#%03u rejected (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff %u \"%s\" (%" PRId64 " ms)",
-                     e->mapperId(), m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, e->result.diff, e->error(), e->result.elapsed);
-        }
+    case IEvent::AcceptType:
+        reject(static_cast<AcceptEvent*>(event));
         break;
 
     default:
         break;
     }
+}
+
+
+void ShareLog::accept(const AcceptEvent *event)
+{
+    if (!Options::i()->verbose()) {
+        return;
+    }
+
+    LOG_INFO(Options::i()->colors() ? "#%03u \x1B[01;32maccepted\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m \x1B[01;30m(%" PRIu64 " ms)"
+                                    : "#%03u accepted (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff %u (%" PRIu64 " ms)",
+             event->mapperId(), m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, event->result.diff, event->result.elapsed);
+}
+
+
+void ShareLog::reject(const AcceptEvent *event)
+{
+    if (event->isDonate()) {
+        return;
+    }
+
+    LOG_INFO(Options::i()->colors() ? "#%03u \x1B[01;31mrejected\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m \x1B[31m\"%s\"\x1B[0m \x1B[01;30m(%" PRId64 " ms)"
+                                    : "#%03u rejected (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff %u \"%s\" (%" PRId64 " ms)",
+             event->mapperId(), m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, event->result.diff, event->error(), event->result.elapsed);
 }

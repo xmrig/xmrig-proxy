@@ -177,5 +177,5 @@ void Job::toHex(const unsigned char* in, unsigned int len, char* out)
 
 bool Job::operator==(const Job &other) const
 {
-    return memcmp(m_id, other.m_id, sizeof(m_id)) == 0;
+    return memcmp(m_id, other.m_id, sizeof(m_id)) == 0 && memcmp(m_blob, other.m_blob, sizeof(m_blob) == 0);
 }

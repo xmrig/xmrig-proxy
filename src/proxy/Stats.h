@@ -33,8 +33,8 @@
 #include "proxy/TickingCounter.h"
 
 
+class AcceptEvent;
 class NonceSplitter;
-class SubmitResult;
 
 
 class Stats : public IEventListener
@@ -53,7 +53,8 @@ protected:
     void onRejectedEvent(IEvent *event) override;
 
 private:
-    void add(const SubmitResult &result);
+    void accept(const AcceptEvent *event);
+    void reject(const AcceptEvent *event);
 
     StatsData m_data;
     TickingCounter<uint32_t> m_hashrate;

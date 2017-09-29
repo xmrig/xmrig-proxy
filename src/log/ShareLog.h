@@ -28,6 +28,7 @@
 #include "interfaces/IEventListener.h"
 
 
+class AcceptEvent;
 class Stats;
 
 
@@ -42,6 +43,9 @@ protected:
     void onRejectedEvent(IEvent *event) override;
 
 private:
+    void accept(const AcceptEvent *event);
+    void reject(const AcceptEvent *event);
+
     const Stats &m_stats;
 };
 

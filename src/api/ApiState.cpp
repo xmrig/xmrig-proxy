@@ -173,11 +173,18 @@ void ApiState::getIdentify(json_t *reply) const
 
 void ApiState::getMiner(json_t *reply) const
 {
-    json_object_set_new(reply, "version",   json_string(APP_VERSION));
-    json_object_set_new(reply, "kind",      json_string(APP_KIND));
-    json_object_set_new(reply, "ua",        json_string(Platform::userAgent()));
-    json_object_set_new(reply, "donate",    json_integer(Options::i()->donateLevel()));
-    json_object_set_new(reply, "uptime",    json_integer(m_stats.uptime()));
+    json_object_set_new(reply, "version",      json_string(APP_VERSION));
+    json_object_set_new(reply, "kind",         json_string(APP_KIND));
+    json_object_set_new(reply, "ua",           json_string(Platform::userAgent()));
+    json_object_set_new(reply, "uptime",       json_integer(m_stats.uptime()));
+    json_object_set_new(reply, "donate_level", json_integer(Options::i()->donateLevel()));
+
+    if (m_stats.hashes && m_stats.donateHashes) {
+        json_object_set_new(reply, "donated", json_real(normalize((double) m_stats.donateHashes / m_stats.hashes * 100.0 )));
+    }
+    else {
+        json_object_set_new(reply, "donated", json_real(0.0));
+    }
 }
 
 
@@ -204,6 +211,7 @@ void ApiState::getResults(json_t *reply) const
     json_object_set_new(results, "avg_time",      json_integer(m_stats.avgTime()));
     json_object_set_new(results, "latency",       json_integer(m_stats.avgLatency()));
     json_object_set_new(results, "hashes_total",  json_integer(m_stats.hashes));
+    json_object_set_new(results, "hashes_donate", json_integer(m_stats.donateHashes));
     json_object_set_new(results, "best",          best);
     json_object_set_new(results, "error_log",     json_array());
 

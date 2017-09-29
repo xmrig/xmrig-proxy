@@ -78,7 +78,7 @@ void Stats::onEvent(IEvent *event)
         break;
 
     case IEvent::AcceptType:
-        add(static_cast<AcceptEvent*>(event)->result);
+        accept(static_cast<AcceptEvent*>(event));
         break;
 
     default:
@@ -96,7 +96,7 @@ void Stats::onRejectedEvent(IEvent *event)
         break;
 
     case IEvent::AcceptType:
-        m_data.rejected++;
+        reject(static_cast<AcceptEvent*>(event));
         break;
 
     default:
@@ -105,20 +105,34 @@ void Stats::onRejectedEvent(IEvent *event)
 }
 
 
-void Stats::add(const SubmitResult &result)
+void Stats::accept(const AcceptEvent *event)
 {
-    m_hashrate.add(result.diff);
+    m_hashrate.add(event->result.diff);
 
     m_data.accepted++;
-    m_data.hashes += result.diff;
+    m_data.hashes += event->result.diff;
+
+    if (event->isDonate()) {
+        m_data.donateHashes += event->result.diff;
+    }
 
     Counters::accepted++;
 
     const size_t ln = m_data.topDiff.size() - 1;
-    if (result.actualDiff > m_data.topDiff[ln]) {
-        m_data.topDiff[ln] = result.actualDiff;
+    if (event->result.actualDiff > m_data.topDiff[ln]) {
+        m_data.topDiff[ln] = event->result.actualDiff;
         std::sort(m_data.topDiff.rbegin(), m_data.topDiff.rend());
     }
 
-    m_data.latency.push_back(result.elapsed > 0xFFFF ? 0xFFFF : (uint16_t) result.elapsed);
+    m_data.latency.push_back(event->result.elapsed > 0xFFFF ? 0xFFFF : (uint16_t) event->result.elapsed);
+}
+
+
+void Stats::reject(const AcceptEvent *event)
+{
+    if (event->isDonate()) {
+        return;
+    }
+
+    m_data.rejected++;
 }

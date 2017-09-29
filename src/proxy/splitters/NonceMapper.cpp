@@ -201,7 +201,7 @@ void NonceMapper::onResultAccepted(Client *client, const SubmitResult &result, c
 {
     const SubmitCtx ctx = submitCtx(result.seq);
 
-    AcceptEvent::start(m_id, ctx.miner, result, error);
+    AcceptEvent::start(m_id, ctx.miner, result, client->id() == -1, error);
 
     if (!ctx.miner) {
         return;

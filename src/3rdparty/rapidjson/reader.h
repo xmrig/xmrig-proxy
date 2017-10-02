@@ -136,7 +136,7 @@ RAPIDJSON_NAMESPACE_BEGIN
     User can define this as any \c ParseFlag combinations.
 */
 #ifndef RAPIDJSON_PARSE_DEFAULT_FLAGS
-#define RAPIDJSON_PARSE_DEFAULT_FLAGS kParseNoFlags
+#define RAPIDJSON_PARSE_DEFAULT_FLAGS kParseCommentsFlag | kParseTrailingCommasFlag
 #endif
 
 //! Combination of parseFlags

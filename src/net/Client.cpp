@@ -23,8 +23,10 @@
 
 #include <inttypes.h>
 #include <iterator>
+#include <stdio.h>
 #include <string.h>
 #include <utility>
+
 
 #include "interfaces/IClientListener.h"
 #include "log/Log.h"

@@ -208,12 +208,13 @@ endif()
 
 if (WITH_HTTPD)
     find_package(MHD)
-endif()
 
-if (MHD_FOUND)
-    include_directories(${MHD_INCLUDE_DIRS})
-
-    set(HTTPD_SOURCES src/api/Httpd.h src/api/Httpd.cpp)
+    if (MHD_FOUND)
+        include_directories(${MHD_INCLUDE_DIRS})
+        set(HTTPD_SOURCES src/api/Httpd.h src/api/Httpd.cpp)
+    else()
+        message(FATAL_ERROR "microhttpd NOT found: use `-DWITH_HTTPD=OFF` to build without http deamon support")
+    endif()
 else()
     add_definitions(/DXMRIG_NO_HTTPD)
     add_definitions(/DXMRIG_NO_API)

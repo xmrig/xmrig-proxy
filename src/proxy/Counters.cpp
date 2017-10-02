@@ -22,96 +22,12 @@
  */
 
 
-#include <inttypes.h>
-
-
 #include "Counters.h"
-#include "log/Log.h"
-#include "Options.h"
 
 
-Hashrate Counters::m_hashrate[2];
-uint64_t Counters::m_counters[3]  = { 0 };
-uint64_t Counters::m_minersMax    = 0;
-uv_timer_t Counters::m_timer;
-
-Counters::Tick Counters::tick;
-
-
-double Counters::hashrate(size_t seconds)
-{
-    return m_hashrate[0].calc(seconds) + m_hashrate[1].calc(seconds);
-}
-
-
-void Counters::accept(Counters::Stores store, size_t id, uint32_t diff, uint64_t ms, bool verbose)
-{
-    m_hashrate[store].accepted++;
-    m_hashrate[store].add(diff);
-
-    tick.accepted++;
-
-    if (verbose) {
-        LOG_INFO(Options::i()->colors() ? "#%03u \x1B[01;32maccepted\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m \x1B[01;30m(%" PRIu64 " ms)"
-                                        : "#%03u accepted (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff %u (%" PRIu64 " ms)"  ,
-                 id, m_hashrate[0].accepted, m_hashrate[0].rejected[0], m_hashrate[0].rejected[1], diff, ms);
-    }
-}
-
-
-void Counters::add(CounterTypes type)
-{
-    m_counters[type]++;
-
-    if (type == Miner) {
-        tick.added++;
-
-        if (m_counters[type] > m_minersMax) {
-            m_minersMax = m_counters[type];
-        }
-    }
-}
-
-
-void Counters::reject(Stores store, const char *ip, const char *message)
-{
-    m_hashrate[store].rejected[1]++;
-//    LOG_INFO("[% -15s] \x1B[01;31mrejected\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") \x1B[31m\"%s\"\x1B[0m",
-//             ip, m_hashrate[0].accepted, m_hashrate[0].rejected[0], m_hashrate[0].rejected[1], message);
-}
-
-
-void Counters::reject(Stores store, size_t id, uint32_t diff, uint64_t ms, const char *error)
-{
-    m_hashrate[store].rejected[0]++;
-    LOG_INFO(Options::i()->colors() ? "#%03u \x1B[01;31mrejected\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m \x1B[31m\"%s\"\x1B[0m \x1B[01;30m(%" PRId64 " ms)"
-                                    : "#%03u rejected (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff %u \"%s\" (%" PRId64 " ms)",
-             id, m_hashrate[0].accepted, m_hashrate[0].rejected[0], m_hashrate[0].rejected[1], diff, error, ms);
-}
-
-
-void Counters::remove(CounterTypes type)
-{
-    m_counters[type]--;
-
-    if (type == Miner) {
-        tick.removed++;
-    }
-}
-
-
-void Counters::start()
-{
-    uv_timer_init(uv_default_loop(), &m_timer);
-    uv_timer_start(&m_timer, Counters::onTick, Hashrate::kTickTime * 1000, Hashrate::kTickTime * 1000);
-}
-
-
-void Counters::onTick(uv_timer_t *handle)
-{
-    m_hashrate[0].tick();
-    m_hashrate[1].tick();
-}
-
-
-
+uint32_t Counters::m_added     = 0;
+uint32_t Counters::m_removed   = 0;
+uint64_t Counters::accepted    = 0;
+uint64_t Counters::connections = 0;
+uint64_t Counters::m_maxMiners = 0;
+uint64_t Counters::m_miners    = 0;

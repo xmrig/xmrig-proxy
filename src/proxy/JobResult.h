@@ -45,12 +45,16 @@ public:
 
     bool isCompatible(uint8_t fixedByte) const;
     bool isValid() const;
+    uint64_t actualDiff() const;
 
     char jobId[64];
     const char *nonce;
     const char *result;
     const int64_t id;
     uint32_t diff;
+
+private:
+    mutable uint64_t m_actualDiff;
 };
 
 #endif /* __JOBRESULT_H__ */

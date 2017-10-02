@@ -22,6 +22,7 @@
  */
 
 
+#include <stdio.h>
 #include <uv.h>
 
 
@@ -87,13 +88,25 @@ static void print_bind()
 }
 
 
+#ifndef XMRIG_NO_API
+static void print_api()
+{
+    if (Options::i()->apiPort() == 0) {
+        return;
+    }
+
+    Log::i()->text(Options::i()->colors() ? "\x1B[01;32m * \x1B[01;37mAPI PORT:     \x1B[01;36m%d" : " * API PORT:     %d", Options::i()->apiPort());
+}
+#endif
+
+
 static void print_commands()
 {
     if (Options::i()->colors()) {
-        Log::i()->text("\x1B[01;32m * \x1B[01;37mCOMMANDS:     \x1B[01;35mh\x1B[01;37mashrate, \x1B[01;35mc\x1B[01;37monnections, \x1B[01;35mv\x1B[01;37merbose");
+        Log::i()->text("\x1B[01;32m * \x1B[01;37mCOMMANDS:     \x1B[01;35mh\x1B[01;37mashrate, \x1B[01;35mc\x1B[01;37monnections, \x1B[01;35mv\x1B[01;37merbose, \x1B[01;35mw\x1B[01;37morkers");
     }
     else {
-        Log::i()->text(" * COMMANDS:     'h' hashrate, 'c' connections, 'v' verbose");
+        Log::i()->text(" * COMMANDS:     'h' hashrate, 'c' connections, 'v' verbose, 'w' workers");
     }
 }
 
@@ -103,6 +116,11 @@ void Summary::print()
     print_versions();
     print_pools();
     print_bind();
+
+#   ifndef XMRIG_NO_API
+    print_api();
+#   endif
+
     print_commands();
 }
 

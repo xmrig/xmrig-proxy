@@ -25,12 +25,12 @@
 #define __OPTIONS_H__
 
 
-#include <jansson.h>
 #include <stdint.h>
 #include <vector>
 
 
 #include "proxy/Addr.h"
+#include "rapidjson/fwd.h"
 
 
 class Url;
@@ -45,15 +45,23 @@ public:
 
     inline bool background() const                 { return m_background; }
     inline bool colors() const                     { return m_colors; }
+    inline bool isDebug() const                    { return m_debug; }
     inline bool syslog() const                     { return m_syslog; }
     inline bool verbose() const                    { return m_verbose; }
+    inline bool workers() const                    { return m_workers; }
+    inline const char *accessLog() const           { return m_accessLog; }
+    inline const char *apiToken() const            { return m_apiToken; }
+    inline const char *apiWorkerId() const         { return m_apiWorkerId; }
+    inline const char *coin() const                { return m_userAgent; }
     inline const char *logFile() const             { return m_logFile; }
     inline const char *userAgent() const           { return m_userAgent; }
     inline const std::vector<Addr*> &addrs() const { return m_addrs; }
     inline const std::vector<Url*> &pools() const  { return m_pools; }
+    inline int apiPort() const                     { return m_apiPort; }
     inline int donateLevel() const                 { return m_donateLevel; }
     inline int retries() const                     { return m_retries; }
     inline int retryPause() const                  { return m_retryPause; }
+    inline uint64_t diff() const                   { return m_diff; }
     inline void setVerbose(bool verbose)           { m_verbose = verbose; }
     inline void toggleVerbose()                    { m_verbose = !m_verbose; }
 
@@ -67,27 +75,36 @@ private:
 
     static Options *m_self;
 
+    bool getJSON(const char *fileName, rapidjson::Document &doc);
     bool parseArg(int key, const char *arg);
     bool parseArg(int key, uint64_t arg);
     bool parseBoolean(int key, bool enable);
     Url *parseUrl(const char *arg) const;
     void parseConfig(const char *fileName);
-    void parseJSON(const struct option *option, json_t *object);
+    void parseJSON(const struct option *option, const rapidjson::Value &object);
     void showUsage(int status) const;
     void showVersion(void);
 
     bool m_background;
     bool m_colors;
+    bool m_debug;
     bool m_ready;
     bool m_syslog;
     bool m_verbose;
+    bool m_workers;
+    char *m_accessLog;
+    char *m_apiToken;
+    char *m_apiWorkerId;
+    char *m_coin;
     char *m_logFile;
     char *m_userAgent;
+    int m_apiPort;
     int m_donateLevel;
     int m_retries;
     int m_retryPause;
     std::vector<Addr*> m_addrs;
     std::vector<Url*> m_pools;
+    uint64_t m_diff;
 };
 
 #endif /* __OPTIONS_H__ */

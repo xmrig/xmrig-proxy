@@ -22,7 +22,7 @@
  */
 
 
-#include <jansson.h>
+#include <limits.h>
 #include <string.h>
 #include <uv.h>
 
@@ -34,9 +34,13 @@
 #endif
 
 
+#include "donate.h"
 #include "net/Url.h"
 #include "Options.h"
 #include "Platform.h"
+#include "rapidjson/document.h"
+#include "rapidjson/error/en.h"
+#include "rapidjson/filereadstream.h"
 #include "version.h"
 
 
@@ -51,64 +55,86 @@ Options *Options::m_self = nullptr;
 static char const usage[] = "\
 Usage: " APP_ID " [OPTIONS]\n\
 Options:\n\
-  -b, --bind=ADDR       bind to specified address, example \"0.0.0.0:3333\"\n\
-  -o, --url=URL         URL of mining server\n\
-  -O, --userpass=U:P    username:password pair for mining server\n\
-  -u, --user=USERNAME   username for mining server\n\
-  -p, --pass=PASSWORD   password for mining server\n\
-  -r, --retries=N       number of times to retry before switch to backup server (default: 5)\n\
-  -R, --retry-pause=N   time to pause between retries (default: 5)\n\
-      --verbose         verbose output\n\
-      --user-agent      set custom user-agent string for pool\n\
-  -B, --background      run the miner in the background\n\
-  -c, --config=FILE     load a JSON-format configuration file\n\
-  -l, --log-file=FILE   log all output to a file\n"
+  -b, --bind=ADDR          bind to specified address, example \"0.0.0.0:3333\"\n\
+  -o, --url=URL            URL of mining server\n\
+  -O, --userpass=U:P       username:password pair for mining server\n\
+  -u, --user=USERNAME      username for mining server\n\
+  -p, --pass=PASSWORD      password for mining server\n\
+  -r, --retries=N          number of times to retry before switch to backup server (default: 5)\n\
+  -R, --retry-pause=N      time to pause between retries (default: 5)\n\
+      --custom-diff=N      override pool diff\n\
+      --verbose            verbose output\n\
+      --user-agent=AGENT   set custom user-agent string for pool\n\
+      --coin=COIN          xmr for all cryptonight coins or aeon\n\
+      --no-color           disable colored output\n\
+      --no-workers         disable per worker statistics\n\
+      --donate-level=N     donate level, default 2%%\n\
+  -B, --background         run the miner in the background\n\
+  -c, --config=FILE        load a JSON-format configuration file\n\
+  -l, --log-file=FILE      log all output to a file\n"
 # ifdef HAVE_SYSLOG_H
 "\
-  -S, --syslog          use system log for output messages\n"
+  -S, --syslog             use system log for output messages\n"
 # endif
 "\
-  -h, --help            display this help and exit\n\
-  -V, --version         output version information and exit\n\
+  -A  --access-log-file=N  log all workers access to a file\n\
+      --api-port=N         port for the miner API\n\
+      --api-access-token=T access token for API\n\
+      --api-worker-id=ID   custom worker-id for API\n\
+  -h, --help               display this help and exit\n\
+  -V, --version            output version information and exit\n\
 ";
 
 
-static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:";
+static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:A:";
 
 
 static struct option const options[] = {
-    { "background",    0, nullptr, 'B'  },
-    { "bind",          1, nullptr, 'b'  },
-    { "config",        1, nullptr, 'c'  },
-    { "donate-level",  1, nullptr, 1003 },
-    { "help",          0, nullptr, 'h'  },
-    { "keepalive",     0, nullptr ,'k'  },
-    { "log-file",      1, nullptr, 'l'  },
-    { "no-color",      0, nullptr, 1002 },
-    { "pass",          1, nullptr, 'p'  },
-    { "retries",       1, nullptr, 'r'  },
-    { "retry-pause",   1, nullptr, 'R'  },
-    { "syslog",        0, nullptr, 'S'  },
-    { "url",           1, nullptr, 'o'  },
-    { "user",          1, nullptr, 'u'  },
-    { "user-agent",    1, nullptr, 1008 },
-    { "userpass",      1, nullptr, 'O'  },
-    { "verbose",       0, nullptr, 1100 },
-    { "version",       0, nullptr, 'V'  },
+    { "access-log-file",  1, nullptr, 'A'  },
+    { "api-access-token", 1, nullptr, 4001 },
+    { "api-port",         1, nullptr, 4000 },
+    { "api-worker-id",    1, nullptr, 4002 },
+    { "background",       0, nullptr, 'B'  },
+    { "bind",             1, nullptr, 'b'  },
+    { "coin",             1, nullptr, 1104 },
+    { "config",           1, nullptr, 'c'  },
+    { "custom-diff",      1, nullptr, 1102 },
+    { "debug",            0, nullptr, 1101 },
+    { "donate-level",     1, nullptr, 1003 },
+    { "help",             0, nullptr, 'h'  },
+    { "keepalive",        0, nullptr ,'k'  },
+    { "log-file",         1, nullptr, 'l'  },
+    { "no-color",         0, nullptr, 1002 },
+    { "no-workers",       0, nullptr, 1103 },
+    { "pass",             1, nullptr, 'p'  },
+    { "retries",          1, nullptr, 'r'  },
+    { "retry-pause",      1, nullptr, 'R'  },
+    { "syslog",           0, nullptr, 'S'  },
+    { "url",              1, nullptr, 'o'  },
+    { "user",             1, nullptr, 'u'  },
+    { "user-agent",       1, nullptr, 1008 },
+    { "userpass",         1, nullptr, 'O'  },
+    { "verbose",          0, nullptr, 1100 },
+    { "version",          0, nullptr, 'V'  },
     { 0, 0, 0, 0 }
 };
 
 
 static struct option const config_options[] = {
-    { "background",    0, nullptr, 'B'  },
-    { "colors",        0, nullptr, 2000 },
-    { "donate-level",  1, nullptr, 1003 },
-    { "log-file",      1, nullptr, 'l'  },
-    { "retries",       1, nullptr, 'r'  },
-    { "retry-pause",   1, nullptr, 'R'  },
-    { "syslog",        0, nullptr, 'S'  },
-    { "user-agent",    1, nullptr, 1008 },
-    { "verbose",       0, nullptr, 1100 },
+    { "access-log-file",  1, nullptr, 'A'  },
+    { "background",       0, nullptr, 'B'  },
+    { "coin",             1, nullptr, 1104 },
+    { "colors",           0, nullptr, 2000 },
+    { "custom-diff",      1, nullptr, 1102 },
+    { "debug",            0, nullptr, 1101 },
+    { "donate-level",     1, nullptr, 1003 },
+    { "log-file",         1, nullptr, 'l'  },
+    { "retries",          1, nullptr, 'r'  },
+    { "retry-pause",      1, nullptr, 'R'  },
+    { "syslog",           0, nullptr, 'S'  },
+    { "user-agent",       1, nullptr, 1008 },
+    { "verbose",          0, nullptr, 1100 },
+    { "workers",          0, nullptr, 1103 },
     { 0, 0, 0, 0 }
 };
 
@@ -119,6 +145,14 @@ static struct option const pool_options[] = {
     { "user",          1, nullptr, 'u'  },
     { "userpass",      1, nullptr, 'O'  },
     { "keepalive",     0, nullptr ,'k'  },
+    { 0, 0, 0, 0 }
+};
+
+
+static struct option const api_options[] = {
+    { "port",          1, nullptr, 4000 },
+    { "access-token",  1, nullptr, 4001 },
+    { "worker-id",     1, nullptr, 4002 },
     { 0, 0, 0, 0 }
 };
 
@@ -139,13 +173,22 @@ Options *Options::parse(int argc, char **argv)
 Options::Options(int argc, char **argv) :
     m_background(false),
     m_colors(true),
+    m_debug(false),
     m_ready(false),
     m_syslog(false),
     m_verbose(false),
+    m_workers(true),
+    m_accessLog(nullptr),
+    m_apiToken(nullptr),
+    m_apiWorkerId(nullptr),
+    m_coin(nullptr),
     m_logFile(nullptr),
     m_userAgent(nullptr),
+    m_apiPort(0),
+    m_donateLevel(kDonateLevel),
     m_retries(5),
-    m_retryPause(5)
+    m_retryPause(5),
+    m_diff(0)
 {
     m_pools.push_back(new Url());
 
@@ -186,6 +229,52 @@ Options::Options(int argc, char **argv) :
 
 Options::~Options()
 {
+    for (Addr *addr : m_addrs) {
+        delete addr;
+    }
+
+    for (Url *url : m_pools) {
+        delete url;
+    }
+
+    m_addrs.clear();
+    m_pools.clear();
+
+    free(m_accessLog);
+    free(m_apiToken);
+    free(m_apiWorkerId);
+    free(m_coin);
+    free(m_logFile);
+    free(m_userAgent);
+}
+
+
+bool Options::getJSON(const char *fileName, rapidjson::Document &doc)
+{
+    uv_fs_t req;
+    const int fd = uv_fs_open(uv_default_loop(), &req, fileName, O_RDONLY, 0644, nullptr);
+    if (fd < 0) {
+        fprintf(stderr, "unable to open %s: %s\n", fileName, uv_strerror(fd));
+        return false;
+    }
+
+    uv_fs_req_cleanup(&req);
+
+    FILE *fp = fdopen(fd, "rb");
+    char buf[8192];
+    rapidjson::FileReadStream is(fp, buf, sizeof(buf));
+
+    doc.ParseStream(is);
+
+    uv_fs_close(uv_default_loop(), &req, fd, nullptr);
+    uv_fs_req_cleanup(&req);
+
+    if (doc.HasParseError()) {
+        printf("%s:%d: %s", fileName, (int) doc.GetErrorOffset(), rapidjson::GetParseError_En(doc.GetParseError()));
+        return false;
+    }
+
+    return doc.IsObject();
 }
 
 
@@ -244,19 +333,51 @@ bool Options::parseArg(int key, const char *arg)
         m_logFile = strdup(arg);
         break;
 
+    case 'A': /* --access-log-file **/
+        free(m_accessLog);
+        m_accessLog = strdup(arg);
+        break;
+
+    case 4001: /* --access-token */
+        free(m_apiToken);
+        m_apiToken = strdup(arg);
+        break;
+
+    case 4002: /* --worker-id */
+        free(m_apiWorkerId);
+        m_apiWorkerId = strdup(arg);
+        break;
+
     case 'r':  /* --retries */
     case 'R':  /* --retry-pause */
-    case 1003: /* --donate-level */
+    case 1102: /* --custom-diff */
+    case 4000: /* --api-port */
         return parseArg(key, strtol(arg, nullptr, 10));
 
     case 'B':  /* --background */
     case 'k':  /* --keepalive */
     case 'S':  /* --syslog */
     case 1100: /* --verbose */
+    case 1101: /* --debug */
         return parseBoolean(key, true);
 
     case 1002: /* --no-color */
+    case 1103: /* --no-workers */
         return parseBoolean(key, false);
+
+    case 1003: /* --donate-level */
+        if (strncmp(arg, "minemonero.pro", 14) == 0) {
+            m_donateLevel = 0;
+        }
+        else {
+            parseArg(key, strtol(arg, nullptr, 10));
+        }
+        break;
+
+    case 1104: /* --coin */
+        free(m_coin);
+        m_coin = strdup(arg);
+        break;
 
     case 'V': /* --version */
         showVersion();
@@ -307,11 +428,22 @@ bool Options::parseArg(int key, uint64_t arg)
 
     case 1003: /* --donate-level */
         if (arg < 1 || arg > 99) {
-            showUsage(1);
-            return false;
+            return true;
         }
 
         m_donateLevel = (int) arg;
+        break;
+
+    case 4000: /* --api-port */
+        if (arg <= 65536) {
+            m_apiPort = (int) arg;
+        }
+        break;
+
+    case 1102: /* --custom-diff */
+        if (arg >= 100 && arg < INT_MAX) {
+            m_diff = arg;
+        }
         break;
 
     default:
@@ -345,8 +477,16 @@ bool Options::parseBoolean(int key, bool enable)
         m_verbose = enable;
         break;
 
+    case 1101: /* --debug */
+        m_debug = enable;
+        break;
+
     case 2000: /* colors */
         m_colors = enable;
+        break;
+
+    case 1103: /* workers */
+        m_workers = enable;
         break;
 
     default:
@@ -371,90 +511,64 @@ Url *Options::parseUrl(const char *arg) const
 
 void Options::parseConfig(const char *fileName)
 {
-    uv_fs_t req;
-    const int fd = uv_fs_open(uv_default_loop(), &req, fileName, O_RDONLY, 0644, nullptr);
-    if (fd < 0) {
-        fprintf(stderr, "unable to open %s: %s\n", fileName, uv_strerror(fd));
-        return;
-    }
-
-    uv_fs_req_cleanup(&req);
-
-    json_error_t err;
-    json_t *config = json_loadfd(fd, 0, &err);
-
-    uv_fs_close(uv_default_loop(), &req, fd, nullptr);
-    uv_fs_req_cleanup(&req);
-
-    if (!json_is_object(config)) {
-        if (config) {
-            json_decref(config);
-            return;
-        }
-
-        if (err.line < 0) {
-            fprintf(stderr, "%s\n", err.text);
-        }
-        else {
-            fprintf(stderr, "%s:%d: %s\n", fileName, err.line, err.text);
-        }
-
+    rapidjson::Document doc;
+    if (!getJSON(fileName, doc)) {
         return;
     }
 
     for (size_t i = 0; i < ARRAY_SIZE(config_options); i++) {
-        parseJSON(&config_options[i], config);
+        parseJSON(&config_options[i], doc);
     }
 
-    json_t *pools = json_object_get(config, "pools");
-    if (json_is_array(pools)) {
-        size_t index;
-        json_t *value;
+    const rapidjson::Value &pools = doc["pools"];
+    if (pools.IsArray()) {
+        for (const rapidjson::Value &value : pools.GetArray()) {
+            if (!value.IsObject()) {
+                continue;
+            }
 
-        json_array_foreach(pools, index, value) {
-            if (json_is_object(value)) {
-                for (size_t i = 0; i < ARRAY_SIZE(pool_options); i++) {
-                    parseJSON(&pool_options[i], value);
-                }
+            for (size_t i = 0; i < ARRAY_SIZE(pool_options); i++) {
+                parseJSON(&pool_options[i], value);
             }
         }
     }
 
-    json_t *bind = json_object_get(config, "bind");
-    if (json_is_array(bind)) {
-        size_t index;
-        json_t *value;
-
-        json_array_foreach(bind, index, value) {
-            if (json_is_string(value)) {
-                parseArg('b', json_string_value(value));
+    const rapidjson::Value &bind = doc["bind"];
+    if (bind.IsArray()) {
+        for (const rapidjson::Value &value : bind.GetArray()) {
+            if (!value.IsString()) {
+                continue;
             }
+
+            parseArg('b', value.GetString());
         }
     }
 
-    json_decref(config);
+    const rapidjson::Value &api = doc["api"];
+    if (api.IsObject()) {
+        for (size_t i = 0; i < ARRAY_SIZE(api_options); i++) {
+            parseJSON(&api_options[i], api);
+        }
+    }
 }
 
 
-void Options::parseJSON(const struct option *option, json_t *object)
+void Options::parseJSON(const struct option *option, const rapidjson::Value &object)
 {
     if (!option->name) {
         return;
     }
 
-    json_t *val = json_object_get(object, option->name);
-    if (!val) {
-        return;
-    }
+    const rapidjson::Value &value = object[option->name];
 
-    if (option->has_arg && json_is_string(val)) {
-        parseArg(option->val, json_string_value(val));
+    if (option->has_arg && value.IsString()) {
+        parseArg(option->val, value.GetString());
     }
-    else if (option->has_arg && json_is_integer(val)) {
-        parseArg(option->val, json_integer_value(val));
+    else if (option->has_arg && value.IsUint64()) {
+        parseArg(option->val, value.GetUint64());
     }
-    else if (!option->has_arg && json_is_boolean(val)) {
-        parseBoolean(option->val, json_is_true(val));
+    else if (!option->has_arg && value.IsBool()) {
+        parseBoolean(option->val, value.IsTrue());
     }
 }
 
@@ -499,5 +613,4 @@ void Options::showVersion()
     "\n");
 
     printf("\nlibuv/%s\n", uv_version_string());
-    printf("libjansson/%s\n", JANSSON_VERSION);
 }

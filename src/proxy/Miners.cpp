@@ -26,6 +26,8 @@
 
 
 #include "log/Log.h"
+#include "proxy/events/CloseEvent.h"
+#include "proxy/events/ConnectionEvent.h"
 #include "proxy/Miner.h"
 #include "proxy/Miners.h"
 
@@ -40,6 +42,24 @@ Miners::Miners()
 
 Miners::~Miners()
 {
+}
+
+
+void Miners::onEvent(IEvent *event)
+{
+    switch (event->type())
+    {
+    case IEvent::ConnectionType:
+        add(static_cast<ConnectionEvent*>(event)->miner());
+        break;
+
+    case IEvent::CloseType:
+        remove(static_cast<CloseEvent*>(event)->miner());
+        break;
+
+    default:
+        break;
+    }
 }
 
 

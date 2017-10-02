@@ -22,30 +22,37 @@
  */
 
 #include <inttypes.h>
+#include <stdio.h>
 #include <string.h>
 
 
-#include "Counters.h"
-#include "interfaces/IMinerListener.h"
 #include "log/Log.h"
 #include "net/Job.h"
+#include "proxy/Counters.h"
+#include "proxy/Error.h"
+#include "proxy/Events.h"
+#include "proxy/events/CloseEvent.h"
+#include "proxy/events/LoginEvent.h"
+#include "proxy/events/SubmitEvent.h"
 #include "proxy/JobResult.h"
 #include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
 #include "proxy/Uuid.h"
+#include "rapidjson/document.h"
+#include "rapidjson/error/en.h"
 
 
 static int64_t nextId = 0;
 
 
 Miner::Miner() :
-    m_listener(nullptr),
     m_id(++nextId),
     m_loginId(0),
     m_recvBufPos(0),
     m_mapperId(-1),
     m_state(WaitLoginState),
-    m_realmId(0),
+    m_customDiff(0),
+    m_diff(0),
     m_expire(uv_now(uv_default_loop()) + kLoginTimeout),
     m_rx(0),
     m_timestamp(uv_now(uv_default_loop())),
@@ -58,21 +65,18 @@ Miner::Miner() :
     m_socket.data = this;
     uv_tcp_init(uv_default_loop(), &m_socket);
 
-    m_recvBuf.base = new char[kRecvBufSize];
-    m_recvBuf.len  = kRecvBufSize;
+    m_recvBuf.base = m_buf;
+    m_recvBuf.len  = sizeof(m_buf);
 
-    memset(m_recvBuf.base, 0, kRecvBufSize);
-
-    Counters::add(Counters::Connection);
+    Counters::connections++;
 }
 
 
 Miner::~Miner()
 {
-    Counters::remove(Counters::Connection);
-
     m_socket.data = nullptr;
-    delete [] m_recvBuf.base;
+
+    Counters::connections--;
 }
 
 
@@ -96,87 +100,62 @@ bool Miner::accept(uv_stream_t *server)
 }
 
 
-void Miner::reject(int64_t id, const char *message, bool log)
+void Miner::replyWithError(int64_t id, const char *message)
 {
-    const size_t size = 64 + strlen(message);
-    char *req = static_cast<char*>(malloc(size));
-
-    if (log) {
-        Counters::reject(Counters::Primary, m_ip, message);
-    }
-
-    snprintf(req, size, "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"error\":{\"code\":-1,\"message\":\"%s\"}}\n", id, message);
-    send(req);
-}
-
-
-void Miner::send(char *data)
-{
-    LOG_DEBUG("[%s] send (%d bytes): \"%s\"", m_ip, strlen(data), data);
-    if (m_state != ReadyState) {
-        return;
-    }
-
-    const size_t size = strlen(data);
-    uv_buf_t buf = uv_buf_init(data, (unsigned int) size);
-
-    uv_write_t *req = new uv_write_t;
-    req->data = buf.base;
-
-    m_tx += size;
-
-    uv_write(req, reinterpret_cast<uv_stream_t*>(&m_socket), &buf, 1, [](uv_write_t *req, int status) {
-        free(req->data);
-        delete req;
-    });
+    send(snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"error\":{\"code\":-1,\"message\":\"%s\"}}\n", id, message));
 }
 
 
 void Miner::setJob(Job &job)
 {
-    const size_t size = 384;
-    char *req = static_cast<char*>(malloc(size));
-    snprintf(req, 4, "%02hhx", m_fixedByte);
+    snprintf(m_sendBuf, 4, "%02hhx", m_fixedByte);
 
-    memcpy(job.rawBlob() + 84, req, 2);
+    memcpy(job.rawBlob() + 84, m_sendBuf, 2);
 
+    m_diff = job.diff();
+    bool customDiff = false;
+
+    char target[9];
+    if (m_customDiff && m_customDiff < m_diff) {
+        const uint64_t t = 0xFFFFFFFFFFFFFFFFULL / m_customDiff;
+        Job::toHex(reinterpret_cast<const unsigned char *>(&t) + 4, 4, target);
+        target[8] = '\0';
+        customDiff = true;
+    }
+
+    int size = 0;
     if (m_state == WaitReadyState) {
         setState(ReadyState);
-        snprintf(req, size, "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"result\":{\"id\":\"%s\",\"job\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx\",\"target\":\"%s\"},\"status\":\"OK\"}}\n",
-                 m_loginId, m_rpcId, job.rawBlob(), job.id(), m_fixedByte, job.rawTarget());
+        size = snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"result\":{\"id\":\"%s\",\"job\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx\",\"target\":\"%s\"},\"status\":\"OK\"}}\n",
+                        m_loginId, m_rpcId, job.rawBlob(), job.id(), m_fixedByte, customDiff ? target : job.rawTarget());
     }
     else {
-        snprintf(req, size, "{\"jsonrpc\":\"2.0\",\"method\":\"job\",\"params\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx\",\"target\":\"%s\"}}\n",
-                 job.rawBlob(), job.id(), m_fixedByte, job.rawTarget());
+        size = snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"jsonrpc\":\"2.0\",\"method\":\"job\",\"params\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx\",\"target\":\"%s\"}}\n",
+                        job.rawBlob(), job.id(), m_fixedByte, customDiff ? target : job.rawTarget());
     }
 
-    send(req);
+    send(size);
 }
 
 
 void Miner::success(int64_t id, const char *status)
 {
-    const size_t size = 96;
-    char *req = static_cast<char*>(malloc(size));
-
-    snprintf(req, size, "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"error\":null,\"result\":{\"status\":\"%s\"}}\n", id, status);
-    send(req);
+    send(snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"error\":null,\"result\":{\"status\":\"%s\"}}\n", id, status));
 }
 
 
-bool Miner::parseRequest(int64_t id, const char *method, const json_t *params)
+bool Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value &params)
 {
-    if (!method || !json_is_object(params) || !m_listener) {
+    if (!method || !params.IsObject()) {
         return false;
     }
 
     if (m_state == WaitLoginState) {
         if (strcmp(method, "login") == 0) {
             setState(WaitReadyState);
-            LoginRequest request(id, json_string_value(json_object_get(params, "login")), json_string_value(json_object_get(params, "pass")), json_string_value(json_object_get(params, "agent")));
             m_loginId = id;
 
-            m_listener->onMinerLogin(this, request);
+            LoginEvent::create(this, id, params["login"].GetString(), params["pass"].GetString(), params["agent"].GetString())->start();
             return true;
         }
 
@@ -190,24 +169,30 @@ bool Miner::parseRequest(int64_t id, const char *method, const json_t *params)
     if (strcmp(method, "submit") == 0) {
         heartbeat();
 
-        const char *rpcId = json_string_value(json_object_get(params, "id"));
+        const char *rpcId = params["id"].GetString();
         if (!rpcId || strncmp(m_rpcId, rpcId, sizeof(m_rpcId)) != 0) {
-            reject(id, "Unauthenticated");
+            replyWithError(id, Error::toString(Error::Unauthenticated));
             return true;
         }
 
-        JobResult request(id, json_string_value(json_object_get(params, "job_id")), json_string_value(json_object_get(params, "nonce")), json_string_value(json_object_get(params, "result")));
-        if (!request.isValid()) {
-            reject(id, "Low difficulty share");
+        SubmitEvent *event = SubmitEvent::create(this, id, params["job_id"].GetString(), params["nonce"].GetString(), params["result"].GetString());
+
+        if (!event->request.isValid() || event->request.actualDiff() < diff()) {
+            event->reject(Error::LowDifficulty);
+        }
+        else if (!event->request.isCompatible(m_fixedByte)) {
+            event->reject(Error::InvalidNonce);
+        }
+
+        if (m_customDiff && event->request.actualDiff() < m_diff) {
+            success(id, "OK");
             return true;
         }
 
-        if (!request.isCompatible(m_fixedByte)) {
-            reject(id, "Invalid nonce; is miner not compatible with NiceHash?");
-            return false;
+        if (!event->start()) {
+            replyWithError(id, event->message());
         }
 
-        m_listener->onMinerSubmit(this, request);
         return true;
     }
 
@@ -217,7 +202,7 @@ bool Miner::parseRequest(int64_t id, const char *method, const json_t *params)
         return true;
     }
 
-    reject(id, "invalid method");
+    replyWithError(id, Error::toString(Error::InvalidMethod));
     return true;
 }
 
@@ -238,24 +223,44 @@ void Miner::parse(char *line, size_t len)
 
     LOG_DEBUG("[%s] received (%d bytes): \"%s\"", m_ip, len, line);
 
-    if (strlen(line) < 32 || line[0] != '{') {
+    if (len < 32 || line[0] != '{') {
         return shutdown(true);
     }
 
-    json_error_t err;
-    json_t *val = json_loads(line, 0, &err);
+    rapidjson::Document doc;
+    if (doc.ParseInsitu(line).HasParseError()) {
+        LOG_ERR("[%s] JSON decode failed: \"%s\"", m_ip, rapidjson::GetParseError_En(doc.GetParseError()));
 
-    if (!val) {
-        //LOG_ERR("[%s] JSON decode failed: \"%s\": \"%s\"", m_ip, err.text, line);
         return shutdown(true);
     }
 
-    const json_t *id = json_object_get(val, "id");
-    if (!json_is_integer(id) || !parseRequest(json_integer_value(id), json_string_value(json_object_get(val, "method")), json_object_get(val, "params"))) {
-        shutdown(true);
+    if (!doc.IsObject()) {
+        return shutdown(true);
     }
 
-    json_decref(val);
+    const rapidjson::Value &id = doc["id"];
+    if (id.IsInt64() && parseRequest(id.GetInt64(), doc["method"].GetString(), doc["params"])) {
+        return;
+    }
+
+    shutdown(true);
+}
+
+
+void Miner::send(int size)
+{
+    LOG_DEBUG("[%s] send (%d bytes): \"%s\"", m_ip, size, m_sendBuf);
+
+    if (size <= 0 || m_state != ReadyState || uv_is_writable(reinterpret_cast<uv_stream_t*>(&m_socket)) == 0) {
+        return;
+    }
+
+    uv_buf_t buf = uv_buf_init(m_sendBuf, (unsigned int) size);
+    const int rc = uv_try_write(reinterpret_cast<uv_stream_t*>(&m_socket), &buf, 1);
+
+    if (rc < 0) {
+        return shutdown(true);
+    }
 }
 
 
@@ -267,11 +272,11 @@ void Miner::setState(State state)
 
     if (state == ReadyState) {
         heartbeat();
-        Counters::add(Counters::Miner);
+        Counters::add();
     }
 
     if (state == ClosingState && m_state == ReadyState) {
-        Counters::remove(Counters::Miner);
+        Counters::remove();
     }
 
     m_state = state;
@@ -285,21 +290,19 @@ void Miner::shutdown(bool had_error)
     }
 
     setState(ClosingState);
+    uv_read_stop(reinterpret_cast<uv_stream_t*>(&m_socket));
 
-    uv_shutdown_t* req = new uv_shutdown_t;
-    uv_shutdown(req, reinterpret_cast<uv_stream_t*>(&m_socket), [](uv_shutdown_t* req, int status) {
+    uv_shutdown(new uv_shutdown_t, reinterpret_cast<uv_stream_t*>(&m_socket), [](uv_shutdown_t* req, int status) {
+
         if (uv_is_closing(reinterpret_cast<uv_handle_t*>(req->handle)) == 0) {
             uv_close(reinterpret_cast<uv_handle_t*>(req->handle), [](uv_handle_t *handle) {
+                CloseEvent::start(getMiner(handle->data));
                 delete static_cast<Miner*>(handle->data);
             });
         }
 
         delete req;
     });
-
-    if (m_listener) {
-        m_listener->onMinerClose(this);
-    }
 }
 
 
@@ -315,7 +318,7 @@ void Miner::onAllocBuffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *
 void Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
 {
     auto miner = getMiner(stream->data);
-    if (nread < 0 || (size_t) nread > (kRecvBufSize - 8 - miner->m_recvBufPos)) {
+    if (nread < 0 || (size_t) nread > (sizeof(m_buf) - 8 - miner->m_recvBufPos)) {
         return miner->shutdown(nread != UV_EOF);;
     }
 
@@ -323,7 +326,7 @@ void Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
     miner->m_recvBufPos += nread;
 
     char* end;
-    char* start = miner->m_recvBuf.base;
+    char* start = buf->base;
     size_t remaining = miner->m_recvBufPos;
 
     while ((end = static_cast<char*>(memchr(start, '\n', remaining))) != nullptr) {
@@ -340,11 +343,11 @@ void Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
         return;
     }
 
-    if (start == miner->m_recvBuf.base) {
+    if (start == buf->base) {
         return;
     }
 
-    memcpy(miner->m_recvBuf.base, start, remaining);
+    memcpy(buf->base, start, remaining);
     miner->m_recvBufPos = remaining;
 }
 
@@ -352,9 +355,7 @@ void Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
 void Miner::onTimeout(uv_timer_t *handle)
 {
     auto miner = getMiner(handle->data);
-    miner->m_recvBuf.base[kRecvBufSize - 1] = '\0';
-
-    LOG_ERR("SHUTDOWN %s %s", miner->m_ip, miner->m_recvBuf.base);
+    miner->m_recvBuf.base[sizeof(m_buf) - 1] = '\0';
 
     miner->shutdown(true);
 }

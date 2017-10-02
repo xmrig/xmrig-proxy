@@ -25,7 +25,6 @@
 #include <string.h>
 
 
-#include "log/Log.h"
 #include "net/Job.h"
 
 
@@ -62,6 +61,11 @@ Job::Job(int poolId, bool nicehash) :
     m_size(0),
     m_diff(0),
     m_target(0)
+{
+}
+
+
+Job::~Job()
 {
 }
 
@@ -178,5 +182,5 @@ void Job::toHex(const unsigned char* in, unsigned int len, char* out)
 
 bool Job::operator==(const Job &other) const
 {
-    return memcmp(m_id, other.m_id, sizeof(m_id)) == 0;
+    return memcmp(m_id, other.m_id, sizeof(m_id)) == 0 && memcmp(m_blob, other.m_blob, sizeof(m_blob) == 0);
 }

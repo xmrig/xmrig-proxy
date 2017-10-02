@@ -36,6 +36,8 @@ class Job
 {
 public:
     Job(int poolId = -2, bool nicehash = false);
+    ~Job();
+
     bool setBlob(const char *blob);
     bool setId(const char *id);
     bool setTarget(const char *target);

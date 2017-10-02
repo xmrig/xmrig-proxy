@@ -1,10 +1,15 @@
 {
     "background": false,
     "log-file": null,
+    "access-log-file": null,
     "retries": 5,
     "retry-pause": 5,
+    "donate-level": 2,
+    "coin": "xmr",
+    "custom-diff": 0,
     "syslog": false,
     "verbose": false,
+    "workers": true,
     "pools": [
         {
             "url": "pool.minemonero.pro:5555",
@@ -14,5 +19,10 @@
     ],
     "bind": [
         "0.0.0.0:3333"
-    ]
+    ],
+    "api": {
+        "port": 0,
+        "access-token": null,
+        "worker-id": null
+    }
 }

@@ -22,10 +22,12 @@
  */
 
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <uv.h>
 
 
+#include "api/Api.h"
 #include "App.h"
 #include "Console.h"
 #include "log/ConsoleLog.h"
@@ -42,6 +44,9 @@
 #   include "log/SysLog.h"
 #endif
 
+#ifndef XMRIG_NO_HTTPD
+#   include "api/Httpd.h"
+#endif
 
 App *App::m_self = nullptr;
 
@@ -52,7 +57,7 @@ App::App(int argc, char **argv) :
     m_proxy(nullptr),
     m_options(nullptr)
 {
-    m_self = this;
+    m_self    = this;
     m_options = Options::parse(argc, argv);
     if (!m_options) {
         return;
@@ -85,7 +90,16 @@ App::App(int argc, char **argv) :
 
 App::~App()
 {
+    uv_tty_reset_mode();
+
     delete m_console;
+    delete m_proxy;
+
+#   ifndef XMRIG_NO_HTTPD
+    delete m_httpd;
+#   endif
+
+    Log::release();
 }
 
 
@@ -103,11 +117,19 @@ int App::exec()
 
     Summary::print();
 
+#   ifndef XMRIG_NO_API
+    Api::start();
+#   endif
+
+#   ifndef XMRIG_NO_HTTPD
+    m_httpd = new Httpd(m_options->apiPort(), m_options->apiToken());
+    m_httpd->start();
+#   endif
+
     m_proxy->connect();
 
     const int r = uv_run(uv_default_loop(), UV_RUN_DEFAULT);
     uv_loop_close(uv_default_loop());
-    uv_tty_reset_mode();
 
     Options::release();
     Platform::release();
@@ -140,6 +162,16 @@ void App::onConsoleCommand(char command)
     case 'c':
     case 'C':
         m_proxy->printConnections();
+        break;
+
+    case 'd':
+    case 'D':
+        m_proxy->toggleDebug();
+        break;
+
+    case 'w':
+    case 'W':
+        m_proxy->printWorkers();
         break;
 
     case 3:
@@ -176,7 +208,8 @@ void App::onSignal(uv_signal_t *handle, int signum)
         break;
 
     default:
-        break;
+        LOG_WARN("signal %d received, ignore", signum);
+        return;
     }
 
     m_self->close();

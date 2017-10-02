@@ -28,20 +28,16 @@
 #include <uv.h>
 
 
-class IServerListener;
-
-
 class Server
 {
 public:
-    Server(const char *ip, uint16_t port, IServerListener *listener);
+    Server(const char *ip, uint16_t port);
     bool bind();
 
 private:
     static void onConnection(uv_stream_t *server, int status);
 
     const char *m_ip;
-    IServerListener *m_listener;
     struct sockaddr_in m_addr;
     uint16_t m_port;
     uv_tcp_t m_server;

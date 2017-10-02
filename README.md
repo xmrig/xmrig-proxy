@@ -6,7 +6,7 @@ Extremely high performance Monero (XMR) Stratum protocol proxy, can easily handl
 :warning: :warning: :warning: **Nicehash support must be enabled on miner side, it mandatory.** :warning: :warning: :warning:
 
 * Compatible with any Monero and AEON pools, strongly recommended use pool with fixed diff feature.
-* Any miner with nicehash support, `--nicehash` option for [XMRig](https://github.com/xmrig/xmrig).
+* Any miner with nicehash support, `--nicehash` option for [XMRig](https://github.com/xmrig/xmrig), `"nicehash_nonce": true,` for xmr-stak-cpu.
 * [Comparison](https://github.com/xmrig/xmrig-proxy/wiki/Comparison) with other proxies.
 
 ## Why?
@@ -32,24 +32,34 @@ For failover you can add multiple pools, maximum count not limited.
   
 ### Options
 ```
-  -b, --bind=ADDR       bind to specified address, example "0.0.0.0:3333"
-  -o, --url=URL         URL of mining server
-  -O, --userpass=U:P    username:password pair for mining server
-  -u, --user=USERNAME   username for mining server
-  -p, --pass=PASSWORD   password for mining server
-  -k, --keepalive       send keepalived for prevent timeout (need pool support)
-  -r, --retries=N       number of times to retry before switch to backup server (default: 5)
-  -R, --retry-pause=N   time to pause between retries (default: 5)
-      --no-color        disable colored output
-      --verbose         verbose output
-  -B, --background      run the miner in the background
-  -l, --log-file=FILE   log all output to a file
-  -h, --help            display this help and exit
-  -V, --version         output version information and exit
+  -b, --bind=ADDR          bind to specified address, example "0.0.0.0:3333"
+  -o, --url=URL            URL of mining server
+  -O, --userpass=U:P       username:password pair for mining server
+  -u, --user=USERNAME      username for mining server
+  -p, --pass=PASSWORD      password for mining server
+  -r, --retries=N          number of times to retry before switch to backup server (default: 5)
+  -R, --retry-pause=N      time to pause between retries (default: 5)
+      --custom-diff=N      override pool diff
+      --verbose            verbose output
+      --user-agent=AGENT   set custom user-agent string for pool
+      --coin=COIN          xmr for all cryptonight coins or aeon
+      --no-color           disable colored output
+      --donate-level=N     donate level, default 2%
+  -B, --background         run the miner in the background
+  -c, --config=FILE        load a JSON-format configuration file
+  -l, --log-file=FILE      log all output to a file
+  -S, --syslog             use system log for output messages
+  -A  --access-log-file=N  log all workers access to a file
+      --api-port=N         port for the miner API
+      --api-access-token=T access token for API
+      --api-worker-id=ID   custom worker-id for API
+  -h, --help               display this help and exit
+  -V, --version            output version information and exit
 ```
 
 ## Donations
-Proxy at this moment does not contain any developer fee. It may added in future or not, anyway it will always free if you had less than 256 workers.
+
+Default donation fee is 2% can be reduced to 1% via `donate-level` option. Donation fee applyed only for second and more pool connection. If you use only one pool connection (up to 256 workers) there is no fee.
 
 * XMR: `48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzKt52XU5xvqgzYnDK9URnRoJMk1j8nLwEVsaSWJ4fhdUyZijBGUicoD`
 * BTC: `1P7ujsXeX7GxQwHNnJsRMgAdNkFZmNVqJT`

@@ -25,12 +25,12 @@
 #define __OPTIONS_H__
 
 
-#include <jansson.h>
 #include <stdint.h>
 #include <vector>
 
 
 #include "proxy/Addr.h"
+#include "rapidjson/fwd.h"
 
 
 class Url;
@@ -48,6 +48,7 @@ public:
     inline bool isDebug() const                    { return m_debug; }
     inline bool syslog() const                     { return m_syslog; }
     inline bool verbose() const                    { return m_verbose; }
+    inline bool workers() const                    { return m_workers; }
     inline const char *accessLog() const           { return m_accessLog; }
     inline const char *apiToken() const            { return m_apiToken; }
     inline const char *apiWorkerId() const         { return m_apiWorkerId; }
@@ -74,12 +75,13 @@ private:
 
     static Options *m_self;
 
+    bool getJSON(const char *fileName, rapidjson::Document &doc);
     bool parseArg(int key, const char *arg);
     bool parseArg(int key, uint64_t arg);
     bool parseBoolean(int key, bool enable);
     Url *parseUrl(const char *arg) const;
     void parseConfig(const char *fileName);
-    void parseJSON(const struct option *option, json_t *object);
+    void parseJSON(const struct option *option, const rapidjson::Value &object);
     void showUsage(int status) const;
     void showVersion(void);
 
@@ -89,6 +91,7 @@ private:
     bool m_ready;
     bool m_syslog;
     bool m_verbose;
+    bool m_workers;
     char *m_accessLog;
     char *m_apiToken;
     char *m_apiWorkerId;

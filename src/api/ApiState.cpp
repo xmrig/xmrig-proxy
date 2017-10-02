@@ -36,6 +36,9 @@
 #include "net/Job.h"
 #include "Options.h"
 #include "Platform.h"
+#include "rapidjson/document.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/prettywriter.h"
 #include "version.h"
 
 
@@ -77,22 +80,29 @@ ApiState::~ApiState()
 
 char *ApiState::get(const char *url, int *status) const
 {
-    json_t *reply = json_object();
+    rapidjson::Document doc;
+    doc.SetObject();
 
     if (strncmp(url, "/workers.json", 13) == 0) {
-        getHashrate(reply);
-        getWorkers(reply);
+        getHashrate(doc);
+        getWorkers(doc);
 
-        return finalize(reply);
+        return finalize(doc);
     }
 
-    getIdentify(reply);
-    getMiner(reply);
-    getHashrate(reply);
-    getMinersSummary(reply);
-    getResults(reply);
+    if (strncmp(url, "/resources.json", 15) == 0) {
+        getResources(doc);
 
-    return finalize(reply);
+        return finalize(doc);
+    }
+
+    getIdentify(doc);
+    getMiner(doc);
+    getHashrate(doc);
+    getMinersSummary(doc);
+    getResults(doc);
+
+    return finalize(doc);
 }
 
 
@@ -108,12 +118,13 @@ void ApiState::tick(const std::vector<Worker> &workers)
 }
 
 
-char *ApiState::finalize(json_t *reply) const
+char *ApiState::finalize(rapidjson::Document &doc) const
 {
-    char *buf = json_dumps(reply, JSON_INDENT(4) | JSON_REAL_PRECISION(15));
-    json_decref(reply);
+    rapidjson::StringBuffer buffer(0, 4096);
+    rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
+    doc.Accept(writer);
 
-    return buf;
+    return strdup(buffer.GetString());
 }
 
 
@@ -150,103 +161,126 @@ void ApiState::genId()
 }
 
 
-void ApiState::getHashrate(json_t *reply) const
+void ApiState::getHashrate(rapidjson::Document &doc) const
 {
-    json_t *hashrate = json_object();
-    json_t *total    = json_array();
+    auto &allocator = doc.GetAllocator();
 
-    json_object_set_new(reply,    "hashrate", hashrate);
-    json_object_set_new(hashrate, "total",    total);
+    rapidjson::Value hashrate(rapidjson::kObjectType);
+    rapidjson::Value total(rapidjson::kArrayType);
 
     for (size_t i = 0; i < sizeof(m_stats.hashrate) / sizeof(m_stats.hashrate[0]); i++) {
-        json_array_append_new(total, json_real(normalize(m_stats.hashrate[i])));
+        total.PushBack(normalize(m_stats.hashrate[i]), allocator);
     }
+
+    hashrate.AddMember("total", total, allocator);
+    doc.AddMember("hashrate", hashrate, allocator);
 }
 
 
-void ApiState::getIdentify(json_t *reply) const
+void ApiState::getIdentify(rapidjson::Document &doc) const
 {
-    json_object_set_new(reply, "id",        json_string(m_id));
-    json_object_set_new(reply, "worker_id", json_string(m_workerId));
+    doc.AddMember("id",        rapidjson::StringRef(m_id),       doc.GetAllocator());
+    doc.AddMember("worker_id", rapidjson::StringRef(m_workerId), doc.GetAllocator());
 }
 
 
-void ApiState::getMiner(json_t *reply) const
+void ApiState::getMiner(rapidjson::Document &doc) const
 {
-    json_object_set_new(reply, "version",      json_string(APP_VERSION));
-    json_object_set_new(reply, "kind",         json_string(APP_KIND));
-    json_object_set_new(reply, "ua",           json_string(Platform::userAgent()));
-    json_object_set_new(reply, "uptime",       json_integer(m_stats.uptime()));
-    json_object_set_new(reply, "donate_level", json_integer(Options::i()->donateLevel()));
+    auto &allocator = doc.GetAllocator();
+
+    doc.AddMember("version",      APP_VERSION, allocator);
+    doc.AddMember("kind",         APP_KIND, allocator);
+    doc.AddMember("ua",           rapidjson::StringRef(Platform::userAgent()), allocator);
+    doc.AddMember("uptime",       m_stats.uptime(), allocator);
+    doc.AddMember("donate_level", Options::i()->donateLevel(), allocator);
 
     if (m_stats.hashes && m_stats.donateHashes) {
-        json_object_set_new(reply, "donated", json_real(normalize((double) m_stats.donateHashes / m_stats.hashes * 100.0 )));
+        doc.AddMember("donated", normalize((double) m_stats.donateHashes / m_stats.hashes * 100.0), allocator);
     }
     else {
-        json_object_set_new(reply, "donated", json_real(0.0));
+        doc.AddMember("donated", 0.0, allocator);
     }
 }
 
 
-void ApiState::getMinersSummary(json_t *reply) const
+void ApiState::getMinersSummary(rapidjson::Document &doc) const
 {
-    json_t *miners = json_object();
-    json_object_set_new(reply, "miners", miners);
+    auto &allocator = doc.GetAllocator();
 
-    json_object_set_new(miners, "now",       json_integer(m_stats.miners));
-    json_object_set_new(miners, "max",       json_integer(m_stats.maxMiners));
-    json_object_set_new(reply,  "upstreams", json_integer(m_stats.upstreams));
+    rapidjson::Value miners(rapidjson::kObjectType);
+
+    miners.AddMember("now", m_stats.miners, allocator);
+    miners.AddMember("max", m_stats.maxMiners, allocator);
+
+    doc.AddMember("miners",    miners, allocator);
+    doc.AddMember("upstreams", m_stats.upstreams, allocator);
 }
 
 
-void ApiState::getResults(json_t *reply) const
+
+void ApiState::getResources(rapidjson::Document &doc) const
 {
-    json_t *results = json_object();
-    json_t *best    = json_array();
+    auto &allocator = doc.GetAllocator();
+    size_t rss = 0;
+    uv_resident_set_memory(&rss);
 
-    json_object_set_new(reply,   "results",       results);
-    json_object_set_new(results, "accepted",      json_integer(m_stats.accepted));
-    json_object_set_new(results, "rejected",      json_integer(m_stats.rejected));
-    json_object_set_new(results, "invalid",       json_integer(m_stats.invalid));
-    json_object_set_new(results, "avg_time",      json_integer(m_stats.avgTime()));
-    json_object_set_new(results, "latency",       json_integer(m_stats.avgLatency()));
-    json_object_set_new(results, "hashes_total",  json_integer(m_stats.hashes));
-    json_object_set_new(results, "hashes_donate", json_integer(m_stats.donateHashes));
-    json_object_set_new(results, "best",          best);
-    json_object_set_new(results, "error_log",     json_array());
+    doc.AddMember("total_memory",        uv_get_total_memory(), allocator);
+    doc.AddMember("resident_set_memory", rss, allocator);
+}
 
+
+void ApiState::getResults(rapidjson::Document &doc) const
+{
+    auto &allocator = doc.GetAllocator();
+
+    rapidjson::Value results(rapidjson::kObjectType);
+
+    results.AddMember("accepted",      m_stats.accepted, allocator);
+    results.AddMember("rejected",      m_stats.rejected, allocator);
+    results.AddMember("invalid",       m_stats.invalid, allocator);
+    results.AddMember("avg_time",      m_stats.avgTime(), allocator);
+    results.AddMember("latency",       m_stats.avgLatency(), allocator);
+    results.AddMember("hashes_total",  m_stats.hashes, allocator);
+    results.AddMember("hashes_donate", m_stats.donateHashes, allocator);
+
+    rapidjson::Value best(rapidjson::kArrayType);
     for (size_t i = 0; i < m_stats.topDiff.size(); ++i) {
-        json_array_append_new(best, json_integer(m_stats.topDiff[i]));
+        best.PushBack(m_stats.topDiff[i], allocator);
     }
+
+    results.AddMember("best", best, allocator);
+
+    doc.AddMember("results", results, allocator);
 }
 
 
-void ApiState::getWorkers(json_t *reply) const
+void ApiState::getWorkers(rapidjson::Document &doc) const
 {
-    json_t *workers = json_array();
-
-    json_object_set_new(reply, "workers", workers);
+    auto &allocator = doc.GetAllocator();
+    rapidjson::Value workers(rapidjson::kArrayType);
 
     for (const Worker &worker : m_workers) {
         if (worker.connections() == 0 && worker.lastHash() == 0) {
             continue;
         }
 
-        json_t *array = json_array();
-        json_array_append_new(array, json_string(worker.name()));
-        json_array_append_new(array, json_string(worker.ip()));
-        json_array_append_new(array, json_integer(worker.connections()));
-        json_array_append_new(array, json_integer(worker.accepted()));
-        json_array_append_new(array, json_integer(worker.rejected()));
-        json_array_append_new(array, json_integer(worker.invalid()));
-        json_array_append_new(array, json_integer(worker.hashes()));
-        json_array_append_new(array, json_integer(worker.lastHash()));
-        json_array_append_new(array, json_real(normalize(worker.hashrate(60))));
-        json_array_append_new(array, json_real(normalize(worker.hashrate(600))));
-        json_array_append_new(array, json_real(normalize(worker.hashrate(3600))));
-        json_array_append_new(array, json_real(normalize(worker.hashrate(3600 * 12))));
-        json_array_append_new(array, json_real(normalize(worker.hashrate(3600 * 24))));
+         rapidjson::Value array(rapidjson::kArrayType);
+         array.PushBack(rapidjson::StringRef(worker.name()), allocator);
+         array.PushBack(rapidjson::StringRef(worker.ip()), allocator);
+         array.PushBack(worker.connections(), allocator);
+         array.PushBack(worker.accepted(), allocator);
+         array.PushBack(worker.rejected(), allocator);
+         array.PushBack(worker.invalid(), allocator);
+         array.PushBack(worker.hashes(), allocator);
+         array.PushBack(worker.lastHash(), allocator);
+         array.PushBack(normalize(worker.hashrate(60)), allocator);
+         array.PushBack(normalize(worker.hashrate(600)), allocator);
+         array.PushBack(normalize(worker.hashrate(3600)), allocator);
+         array.PushBack(normalize(worker.hashrate(3600 * 12)), allocator);
+         array.PushBack(normalize(worker.hashrate(3600 * 24)), allocator);
 
-        json_array_append_new(workers, array);
+         workers.PushBack(array, allocator);
     }
+
+    doc.AddMember("workers", workers, allocator);
 }

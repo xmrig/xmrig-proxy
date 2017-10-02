@@ -22,7 +22,6 @@
  */
 
 
-#include <jansson.h>
 #include <limits.h>
 #include <string.h>
 #include <uv.h>
@@ -39,6 +38,9 @@
 #include "net/Url.h"
 #include "Options.h"
 #include "Platform.h"
+#include "rapidjson/document.h"
+#include "rapidjson/error/en.h"
+#include "rapidjson/filereadstream.h"
 #include "version.h"
 
 
@@ -65,6 +67,7 @@ Options:\n\
       --user-agent=AGENT   set custom user-agent string for pool\n\
       --coin=COIN          xmr for all cryptonight coins or aeon\n\
       --no-color           disable colored output\n\
+      --no-workers         disable per worker statistics\n\
       --donate-level=N     donate level, default 2%%\n\
   -B, --background         run the miner in the background\n\
   -c, --config=FILE        load a JSON-format configuration file\n\
@@ -95,13 +98,14 @@ static struct option const options[] = {
     { "bind",             1, nullptr, 'b'  },
     { "coin",             1, nullptr, 1104 },
     { "config",           1, nullptr, 'c'  },
-    { "debug",            0, nullptr, 1101 },
     { "custom-diff",      1, nullptr, 1102 },
+    { "debug",            0, nullptr, 1101 },
     { "donate-level",     1, nullptr, 1003 },
     { "help",             0, nullptr, 'h'  },
     { "keepalive",        0, nullptr ,'k'  },
     { "log-file",         1, nullptr, 'l'  },
     { "no-color",         0, nullptr, 1002 },
+    { "no-workers",       0, nullptr, 1103 },
     { "pass",             1, nullptr, 'p'  },
     { "retries",          1, nullptr, 'r'  },
     { "retry-pause",      1, nullptr, 'R'  },
@@ -121,8 +125,8 @@ static struct option const config_options[] = {
     { "background",       0, nullptr, 'B'  },
     { "coin",             1, nullptr, 1104 },
     { "colors",           0, nullptr, 2000 },
-    { "debug",            0, nullptr, 1101 },
     { "custom-diff",      1, nullptr, 1102 },
+    { "debug",            0, nullptr, 1101 },
     { "donate-level",     1, nullptr, 1003 },
     { "log-file",         1, nullptr, 'l'  },
     { "retries",          1, nullptr, 'r'  },
@@ -130,6 +134,7 @@ static struct option const config_options[] = {
     { "syslog",           0, nullptr, 'S'  },
     { "user-agent",       1, nullptr, 1008 },
     { "verbose",          0, nullptr, 1100 },
+    { "workers",          0, nullptr, 1103 },
     { 0, 0, 0, 0 }
 };
 
@@ -172,6 +177,7 @@ Options::Options(int argc, char **argv) :
     m_ready(false),
     m_syslog(false),
     m_verbose(false),
+    m_workers(true),
     m_accessLog(nullptr),
     m_apiToken(nullptr),
     m_apiWorkerId(nullptr),
@@ -240,6 +246,35 @@ Options::~Options()
     free(m_coin);
     free(m_logFile);
     free(m_userAgent);
+}
+
+
+bool Options::getJSON(const char *fileName, rapidjson::Document &doc)
+{
+    uv_fs_t req;
+    const int fd = uv_fs_open(uv_default_loop(), &req, fileName, O_RDONLY, 0644, nullptr);
+    if (fd < 0) {
+        fprintf(stderr, "unable to open %s: %s\n", fileName, uv_strerror(fd));
+        return false;
+    }
+
+    uv_fs_req_cleanup(&req);
+
+    FILE *fp = fdopen(fd, "rb");
+    char buf[8192];
+    rapidjson::FileReadStream is(fp, buf, sizeof(buf));
+
+    doc.ParseStream(is);
+
+    uv_fs_close(uv_default_loop(), &req, fd, nullptr);
+    uv_fs_req_cleanup(&req);
+
+    if (doc.HasParseError()) {
+        printf("%s:%d: %s", fileName, (int) doc.GetErrorOffset(), rapidjson::GetParseError_En(doc.GetParseError()));
+        return false;
+    }
+
+    return doc.IsObject();
 }
 
 
@@ -327,6 +362,7 @@ bool Options::parseArg(int key, const char *arg)
         return parseBoolean(key, true);
 
     case 1002: /* --no-color */
+    case 1103: /* --no-workers */
         return parseBoolean(key, false);
 
     case 1003: /* --donate-level */
@@ -449,6 +485,10 @@ bool Options::parseBoolean(int key, bool enable)
         m_colors = enable;
         break;
 
+    case 1103: /* workers */
+        m_workers = enable;
+        break;
+
     default:
         break;
     }
@@ -471,97 +511,64 @@ Url *Options::parseUrl(const char *arg) const
 
 void Options::parseConfig(const char *fileName)
 {
-    uv_fs_t req;
-    const int fd = uv_fs_open(uv_default_loop(), &req, fileName, O_RDONLY, 0644, nullptr);
-    if (fd < 0) {
-        fprintf(stderr, "unable to open %s: %s\n", fileName, uv_strerror(fd));
-        return;
-    }
-
-    uv_fs_req_cleanup(&req);
-
-    json_error_t err;
-    json_t *config = json_loadfd(fd, 0, &err);
-
-    uv_fs_close(uv_default_loop(), &req, fd, nullptr);
-    uv_fs_req_cleanup(&req);
-
-    if (!json_is_object(config)) {
-        if (config) {
-            json_decref(config);
-            return;
-        }
-
-        if (err.line < 0) {
-            fprintf(stderr, "%s\n", err.text);
-        }
-        else {
-            fprintf(stderr, "%s:%d: %s\n", fileName, err.line, err.text);
-        }
-
+    rapidjson::Document doc;
+    if (!getJSON(fileName, doc)) {
         return;
     }
 
     for (size_t i = 0; i < ARRAY_SIZE(config_options); i++) {
-        parseJSON(&config_options[i], config);
+        parseJSON(&config_options[i], doc);
     }
 
-    json_t *pools = json_object_get(config, "pools");
-    if (json_is_array(pools)) {
-        size_t index;
-        json_t *value;
+    const rapidjson::Value &pools = doc["pools"];
+    if (pools.IsArray()) {
+        for (const rapidjson::Value &value : pools.GetArray()) {
+            if (!value.IsObject()) {
+                continue;
+            }
 
-        json_array_foreach(pools, index, value) {
-            if (json_is_object(value)) {
-                for (size_t i = 0; i < ARRAY_SIZE(pool_options); i++) {
-                    parseJSON(&pool_options[i], value);
-                }
+            for (size_t i = 0; i < ARRAY_SIZE(pool_options); i++) {
+                parseJSON(&pool_options[i], value);
             }
         }
     }
 
-    json_t *bind = json_object_get(config, "bind");
-    if (json_is_array(bind)) {
-        size_t index;
-        json_t *value;
-
-        json_array_foreach(bind, index, value) {
-            if (json_is_string(value)) {
-                parseArg('b', json_string_value(value));
+    const rapidjson::Value &bind = doc["bind"];
+    if (bind.IsArray()) {
+        for (const rapidjson::Value &value : bind.GetArray()) {
+            if (!value.IsString()) {
+                continue;
             }
+
+            parseArg('b', value.GetString());
         }
     }
 
-    json_t *api = json_object_get(config, "api");
-    if (json_is_object(api)) {
+    const rapidjson::Value &api = doc["api"];
+    if (api.IsObject()) {
         for (size_t i = 0; i < ARRAY_SIZE(api_options); i++) {
             parseJSON(&api_options[i], api);
         }
     }
-
-    json_decref(config);
 }
 
 
-void Options::parseJSON(const struct option *option, json_t *object)
+void Options::parseJSON(const struct option *option, const rapidjson::Value &object)
 {
     if (!option->name) {
         return;
     }
 
-    json_t *val = json_object_get(object, option->name);
-    if (!val) {
-        return;
-    }
+    const rapidjson::Value &value = object[option->name];
 
-    if (option->has_arg && json_is_string(val)) {
-        parseArg(option->val, json_string_value(val));
+    if (option->has_arg && value.IsString()) {
+        parseArg(option->val, value.GetString());
     }
-    else if (option->has_arg && json_is_integer(val)) {
-        parseArg(option->val, json_integer_value(val));
+    else if (option->has_arg && value.IsUint64()) {
+        parseArg(option->val, value.GetUint64());
     }
-    else if (!option->has_arg && json_is_boolean(val)) {
-        parseBoolean(option->val, json_is_true(val));
+    else if (!option->has_arg && value.IsBool()) {
+        parseBoolean(option->val, value.IsTrue());
     }
 }
 
@@ -606,5 +613,4 @@ void Options::showVersion()
     "\n");
 
     printf("\nlibuv/%s\n", uv_version_string());
-    printf("libjansson/%s\n", JANSSON_VERSION);
 }

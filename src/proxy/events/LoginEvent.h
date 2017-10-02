@@ -26,27 +26,25 @@
 
 
 #include "proxy/events/MinerEvent.h"
-
-
-class LoginRequest;
+#include "proxy/LoginRequest.h"
 
 
 class LoginEvent : public MinerEvent
 {
 public:
-    static inline bool start(Miner *miner, const LoginRequest &request)
+    static inline LoginEvent *create(Miner *miner, int64_t id, const char *login, const char *pass, const char *agent)
     {
-        return exec(new (m_buf) LoginEvent(miner, request));
+        return new (m_buf) LoginEvent(miner, id, login, pass, agent);
     }
 
 
-    const LoginRequest &request;
+    LoginRequest request;
 
 
 protected:
-    inline LoginEvent(Miner *miner, const LoginRequest &request)
+    inline LoginEvent(Miner *miner, int64_t id, const char *login, const char *pass, const char *agent)
         : MinerEvent(LoginType, miner),
-          request(request)
+          request(id, login, pass, agent)
     {}
 };
 

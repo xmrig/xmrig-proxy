@@ -65,6 +65,11 @@ Job::Job(int poolId, bool nicehash) :
 }
 
 
+Job::~Job()
+{
+}
+
+
 bool Job::setBlob(const char *blob)
 {
     if (!blob) {

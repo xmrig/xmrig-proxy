@@ -9,6 +9,7 @@
     "custom-diff": 0,
     "syslog": false,
     "verbose": false,
+    "workers": true,
     "pools": [
         {
             "url": "pool.minemonero.pro:5555",

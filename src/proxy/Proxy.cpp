@@ -147,6 +147,8 @@ void Proxy::printState()
     LOG_NOTICE("---------------------------------");
     m_splitter->printState();
     LOG_NOTICE("---------------------------------");
+
+    LOG_INFO("%" PRIu64 " (%" PRIu64 ")", Counters::miners(), Counters::connections);
 }
 #endif
 

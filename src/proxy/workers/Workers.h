@@ -37,6 +37,7 @@
 class AcceptEvent;
 class CloseEvent;
 class LoginEvent;
+class Miner;
 class SubmitEvent;
 
 
@@ -54,11 +55,13 @@ protected:
     void onRejectedEvent(IEvent *event) override;
 
 private:
+    bool indexByMiner(const Miner *miner, size_t *index) const;
     void accept(const AcceptEvent *event);
     void login(const LoginEvent *event);
     void reject(const SubmitEvent *event);
     void remove(const CloseEvent *event);
 
+    bool m_enabled;
     std::map<int64_t, size_t> m_miners;
     std::map<std::string, size_t> m_map;
     std::vector<Worker> m_workers;

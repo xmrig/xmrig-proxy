@@ -37,7 +37,8 @@
 #include "proxy/workers/Workers.h"
 
 
-Workers::Workers()
+Workers::Workers() :
+    m_enabled(Options::i()->workers())
 {
 }
 
@@ -49,6 +50,12 @@ Workers::~Workers()
 
 void Workers::printWorkers()
 {
+    if (!m_enabled) {
+        LOG_ERR("Per worker statistics disabled");
+
+        return;
+    }
+
     char workerName[24];
     size_t size = 0;
 
@@ -91,6 +98,10 @@ void Workers::tick(uint64_t ticks)
 
 void Workers::onEvent(IEvent *event)
 {
+    if (!m_enabled) {
+        return;
+    }
+
     switch (event->type())
     {
     case IEvent::LoginType:
@@ -105,7 +116,6 @@ void Workers::onEvent(IEvent *event)
         accept(static_cast<AcceptEvent*>(event));
         break;
 
-
     default:
         break;
     }
@@ -114,6 +124,10 @@ void Workers::onEvent(IEvent *event)
 
 void Workers::onRejectedEvent(IEvent *event)
 {
+    if (!m_enabled) {
+        return;
+    }
+
     switch (event->type())
     {
     case IEvent::SubmitType:
@@ -130,13 +144,30 @@ void Workers::onRejectedEvent(IEvent *event)
 }
 
 
+bool Workers::indexByMiner(const Miner *miner, size_t *index) const
+{
+    if (!miner || miner->mapperId() == -1 || m_miners.count(miner->id()) == 0) {
+        return false;
+    }
+
+    const size_t i = m_miners.at(miner->id());
+    if (i >= m_workers.size()) {
+        return false;
+    }
+
+    *index = i;
+    return true;
+}
+
+
 void Workers::accept(const AcceptEvent *event)
 {
-    if (!event->miner() || event->miner()->mapperId() == -1 || m_miners.count(event->miner()->id()) == 0) {
+    size_t index = 0;
+    if (!indexByMiner(event->miner(), &index)) {
         return;
     }
 
-    Worker &worker = m_workers[m_miners.at(event->miner()->id())];
+    Worker &worker = m_workers[index];
     if (!event->isRejected()) {
         worker.add(event->result);
     }
@@ -169,19 +200,21 @@ void Workers::login(const LoginEvent *event)
 
 void Workers::reject(const SubmitEvent *event)
 {
-    if (event->miner()->mapperId() == -1 || m_miners.count(event->miner()->id()) == 0) {
+    size_t index = 0;
+    if (!indexByMiner(event->miner(), &index)) {
         return;
     }
 
-    m_workers[m_miners.at(event->miner()->id())].reject(true);
+    m_workers[index].reject(true);
 }
 
 
 void Workers::remove(const CloseEvent *event)
 {
-    if (event->miner()->mapperId() == -1 || m_miners.count(event->miner()->id()) == 0) {
+    size_t index = 0;
+    if (!indexByMiner(event->miner(), &index)) {
         return;
     }
 
-    m_workers[m_miners.at(event->miner()->id())].remove();
+    m_workers[index].remove();
 }

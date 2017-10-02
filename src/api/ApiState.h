@@ -25,9 +25,9 @@
 #define __APISTATE_H__
 
 
-#include "jansson.h"
 #include "proxy/StatsData.h"
 #include "proxy/workers/Worker.h"
+#include "rapidjson/fwd.h"
 
 
 class Hashrate;
@@ -44,14 +44,15 @@ public:
     void tick(const std::vector<Worker> &workers);
 
 private:
-    char *finalize(json_t *reply) const;
+    char *finalize(rapidjson::Document &doc) const;
     void genId();
-    void getHashrate(json_t *reply) const;
-    void getIdentify(json_t *reply) const;
-    void getMiner(json_t *reply) const;
-    void getMinersSummary(json_t *reply) const;
-    void getResults(json_t *reply) const;
-    void getWorkers(json_t *reply) const;
+    void getHashrate(rapidjson::Document &doc) const;
+    void getIdentify(rapidjson::Document &doc) const;
+    void getMiner(rapidjson::Document &doc) const;
+    void getMinersSummary(rapidjson::Document &doc) const;
+    void getResources(rapidjson::Document &doc) const;
+    void getResults(rapidjson::Document &doc) const;
+    void getWorkers(rapidjson::Document &doc) const;
 
     char m_id[17];
     char m_workerId[128];

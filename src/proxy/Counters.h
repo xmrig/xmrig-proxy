@@ -64,6 +64,7 @@ public:
 
 
     static uint64_t accepted;
+    static uint64_t connections;
 
 private:
     static uint32_t m_added;

@@ -41,6 +41,7 @@ public:
     static void subscribe(IEvent::Type type, IEventListener *listener);
 
 private:
+    static bool m_ready;
     static std::map<IEvent::Type, std::vector<IEventListener*> > m_listeners;
 };
 

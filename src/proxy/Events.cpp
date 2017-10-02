@@ -22,14 +22,23 @@
  */
 
 
+#include "log/Log.h"
 #include "proxy/Events.h"
 
 
+bool Events::m_ready = true;
 std::map<IEvent::Type, std::vector<IEventListener*> > Events::m_listeners;
 
 
 bool Events::exec(IEvent *event)
 {
+    if (!m_ready) {
+        LOG_ERR("failed start event %d", (int) event->type());
+        return false;
+    }
+
+    m_ready = false;
+
     std::vector<IEventListener*> &listeners = m_listeners[event->type()];
     for (IEventListener *listener : listeners) {
         event->isRejected() ? listener->onRejectedEvent(event) : listener->onEvent(event);
@@ -38,6 +47,7 @@ bool Events::exec(IEvent *event)
     const bool rejected = event->isRejected();
     event->~IEvent();
 
+    m_ready = true;
     return !rejected;
 }
 

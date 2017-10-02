@@ -26,8 +26,10 @@
 
 
 #include <algorithm>
-#include <jansson.h>
 #include <uv.h>
+
+
+#include "rapidjson/fwd.h"
 
 
 class IMinerListener;
@@ -49,7 +51,6 @@ public:
     ~Miner();
     bool accept(uv_stream_t *server);
     void replyWithError(int64_t id, const char *message);
-    void send(char *data);
     void setJob(Job &job);
     void success(int64_t id, const char *status);
 
@@ -73,9 +74,11 @@ private:
     constexpr static size_t kLoginTimeout  = 10 * 1000;
     constexpr static size_t kSocketTimeout = 60 * 10 * 1000;
 
-    bool parseRequest(int64_t id, const char *method, const json_t *params);
+    bool parseRequest(int64_t id, const char *method, const rapidjson::Value &params);
     void heartbeat();
     void parse(char *line, size_t len);
+    void send(const char *data, int size);
+    void send(int size);
     void setState(State state);
     void shutdown(bool had_error);
 
@@ -88,6 +91,7 @@ private:
     char m_buf[2048];
     char m_ip[17];
     char m_rpcId[37];
+    char m_sendBuf[768];
     int64_t m_id;
     int64_t m_loginId;
     size_t m_recvBufPos;

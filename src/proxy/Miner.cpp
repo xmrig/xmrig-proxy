@@ -37,6 +37,8 @@
 #include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
 #include "proxy/Uuid.h"
+#include "rapidjson/document.h"
+#include "rapidjson/error/en.h"
 
 
 static int64_t nextId = 0;
@@ -65,13 +67,15 @@ Miner::Miner() :
     m_recvBuf.base = m_buf;
     m_recvBuf.len  = sizeof(m_buf);
 
-    memset(m_buf, 0, sizeof(m_buf));
+    Counters::connections++;
 }
 
 
 Miner::~Miner()
 {
     m_socket.data = nullptr;
+
+    Counters::connections--;
 }
 
 
@@ -97,45 +101,15 @@ bool Miner::accept(uv_stream_t *server)
 
 void Miner::replyWithError(int64_t id, const char *message)
 {
-    const size_t size = 64 + strlen(message);
-    char *req = static_cast<char*>(malloc(size));
-
-    snprintf(req, size, "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"error\":{\"code\":-1,\"message\":\"%s\"}}\n", id, message);
-    send(req);
-}
-
-
-void Miner::send(char *data)
-{
-    LOG_DEBUG("[%s] send (%d bytes): \"%s\"", m_ip, strlen(data), data);
-
-    if (m_state != ReadyState || uv_is_writable(reinterpret_cast<uv_stream_t*>(&m_socket)) == 0) {
-        free(data);
-        return;
-    }
-
-    const size_t size = strlen(data);
-    uv_buf_t buf = uv_buf_init(data, (unsigned int) size);
-
-    uv_write_t *req = new uv_write_t;
-    req->data = buf.base;
-
-    m_tx += size;
-
-    uv_write(req, reinterpret_cast<uv_stream_t*>(&m_socket), &buf, 1, [](uv_write_t *req, int status) {
-        free(req->data);
-        delete req;
-    });
+    send(snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"error\":{\"code\":-1,\"message\":\"%s\"}}\n", id, message));
 }
 
 
 void Miner::setJob(Job &job)
 {
-    const size_t size = 512;
-    char *req = static_cast<char*>(malloc(size));
-    snprintf(req, 4, "%02hhx", m_fixedByte);
+    snprintf(m_sendBuf, 4, "%02hhx", m_fixedByte);
 
-    memcpy(job.rawBlob() + 84, req, 2);
+    memcpy(job.rawBlob() + 84, m_sendBuf, 2);
 
     m_diff = job.diff();
     bool customDiff = false;
@@ -148,43 +122,39 @@ void Miner::setJob(Job &job)
         customDiff = true;
     }
 
+    int size = 0;
     if (m_state == WaitReadyState) {
         setState(ReadyState);
-        snprintf(req, size, "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"result\":{\"id\":\"%s\",\"job\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx\",\"target\":\"%s\"},\"status\":\"OK\"}}\n",
-                 m_loginId, m_rpcId, job.rawBlob(), job.id(), m_fixedByte, customDiff ? target : job.rawTarget());
+        size = snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"result\":{\"id\":\"%s\",\"job\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx\",\"target\":\"%s\"},\"status\":\"OK\"}}\n",
+                        m_loginId, m_rpcId, job.rawBlob(), job.id(), m_fixedByte, customDiff ? target : job.rawTarget());
     }
     else {
-        snprintf(req, size, "{\"jsonrpc\":\"2.0\",\"method\":\"job\",\"params\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx\",\"target\":\"%s\"}}\n",
-                 job.rawBlob(), job.id(), m_fixedByte, customDiff ? target : job.rawTarget());
+        size = snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"jsonrpc\":\"2.0\",\"method\":\"job\",\"params\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx\",\"target\":\"%s\"}}\n",
+                        job.rawBlob(), job.id(), m_fixedByte, customDiff ? target : job.rawTarget());
     }
 
-    send(req);
+    send(size);
 }
 
 
 void Miner::success(int64_t id, const char *status)
 {
-    const size_t size = 96;
-    char *req = static_cast<char*>(malloc(size));
-
-    snprintf(req, size, "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"error\":null,\"result\":{\"status\":\"%s\"}}\n", id, status);
-    send(req);
+    send(snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"error\":null,\"result\":{\"status\":\"%s\"}}\n", id, status));
 }
 
 
-bool Miner::parseRequest(int64_t id, const char *method, const json_t *params)
+bool Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value &params)
 {
-    if (!method || !json_is_object(params)) {
+    if (!method || !params.IsObject()) {
         return false;
     }
 
     if (m_state == WaitLoginState) {
         if (strcmp(method, "login") == 0) {
             setState(WaitReadyState);
-            LoginRequest request(id, json_string_value(json_object_get(params, "login")), json_string_value(json_object_get(params, "pass")), json_string_value(json_object_get(params, "agent")));
             m_loginId = id;
 
-            LoginEvent::start(this, request);
+            LoginEvent::create(this, id, params["login"].GetString(), params["pass"].GetString(), params["agent"].GetString())->start();
             return true;
         }
 
@@ -198,23 +168,22 @@ bool Miner::parseRequest(int64_t id, const char *method, const json_t *params)
     if (strcmp(method, "submit") == 0) {
         heartbeat();
 
-        const char *rpcId = json_string_value(json_object_get(params, "id"));
+        const char *rpcId = params["id"].GetString();
         if (!rpcId || strncmp(m_rpcId, rpcId, sizeof(m_rpcId)) != 0) {
             replyWithError(id, Error::toString(Error::Unauthenticated));
             return true;
         }
 
-        JobResult request(id, json_string_value(json_object_get(params, "job_id")), json_string_value(json_object_get(params, "nonce")), json_string_value(json_object_get(params, "result")));
-        SubmitEvent *event = SubmitEvent::create(this, request);
+        SubmitEvent *event = SubmitEvent::create(this, id, params["job_id"].GetString(), params["nonce"].GetString(), params["result"].GetString());
 
-        if (!request.isValid() || request.actualDiff() < diff()) {
+        if (!event->request.isValid() || event->request.actualDiff() < diff()) {
             event->reject(Error::LowDifficulty);
         }
-        else if (!request.isCompatible(m_fixedByte)) {
+        else if (!event->request.isCompatible(m_fixedByte)) {
             event->reject(Error::InvalidNonce);
         }
 
-        if (m_customDiff && request.actualDiff() < m_diff) {
+        if (m_customDiff && event->request.actualDiff() < m_diff) {
             success(id, "OK");
             return true;
         }
@@ -253,24 +222,44 @@ void Miner::parse(char *line, size_t len)
 
     LOG_DEBUG("[%s] received (%d bytes): \"%s\"", m_ip, len, line);
 
-    if (strlen(line) < 32 || line[0] != '{') {
+    if (len < 32 || line[0] != '{') {
         return shutdown(true);
     }
 
-    json_error_t err;
-    json_t *val = json_loads(line, 0, &err);
+    rapidjson::Document doc;
+    if (doc.ParseInsitu(line).HasParseError()) {
+        LOG_ERR("[%s] JSON decode failed: \"%s\"", m_ip, rapidjson::GetParseError_En(doc.GetParseError()));
 
-    if (!val) {
-        //LOG_ERR("[%s] JSON decode failed: \"%s\": \"%s\"", m_ip, err.text, line);
         return shutdown(true);
     }
 
-    const json_t *id = json_object_get(val, "id");
-    if (!json_is_integer(id) || !parseRequest(json_integer_value(id), json_string_value(json_object_get(val, "method")), json_object_get(val, "params"))) {
-        shutdown(true);
+    if (!doc.IsObject()) {
+        return shutdown(true);
     }
 
-    json_decref(val);
+    const rapidjson::Value &id = doc["id"];
+    if (id.IsInt64() && parseRequest(id.GetInt64(), doc["method"].GetString(), doc["params"])) {
+        return;
+    }
+
+    shutdown(true);
+}
+
+
+void Miner::send(int size)
+{
+    LOG_DEBUG("[%s] send (%d bytes): \"%s\"", m_ip, size, m_sendBuf);
+
+    if (size <= 0 || m_state != ReadyState || uv_is_writable(reinterpret_cast<uv_stream_t*>(&m_socket)) == 0) {
+        return;
+    }
+
+    uv_buf_t buf = uv_buf_init(m_sendBuf, (unsigned int) size);
+    const int rc = uv_try_write(reinterpret_cast<uv_stream_t*>(&m_socket), &buf, 1);
+
+    if (rc < 0) {
+        return shutdown(true);
+    }
 }
 
 
@@ -300,14 +289,13 @@ void Miner::shutdown(bool had_error)
     }
 
     setState(ClosingState);
-
     uv_read_stop(reinterpret_cast<uv_stream_t*>(&m_socket));
-    CloseEvent::start(this);
 
-    uv_shutdown_t* req = new uv_shutdown_t;
-    uv_shutdown(req, reinterpret_cast<uv_stream_t*>(&m_socket), [](uv_shutdown_t* req, int status) {
+    uv_shutdown(new uv_shutdown_t, reinterpret_cast<uv_stream_t*>(&m_socket), [](uv_shutdown_t* req, int status) {
+
         if (uv_is_closing(reinterpret_cast<uv_handle_t*>(req->handle)) == 0) {
             uv_close(reinterpret_cast<uv_handle_t*>(req->handle), [](uv_handle_t *handle) {
+                CloseEvent::start(getMiner(handle->data));
                 delete static_cast<Miner*>(handle->data);
             });
         }
@@ -367,8 +355,6 @@ void Miner::onTimeout(uv_timer_t *handle)
 {
     auto miner = getMiner(handle->data);
     miner->m_recvBuf.base[sizeof(m_buf) - 1] = '\0';
-
-    LOG_ERR("SHUTDOWN %s %s", miner->m_ip, miner->m_recvBuf.base);
 
     miner->shutdown(true);
 }

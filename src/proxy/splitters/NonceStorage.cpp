@@ -78,7 +78,11 @@ bool NonceStorage::isUsed() const
 
 Miner *NonceStorage::miner(int64_t id)
 {
-    return m_miners[id];
+    if (m_miners.count(id) == 0) {
+        return nullptr;
+    }
+
+    return m_miners.at(id);
 }
 
 
@@ -110,9 +114,12 @@ void NonceStorage::setJob(const Job &job)
     m_job = job;
 
     for (size_t i = 0; i < 256; ++i) {
-        const size_t index = m_used[i];
-        Miner *miner = index > 0 ? m_miners[index] : nullptr;
+        const int64_t index = m_used[i];
+        if (index == 0) {
+            continue;
+        }
 
+        Miner *miner = this->miner(index);
         if (miner) {
             miner->setJob(m_job);
         }

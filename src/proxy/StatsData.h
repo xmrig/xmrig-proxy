@@ -75,6 +75,10 @@ public:
 
     inline int uptime() const
     {
+        if (startTime == 0) {
+            return 0;
+        }
+
         return (uv_now(uv_default_loop()) - startTime) / 1000;
     }
 

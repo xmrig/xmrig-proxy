@@ -33,6 +33,13 @@
  * If you plan on changing this setting to 0 please consider making a one off donation to my wallet:
  * XMR: 48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzKt52XU5xvqgzYnDK9URnRoJMk1j8nLwEVsaSWJ4fhdUyZijBGUicoD
  * BTC: 1P7ujsXeX7GxQwHNnJsRMgAdNkFZmNVqJT
+ *
+ * How it works:
+ * First pool connection (up to 256 workers) always without fee.
+ * Other connections first randomly switch to dev pool in range from 50 to 150 minutes, to reduce dev pool peak load.
+ * Stays on dev pool at least kDonateLevel minutes.
+ * Choice next donation time, with overime compensation. In proxy no way to use precise donation time.
+ * You can check actual donation via API.
  */
 constexpr const int kDonateLevel = 2;
 

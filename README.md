@@ -44,6 +44,7 @@ For failover you can add multiple pools, maximum count not limited.
       --user-agent=AGENT   set custom user-agent string for pool
       --coin=COIN          xmr for all cryptonight coins or aeon
       --no-color           disable colored output
+      --no-workers         disable per worker statistics
       --donate-level=N     donate level, default 2%
   -B, --background         run the miner in the background
   -c, --config=FILE        load a JSON-format configuration file

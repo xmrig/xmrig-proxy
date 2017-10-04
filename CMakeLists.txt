@@ -30,6 +30,7 @@ set(HEADERS
     src/log/ShareLog.h
     src/net/Client.h
     src/net/Job.h
+    src/net/JobId.h
     src/net/strategies/DonateStrategy.h
     src/net/strategies/FailoverStrategy.h
     src/net/strategies/SinglePoolStrategy.h

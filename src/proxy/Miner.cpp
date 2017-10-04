@@ -127,11 +127,11 @@ void Miner::setJob(Job &job)
     if (m_state == WaitReadyState) {
         setState(ReadyState);
         size = snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"result\":{\"id\":\"%s\",\"job\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx\",\"target\":\"%s\"},\"status\":\"OK\"}}\n",
-                        m_loginId, m_rpcId, job.rawBlob(), job.id(), m_fixedByte, customDiff ? target : job.rawTarget());
+                        m_loginId, m_rpcId, job.rawBlob(), job.id().data(), m_fixedByte, customDiff ? target : job.rawTarget());
     }
     else {
         size = snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"jsonrpc\":\"2.0\",\"method\":\"job\",\"params\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx\",\"target\":\"%s\"}}\n",
-                        job.rawBlob(), job.id(), m_fixedByte, customDiff ? target : job.rawTarget());
+                        job.rawBlob(), job.id().data(), m_fixedByte, customDiff ? target : job.rawTarget());
     }
 
     send(size);

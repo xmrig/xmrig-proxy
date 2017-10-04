@@ -238,6 +238,7 @@ void ApiState::getResults(rapidjson::Document &doc) const
     results.AddMember("accepted",      m_stats.accepted, allocator);
     results.AddMember("rejected",      m_stats.rejected, allocator);
     results.AddMember("invalid",       m_stats.invalid, allocator);
+    results.AddMember("expired",       m_stats.expired, allocator);
     results.AddMember("avg_time",      m_stats.avgTime(), allocator);
     results.AddMember("latency",       m_stats.avgLatency(), allocator);
     results.AddMember("hashes_total",  m_stats.hashes, allocator);

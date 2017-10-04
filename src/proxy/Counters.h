@@ -62,9 +62,9 @@ public:
     static inline uint64_t maxMiners() { return m_maxMiners; }
     static inline uint64_t miners()    { return m_miners; }
 
-
     static uint64_t accepted;
     static uint64_t connections;
+    static uint64_t expired;
 
 private:
     static uint32_t m_added;

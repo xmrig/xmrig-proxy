@@ -103,18 +103,6 @@ bool Job::setBlob(const char *blob)
 }
 
 
-bool Job::setId(const char *id)
-{
-    if (!id || strlen(id) >= sizeof(m_id)) {
-        return false;
-    }
-
-    memset(m_id, 0, sizeof(m_id));
-    memcpy(m_id, id, strlen(id));
-    return true;
-}
-
-
 bool Job::setTarget(const char *target)
 {
     if (!target) {
@@ -182,5 +170,5 @@ void Job::toHex(const unsigned char* in, unsigned int len, char* out)
 
 bool Job::operator==(const Job &other) const
 {
-    return memcmp(m_id, other.m_id, sizeof(m_id)) == 0 && memcmp(m_blob, other.m_blob, sizeof(m_blob) == 0);
+    return m_id == other.m_id && memcmp(m_blob, other.m_blob, sizeof(m_blob) == 0);
 }

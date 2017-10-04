@@ -167,7 +167,7 @@ int64_t Client::submit(const JobResult &result)
 #   endif
 
     const size_t size = snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRIu64 ",\"jsonrpc\":\"2.0\",\"method\":\"submit\",\"params\":{\"id\":\"%s\",\"job_id\":\"%s\",\"nonce\":\"%s\",\"result\":\"%s\"}}\n",
-                                 m_sequence, m_rpcId, result.jobId, nonce, data);
+                                 m_sequence, m_rpcId, result.jobId.data(), nonce, data);
 
     m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff());
     return send(size);

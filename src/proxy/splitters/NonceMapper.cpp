@@ -124,7 +124,7 @@ void NonceMapper::submit(SubmitEvent *event)
         return event->reject(Error::BadGateway);
     }
 
-    if (strncmp(m_storage->job().id(), event->request.jobId, 64) != 0) {
+    if (!m_storage->isValidJobId(event->request.jobId)) {
         return event->reject(Error::InvalidJobId);
     }
 

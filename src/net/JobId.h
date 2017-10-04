@@ -21,42 +21,63 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __JOBRESULT_H__
-#define __JOBRESULT_H__
+#ifndef __JOBID_H__
+#define __JOBID_H__
 
 
-#include <stdint.h>
 #include <string.h>
 
 
-#include "net/JobId.h"
-
-
-class JobResult
+class JobId
 {
 public:
-    inline JobResult() :
-        nonce(nullptr),
-        result(nullptr),
-        id(0),
-        diff(0)
+    inline JobId()
     {
+        memset(m_data, 0, sizeof(m_data));
     }
 
-    JobResult(int64_t id, const char *jobId, const char *nonce, const char *result);
 
-    bool isCompatible(uint8_t fixedByte) const;
-    bool isValid() const;
-    uint64_t actualDiff() const;
+    inline JobId(const char *id, size_t sizeFix = 0)
+    {
+        setId(id, sizeFix);
+    }
 
-    const char *nonce;
-    const char *result;
-    const int64_t id;
-    JobId jobId;
-    uint32_t diff;
+
+    inline bool operator==(const JobId &other) const
+    {
+        return memcmp(m_data, other.m_data, sizeof(m_data)) == 0;
+    }
+
+
+    inline bool operator!=(const JobId &other) const
+    {
+        return memcmp(m_data, other.m_data, sizeof(m_data)) != 0;
+    }
+
+
+    inline bool setId(const char *id, size_t sizeFix = 0)
+    {
+        memset(m_data, 0, sizeof(m_data));
+        if (!id) {
+            return false;
+        }
+
+        const size_t size = strlen(id);
+        if (size < 4 || size >= sizeof(m_data)) {
+            return false;
+        }
+
+        memcpy(m_data, id, size - sizeFix);
+        return true;
+    }
+
+
+    inline const char *data() const { return m_data; }
+    inline bool isValid() const     { return *m_data != '\0'; }
+
 
 private:
-    mutable uint64_t m_actualDiff;
+    char m_data[64];
 };
 
-#endif /* __JOBRESULT_H__ */
+#endif /* __JOBID_H__ */

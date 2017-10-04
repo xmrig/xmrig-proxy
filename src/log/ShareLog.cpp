@@ -30,7 +30,6 @@
 #include "net/SubmitResult.h"
 #include "Options.h"
 #include "proxy/events/AcceptEvent.h"
-#include "proxy/events/SubmitEvent.h"
 #include "proxy/Stats.h"
 
 

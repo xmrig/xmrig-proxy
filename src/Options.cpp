@@ -270,7 +270,7 @@ bool Options::getJSON(const char *fileName, rapidjson::Document &doc)
     uv_fs_req_cleanup(&req);
 
     if (doc.HasParseError()) {
-        printf("%s:%d: %s", fileName, (int) doc.GetErrorOffset(), rapidjson::GetParseError_En(doc.GetParseError()));
+        printf("%s:%d: %s\n", fileName, (int) doc.GetErrorOffset(), rapidjson::GetParseError_En(doc.GetParseError()));
         return false;
     }
 
@@ -555,7 +555,7 @@ void Options::parseConfig(const char *fileName)
 
 void Options::parseJSON(const struct option *option, const rapidjson::Value &object)
 {
-    if (!option->name) {
+    if (!option->name || !object.HasMember(option->name)) {
         return;
     }
 

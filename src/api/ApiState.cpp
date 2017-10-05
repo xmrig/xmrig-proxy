@@ -54,7 +54,7 @@ static inline double normalize(double d)
         return 0.0;
     }
 
-    return std::floor(d * 10.0) / 10.0;
+    return std::floor(d * 100.0) / 100.0;
 }
 
 
@@ -122,6 +122,7 @@ char *ApiState::finalize(rapidjson::Document &doc) const
 {
     rapidjson::StringBuffer buffer(0, 4096);
     rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
+    writer.SetMaxDecimalPlaces(10);
     doc.Accept(writer);
 
     return strdup(buffer.GetString());

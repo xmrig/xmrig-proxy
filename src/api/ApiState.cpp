@@ -226,7 +226,7 @@ void ApiState::getResources(rapidjson::Document &doc) const
     uv_resident_set_memory(&rss);
 
     doc.AddMember("total_memory",        uv_get_total_memory(), allocator);
-    doc.AddMember("resident_set_memory", rss, allocator);
+    doc.AddMember("resident_set_memory", (uint64_t) rss, allocator);
 }
 
 

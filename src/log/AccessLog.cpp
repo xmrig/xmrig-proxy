@@ -38,8 +38,7 @@
 #include "proxy/Stats.h"
 
 
-AccessLog::AccessLog(const Stats &stats) :
-    m_stats(stats),
+AccessLog::AccessLog() :
     m_file(-1)
 {
     if (!Options::i()->accessLog()) {

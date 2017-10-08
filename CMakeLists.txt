@@ -193,7 +193,7 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES MSVC)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES Clang)
 
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-overloaded-virtual")
 
 endif()
 

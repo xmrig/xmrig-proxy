@@ -230,7 +230,7 @@ SubmitCtx NonceMapper::submitCtx(int64_t seq)
         m_results.erase(it);
     }
 
-    return std::move(ctx);
+    return ctx;
 }
 
 

@@ -43,7 +43,7 @@ class SubmitEvent;
 class NonceSplitter : public IEventListener
 {
 public:
-    NonceSplitter(Stats &stats);
+    NonceSplitter();
     ~NonceSplitter();
 
     uint32_t activeUpstreams() const;
@@ -65,7 +65,6 @@ private:
     void remove(Miner *miner);
     void submit(SubmitEvent *event);
 
-    const Stats &m_stats;
     std::vector<NonceMapper*> m_upstreams;
 };
 

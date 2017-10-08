@@ -54,9 +54,9 @@ Proxy::Proxy(const Options *options) :
     srand(time(0) ^ (uintptr_t) this);
 
     m_miners    = new Miners();
-    m_splitter  = new NonceSplitter(m_stats);
+    m_splitter  = new NonceSplitter();
     m_shareLog  = new ShareLog(m_stats);
-    m_accessLog = new AccessLog(m_stats);
+    m_accessLog = new AccessLog();
     m_workers   = new Workers();
 
     m_timer.data = this;

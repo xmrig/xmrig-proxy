@@ -33,7 +33,7 @@ JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, const cha
     nonce(nonce),
     result(result),
     id(id),
-    jobId(jobId, 2),
+    jobId(jobId, 3),
     diff(0),
     m_actualDiff(0)
 {

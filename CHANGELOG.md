@@ -1,3 +1,8 @@
+# v2.4.1
+ - [#25](https://github.com/xmrig/xmrig-proxy/issues/25) Use 2 decimal places in API hashrate.
+ - [#147](https://github.com/xmrig/xmrig/issues/147) Fixed comparability with monero-stratum.
+ - Fixed OS X build.
+
 # v2.4.0
  - New internal event based architecture to easily extend proxy features.
  - Added [HTTP API](https://github.com/xmrig/xmrig-proxy/wiki/API).

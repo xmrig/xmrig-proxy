@@ -1,3 +1,6 @@
+# v2.4.2
+ - [#153](https://github.com/xmrig/xmrig/issues/153) Fixed issues with dwarfpool.com.
+
 # v2.4.1
  - [#25](https://github.com/xmrig/xmrig-proxy/issues/25) Use 2 decimal places in API hashrate.
  - [#147](https://github.com/xmrig/xmrig/issues/147) Fixed comparability with monero-stratum.

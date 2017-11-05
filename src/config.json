@@ -9,6 +9,7 @@
     "custom-diff": 0,
     "syslog": false,
     "verbose": false,
+    "colors": true,
     "workers": true,
     "pools": [
         {

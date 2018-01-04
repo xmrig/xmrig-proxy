@@ -60,7 +60,9 @@ private:
   Httpd *m_httpd;
   Proxy *m_proxy;
   Options *m_options;
-  uv_signal_t m_signal;
+  uv_signal_t m_sigHUP;
+  uv_signal_t m_sigINT;
+  uv_signal_t m_sigTERM;
 };
 
 

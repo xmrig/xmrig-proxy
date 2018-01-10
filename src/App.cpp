@@ -54,6 +54,7 @@ App *App::m_self = nullptr;
 
 App::App(int argc, char **argv) :
     m_console(nullptr),
+    m_httpd(nullptr),
     m_proxy(nullptr),
     m_options(nullptr)
 {

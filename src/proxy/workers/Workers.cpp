@@ -76,7 +76,7 @@ void Workers::printWorkers()
             strncpy(workerName, name, sizeof(workerName) - 1);
         }
 
-        Log::i()->text("%-23s | %-15s | %5" PRIu64 " | %8" PRIu64 " | %3" PRIu64 " | %5.1f KH/s |",
+        Log::i()->text("%-23s | %-15s | %5" PRIu64 " | %8" PRIu64 " | %3" PRIu64 " | %5.1f kH/s |",
                        workerName, worker.ip(), worker.connections(), worker.accepted(), worker.rejected(), worker.hashrate(600));
     }
 }

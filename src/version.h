@@ -30,7 +30,7 @@
 #define APP_VERSION   "2.4.4"
 #define APP_DOMAIN    "xmrig.com"
 #define APP_SITE      "www.xmrig.com"
-#define APP_COPYRIGHT "Copyright (C) 2016-2017 xmrig.com"
+#define APP_COPYRIGHT "Copyright (C) 2016-2018 xmrig.com"
 #define APP_KIND      "proxy"
 
 #define APP_VER_MAJOR  2

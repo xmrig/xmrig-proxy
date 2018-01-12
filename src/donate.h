@@ -41,7 +41,7 @@
  * Choice next donation time, with overime compensation. In proxy no way to use precise donation time.
  * You can check actual donation via API.
  */
-constexpr const int kDonateLevel = 2;
+constexpr const int kDonateLevel = 0;
 
 
 #endif /* __DONATE_H__ */

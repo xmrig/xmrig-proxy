@@ -140,6 +140,7 @@ static struct option const config_options[] = {
     { "user-agent",       1, nullptr, 1008 },
     { "verbose",          0, nullptr, 1100 },
     { "workers",          0, nullptr, 1103 },
+    { "fullnonce",        0, nullptr, 1110 },
     { 0, 0, 0, 0 }
 };
 
@@ -183,6 +184,7 @@ Options::Options(int argc, char **argv) :
     m_syslog(false),
     m_verbose(false),
     m_workers(true),
+    m_fullnonce(false),
     m_accessLog(nullptr),
     m_apiToken(nullptr),
     m_apiWorkerId(nullptr),
@@ -492,6 +494,10 @@ bool Options::parseBoolean(int key, bool enable)
 
     case 1103: /* workers */
         m_workers = enable;
+        break;
+
+    case 1110: /* fullnonce */
+        m_fullnonce = enable;
         break;
 
     default:

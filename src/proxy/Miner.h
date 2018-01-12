@@ -54,6 +54,7 @@ public:
     void setJob(Job &job);
     void success(int64_t id, const char *status);
 
+    inline bool fullNonce() const                     { return m_fullnonce; }
     inline const char *ip() const                     { return m_ip; }
     inline int64_t id() const                         { return m_id; }
     inline ssize_t mapperId() const                   { return m_mapperId; }
@@ -67,7 +68,7 @@ public:
     inline uint8_t fixedByte() const                  { return m_fixedByte; }
     inline void close()                               { shutdown(true); }
     inline void setCustomDiff(uint64_t diff)          { m_customDiff = diff; }
-    inline void setFixedByte(uint8_t fixedByte)       { m_fixedByte = fixedByte; }
+    inline void setFixedByte(uint8_t fixedByte)       { if (!fullNonce()) m_fixedByte = fixedByte; }
     inline void setMapperId(ssize_t mapperId)         { m_mapperId = mapperId; }
 
 private:
@@ -88,6 +89,7 @@ private:
 
     static inline Miner *getMiner(void *data) { return static_cast<Miner*>(data); }
 
+    bool m_fullnonce;
     char m_buf[2048];
     char m_ip[17];
     char m_rpcId[37];

@@ -49,6 +49,7 @@ public:
     inline bool syslog() const                     { return m_syslog; }
     inline bool verbose() const                    { return m_verbose; }
     inline bool workers() const                    { return m_workers; }
+    inline bool fullNonce() const                  { return m_fullnonce; }
     inline const char *accessLog() const           { return m_accessLog; }
     inline const char *apiToken() const            { return m_apiToken; }
     inline const char *apiWorkerId() const         { return m_apiWorkerId; }
@@ -92,6 +93,7 @@ private:
     bool m_syslog;
     bool m_verbose;
     bool m_workers;
+    bool m_fullnonce;
     char *m_accessLog;
     char *m_apiToken;
     char *m_apiWorkerId;

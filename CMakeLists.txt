@@ -148,7 +148,7 @@ add_definitions(/DAPP_DEVEL)
 add_definitions(/DNDEBUG)
 #add_definitions(/DAPP_DEBUG)
 
-if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$" AND CMAKE_SIZEOF_VOID_P EQUAL 8)
     add_definitions(/DRAPIDJSON_SSE2)
 endif()
 

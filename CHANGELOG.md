@@ -1,3 +1,11 @@
+# v2.4.4
+ - Added libmicrohttpd version to --version output.
+ - Fixed bug in singal handler, in some cases proxy wasn't shutdown properly.
+ - Fixed recent MSVC 2017 version detection.
+ - Fixed in default `config.json` was missing option `colors`.
+ - [#37](https://github.com/xmrig/xmrig-proxy/issues/37) Fixed ARM build.
+ - [#70](https://github.com/xmrig/xmrig-proxy/issues/70) Now used kH/s instead of KH/s.
+ 
 # v2.4.2
  - [#153](https://github.com/xmrig/xmrig/issues/153) Fixed issues with dwarfpool.com.
 

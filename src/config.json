@@ -8,12 +8,18 @@
     "coin": "xmr",
     "custom-diff": 0,
     "syslog": false,
+    "debug": false,
     "verbose": false,
     "colors": true,
     "workers": true,
     "pools": [
         {
             "url": "pool.minemonero.pro:5555",
+            "user": "",
+            "pass": "x"
+        },
+        {
+            "url": "pool.minemonero.pro:5555@localhost:8080",
             "user": "",
             "pass": "x"
         }

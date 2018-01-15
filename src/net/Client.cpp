@@ -332,22 +332,22 @@ void Client::prelogin()
 {
     if (m_url.proxyHost())
     {
-        setState (ProxingState);
+        setState(ProxingState);
         const std::string buffer = std::string ("CONNECT ") + m_url.finalHost() + " HTTP/1.1\r\n" +
                                     "Host: " + m_url.finalHost() + ":" + std::to_string (m_url.finalPort()) +
                                     "\r\n";
-        const size_t size = buffer.size();
-        LOG_INFO ("Prelogin send (%d bytes): \"%s\"", size, m_sendBuf);
 
+        const size_t size = buffer.size();
         memcpy (m_sendBuf, buffer.c_str(), size);
         m_sendBuf[size]     = '\n';
         m_sendBuf[size + 1] = '\0';
 
-        send (size + 1);
+        LOG_INFO("Prelogin send (%d bytes): \"%s\"", size, m_sendBuf);
+        send(size + 1);
     }
     else
     {
-        setState (ConnectedState);
+        setState(ConnectedState);
         login();
     }
 }
@@ -588,7 +588,8 @@ void Client::onConnect(uv_connect_t *req, int status)
 
     client->m_stream = static_cast<uv_stream_t*>(req->handle);
     client->m_stream->data = req->data;
-
+	
+    client->setState(ConnectedState);
     uv_read_start(client->m_stream, Client::onAllocBuffer, Client::onRead);
     delete req;
 
@@ -614,12 +615,13 @@ void Client::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
     if (client->state() == ProxingState)
     {
         const char* const content = buf->base;
-        LOG_DEBUG("[%s:%u] received from proxy (%d bytes): \"%s\"",
+        LOG_INFO("[%s:%u] received from proxy (%d bytes): \"%s\"",
                   client->m_url.host(), client->m_url.port(),
                   nread, content);
 
         if(content == strstr(content, "HTTP/1.1 200"))
         {
+            LOG_INFO("[%s:%u] connected!", client->m_url.host(), client->m_url.port());
             client->setState(ConnectedState);
             client->login();
         }

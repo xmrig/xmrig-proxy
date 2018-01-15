@@ -40,7 +40,9 @@ Url::Url() :
     m_host(nullptr),
     m_password(nullptr),
     m_user(nullptr),
-    m_port(kDefaultPort)
+    m_port(kDefaultPort),
+    m_proxy_host(nullptr),
+    m_proxy_port(kDefaultProxyPort)
 {
 }
 
@@ -63,8 +65,8 @@ Url::Url(const char *url) :
     m_password(nullptr),
     m_user(nullptr),
     m_port(kDefaultPort),
-    m_proxy_host (nullptr),
-    m_proxy_port (kDefaultProxyPort)
+    m_proxy_host(nullptr),
+    m_proxy_port(kDefaultProxyPort)
 {
     parse(url);
 }
@@ -76,8 +78,8 @@ Url::Url(const char *host, uint16_t port, const char *user, const char *password
     m_password(password ? strdup(password) : nullptr),
     m_user(user ? strdup(user) : nullptr),
     m_port(port),
-    m_proxy_host (nullptr),
-    m_proxy_port (kDefaultProxyPort)
+    m_proxy_host(nullptr),
+    m_proxy_port(kDefaultProxyPort)
 {
     m_host = strdup(host);
 }
@@ -126,18 +128,19 @@ bool Url::parse(const char *url)
     m_host[size - 1] = '\0';
 
     const char* proxy = strchr(port, '@');
+    m_port = (uint16_t) strtol(port, nullptr, 10);
     if (!proxy) {
-        m_port = (uint16_t) strtol(proxy, nullptr, 10);
+        m_port = (uint16_t) strtol(port, nullptr, 10);
         return true;
     }
+    
+	++proxy;
 
     const char* proxyport = strchr(proxy, ':');
     if (!port) {
         m_proxy_host = strdup(proxy);
         return false;
     }
-
-    ++proxy;
 
     const size_t proxysize = proxyport++ - proxy + 1;
     m_proxy_host = static_cast<char*>(malloc (proxysize));
@@ -200,7 +203,14 @@ Url &Url::operator=(const Url *other)
     m_host = strdup(other->m_host);
 
     free (m_proxy_host);
-    m_proxy_host = strdup (other->m_proxy_host);
+    if(other->m_proxy_host)
+    {
+        m_proxy_host = strdup (other->m_proxy_host);
+    }
+    else
+    {
+        m_proxy_host = nullptr;
+    }
 
     setPassword(other->m_password);
     setUser(other->m_user);

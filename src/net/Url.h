@@ -49,7 +49,7 @@ public:
     inline uint16_t port() const             { return isProxyed() ? proxyPort() : finalPort(); }
     inline bool isProxyed() const            { return proxyHost(); }
     inline const char* finalHost() const     { return m_host; }
-    inline uint16_t finalPort() const        { return m_port;}
+    inline uint16_t finalPort() const        { return m_port; }
     inline const char* proxyHost() const     { return m_proxy_host; }
     inline uint16_t proxyPort() const        { return m_proxy_port; }
     inline void setKeepAlive(bool keepAlive) { m_keepAlive = keepAlive; }

@@ -333,9 +333,7 @@ void Client::prelogin()
     if (m_url.proxyHost())
     {
         setState(ProxingState);
-        const std::string buffer = std::string ("CONNECT ") + m_url.finalHost() + " HTTP/1.1\r\n" +
-                                    "Host: " + m_url.finalHost() + ":" + std::to_string (m_url.finalPort()) +
-                                    "\r\n";
+        const std::string buffer = std::string ("CONNECT ") + m_url.finalHost() + ":" + std::to_string(m_url.finalPort()) + " HTTP/1.1\n";
 
         const size_t size = buffer.size();
         memcpy (m_sendBuf, buffer.c_str(), size);

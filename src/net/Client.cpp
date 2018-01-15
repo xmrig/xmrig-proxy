@@ -342,7 +342,7 @@ void Client::prelogin()
         m_sendBuf[size]     = '\n';
         m_sendBuf[size + 1] = '\0';
 
-        LOG_INFO("Prelogin send (%d bytes): \"%s\"", size, m_sendBuf);
+        LOG_DEBUG("Prelogin send (%d bytes): \"%s\"", size, m_sendBuf);
         send(size + 1);
     }
     else
@@ -615,13 +615,13 @@ void Client::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
     if (client->state() == ProxingState)
     {
         const char* const content = buf->base;
-        LOG_INFO("[%s:%u] received from proxy (%d bytes): \"%s\"",
+        LOG_DEBUG("[%s:%u] received from proxy (%d bytes): \"%s\"",
                   client->m_url.host(), client->m_url.port(),
                   nread, content);
 
         if(content == strstr(content, "HTTP/1.1 200"))
         {
-            LOG_INFO("[%s:%u] connected!", client->m_url.host(), client->m_url.port());
+            LOG_INFO("[%s:%u] Proxy connected to %s:%u!", client->m_url.host(), client->m_url.port(), client->m_url.finalHost(), client->m_url.finalPort());
             client->setState(ConnectedState);
             client->login();
         }

@@ -46,6 +46,7 @@ public:
     inline bool background() const                 { return m_background; }
     inline bool colors() const                     { return m_colors; }
     inline bool isDebug() const                    { return m_debug; }
+    inline void toggleDebug()                      { m_debug = !m_debug; }
     inline bool syslog() const                     { return m_syslog; }
     inline bool verbose() const                    { return m_verbose; }
     inline bool workers() const                    { return m_workers; }

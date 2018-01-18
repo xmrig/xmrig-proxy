@@ -110,9 +110,11 @@ void Miner::replyWithError(int64_t id, const char *message)
 
 void Miner::setJob(Job &job)
 {
-    snprintf(m_sendBuf, 4, "%02hhx", m_fixedByte);
+    if (!fullNonce()) {
+        snprintf(m_sendBuf, 4, "%02hhx", m_fixedByte);
 
-    memcpy(job.rawBlob() + 84, m_sendBuf, 2);
+        memcpy(job.rawBlob() + 84, m_sendBuf, 2);
+    }
 
     m_diff = job.diff();
     bool customDiff = false;

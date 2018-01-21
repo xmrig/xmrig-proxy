@@ -43,6 +43,7 @@ public:
 
     inline bool isKeepAlive() const          { return m_keepAlive; }
     inline bool isValid() const              { return m_host && m_port > 0; }
+    inline bool hasKeystream() const         { return m_keystream; }
     inline const char *host() const          { return isProxyed() ? proxyHost() : finalHost(); }
     inline const char *password() const      { return m_password ? m_password : kDefaultPassword; }
     inline const char *user() const          { return m_user ? m_user : kDefaultUser; }
@@ -60,6 +61,7 @@ public:
     bool setUserpass(const char *userpass);
     void setPassword(const char *password);
     void setUser(const char *user);
+    void copyKeystream(char *keystreamDest, const size_t keystreamLen) const;
 
     Url &operator=(const Url *other);
 
@@ -72,6 +74,7 @@ private:
     uint16_t m_port;
     char* m_proxy_host;
     uint16_t m_proxy_port;
+    char* m_keystream;
 };
 
 #endif /* __URL_H__ */

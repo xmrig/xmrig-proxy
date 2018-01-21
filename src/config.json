@@ -1,6 +1,7 @@
 {
     "background": false,
     "log-file": null,
+    "user-agent": "",
     "access-log-file": null,
     "retries": 5,
     "retry-pause": 5,
@@ -14,22 +15,18 @@
     "workers": true,
     "pools": [
         {
-            "url": "pool.minemonero.pro:5555",
-            "user": "",
-            "pass": "x"
-        },
-        {
-            "url": "pool.minemonero.pro:5555@localhost:8080",
-            "user": "",
-            "pass": "x"
+            "url": "pool.minemonero.pro:3333",                   // ---------------  URL of mining server
+        /*  "url": "pool.minemonero.pro:443@localhost:8080",*/   // ---------------  URL of mining server over HTTP (CONNECT) proxy
+        /*  "url": "pool.minemonero.pro:7777#secret_keystream",*/                 // URL of mining xmrig-proxy with encrypted support
+        /*  "url": "pool.minemonero.pro:8080#secret_keystream@localhost:8080",*/  // URL of mining xmrig-proxy with encrypted support over HTTP (CONNECT) proxy
+            "user": "",                        // username for mining server
+            "pass": "x",                       // password for mining server
+            "keepalive": true,                 // send keepalived for prevent timeout (need pool support)
+            "nicehash": false                  // enable nicehash/xmrig-proxy support
         }
     ],
     "bind": [
-        "0.0.0.0:3333"
-    ],
-    "api": {
-        "port": 0,
-        "access-token": null,
-        "worker-id": null
-    }
+        "0.0.0.0:8088",                 // listen on port 8088 in plain-text
+        "0.0.0.0:8888#secret_keystream" // listen on port 8888 with encrpyt-text
+    ]
 }

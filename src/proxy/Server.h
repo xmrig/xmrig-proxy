@@ -26,20 +26,20 @@
 
 
 #include <uv.h>
+#include "proxy/Addr.h"
 
 
 class Server
 {
 public:
-    Server(const char *ip, uint16_t port);
+    Server(const Addr *addr);
     bool bind();
 
 private:
     static void onConnection(uv_stream_t *server, int status);
 
-    const char *m_ip;
+    const Addr m_bindAddr;
     struct sockaddr_in m_addr;
-    uint16_t m_port;
     uv_tcp_t m_server;
 };
 

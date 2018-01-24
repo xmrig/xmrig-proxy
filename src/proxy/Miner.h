@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <uv.h>
 
+#include "proxy/Addr.h"
 
 #include "rapidjson/fwd.h"
 
@@ -47,7 +48,7 @@ public:
         ClosingState
     };
 
-    Miner();
+    Miner(const Addr &addr);
     ~Miner();
     bool accept(uv_stream_t *server);
     void replyWithError(int64_t id, const char *message);
@@ -78,7 +79,7 @@ private:
     void heartbeat();
     void parse(char *line, size_t len);
     void send(const char *data, int size);
-    void send(int size);
+    void send(int size, const bool encrypted = true);
     void setState(State state);
     void shutdown(bool had_error);
 
@@ -92,6 +93,8 @@ private:
     char m_ip[17];
     char m_rpcId[37];
     char m_sendBuf[768];
+    char m_keystream[sizeof(m_sendBuf)];
+    bool m_encrypted;
     int64_t m_id;
     int64_t m_loginId;
     size_t m_recvBufPos;

@@ -1,0 +1,547 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Archivos de código fuente">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Archivos de encabezado">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Archivos de código fuente\proxy">
+      <UniqueIdentifier>{bdf91185-96c9-429d-91e1-43c5f2c9bc06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de código fuente\net">
+      <UniqueIdentifier>{fdb280c5-1de4-4167-b91b-fc9c94d81142}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de código fuente\proxy\workers">
+      <UniqueIdentifier>{d76f07a7-0dc9-448c-9c3d-404d7c16fc77}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de código fuente\proxy\splitters">
+      <UniqueIdentifier>{9b5a70e9-6a69-48c5-9979-ab839587006d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de código fuente\proxy\events">
+      <UniqueIdentifier>{747142e5-34ad-4336-9b71-1537a1ab164a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de encabezado\proxy">
+      <UniqueIdentifier>{9ff06d89-6545-4b70-b0bf-f90b0d1a546c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de encabezado\proxy\events">
+      <UniqueIdentifier>{689ec9f0-7f24-4afd-8bac-4d0351c15d9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de encabezado\proxy\workers">
+      <UniqueIdentifier>{95ea5137-a534-43de-9ff2-4b4b54d419f5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de encabezado\proxy\splitters">
+      <UniqueIdentifier>{6f7a0948-5950-4dcd-94eb-4796c8c48e9e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de encabezado\net">
+      <UniqueIdentifier>{ef051e55-6cf5-4b78-a7ec-e850c1e8100e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de encabezado\net\strategies">
+      <UniqueIdentifier>{30f9ce5e-5ce1-47aa-b2fa-869a348d3de5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de código fuente\net\strategies">
+      <UniqueIdentifier>{6ffd1b8b-0b4e-415f-a4eb-e11258499b35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de código fuente\api">
+      <UniqueIdentifier>{04bb8e3a-6f81-44b9-bdc2-0cf8c67f3835}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de recursos">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Archivos de encabezado\api">
+      <UniqueIdentifier>{3447747c-a7ed-47ae-a661-91f7ed2d7713}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de encabezado\crypto">
+      <UniqueIdentifier>{09e88ada-1389-4932-b914-ed85204f3e87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de código fuente\crypto">
+      <UniqueIdentifier>{1d9e4974-f579-4d89-975c-dbc255bc784f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de encabezado\interfaces">
+      <UniqueIdentifier>{3f9ca45d-6a75-44e5-8635-58b9fbc2c127}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de encabezado\log">
+      <UniqueIdentifier>{df3f08fe-da47-42ca-b662-041296aa4be8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de código fuente\log">
+      <UniqueIdentifier>{8ff3161c-8e81-4f2e-a11f-2175490b5af1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de encabezado\3rdparty">
+      <UniqueIdentifier>{248f5332-ba52-4edb-8eb7-e16158eaf654}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de encabezado\3rdparty\rapidjson">
+      <UniqueIdentifier>{08730fee-4641-4894-941a-8d8a3e26ae35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de encabezado\3rdparty\rapidjson\msinttypes">
+      <UniqueIdentifier>{7785ce70-7c40-4a87-8688-ede08e0e09d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de encabezado\3rdparty\rapidjson\internal">
+      <UniqueIdentifier>{71f07123-ad12-493c-82d8-c821a003c9eb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de encabezado\3rdparty\rapidjson\error">
+      <UniqueIdentifier>{9485bb27-9d9b-49a4-adc5-8ace2c64321a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de encabezado\3rdparty\getopt">
+      <UniqueIdentifier>{cc4f7f6f-cfae-4dd7-a5a2-07a5d2e03535}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\proxy\events\Event.cpp">
+      <Filter>Archivos de código fuente\proxy\events</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\splitters\NonceMapper.cpp">
+      <Filter>Archivos de código fuente\proxy\splitters</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\splitters\NonceSplitter.cpp">
+      <Filter>Archivos de código fuente\proxy\splitters</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\splitters\NonceStorage.cpp">
+      <Filter>Archivos de código fuente\proxy\splitters</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\workers\Worker.cpp">
+      <Filter>Archivos de código fuente\proxy\workers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\workers\Workers.cpp">
+      <Filter>Archivos de código fuente\proxy\workers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\Counters.cpp">
+      <Filter>Archivos de código fuente\proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\CustomDiff.cpp">
+      <Filter>Archivos de código fuente\proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\Error.cpp">
+      <Filter>Archivos de código fuente\proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\Events.cpp">
+      <Filter>Archivos de código fuente\proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\JobResult.cpp">
+      <Filter>Archivos de código fuente\proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\LoginRequest.cpp">
+      <Filter>Archivos de código fuente\proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\Miner.cpp">
+      <Filter>Archivos de código fuente\proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\Miners.cpp">
+      <Filter>Archivos de código fuente\proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\Proxy.cpp">
+      <Filter>Archivos de código fuente\proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\ProxyDebug.cpp">
+      <Filter>Archivos de código fuente\proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\Server.cpp">
+      <Filter>Archivos de código fuente\proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\Stats.cpp">
+      <Filter>Archivos de código fuente\proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\Uuid_mac.cpp">
+      <Filter>Archivos de código fuente\proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\Uuid_unix.cpp">
+      <Filter>Archivos de código fuente\proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\proxy\Uuid_win.cpp">
+      <Filter>Archivos de código fuente\proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\net\strategies\DonateStrategy.cpp">
+      <Filter>Archivos de código fuente\net\strategies</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\net\strategies\FailoverStrategy.cpp">
+      <Filter>Archivos de código fuente\net\strategies</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\net\strategies\SinglePoolStrategy.cpp">
+      <Filter>Archivos de código fuente\net\strategies</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\net\Client.cpp">
+      <Filter>Archivos de código fuente\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\net\Job.cpp">
+      <Filter>Archivos de código fuente\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\net\SubmitResult.cpp">
+      <Filter>Archivos de código fuente\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\net\Url.cpp">
+      <Filter>Archivos de código fuente\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\api\Api.cpp">
+      <Filter>Archivos de código fuente\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\api\ApiState.cpp">
+      <Filter>Archivos de código fuente\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\api\Httpd.cpp">
+      <Filter>Archivos de código fuente\api</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\crypto\c_keccak.c">
+      <Filter>Archivos de código fuente\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\log\AccessLog.cpp">
+      <Filter>Archivos de código fuente\log</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\log\ConsoleLog.cpp">
+      <Filter>Archivos de código fuente\log</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\log\FileLog.cpp">
+      <Filter>Archivos de código fuente\log</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\log\Log.cpp">
+      <Filter>Archivos de código fuente\log</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\log\ShareLog.cpp">
+      <Filter>Archivos de código fuente\log</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\log\SysLog.cpp">
+      <Filter>Archivos de código fuente\log</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\App.cpp">
+      <Filter>Archivos de código fuente</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\App_unix.cpp">
+      <Filter>Archivos de código fuente</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\App_win.cpp">
+      <Filter>Archivos de código fuente</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Console.cpp">
+      <Filter>Archivos de código fuente</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Options.cpp">
+      <Filter>Archivos de código fuente</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Platform.cpp">
+      <Filter>Archivos de código fuente</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Platform_mac.cpp">
+      <Filter>Archivos de código fuente</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Platform_unix.cpp">
+      <Filter>Archivos de código fuente</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Platform_win.cpp">
+      <Filter>Archivos de código fuente</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Summary.cpp">
+      <Filter>Archivos de código fuente</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\xmrig.cpp">
+      <Filter>Archivos de código fuente</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\proxy\events\AcceptEvent.h">
+      <Filter>Archivos de encabezado\proxy\events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\events\SubmitEvent.h">
+      <Filter>Archivos de encabezado\proxy\events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\events\CloseEvent.h">
+      <Filter>Archivos de encabezado\proxy\events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\events\ConnectionEvent.h">
+      <Filter>Archivos de encabezado\proxy\events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\events\Event.h">
+      <Filter>Archivos de encabezado\proxy\events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\events\LoginEvent.h">
+      <Filter>Archivos de encabezado\proxy\events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\events\MinerEvent.h">
+      <Filter>Archivos de encabezado\proxy\events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\splitters\NonceMapper.h">
+      <Filter>Archivos de encabezado\proxy\splitters</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\splitters\NonceSplitter.h">
+      <Filter>Archivos de encabezado\proxy\splitters</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\splitters\NonceStorage.h">
+      <Filter>Archivos de encabezado\proxy\splitters</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\workers\Worker.h">
+      <Filter>Archivos de encabezado\proxy\workers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\workers\Workers.h">
+      <Filter>Archivos de encabezado\proxy\workers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\Addr.h">
+      <Filter>Archivos de encabezado\proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\Counters.h">
+      <Filter>Archivos de encabezado\proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\CustomDiff.h">
+      <Filter>Archivos de encabezado\proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\Error.h">
+      <Filter>Archivos de encabezado\proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\Events.h">
+      <Filter>Archivos de encabezado\proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\JobResult.h">
+      <Filter>Archivos de encabezado\proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\LoginRequest.h">
+      <Filter>Archivos de encabezado\proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\Miner.h">
+      <Filter>Archivos de encabezado\proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\Miners.h">
+      <Filter>Archivos de encabezado\proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\Proxy.h">
+      <Filter>Archivos de encabezado\proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\ProxyDebug.h">
+      <Filter>Archivos de encabezado\proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\Server.h">
+      <Filter>Archivos de encabezado\proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\Stats.h">
+      <Filter>Archivos de encabezado\proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\StatsData.h">
+      <Filter>Archivos de encabezado\proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\TickingCounter.h">
+      <Filter>Archivos de encabezado\proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\proxy\Uuid.h">
+      <Filter>Archivos de encabezado\proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\Client.h">
+      <Filter>Archivos de encabezado\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\Job.h">
+      <Filter>Archivos de encabezado\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\JobId.h">
+      <Filter>Archivos de encabezado\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\SubmitResult.h">
+      <Filter>Archivos de encabezado\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\Url.h">
+      <Filter>Archivos de encabezado\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\strategies\DonateStrategy.h">
+      <Filter>Archivos de encabezado\net\strategies</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\strategies\FailoverStrategy.h">
+      <Filter>Archivos de encabezado\net\strategies</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\net\strategies\SinglePoolStrategy.h">
+      <Filter>Archivos de encabezado\net\strategies</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\api\Api.h">
+      <Filter>Archivos de encabezado\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\api\ApiState.h">
+      <Filter>Archivos de encabezado\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\api\Httpd.h">
+      <Filter>Archivos de encabezado\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\crypto\c_keccak.h">
+      <Filter>Archivos de encabezado\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\log\AccessLog.h">
+      <Filter>Archivos de encabezado\log</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\log\ConsoleLog.h">
+      <Filter>Archivos de encabezado\log</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\log\FileLog.h">
+      <Filter>Archivos de encabezado\log</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\log\Log.h">
+      <Filter>Archivos de encabezado\log</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\log\ShareLog.h">
+      <Filter>Archivos de encabezado\log</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\log\SysLog.h">
+      <Filter>Archivos de encabezado\log</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\interfaces\IClientListener.h">
+      <Filter>Archivos de encabezado\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\interfaces\IConsoleListener.h">
+      <Filter>Archivos de encabezado\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\interfaces\IEvent.h">
+      <Filter>Archivos de encabezado\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\interfaces\IEventListener.h">
+      <Filter>Archivos de encabezado\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\interfaces\ILogBackend.h">
+      <Filter>Archivos de encabezado\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\interfaces\IStrategy.h">
+      <Filter>Archivos de encabezado\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\interfaces\IStrategyListener.h">
+      <Filter>Archivos de encabezado\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\allocators.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\document.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\encodedstream.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\encodings.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\filereadstream.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\filewritestream.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\fwd.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\istreamwrapper.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\memorybuffer.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\memorystream.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\ostreamwrapper.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\pointer.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\prettywriter.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\rapidjson.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\reader.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\schema.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\stream.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\stringbuffer.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\writer.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\msinttypes\inttypes.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson\msinttypes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\msinttypes\stdint.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson\msinttypes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\biginteger.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\diyfp.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\dtoa.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\ieee754.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\itoa.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\meta.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\pow10.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\regex.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\stack.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\strfunc.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\strtod.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\swap.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\error\en.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson\error</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\rapidjson\error\error.h">
+      <Filter>Archivos de encabezado\3rdparty\rapidjson\error</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\align.h">
+      <Filter>Archivos de encabezado\3rdparty</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rdparty\getopt\getopt.h">
+      <Filter>Archivos de encabezado\3rdparty\getopt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\App.h">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Console.h">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\donate.h">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Options.h">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Platform.h">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Summary.h">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\version.h">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\res\app.ico">
+      <Filter>Archivos de recursos</Filter>
+    </None>
+    <None Include="..\src\config.json">
+      <Filter>Archivos de recursos</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\res\app.rc">
+      <Filter>Archivos de recursos</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

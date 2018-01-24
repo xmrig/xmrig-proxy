@@ -169,7 +169,9 @@ void App::onConsoleCommand(char command)
 
     case 'd':
     case 'D':
+        Options::i()->toggleDebug();
         m_proxy->toggleDebug();
+        LOG_NOTICE("debug: %d", Options::i()->isDebug());
         break;
 
     case 'w':

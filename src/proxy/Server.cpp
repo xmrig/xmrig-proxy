@@ -28,14 +28,13 @@
 #include "proxy/Server.h"
 
 
-Server::Server(const char *ip, uint16_t port) :
-    m_ip(ip),
-    m_port(port)
+Server::Server(const Addr *addr) :
+    m_bindAddr(addr)
 {
     uv_tcp_init(uv_default_loop(), &m_server);
     m_server.data = this;
 
-    uv_ip4_addr(ip, port, &m_addr);
+    uv_ip4_addr(m_bindAddr.host(), m_bindAddr.port(), &m_addr);
     uv_tcp_nodelay(&m_server, 1);
 }
 
@@ -46,7 +45,7 @@ bool Server::bind()
 
     const int r = uv_listen(reinterpret_cast<uv_stream_t*>(&m_server), 511, Server::onConnection);
     if (r) {
-        LOG_ERR("[%s:%u] listen error: \"%s\"", m_ip, m_port, uv_strerror(r));
+        LOG_ERR("[%s:%u] listen error: \"%s\"", m_bindAddr.host(), m_bindAddr.port(), uv_strerror(r));
         return false;
     }
 
@@ -59,11 +58,11 @@ void Server::onConnection(uv_stream_t *server, int status)
     auto instance = static_cast<Server*>(server->data);
 
     if (status < 0) {
-        LOG_ERR("[%s:%u] new connection error: \"%s\"", instance->m_ip, instance->m_port, uv_strerror(status));
+        LOG_ERR("[%s:%u] new connection error: \"%s\"", instance->m_bindAddr.host(), instance->m_bindAddr.port(), uv_strerror(status));
         return;
     }
 
-    Miner *miner = new Miner();
+    Miner *miner = new Miner(instance->m_bindAddr);
     if (!miner) {
         LOG_ERR("NEW FAILED");
         return;
@@ -74,5 +73,5 @@ void Server::onConnection(uv_stream_t *server, int status)
         return;
     }
 
-    ConnectionEvent::start(miner, instance->m_port);
+    ConnectionEvent::start(miner, instance->m_bindAddr.port());
 }

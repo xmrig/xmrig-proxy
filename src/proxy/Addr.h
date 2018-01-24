@@ -38,13 +38,28 @@ public:
 
     inline Addr() :
         m_host(nullptr),
-        m_port(kDefaultPort)
+        m_port(kDefaultPort),
+        m_keystream(nullptr)
     {}
-
+        
+    inline Addr(const Addr * const other)
+    {
+        m_port = other->m_port;
+        m_host = strdup(other->m_host);
+        if(other->m_keystream)
+        {
+            m_keystream = strdup (other->m_keystream);
+        }
+        else
+        {
+            m_keystream = nullptr;
+        }
+    }
 
     inline Addr(const char *addr) :
         m_host(nullptr),
-        m_port(kDefaultPort)
+        m_port(kDefaultPort),
+        m_keystream(nullptr)
     {
         if (!addr) {
             return;
@@ -62,6 +77,12 @@ public:
         m_host[size - 1] = '\0';
 
         m_port = (uint16_t) strtol(port, nullptr, 10);
+
+        const char* keystream = strchr(port, '#');
+        if(keystream)
+        {
+            m_keystream = strdup(keystream + 1);
+        }
     }
 
 
@@ -74,10 +95,20 @@ public:
     inline bool isValid() const     { return m_host && m_port > 0; }
     inline const char *host() const { return m_host; }
     inline uint16_t port() const    { return m_port; }
+    inline bool hasKeystream() const         { return m_keystream; }
+    void copyKeystream(char *keystreamDest, const size_t keystreamLen) const
+    {
+        if(m_keystream)
+        {
+            memset(keystreamDest, 1, keystreamLen);
+            memcpy(keystreamDest, m_keystream, std::min(keystreamLen, strlen(m_keystream)));
+        }
+    }
 
 private:
     char *m_host;
     uint16_t m_port;
+    char* m_keystream;
 };
 
 #endif /* __ADDR_H__ */

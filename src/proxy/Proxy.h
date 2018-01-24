@@ -64,7 +64,7 @@ private:
     constexpr static int kPrintInterval = 60;
     constexpr static int kGCInterval    = 60;
 
-    void bind(const char *ip, uint16_t port);
+    void bind(const Addr *addr);
     void gc();
     void print();
     void tick();

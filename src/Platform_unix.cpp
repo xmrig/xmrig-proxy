@@ -117,6 +117,7 @@ void Platform::setThreadPriority(int priority)
 
     setpriority(PRIO_PROCESS, 0, prio);
 
+#ifdef SCHED_IDLE
     if (priority == 0) {
         sched_param param;
         param.sched_priority = 0;
@@ -125,4 +126,5 @@ void Platform::setThreadPriority(int priority)
             sched_setscheduler(0, SCHED_BATCH, &param);
         }
     }
+#endif
 }

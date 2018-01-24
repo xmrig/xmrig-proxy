@@ -1,0 +1,219 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="make|Win32">
+      <Configuration>make</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{53285F83-3CB3-4BB7-B723-C2EFDBCEB785}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>xmrigproxy</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='make|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <OutDir>$(SolutionDir)\..\build</OutDir>
+    <IntDir>$(SolutionDir)\..\build\obj</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <OutDir>$(SolutionDir)\..\build</OutDir>
+    <IntDir>$(SolutionDir)\..\build\obj</IntDir>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='make|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='make|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <CustomBuildBeforeTargets>InitializeBuildStatus</CustomBuildBeforeTargets>
+    <NMakeReBuildCommandLine>cd $(OutDir) &amp;&amp; make clean &amp;&amp; make</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd $(OutDir) &amp;&amp; make clean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd $(OutDir) &amp;&amp; make -j$(NUMBER_OF_PROCESSORS)</NMakeBuildCommandLine>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='make|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <CustomBuildStep>
+      <Command>cd $(SolutionDir)..\build\ &amp;&amp; make &amp;&amp; exit</Command>
+      <Outputs>xmrig-proxy;%(Outputs)</Outputs>
+      <Message>MAKE</Message>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\api\Api.cpp" />
+    <ClCompile Include="..\src\api\ApiState.cpp" />
+    <ClCompile Include="..\src\api\Httpd.cpp" />
+    <ClCompile Include="..\src\App.cpp" />
+    <ClCompile Include="..\src\App_unix.cpp" />
+    <ClCompile Include="..\src\App_win.cpp" />
+    <ClCompile Include="..\src\Console.cpp" />
+    <ClCompile Include="..\src\crypto\c_keccak.c" />
+    <ClCompile Include="..\src\log\AccessLog.cpp" />
+    <ClCompile Include="..\src\log\ConsoleLog.cpp" />
+    <ClCompile Include="..\src\log\FileLog.cpp" />
+    <ClCompile Include="..\src\log\Log.cpp" />
+    <ClCompile Include="..\src\log\ShareLog.cpp" />
+    <ClCompile Include="..\src\log\SysLog.cpp" />
+    <ClCompile Include="..\src\net\Client.cpp" />
+    <ClCompile Include="..\src\net\Job.cpp" />
+    <ClCompile Include="..\src\net\strategies\DonateStrategy.cpp" />
+    <ClCompile Include="..\src\net\strategies\FailoverStrategy.cpp" />
+    <ClCompile Include="..\src\net\strategies\SinglePoolStrategy.cpp" />
+    <ClCompile Include="..\src\net\SubmitResult.cpp" />
+    <ClCompile Include="..\src\net\Url.cpp" />
+    <ClCompile Include="..\src\Options.cpp" />
+    <ClCompile Include="..\src\Platform.cpp" />
+    <ClCompile Include="..\src\Platform_mac.cpp" />
+    <ClCompile Include="..\src\Platform_unix.cpp" />
+    <ClCompile Include="..\src\Platform_win.cpp" />
+    <ClCompile Include="..\src\proxy\Counters.cpp" />
+    <ClCompile Include="..\src\proxy\CustomDiff.cpp" />
+    <ClCompile Include="..\src\proxy\Error.cpp" />
+    <ClCompile Include="..\src\proxy\Events.cpp" />
+    <ClCompile Include="..\src\proxy\events\Event.cpp" />
+    <ClCompile Include="..\src\proxy\JobResult.cpp" />
+    <ClCompile Include="..\src\proxy\LoginRequest.cpp" />
+    <ClCompile Include="..\src\proxy\Miner.cpp" />
+    <ClCompile Include="..\src\proxy\Miners.cpp" />
+    <ClCompile Include="..\src\proxy\Proxy.cpp" />
+    <ClCompile Include="..\src\proxy\ProxyDebug.cpp" />
+    <ClCompile Include="..\src\proxy\Server.cpp" />
+    <ClCompile Include="..\src\proxy\splitters\NonceMapper.cpp" />
+    <ClCompile Include="..\src\proxy\splitters\NonceSplitter.cpp" />
+    <ClCompile Include="..\src\proxy\splitters\NonceStorage.cpp" />
+    <ClCompile Include="..\src\proxy\Stats.cpp" />
+    <ClCompile Include="..\src\proxy\Uuid_mac.cpp" />
+    <ClCompile Include="..\src\proxy\Uuid_unix.cpp" />
+    <ClCompile Include="..\src\proxy\Uuid_win.cpp" />
+    <ClCompile Include="..\src\proxy\workers\Worker.cpp" />
+    <ClCompile Include="..\src\proxy\workers\Workers.cpp" />
+    <ClCompile Include="..\src\Summary.cpp" />
+    <ClCompile Include="..\src\xmrig.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\3rdparty\align.h" />
+    <ClInclude Include="..\src\3rdparty\getopt\getopt.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\allocators.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\document.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\encodedstream.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\encodings.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\error\en.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\error\error.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\filereadstream.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\filewritestream.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\fwd.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\biginteger.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\diyfp.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\dtoa.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\ieee754.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\itoa.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\meta.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\pow10.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\regex.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\stack.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\strfunc.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\strtod.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\internal\swap.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\istreamwrapper.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\memorybuffer.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\memorystream.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\msinttypes\inttypes.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\msinttypes\stdint.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\ostreamwrapper.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\pointer.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\prettywriter.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\rapidjson.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\reader.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\schema.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\stream.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\stringbuffer.h" />
+    <ClInclude Include="..\src\3rdparty\rapidjson\writer.h" />
+    <ClInclude Include="..\src\api\Api.h" />
+    <ClInclude Include="..\src\api\ApiState.h" />
+    <ClInclude Include="..\src\api\Httpd.h" />
+    <ClInclude Include="..\src\App.h" />
+    <ClInclude Include="..\src\Console.h" />
+    <ClInclude Include="..\src\crypto\c_keccak.h" />
+    <ClInclude Include="..\src\donate.h" />
+    <ClInclude Include="..\src\interfaces\IClientListener.h" />
+    <ClInclude Include="..\src\interfaces\IConsoleListener.h" />
+    <ClInclude Include="..\src\interfaces\IEvent.h" />
+    <ClInclude Include="..\src\interfaces\IEventListener.h" />
+    <ClInclude Include="..\src\interfaces\ILogBackend.h" />
+    <ClInclude Include="..\src\interfaces\IStrategy.h" />
+    <ClInclude Include="..\src\interfaces\IStrategyListener.h" />
+    <ClInclude Include="..\src\log\AccessLog.h" />
+    <ClInclude Include="..\src\log\ConsoleLog.h" />
+    <ClInclude Include="..\src\log\FileLog.h" />
+    <ClInclude Include="..\src\log\Log.h" />
+    <ClInclude Include="..\src\log\ShareLog.h" />
+    <ClInclude Include="..\src\log\SysLog.h" />
+    <ClInclude Include="..\src\net\Client.h" />
+    <ClInclude Include="..\src\net\Job.h" />
+    <ClInclude Include="..\src\net\JobId.h" />
+    <ClInclude Include="..\src\net\strategies\DonateStrategy.h" />
+    <ClInclude Include="..\src\net\strategies\FailoverStrategy.h" />
+    <ClInclude Include="..\src\net\strategies\SinglePoolStrategy.h" />
+    <ClInclude Include="..\src\net\SubmitResult.h" />
+    <ClInclude Include="..\src\net\Url.h" />
+    <ClInclude Include="..\src\Options.h" />
+    <ClInclude Include="..\src\Platform.h" />
+    <ClInclude Include="..\src\proxy\Addr.h" />
+    <ClInclude Include="..\src\proxy\Counters.h" />
+    <ClInclude Include="..\src\proxy\CustomDiff.h" />
+    <ClInclude Include="..\src\proxy\Error.h" />
+    <ClInclude Include="..\src\proxy\Events.h" />
+    <ClInclude Include="..\src\proxy\events\AcceptEvent.h" />
+    <ClInclude Include="..\src\proxy\events\CloseEvent.h" />
+    <ClInclude Include="..\src\proxy\events\ConnectionEvent.h" />
+    <ClInclude Include="..\src\proxy\events\Event.h" />
+    <ClInclude Include="..\src\proxy\events\LoginEvent.h" />
+    <ClInclude Include="..\src\proxy\events\MinerEvent.h" />
+    <ClInclude Include="..\src\proxy\events\SubmitEvent.h" />
+    <ClInclude Include="..\src\proxy\JobResult.h" />
+    <ClInclude Include="..\src\proxy\LoginRequest.h" />
+    <ClInclude Include="..\src\proxy\Miner.h" />
+    <ClInclude Include="..\src\proxy\Miners.h" />
+    <ClInclude Include="..\src\proxy\Proxy.h" />
+    <ClInclude Include="..\src\proxy\ProxyDebug.h" />
+    <ClInclude Include="..\src\proxy\Server.h" />
+    <ClInclude Include="..\src\proxy\splitters\NonceMapper.h" />
+    <ClInclude Include="..\src\proxy\splitters\NonceSplitter.h" />
+    <ClInclude Include="..\src\proxy\splitters\NonceStorage.h" />
+    <ClInclude Include="..\src\proxy\Stats.h" />
+    <ClInclude Include="..\src\proxy\StatsData.h" />
+    <ClInclude Include="..\src\proxy\TickingCounter.h" />
+    <ClInclude Include="..\src\proxy\Uuid.h" />
+    <ClInclude Include="..\src\proxy\workers\Worker.h" />
+    <ClInclude Include="..\src\proxy\workers\Workers.h" />
+    <ClInclude Include="..\src\Summary.h" />
+    <ClInclude Include="..\src\version.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\res\app.ico" />
+    <None Include="..\src\config.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\res\app.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

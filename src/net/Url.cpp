@@ -24,6 +24,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <algorithm>
 
 
 #include "net/Url.h"
@@ -40,7 +41,10 @@ Url::Url() :
     m_host(nullptr),
     m_password(nullptr),
     m_user(nullptr),
-    m_port(kDefaultPort)
+    m_port(kDefaultPort),
+    m_proxy_host(nullptr),
+    m_proxy_port(kDefaultProxyPort),
+    m_keystream(nullptr)
 {
 }
 
@@ -62,7 +66,10 @@ Url::Url(const char *url) :
     m_host(nullptr),
     m_password(nullptr),
     m_user(nullptr),
-    m_port(kDefaultPort)
+    m_port(kDefaultPort),
+    m_proxy_host(nullptr),
+    m_proxy_port(kDefaultProxyPort),
+    m_keystream(nullptr)
 {
     parse(url);
 }
@@ -73,7 +80,10 @@ Url::Url(const char *host, uint16_t port, const char *user, const char *password
     m_nicehash(nicehash),
     m_password(password ? strdup(password) : nullptr),
     m_user(user ? strdup(user) : nullptr),
-    m_port(port)
+    m_port(port),
+    m_proxy_host(nullptr),
+    m_proxy_port(kDefaultProxyPort),
+    m_keystream(nullptr)
 {
     m_host = strdup(host);
 }
@@ -84,6 +94,8 @@ Url::~Url()
     free(m_host);
     free(m_password);
     free(m_user);
+    free(m_proxy_host);
+    free(m_keystream);
 }
 
 
@@ -91,7 +103,6 @@ bool Url::isNicehash() const
 {
     return isValid() && (m_nicehash || strstr(m_host, ".nicehash.com"));
 }
-
 
 bool Url::parse(const char *url)
 {
@@ -121,7 +132,44 @@ bool Url::parse(const char *url)
     memcpy(m_host, base, size - 1);
     m_host[size - 1] = '\0';
 
+    const char* proxy = strchr(port, '@');
+    const char* keystream = strchr(port, '#');
+    if(keystream)
+    {
+        ++keystream;
+        if(!proxy)
+        {
+            m_keystream = strdup(keystream);
+        }
+        else
+        {
+            const size_t keystreamsize = proxy - keystream;
+            m_keystream = static_cast<char*>(malloc (keystreamsize + 1));
+            m_keystream[keystreamsize] = '\0';
+            memcpy(m_keystream, keystream, keystreamsize);
+        }
+    }
+
     m_port = (uint16_t) strtol(port, nullptr, 10);
+    if (!proxy) {
+        m_port = (uint16_t) strtol(port, nullptr, 10);
+        return true;
+    }
+    
+    ++proxy;
+
+    const char* proxyport = strchr(proxy, ':');
+    if (!port) {
+        m_proxy_host = strdup(proxy);
+        return false;
+    }
+
+    const size_t proxysize = proxyport++ - proxy + 1;
+    m_proxy_host = static_cast<char*>(malloc (proxysize));
+    memcpy(m_proxy_host, proxy, proxysize - 1);
+    m_proxy_host[proxysize - 1] = '\0';
+    m_proxy_port = (uint16_t) strtol(proxyport, nullptr, 10);
+
     return true;
 }
 
@@ -165,18 +213,46 @@ void Url::setUser(const char *user)
     m_user = strdup(user);
 }
 
+void Url::copyKeystream(char *keystreamDest, const size_t keystreamLen) const
+{
+    if(hasKeystream())
+    {
+        memset(keystreamDest, 1, keystreamLen);
+        memcpy(keystreamDest, m_keystream, std::min(keystreamLen, strlen(m_keystream)));
+    }
+}
 
 Url &Url::operator=(const Url *other)
 {
     m_keepAlive = other->m_keepAlive;
     m_nicehash  = other->m_nicehash;
     m_port      = other->m_port;
+    m_proxy_port = other->m_proxy_port;
 
     free(m_host);
     m_host = strdup(other->m_host);
 
+    free (m_proxy_host);
+    if(other->m_proxy_host)
+    {
+        m_proxy_host = strdup (other->m_proxy_host);
+    }
+    else
+    {
+        m_proxy_host = nullptr;
+    }
+
     setPassword(other->m_password);
     setUser(other->m_user);
 
+    free (m_keystream);
+    if(other->m_keystream)
+    {
+        m_keystream = strdup (other->m_keystream);
+    }
+    else
+    {
+        m_keystream = nullptr;
+    }
     return *this;
 }

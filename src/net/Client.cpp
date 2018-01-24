@@ -131,7 +131,8 @@ void Client::setUrl(const Url *url)
         return;
     }
 
-    if (url->hasKeystream()) {
+    if (url->hasKeystream())
+    {
         url->copyKeystream(m_keystream, sizeof(m_keystream));
         m_encrypted = true;
     }
@@ -303,7 +304,7 @@ int64_t Client::send(size_t size, const bool encrypted)
 		memset(send_encr_hex, 0, size * 2 + 1);
 		Job::toHex((const unsigned char*)m_sendBuf, size, send_encr_hex);
 		send_encr_hex[size * 2] = '\0';
-		LOG_DEBUG("[%s:%u] send encr1. (%d bytes): 0x\"%s\"", m_url.host(), m_url.port(), size, send_encr_hex);
+		LOG_DEBUG("[%s:%u] send encr. (%d bytes): 0x\"%s\"", m_url.host(), m_url.port(), size, send_encr_hex);
 		free(send_encr_hex);
     }
     

@@ -39,7 +39,6 @@
 #endif
 
 
-#include "donate.h"
 #include "net/Url.h"
 #include "Options.h"
 #include "Platform.h"
@@ -73,7 +72,6 @@ Options:\n\
       --coin=COIN          xmr for all cryptonight coins or aeon\n\
       --no-color           disable colored output\n\
       --no-workers         disable per worker statistics\n\
-      --donate-level=N     donate level, default 2%%\n\
   -B, --background         run the miner in the background\n\
   -c, --config=FILE        load a JSON-format configuration file\n\
   -l, --log-file=FILE      log all output to a file\n"
@@ -105,7 +103,6 @@ static struct option const options[] = {
     { "config",           1, nullptr, 'c'  },
     { "custom-diff",      1, nullptr, 1102 },
     { "debug",            0, nullptr, 1101 },
-    { "donate-level",     1, nullptr, 1003 },
     { "help",             0, nullptr, 'h'  },
     { "keepalive",        0, nullptr ,'k'  },
     { "log-file",         1, nullptr, 'l'  },
@@ -132,7 +129,6 @@ static struct option const config_options[] = {
     { "colors",           0, nullptr, 2000 },
     { "custom-diff",      1, nullptr, 1102 },
     { "debug",            0, nullptr, 1101 },
-    { "donate-level",     1, nullptr, 1003 },
     { "log-file",         1, nullptr, 'l'  },
     { "retries",          1, nullptr, 'r'  },
     { "retry-pause",      1, nullptr, 'R'  },
@@ -190,7 +186,6 @@ Options::Options(int argc, char **argv) :
     m_logFile(nullptr),
     m_userAgent(nullptr),
     m_apiPort(0),
-    m_donateLevel(kDonateLevel),
     m_retries(5),
     m_retryPause(5),
     m_diff(0)
@@ -370,15 +365,6 @@ bool Options::parseArg(int key, const char *arg)
     case 1103: /* --no-workers */
         return parseBoolean(key, false);
 
-    case 1003: /* --donate-level */
-        if (strncmp(arg, "minemonero.pro", 14) == 0) {
-            m_donateLevel = 0;
-        }
-        else {
-            parseArg(key, strtol(arg, nullptr, 10));
-        }
-        break;
-
     case 1104: /* --coin */
         free(m_coin);
         m_coin = strdup(arg);
@@ -429,14 +415,6 @@ bool Options::parseArg(int key, uint64_t arg)
         }
 
         m_retryPause = (int) arg;
-        break;
-
-    case 1003: /* --donate-level */
-        if (arg < 1 || arg > 99) {
-            return true;
-        }
-
-        m_donateLevel = (int) arg;
         break;
 
     case 4000: /* --api-port */

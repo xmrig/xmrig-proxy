@@ -193,14 +193,6 @@ void ApiState::getMiner(rapidjson::Document &doc) const
     doc.AddMember("kind",         APP_KIND, allocator);
     doc.AddMember("ua",           rapidjson::StringRef(Platform::userAgent()), allocator);
     doc.AddMember("uptime",       m_stats.uptime(), allocator);
-    doc.AddMember("donate_level", Options::i()->donateLevel(), allocator);
-
-    if (m_stats.hashes && m_stats.donateHashes) {
-        doc.AddMember("donated", normalize((double) m_stats.donateHashes / m_stats.hashes * 100.0), allocator);
-    }
-    else {
-        doc.AddMember("donated", 0.0, allocator);
-    }
 }
 
 
@@ -243,7 +235,6 @@ void ApiState::getResults(rapidjson::Document &doc) const
     results.AddMember("avg_time",      m_stats.avgTime(), allocator);
     results.AddMember("latency",       m_stats.avgLatency(), allocator);
     results.AddMember("hashes_total",  m_stats.hashes, allocator);
-    results.AddMember("hashes_donate", m_stats.donateHashes, allocator);
 
     rapidjson::Value best(rapidjson::kArrayType);
     for (size_t i = 0; i < m_stats.topDiff.size(); ++i) {

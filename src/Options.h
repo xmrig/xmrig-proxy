@@ -58,7 +58,6 @@ public:
     inline const std::vector<Addr*> &addrs() const { return m_addrs; }
     inline const std::vector<Url*> &pools() const  { return m_pools; }
     inline int apiPort() const                     { return m_apiPort; }
-    inline int donateLevel() const                 { return m_donateLevel; }
     inline int retries() const                     { return m_retries; }
     inline int retryPause() const                  { return m_retryPause; }
     inline uint64_t diff() const                   { return m_diff; }
@@ -99,7 +98,6 @@ private:
     char *m_logFile;
     char *m_userAgent;
     int m_apiPort;
-    int m_donateLevel;
     int m_retries;
     int m_retryPause;
     std::vector<Addr*> m_addrs;

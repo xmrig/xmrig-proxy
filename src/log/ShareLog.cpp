@@ -86,10 +86,6 @@ void ShareLog::accept(const AcceptEvent *event)
 
 void ShareLog::reject(const AcceptEvent *event)
 {
-    if (event->isDonate()) {
-        return;
-    }
-
     LOG_INFO(Options::i()->colors() ? "#%03u \x1B[01;31mrejected\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m \x1B[31m\"%s\"\x1B[0m \x1B[01;30m(%" PRId64 " ms)"
                                     : "#%03u rejected (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff %u \"%s\" (%" PRId64 " ms)",
              event->mapperId(), m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, event->result.diff, event->error(), event->result.elapsed);

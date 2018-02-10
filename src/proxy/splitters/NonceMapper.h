@@ -34,7 +34,6 @@
 #include "net/Job.h"
 
 
-class DonateStrategy;
 class IStrategy;
 class JobResult;
 class LoginRequest;
@@ -91,7 +90,6 @@ private:
     bool m_suspended;
     const char *m_agent;
     const Options *m_options;
-    DonateStrategy *m_donate;
     IStrategy *m_strategy;
     NonceStorage *m_storage;
     size_t m_id;

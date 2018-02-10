@@ -113,10 +113,6 @@ void Stats::accept(const AcceptEvent *event)
     m_data.accepted++;
     m_data.hashes += event->result.diff;
 
-    if (event->isDonate()) {
-        m_data.donateHashes += event->result.diff;
-    }
-
     Counters::accepted++;
 
     const size_t ln = m_data.topDiff.size() - 1;
@@ -131,9 +127,5 @@ void Stats::accept(const AcceptEvent *event)
 
 void Stats::reject(const AcceptEvent *event)
 {
-    if (event->isDonate()) {
-        return;
-    }
-
     m_data.rejected++;
 }

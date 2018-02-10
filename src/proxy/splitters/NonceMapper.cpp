@@ -29,7 +29,6 @@
 
 #include "log/Log.h"
 #include "net/Client.h"
-#include "net/strategies/DonateStrategy.h"
 #include "net/strategies/FailoverStrategy.h"
 #include "net/strategies/SinglePoolStrategy.h"
 #include "net/Url.h"
@@ -48,7 +47,6 @@ NonceMapper::NonceMapper(size_t id, const Options *options, const char *agent) :
     m_suspended(false),
     m_agent(agent),
     m_options(options),
-    m_donate(nullptr),
     m_id(id)
 {
     m_storage = new NonceStorage();
@@ -60,10 +58,6 @@ NonceMapper::NonceMapper(size_t id, const Options *options, const char *agent) :
     else {
         m_strategy = new SinglePoolStrategy(pools.front(), m_agent, this);
     }
-
-    if (id != 0 && m_options->donateLevel() > 0) {
-        m_donate = new DonateStrategy(m_agent, this);
-    }
 }
 
 
@@ -71,7 +65,6 @@ NonceMapper::~NonceMapper()
 {
     delete m_strategy;
     delete m_storage;
-    delete m_donate;
 }
 
 
@@ -131,7 +124,7 @@ void NonceMapper::submit(SubmitEvent *event)
     JobResult req = event->request;
     req.diff = m_storage->job().diff();
 
-    IStrategy *strategy = m_donate && m_donate->isActive() ? m_donate : m_strategy;
+    IStrategy *strategy = m_strategy;
 
     m_results[strategy->submit(req)] = SubmitCtx(req.id, event->miner()->id());
 }
@@ -140,10 +133,6 @@ void NonceMapper::submit(SubmitEvent *event)
 void NonceMapper::tick(uint64_t ticks, uint64_t now)
 {
     m_strategy->tick(now);
-
-    if (m_donate) {
-        m_donate->tick(now);
-    }
 }
 
 
@@ -179,10 +168,6 @@ void NonceMapper::onJob(Client *client, const Job &job)
                  m_id, client->host(), client->port(), job.diff());
     }
 
-    if (m_donate && m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {
-        return;
-    }
-
     m_storage->setJob(job);
 }
 
@@ -201,7 +186,7 @@ void NonceMapper::onResultAccepted(Client *client, const SubmitResult &result, c
 {
     const SubmitCtx ctx = submitCtx(result.seq);
 
-    AcceptEvent::start(m_id, ctx.miner, result, client->id() == -1, error);
+    AcceptEvent::start(m_id, ctx.miner, result, error);
 
     if (!ctx.miner) {
         return;
@@ -238,10 +223,6 @@ void NonceMapper::connect()
 {
     m_suspended = false;
     m_strategy->connect();
-
-    if (m_donate) {
-        m_donate->connect();
-    }
 }
 
 
@@ -251,8 +232,4 @@ void NonceMapper::suspend()
     m_storage->setActive(false);
     m_storage->reset();
     m_strategy->stop();
-
-    if (m_donate) {
-        m_donate->stop();
-    }
 }

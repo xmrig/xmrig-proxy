@@ -37,7 +37,6 @@ public:
     inline StatsData() :
         accepted(0),
         connections(0),
-        donateHashes(0),
         expired(0),
         hashes(0),
         invalid(0),
@@ -89,7 +88,6 @@ public:
     std::vector<uint16_t> latency;
     uint64_t accepted;
     uint64_t connections;
-    uint64_t donateHashes;
     uint64_t expired;
     uint64_t hashes;
     uint64_t invalid;

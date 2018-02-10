@@ -1,4 +1,4 @@
-# XMRig Proxy
+# XMRig Proxy without donate
 
 Extremely high performance Monero (XMR) Stratum protocol proxy, can easily handle over 100K connections on cheap $5 (1024 MB) virtual machine. Reduce number of pool connections up to 256 times, 100K workers become just 391 worker on pool side. Written on C++/libuv same as [XMRig](https://github.com/xmrig/xmrig) miner.
 
@@ -13,9 +13,9 @@ Extremely high performance Monero (XMR) Stratum protocol proxy, can easily handl
 This proxy designed and created for handle donation traffic from XMRig. No one other solution works fine with high connection/disconnection rate.
 
 ## Download
-* Binary releases: https://github.com/xmrig/xmrig-proxy/releases
+* Binary releases: https://github.com/xoste49/xmrig-proxy/releases
 * Git tree: https://github.com/xmrig/xmrig-proxy.git
-  * Clone with `git clone https://github.com/xmrig/xmrig-proxy.git` :hammer: [Build instructions](https://github.com/xmrig/xmrig-proxy/wiki/Build).
+  * Clone with `git clone https://github.com/xoste49/xmrig-proxy.git` :hammer: [Build instructions](https://github.com/xmrig/xmrig-proxy/wiki/Build).
   
 ## Usage
 :boom: If you use Linux and want handle more than **1000 connections**, you need [increase limits of open files](https://github.com/xmrig/xmrig-proxy/wiki/Ubuntu-setup).
@@ -45,7 +45,6 @@ For failover you can add multiple pools, maximum count not limited.
       --coin=COIN          xmr for all cryptonight coins or aeon
       --no-color           disable colored output
       --no-workers         disable per worker statistics
-      --donate-level=N     donate level, default 2%
   -B, --background         run the miner in the background
   -c, --config=FILE        load a JSON-format configuration file
   -l, --log-file=FILE      log all output to a file
@@ -57,13 +56,6 @@ For failover you can add multiple pools, maximum count not limited.
   -h, --help               display this help and exit
   -V, --version            output version information and exit
 ```
-
-## Donations
-
-Default donation fee is 2% can be reduced to 1% via `donate-level` option. Donation fee applyed only for second and more pool connection. If you use only one pool connection (up to 256 workers) there is no fee.
-
-* XMR: `48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzKt52XU5xvqgzYnDK9URnRoJMk1j8nLwEVsaSWJ4fhdUyZijBGUicoD`
-* BTC: `1P7ujsXeX7GxQwHNnJsRMgAdNkFZmNVqJT`
 
 ## Contacts
 * support@xmrig.com

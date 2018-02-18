@@ -8,8 +8,6 @@
 
 Extremely high performance Monero (XMR) Stratum protocol proxy, can easily handle over 100K connections on cheap $5 (1024 MB) virtual machine. Reduce number of pool connections up to 256 times, 100K workers become just 391 worker on pool side. Written on C++/libuv same as [XMRig](https://github.com/xmrig/xmrig) miner.
 
-* You can use [config.xmrig.com](https://config.xmrig.com/) to generate/edit/share your configurations. :new:
-
 ## Compatibility
 :warning: :warning: :warning: **Nicehash support must be enabled on miner side, it mandatory.** :warning: :warning: :warning:
 
@@ -27,16 +25,8 @@ This proxy designed and created for handle donation traffic from XMRig. No one o
   
 ## Usage
 :boom: If you use Linux and want handle more than **1000 connections**, you need [increase limits of open files](https://github.com/xmrig/xmrig-proxy/wiki/Ubuntu-setup).
-### Basic example
-```
-xmrig-proxy.exe -o pool.minemonero.pro:5555 -u YOUR_WALLET -p x --bind 0.0.0.0:3333 --bind 0.0.0.0:5555 
-```
 
-### Failover
-```
-xmrig-proxy.exe -o pool.minemonero.pro:5555 -u YOUR_WALLET1 -o pool.supportxmr.com:5555 -u YOUR_WALLET2 -p x --bind 0.0.0.0:5555 
-```
-For failover you can add multiple pools, maximum count not limited.
+Use [config.xmrig.com](https://config.xmrig.com/proxy) to generate, edit or share configurations.
   
 ### Options
 ```

@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -36,6 +36,18 @@ Httpd::Httpd(int port, const char *accessToken) :
     m_port(port),
     m_daemon(nullptr)
 {
+    uv_idle_init(uv_default_loop(), &m_idle);
+    m_idle.data = this;
+}
+
+
+Httpd::~Httpd()
+{
+    uv_idle_stop(&m_idle);
+
+    if (m_daemon) {
+        MHD_stop_daemon(m_daemon);
+    }
 }
 
 
@@ -47,10 +59,7 @@ bool Httpd::start()
 
     unsigned int flags = 0;
     if (MHD_is_feature_supported(MHD_FEATURE_EPOLL)) {
-        flags = MHD_USE_EPOLL_LINUX_ONLY | MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY;
-    }
-    else {
-        flags = MHD_USE_SELECT_INTERNALLY;
+        flags |= MHD_USE_EPOLL_LINUX_ONLY;
     }
 
     m_daemon = MHD_start_daemon(flags, m_port, nullptr, nullptr, &Httpd::handler, this, MHD_OPTION_END);
@@ -59,6 +68,7 @@ bool Httpd::start()
         return false;
     }
 
+    uv_idle_start(&m_idle, Httpd::onIdle);
     return true;
 }
 
@@ -121,4 +131,10 @@ int Httpd::handler(void *cls, struct MHD_Connection *connection, const char *url
 
     MHD_Response *rsp = MHD_create_response_from_buffer(strlen(buf), (void*) buf, MHD_RESPMEM_MUST_FREE);
     return done(connection, status, rsp);
+}
+
+
+void Httpd::onIdle(uv_idle_t *handle)
+{
+    MHD_run(static_cast<Httpd*>(handle->data)->m_daemon);
 }

@@ -59,6 +59,7 @@ void Stats::tick(uint64_t ticks, const NonceSplitter &splitter)
         m_data.upstreams = splitter.activeUpstreams();
         m_data.miners    = Counters::miners();
         m_data.maxMiners = Counters::maxMiners();
+        m_data.expired   = Counters::expired;
         Api::tick(m_data);
 #       endif
     }

@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -167,7 +167,7 @@ int64_t Client::submit(const JobResult &result)
 #   endif
 
     const size_t size = snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRIu64 ",\"jsonrpc\":\"2.0\",\"method\":\"submit\",\"params\":{\"id\":\"%s\",\"job_id\":\"%s\",\"nonce\":\"%s\",\"result\":\"%s\"}}\n",
-                                 m_sequence, m_rpcId, result.jobId, nonce, data);
+                                 m_sequence, m_rpcId, result.jobId.data(), nonce, data);
 
     m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff());
     return send(size);
@@ -220,7 +220,11 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
     }
 
     if (m_job == job) {
-        LOG_WARN("[%s:%u] duplicate job received, ignore", m_url.host(), m_url.port());
+        if (!m_quiet) {
+            LOG_WARN("[%s:%u] duplicate job received, reconnect", m_url.host(), m_url.port());
+        }
+
+        close();
         return false;
     }
 
@@ -578,11 +582,11 @@ void Client::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
             LOG_ERR("[%s:%u] read error: \"%s\"", client->m_url.host(), client->m_url.port(), uv_strerror((int) nread));
         }
 
-        return client->close();;
+        return client->close();
     }
 
     if ((size_t) nread > (sizeof(m_buf) - 8 - client->m_recvBufPos)) {
-        return client->close();;
+        return client->close();
     }
 
     client->m_recvBufPos += nread;
@@ -619,7 +623,7 @@ void Client::onResolved(uv_getaddrinfo_t *req, int status, struct addrinfo *res)
     auto client = getClient(req->data);
     if (status < 0) {
         LOG_ERR("[%s:%u] DNS error: \"%s\"", client->m_url.host(), client->m_url.port(), uv_strerror(status));
-        return client->reconnect();;
+        return client->reconnect();
     }
 
     addrinfo *ptr = res;

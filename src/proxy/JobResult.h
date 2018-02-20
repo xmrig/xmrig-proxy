@@ -29,6 +29,9 @@
 #include <string.h>
 
 
+#include "net/JobId.h"
+
+
 class JobResult
 {
 public:
@@ -38,7 +41,6 @@ public:
         id(0),
         diff(0)
     {
-        *jobId = '\0';
     }
 
     JobResult(int64_t id, const char *jobId, const char *nonce, const char *result);
@@ -47,10 +49,10 @@ public:
     bool isValid() const;
     uint64_t actualDiff() const;
 
-    char jobId[64];
     const char *nonce;
     const char *result;
     const int64_t id;
+    JobId jobId;
     uint32_t diff;
 
 private:

@@ -21,49 +21,63 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __APP_H__
-#define __APP_H__
+#ifndef __JOBID_H__
+#define __JOBID_H__
 
 
-#include <uv.h>
+#include <string.h>
 
 
-#include "interfaces/IConsoleListener.h"
-
-
-class Console;
-class Httpd;
-class Proxy;
-class Options;
-
-
-class App : public IConsoleListener
+class JobId
 {
 public:
-  App(int argc, char **argv);
-  ~App();
+    inline JobId()
+    {
+        memset(m_data, 0, sizeof(m_data));
+    }
 
-  int exec();
 
-protected:
-  void onConsoleCommand(char command) override;
+    inline JobId(const char *id, size_t sizeFix = 0)
+    {
+        setId(id, sizeFix);
+    }
+
+
+    inline bool operator==(const JobId &other) const
+    {
+        return memcmp(m_data, other.m_data, sizeof(m_data)) == 0;
+    }
+
+
+    inline bool operator!=(const JobId &other) const
+    {
+        return memcmp(m_data, other.m_data, sizeof(m_data)) != 0;
+    }
+
+
+    inline bool setId(const char *id, size_t sizeFix = 0)
+    {
+        memset(m_data, 0, sizeof(m_data));
+        if (!id) {
+            return false;
+        }
+
+        const size_t size = strlen(id);
+        if (size >= sizeof(m_data)) {
+            return false;
+        }
+
+        memcpy(m_data, id, size - sizeFix);
+        return true;
+    }
+
+
+    inline const char *data() const { return m_data; }
+    inline bool isValid() const     { return *m_data != '\0'; }
+
 
 private:
-  void background();
-  void close();
-
-  static void onSignal(uv_signal_t *handle, int signum);
-
-  static App *m_self;
-
-  Console *m_console;
-  Httpd *m_httpd;
-  Proxy *m_proxy;
-  Options *m_options;
-  uv_signal_t m_sigHUP;
-  uv_signal_t m_sigINT;
-  uv_signal_t m_sigTERM;
+    char m_data[64];
 };
 
-
-#endif /* __APP_H__ */
+#endif /* __JOBID_H__ */

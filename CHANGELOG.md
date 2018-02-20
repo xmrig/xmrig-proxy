@@ -1,3 +1,23 @@
+# v2.4.5
+- [#109](https://github.com/xmrig/xmrig-proxy/issues/109) Hashrate reports now more detailed for low speed workers.
+- [#200](https://github.com/xmrig/xmrig/issues/200) In some cases proxy was doesn't write log to stdout.
+
+# v2.4.4
+ - Added libmicrohttpd version to --version output.
+ - Fixed bug in singal handler, in some cases proxy wasn't shutdown properly.
+ - Fixed recent MSVC 2017 version detection.
+ - Fixed in default `config.json` was missing option `colors`.
+ - [#37](https://github.com/xmrig/xmrig-proxy/issues/37) Fixed ARM build.
+ - [#70](https://github.com/xmrig/xmrig-proxy/issues/70) Now used kH/s instead of KH/s.
+ 
+# v2.4.2
+ - [#153](https://github.com/xmrig/xmrig/issues/153) Fixed issues with dwarfpool.com.
+
+# v2.4.1
+ - [#25](https://github.com/xmrig/xmrig-proxy/issues/25) Use 2 decimal places in API hashrate.
+ - [#147](https://github.com/xmrig/xmrig/issues/147) Fixed comparability with monero-stratum.
+ - Fixed OS X build.
+
 # v2.4.0
  - New internal event based architecture to easily extend proxy features.
  - Added [HTTP API](https://github.com/xmrig/xmrig-proxy/wiki/API).

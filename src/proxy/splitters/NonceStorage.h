@@ -44,6 +44,7 @@ public:
 
     bool add(Miner *miner, const LoginRequest &request);
     bool isUsed() const;
+    bool isValidJobId(const JobId &id);
     Miner *miner(int64_t id);
     void remove(const Miner *miner);
     void reset();
@@ -62,6 +63,7 @@ private:
 
     bool m_active;
     Job m_job;
+    Job m_prevJob;
     std::map<int64_t, Miner*> m_miners;
     std::vector<int64_t> m_used;
     uint8_t m_index;

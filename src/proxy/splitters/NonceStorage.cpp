@@ -25,6 +25,7 @@
 
 
 #include "log/Log.h"
+#include "proxy/Counters.h"
 #include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
 #include "proxy/splitters/NonceStorage.h"
@@ -76,6 +77,21 @@ bool NonceStorage::isUsed() const
 }
 
 
+bool NonceStorage::isValidJobId(const JobId &id)
+{
+    if (m_job.id() == id) {
+        return true;
+    }
+
+    if (m_prevJob.isValid() && m_prevJob.id() == id) {
+        Counters::expired++;
+        return true;
+    }
+
+    return false;
+}
+
+
 Miner *NonceStorage::miner(int64_t id)
 {
     if (m_miners.count(id) == 0) {
@@ -111,7 +127,8 @@ void NonceStorage::setJob(const Job &job)
         }
     }
 
-    m_job = job;
+    m_prevJob = m_job;
+    m_job     = job;
 
     for (size_t i = 0; i < 256; ++i) {
         const int64_t index = m_used[i];

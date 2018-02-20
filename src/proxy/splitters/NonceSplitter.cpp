@@ -41,8 +41,7 @@
 #define LABEL(x) " \x1B[01;30m" x ":\x1B[0m "
 
 
-NonceSplitter::NonceSplitter(Stats &stats) :
-    m_stats(stats)
+NonceSplitter::NonceSplitter()
 {
 }
 

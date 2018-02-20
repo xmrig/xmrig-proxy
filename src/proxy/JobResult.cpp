@@ -22,33 +22,21 @@
  */
 
 
+#include <stdio.h>
+
+
 #include "net/Job.h"
 #include "proxy/JobResult.h"
-
-
-#include <stdio.h>
 
 
 JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, const char *result) :
     nonce(nonce),
     result(result),
     id(id),
+    jobId(jobId, 3),
     diff(0),
     m_actualDiff(0)
 {
-    *this->jobId = '\0';
-
-    if (!jobId) {
-        return;
-    }
-
-    const size_t size = strlen(jobId);
-    if (size < 4 || size >= sizeof(this->jobId)) {
-        return;
-    }
-
-    memset(this->jobId, 0, sizeof(this->jobId));
-    memcpy(this->jobId, jobId, size - 2);
 }
 
 
@@ -69,7 +57,7 @@ bool JobResult::isValid() const
         return false;
     }
 
-    return strlen(nonce) == 8 && strlen(jobId) > 0 && strlen(result) == 64;
+    return strlen(nonce) == 8 && jobId.isValid() && strlen(result) == 64;
 }
 
 

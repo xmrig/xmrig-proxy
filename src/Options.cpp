@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -31,6 +31,11 @@
 #   include "getopt/getopt.h"
 #else
 #   include <getopt.h>
+#endif
+
+
+#ifndef XMRIG_NO_HTTPD
+#   include <microhttpd.h>
 #endif
 
 
@@ -270,7 +275,7 @@ bool Options::getJSON(const char *fileName, rapidjson::Document &doc)
     uv_fs_req_cleanup(&req);
 
     if (doc.HasParseError()) {
-        printf("%s:%d: %s", fileName, (int) doc.GetErrorOffset(), rapidjson::GetParseError_En(doc.GetParseError()));
+        printf("%s:%d: %s\n", fileName, (int) doc.GetErrorOffset(), rapidjson::GetParseError_En(doc.GetParseError()));
         return false;
     }
 
@@ -555,7 +560,7 @@ void Options::parseConfig(const char *fileName)
 
 void Options::parseJSON(const struct option *option, const rapidjson::Value &object)
 {
-    if (!option->name) {
+    if (!option->name || !object.HasMember(option->name)) {
         return;
     }
 
@@ -613,4 +618,8 @@ void Options::showVersion()
     "\n");
 
     printf("\nlibuv/%s\n", uv_version_string());
+
+#   ifndef XMRIG_NO_HTTPD
+    printf("libmicrohttpd/%s\n", MHD_get_version());
+#   endif
 }

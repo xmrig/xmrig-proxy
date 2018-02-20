@@ -54,7 +54,7 @@ static inline double normalize(double d)
         return 0.0;
     }
 
-    return std::floor(d * 10.0) / 10.0;
+    return std::floor(d * 100.0) / 100.0;
 }
 
 
@@ -122,6 +122,7 @@ char *ApiState::finalize(rapidjson::Document &doc) const
 {
     rapidjson::StringBuffer buffer(0, 4096);
     rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
+    writer.SetMaxDecimalPlaces(10);
     doc.Accept(writer);
 
     return strdup(buffer.GetString());
@@ -225,7 +226,7 @@ void ApiState::getResources(rapidjson::Document &doc) const
     uv_resident_set_memory(&rss);
 
     doc.AddMember("total_memory",        uv_get_total_memory(), allocator);
-    doc.AddMember("resident_set_memory", rss, allocator);
+    doc.AddMember("resident_set_memory", (uint64_t) rss, allocator);
 }
 
 
@@ -238,6 +239,7 @@ void ApiState::getResults(rapidjson::Document &doc) const
     results.AddMember("accepted",      m_stats.accepted, allocator);
     results.AddMember("rejected",      m_stats.rejected, allocator);
     results.AddMember("invalid",       m_stats.invalid, allocator);
+    results.AddMember("expired",       m_stats.expired, allocator);
     results.AddMember("avg_time",      m_stats.avgTime(), allocator);
     results.AddMember("latency",       m_stats.avgLatency(), allocator);
     results.AddMember("hashes_total",  m_stats.hashes, allocator);

@@ -37,7 +37,7 @@ class Stats;
 class AccessLog : public IEventListener
 {
 public:
-    AccessLog(const Stats &stats);
+    AccessLog();
     ~AccessLog();
 
 protected:
@@ -49,7 +49,6 @@ private:
 
     void write(const char *fmt, ...);
 
-    const Stats &m_stats;
     int m_file;
 };
 

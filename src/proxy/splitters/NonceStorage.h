@@ -62,6 +62,7 @@ private:
     int nextIndex(int start) const;
 
     bool m_active;
+    bool m_nonpooling;
     Job m_job;
     Job m_prevJob;
     std::map<int64_t, Miner*> m_miners;

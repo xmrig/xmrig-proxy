@@ -40,12 +40,13 @@
 #include "proxy/Uuid.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
-
+#include "Options.h"
 
 static int64_t nextId = 0;
 
 
 Miner::Miner() :
+    m_fullnonce(false),
     m_id(++nextId),
     m_loginId(0),
     m_recvBufPos(0),
@@ -62,6 +63,7 @@ Miner::Miner() :
     memset(m_ip, 0, sizeof(m_ip));
     Uuid::create(m_rpcId, sizeof(m_rpcId));
 
+    m_fullnonce = Options::i()->fullNonce();
     m_socket.data = this;
     uv_tcp_init(uv_default_loop(), &m_socket);
 
@@ -108,9 +110,11 @@ void Miner::replyWithError(int64_t id, const char *message)
 
 void Miner::setJob(Job &job)
 {
-    snprintf(m_sendBuf, 4, "%02hhx", m_fixedByte);
+    if (!fullNonce()) {
+        snprintf(m_sendBuf, 4, "%02hhx", m_fixedByte);
 
-    memcpy(job.rawBlob() + 84, m_sendBuf, 2);
+        memcpy(job.rawBlob() + 84, m_sendBuf, 2);
+    }
 
     m_diff = job.diff();
     bool customDiff = false;
@@ -180,7 +184,7 @@ bool Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value 
         if (!event->request.isValid() || event->request.actualDiff() < diff()) {
             event->reject(Error::LowDifficulty);
         }
-        else if (!event->request.isCompatible(m_fixedByte)) {
+        else if (!fullNonce() && !event->request.isCompatible(m_fixedByte)) {
             event->reject(Error::InvalidNonce);
         }
 

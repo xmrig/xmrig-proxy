@@ -29,13 +29,15 @@
 #include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
 #include "proxy/splitters/NonceStorage.h"
-
+#include "Options.h"
 
 NonceStorage::NonceStorage() :
     m_active(false),
+    m_nonpooling(false),
     m_used(256, 0),
     m_index(rand() % 256)
 {
+    m_nonpooling = Options::i()->fullNonce();
 }
 
 
@@ -169,6 +171,14 @@ void NonceStorage::printState(size_t id)
 
 int NonceStorage::nextIndex(int start) const
 {
+    // in this mode always use just one slot from a storage
+    if (m_nonpooling) {
+        if (!m_used[0]) {
+            return (int) 0;
+        }
+        return -1;
+    }
+
     for (size_t i = m_index; i < m_used.size(); ++i) {
         if (m_used[i] == 0) {
             return (int) i;

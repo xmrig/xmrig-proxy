@@ -11,6 +11,7 @@
     "verbose": false,
     "colors": true,
     "workers": true,
+    "fullnonce": false,
     "pools": [
         {
             "url": "pool.minemonero.pro:5555",

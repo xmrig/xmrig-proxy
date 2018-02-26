@@ -45,7 +45,8 @@
 static int64_t nextId = 0;
 
 
-Miner::Miner() :
+Miner::Miner(const Addr &addr) :
+    m_encrypted(addr.hasKeystream()),
     m_id(++nextId),
     m_loginId(0),
     m_recvBufPos(0),
@@ -60,6 +61,7 @@ Miner::Miner() :
     m_fixedByte(0)
 {
     memset(m_ip, 0, sizeof(m_ip));
+    addr.copyKeystream(m_keystream, sizeof(m_keystream));
     Uuid::create(m_rpcId, sizeof(m_rpcId));
 
     m_socket.data = this;
@@ -247,12 +249,28 @@ void Miner::parse(char *line, size_t len)
 }
 
 
-void Miner::send(int size)
+void Miner::send(int size, const bool encrypted)
 {
     LOG_DEBUG("[%s] send (%d bytes): \"%s\"", m_ip, size, m_sendBuf);
 
     if (size <= 0 || m_state != ReadyState || uv_is_writable(reinterpret_cast<uv_stream_t*>(&m_socket)) == 0) {
         return;
+    }
+
+    if(encrypted && m_encrypted)
+    {
+        // Encrypt
+        for(size_t i = 0; i < std::min((size_t)size, sizeof(m_keystream)); ++i)
+        {
+            m_sendBuf[i] ^= m_keystream[i];
+        }
+
+        char * send_encr_hex = static_cast<char*>(malloc(size * 2 + 1));
+        memset(send_encr_hex, 0, size * 2 + 1);
+        Job::toHex((const unsigned char*)m_sendBuf, size, send_encr_hex);
+        send_encr_hex[size * 2] = 0;
+        LOG_DEBUG("[%s] send encr. (%d bytes): \"0x%s\"", m_ip, size, send_encr_hex);
+        free(send_encr_hex);
     }
 
     uv_buf_t buf = uv_buf_init(m_sendBuf, (unsigned int) size);
@@ -328,6 +346,23 @@ void Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
     char* end;
     char* start = buf->base;
     size_t remaining = miner->m_recvBufPos;
+
+    if(miner->m_encrypted)
+    {
+        char * read_encr_hex = static_cast<char*>(malloc(nread * 2 + 1));
+        Job::toHex((const unsigned char*)start, nread, read_encr_hex);
+        read_encr_hex[nread * 2] = '\0';
+        LOG_DEBUG("[%s] read encr. (%d bytes): 0x\"%s\"", miner->m_ip, nread, read_encr_hex);
+        free(read_encr_hex);
+
+        // DeEncrypt
+        for(size_t i = 0; i < std::min((size_t)nread, sizeof(m_keystream)); ++i)
+        {
+            start[i] ^= miner->m_keystream[i];
+        }
+    }
+
+    LOG_DEBUG("[%s] read (%d bytes): \"%s\"", miner->m_ip, nread, start);
 
     while ((end = static_cast<char*>(memchr(start, '\n', remaining))) != nullptr) {
         end++;

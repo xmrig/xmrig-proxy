@@ -32,18 +32,19 @@
 
 
 Httpd::Httpd(int port, const char *accessToken) :
+    m_idle(true),
     m_accessToken(accessToken ? strdup(accessToken) : nullptr),
     m_port(port),
     m_daemon(nullptr)
 {
-    uv_idle_init(uv_default_loop(), &m_idle);
-    m_idle.data = this;
+    uv_timer_init(uv_default_loop(), &m_timer);
+    m_timer.data = this;
 }
 
 
 Httpd::~Httpd()
 {
-    uv_idle_stop(&m_idle);
+    uv_timer_stop(&m_timer);
 
     if (m_daemon) {
         MHD_stop_daemon(m_daemon);
@@ -70,7 +71,7 @@ bool Httpd::start()
         return false;
     }
 
-    uv_idle_start(&m_idle, Httpd::onIdle);
+    uv_timer_start(&m_timer, Httpd::onTimer, kIdleInterval, kIdleInterval);
     return true;
 }
 
@@ -91,6 +92,22 @@ int Httpd::auth(const char *header)
     }
 
     return strncmp(m_accessToken, header + 7, strlen(m_accessToken)) == 0 ? MHD_HTTP_OK : MHD_HTTP_FORBIDDEN;
+}
+
+
+void Httpd::run()
+{
+    MHD_run(m_daemon);
+
+    const MHD_DaemonInfo *info = MHD_get_daemon_info(m_daemon, MHD_DAEMON_INFO_CURRENT_CONNECTIONS);
+    if (m_idle && info->num_connections) {
+        uv_timer_set_repeat(&m_timer, kActiveInterval);
+        m_idle = false;
+    }
+    else if (!m_idle && !info->num_connections) {
+        uv_timer_set_repeat(&m_timer, kIdleInterval);
+        m_idle = true;
+    }
 }
 
 
@@ -136,7 +153,45 @@ int Httpd::handler(void *cls, struct MHD_Connection *connection, const char *url
 }
 
 
-void Httpd::onIdle(uv_idle_t *handle)
+void Httpd::onTimer(uv_timer_t *handle)
 {
-    MHD_run(static_cast<Httpd*>(handle->data)->m_daemon);
+    static_cast<Httpd*>(handle->data)->run();
+////    printf("-\n");
+//    MHD_Daemon *daemon = static_cast<Httpd*>(handle->data)->m_daemon;
+
+//    const MHD_DaemonInfo *info = MHD_get_daemon_info(daemon, MHD_DAEMON_INFO_CURRENT_CONNECTIONS);
+//    if (m_idle) {
+//        if (info->num_connections) {
+//            uv_timer_set_repeat(&static_cast<Httpd*>(handle->data)->m_timer, 1000);
+//            m_idle = false;
+//        }
+//    }
+
+
+//    printf("%u\n", info->num_connections);
+
+//    fd_set rs;
+//    fd_set ws;
+//    fd_set es;
+//    FD_ZERO(&rs);
+//    FD_ZERO(&ws);
+//    FD_ZERO(&es);
+//    MHD_socket max = 0;
+
+//    timeval timeout;
+//    timeout.tv_sec  = 0;
+//    timeout.tv_usec = 0;
+
+//    MHD_get_fdset (daemon, &rs, &ws, &es, &max);
+
+//    unsigned long long ltimeout;
+//    if (MHD_get_timeout(daemon, &ltimeout) == MHD_YES) {
+
+//    printf("%llu\n", ltimeout);
+//    }
+
+
+//    select(max + 1, &rs, &ws, &es, &timeout);
+
+//    MHD_run(daemon);
 }

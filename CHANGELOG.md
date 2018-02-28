@@ -1,5 +1,5 @@
 # v2.5.0-dev
-- Added dynamic config reload support, pools and some other settings now can changed without proxy restart.
+- Added graceful reload support, pools and some other settings now can changed without proxy restart.
 - Added command line option `--no-watch` and config option `watch` to disable config file watching.
 - Added API endpoint `GET /1/config` to get current active config.
 - Deprecations:

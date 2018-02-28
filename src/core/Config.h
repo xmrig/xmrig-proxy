@@ -21,70 +21,87 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __OPTIONS_H__
-#define __OPTIONS_H__
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
 
 
 #include <stdint.h>
 #include <vector>
 
 
-#include "proxy/Addr.h"
 #include "rapidjson/fwd.h"
 
 
+class Addr;
 class Url;
-struct option;
 
 
-class Options
+namespace xmrig {
+
+
+class ConfigLoader;
+class IWatcherListener;
+
+
+/**
+ * @brief The Config class
+ *
+ * Options with dynamic reload:
+ *   colors
+ *   debug
+ *   verbose
+ *   custom-diff (only for new connections)
+ *   api/worker-id
+ *   pools/
+ */
+class Config
 {
+    friend class ConfigLoader;
+
 public:
-    static inline Options* i() { return m_self; }
-    static Options *parse(int argc, char **argv);
+    enum Algorithm {
+        CRYPTONIGHT,      /* CryptoNight (Monero) */
+        CRYPTONIGHT_LITE, /* CryptoNight-Lite (AEON) */
+    };
+
+    Config();
+    ~Config();
+
+    bool isValid() const;
+    const char *algoName() const;
+    void getJSON(rapidjson::Document &doc);
+
+    static Config *load(int argc, char **argv, IWatcherListener *listener);
 
     inline bool background() const                 { return m_background; }
     inline bool colors() const                     { return m_colors; }
     inline bool isDebug() const                    { return m_debug; }
     inline bool syslog() const                     { return m_syslog; }
     inline bool verbose() const                    { return m_verbose; }
+    inline bool watch() const                      { return m_watch && m_fileName; }
     inline bool workers() const                    { return m_workers; }
     inline const char *accessLog() const           { return m_accessLog; }
     inline const char *apiToken() const            { return m_apiToken; }
     inline const char *apiWorkerId() const         { return m_apiWorkerId; }
-    inline const char *coin() const                { return m_userAgent; }
+    inline const char *fileName() const            { return m_fileName; }
     inline const char *logFile() const             { return m_logFile; }
     inline const char *userAgent() const           { return m_userAgent; }
     inline const std::vector<Addr*> &addrs() const { return m_addrs; }
     inline const std::vector<Url*> &pools() const  { return m_pools; }
+    inline int algorithm() const                   { return m_algorithm; }
     inline int apiPort() const                     { return m_apiPort; }
     inline int donateLevel() const                 { return m_donateLevel; }
     inline int retries() const                     { return m_retries; }
     inline int retryPause() const                  { return m_retryPause; }
     inline uint64_t diff() const                   { return m_diff; }
+    inline void setColors(bool colors)             { m_colors = colors; }
     inline void setVerbose(bool verbose)           { m_verbose = verbose; }
     inline void toggleVerbose()                    { m_verbose = !m_verbose; }
-    inline void setColors(bool colors)             { m_colors = colors; }
-
-    inline static void release()                   { delete m_self; }
 
 private:
-    Options(int argc, char **argv);
-    ~Options();
-
-    inline bool isReady() const { return m_ready; }
-
-    static Options *m_self;
-
-    bool getJSON(const char *fileName, rapidjson::Document &doc);
-    bool parseArg(int key, const char *arg);
-    bool parseArg(int key, uint64_t arg);
-    bool parseBoolean(int key, bool enable);
-    Url *parseUrl(const char *arg) const;
-    void parseConfig(const char *fileName);
-    void parseJSON(const struct option *option, const rapidjson::Value &object);
-    void showUsage(int status) const;
-    void showVersion(void);
+    void setAlgo(const char *algo);
+    void setCoin(const char *coin);
+    void setFileName(const char *fileName);
 
     bool m_background;
     bool m_colors;
@@ -92,13 +109,15 @@ private:
     bool m_ready;
     bool m_syslog;
     bool m_verbose;
+    bool m_watch;
     bool m_workers;
     char *m_accessLog;
     char *m_apiToken;
     char *m_apiWorkerId;
-    char *m_coin;
+    char *m_fileName;
     char *m_logFile;
     char *m_userAgent;
+    int m_algorithm;
     int m_apiPort;
     int m_donateLevel;
     int m_retries;
@@ -108,4 +127,7 @@ private:
     uint64_t m_diff;
 };
 
-#endif /* __OPTIONS_H__ */
+
+} /* namespace xmrig */
+
+#endif /* __CONFIG_H__ */

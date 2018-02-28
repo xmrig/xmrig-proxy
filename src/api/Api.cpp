@@ -25,15 +25,15 @@
 
 
 #include "api/Api.h"
-#include "api/ApiState.h"
+#include "api/ApiRouter.h"
 
 
-ApiState *Api::m_state = nullptr;
+ApiRouter *Api::m_router = nullptr;
 
 
-bool Api::start()
+bool Api::start(xmrig::Controller *controller)
 {
-    m_state = new ApiState();
+    m_router = new ApiRouter(controller);
 
     return true;
 }
@@ -41,35 +41,15 @@ bool Api::start()
 
 void Api::release()
 {
-    delete m_state;
+    delete m_router;
 }
 
 
 char *Api::get(const char *url, int *status)
 {
-    if (!m_state) {
+    if (!m_router) {
         return nullptr;
     }
 
-    return m_state->get(url, status);
-}
-
-
-void Api::tick(const StatsData &data)
-{
-    if (!m_state) {
-        return;
-    }
-
-    m_state->tick(data);
-}
-
-
-void Api::tick(const std::vector<Worker> &workers)
-{
-    if (!m_state) {
-        return;
-    }
-
-    m_state->tick(workers);
+    return m_router->get(url, status);
 }

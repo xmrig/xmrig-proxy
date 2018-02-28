@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -41,6 +41,7 @@ public:
     ~Url();
 
     inline bool isKeepAlive() const          { return m_keepAlive; }
+    inline bool isNicehash() const           { return m_nicehash; }
     inline bool isValid() const              { return m_host && m_port > 0; }
     inline const char *host() const          { return m_host; }
     inline const char *password() const      { return m_password ? m_password : kDefaultPassword; }
@@ -49,12 +50,14 @@ public:
     inline void setKeepAlive(bool keepAlive) { m_keepAlive = keepAlive; }
     inline void setNicehash(bool nicehash)   { m_nicehash = nicehash; }
 
-    bool isNicehash() const;
     bool parse(const char *url);
     bool setUserpass(const char *userpass);
+    const char *url() const;
+    void applyExceptions();
     void setPassword(const char *password);
     void setUser(const char *user);
 
+    bool operator==(const Url &other) const;
     Url &operator=(const Url *other);
 
 private:
@@ -63,6 +66,7 @@ private:
     char *m_host;
     char *m_password;
     char *m_user;
+    mutable char *m_url;
     uint16_t m_port;
 };
 

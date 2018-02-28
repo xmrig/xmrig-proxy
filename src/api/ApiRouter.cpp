@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -32,13 +32,14 @@
 #endif
 
 
-#include "api/ApiState.h"
+#include "api/ApiRouter.h"
+#include "core/Config.h"
+#include "core/Controller.h"
 #include "net/Job.h"
-#include "Options.h"
 #include "Platform.h"
 #include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
 #include "rapidjson/prettywriter.h"
+#include "rapidjson/stringbuffer.h"
 #include "version.h"
 
 
@@ -58,34 +59,35 @@ static inline double normalize(double d)
 }
 
 
-ApiState::ApiState()
+ApiRouter::ApiRouter(xmrig::Controller *controller) :
+    m_controller(controller)
 {
-    memset(m_workerId, 0, sizeof(m_workerId));
-
-    if (Options::i()->apiWorkerId()) {
-        strncpy(m_workerId, Options::i()->apiWorkerId(), sizeof(m_workerId) - 1);
-    }
-    else {
-        gethostname(m_workerId, sizeof(m_workerId) - 1);
-    }
-
+    setWorkerId(controller->config()->apiWorkerId());
     genId();
+
+    controller->addListener(this);
 }
 
 
-ApiState::~ApiState()
+ApiRouter::~ApiRouter()
 {
 }
 
 
-char *ApiState::get(const char *url, int *status) const
+char *ApiRouter::get(const char *url, int *status) const
 {
     rapidjson::Document doc;
     doc.SetObject();
 
-    if (strncmp(url, "/workers.json", 13) == 0) {
+    if (strncmp(url, "/1/workers", 10) == 0 || strncmp(url, "/workers.json", 13) == 0) {
         getHashrate(doc);
         getWorkers(doc);
+
+        return finalize(doc);
+    }
+
+    if (strncmp(url, "/1/config", 9) == 0) {
+        m_controller->config()->getJSON(doc);
 
         return finalize(doc);
     }
@@ -106,19 +108,13 @@ char *ApiState::get(const char *url, int *status) const
 }
 
 
-void ApiState::tick(const StatsData &data)
+void ApiRouter::onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig)
 {
-    m_stats = data;
+    updateWorkerId(config->apiWorkerId(), previousConfig->apiWorkerId());
 }
 
 
-void ApiState::tick(const std::vector<Worker> &workers)
-{
-    m_workers = workers;
-}
-
-
-char *ApiState::finalize(rapidjson::Document &doc) const
+char *ApiRouter::finalize(rapidjson::Document &doc) const
 {
     rapidjson::StringBuffer buffer(0, 4096);
     rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
@@ -129,7 +125,7 @@ char *ApiState::finalize(rapidjson::Document &doc) const
 }
 
 
-void ApiState::genId()
+void ApiRouter::genId()
 {
     memset(m_id, 0, sizeof(m_id));
 
@@ -162,15 +158,17 @@ void ApiState::genId()
 }
 
 
-void ApiState::getHashrate(rapidjson::Document &doc) const
+void ApiRouter::getHashrate(rapidjson::Document &doc) const
 {
     auto &allocator = doc.GetAllocator();
 
     rapidjson::Value hashrate(rapidjson::kObjectType);
     rapidjson::Value total(rapidjson::kArrayType);
 
-    for (size_t i = 0; i < sizeof(m_stats.hashrate) / sizeof(m_stats.hashrate[0]); i++) {
-        total.PushBack(normalize(m_stats.hashrate[i]), allocator);
+    auto &stats = m_controller->statsData();
+
+    for (size_t i = 0; i < sizeof(stats.hashrate) / sizeof(stats.hashrate[0]); i++) {
+        total.PushBack(normalize(stats.hashrate[i]), allocator);
     }
 
     hashrate.AddMember("total", total, allocator);
@@ -178,25 +176,26 @@ void ApiState::getHashrate(rapidjson::Document &doc) const
 }
 
 
-void ApiState::getIdentify(rapidjson::Document &doc) const
+void ApiRouter::getIdentify(rapidjson::Document &doc) const
 {
     doc.AddMember("id",        rapidjson::StringRef(m_id),       doc.GetAllocator());
     doc.AddMember("worker_id", rapidjson::StringRef(m_workerId), doc.GetAllocator());
 }
 
 
-void ApiState::getMiner(rapidjson::Document &doc) const
+void ApiRouter::getMiner(rapidjson::Document &doc) const
 {
     auto &allocator = doc.GetAllocator();
+    auto &stats = m_controller->statsData();
 
     doc.AddMember("version",      APP_VERSION, allocator);
     doc.AddMember("kind",         APP_KIND, allocator);
     doc.AddMember("ua",           rapidjson::StringRef(Platform::userAgent()), allocator);
-    doc.AddMember("uptime",       m_stats.uptime(), allocator);
-    doc.AddMember("donate_level", Options::i()->donateLevel(), allocator);
+    doc.AddMember("uptime",       stats.uptime(), allocator);
+    doc.AddMember("donate_level", m_controller->config()->donateLevel(), allocator);
 
-    if (m_stats.hashes && m_stats.donateHashes) {
-        doc.AddMember("donated", normalize((double) m_stats.donateHashes / m_stats.hashes * 100.0), allocator);
+    if (stats.hashes && stats.donateHashes) {
+        doc.AddMember("donated", normalize((double) stats.donateHashes / stats.hashes * 100.0), allocator);
     }
     else {
         doc.AddMember("donated", 0.0, allocator);
@@ -204,22 +203,23 @@ void ApiState::getMiner(rapidjson::Document &doc) const
 }
 
 
-void ApiState::getMinersSummary(rapidjson::Document &doc) const
+void ApiRouter::getMinersSummary(rapidjson::Document &doc) const
 {
     auto &allocator = doc.GetAllocator();
+    auto &stats = m_controller->statsData();
 
     rapidjson::Value miners(rapidjson::kObjectType);
 
-    miners.AddMember("now", m_stats.miners, allocator);
-    miners.AddMember("max", m_stats.maxMiners, allocator);
+    miners.AddMember("now", stats.miners, allocator);
+    miners.AddMember("max", stats.maxMiners, allocator);
 
     doc.AddMember("miners",    miners, allocator);
-    doc.AddMember("upstreams", m_stats.upstreams, allocator);
+    doc.AddMember("upstreams", stats.upstreams, allocator);
 }
 
 
 
-void ApiState::getResources(rapidjson::Document &doc) const
+void ApiRouter::getResources(rapidjson::Document &doc) const
 {
     auto &allocator = doc.GetAllocator();
     size_t rss = 0;
@@ -230,24 +230,25 @@ void ApiState::getResources(rapidjson::Document &doc) const
 }
 
 
-void ApiState::getResults(rapidjson::Document &doc) const
+void ApiRouter::getResults(rapidjson::Document &doc) const
 {
     auto &allocator = doc.GetAllocator();
+    auto &stats = m_controller->statsData();
 
     rapidjson::Value results(rapidjson::kObjectType);
 
-    results.AddMember("accepted",      m_stats.accepted, allocator);
-    results.AddMember("rejected",      m_stats.rejected, allocator);
-    results.AddMember("invalid",       m_stats.invalid, allocator);
-    results.AddMember("expired",       m_stats.expired, allocator);
-    results.AddMember("avg_time",      m_stats.avgTime(), allocator);
-    results.AddMember("latency",       m_stats.avgLatency(), allocator);
-    results.AddMember("hashes_total",  m_stats.hashes, allocator);
-    results.AddMember("hashes_donate", m_stats.donateHashes, allocator);
+    results.AddMember("accepted",      stats.accepted, allocator);
+    results.AddMember("rejected",      stats.rejected, allocator);
+    results.AddMember("invalid",       stats.invalid, allocator);
+    results.AddMember("expired",       stats.expired, allocator);
+    results.AddMember("avg_time",      stats.avgTime(), allocator);
+    results.AddMember("latency",       stats.avgLatency(), allocator);
+    results.AddMember("hashes_total",  stats.hashes, allocator);
+    results.AddMember("hashes_donate", stats.donateHashes, allocator);
 
     rapidjson::Value best(rapidjson::kArrayType);
-    for (size_t i = 0; i < m_stats.topDiff.size(); ++i) {
-        best.PushBack(m_stats.topDiff[i], allocator);
+    for (size_t i = 0; i < stats.topDiff.size(); ++i) {
+        best.PushBack(stats.topDiff[i], allocator);
     }
 
     results.AddMember("best", best, allocator);
@@ -256,12 +257,14 @@ void ApiState::getResults(rapidjson::Document &doc) const
 }
 
 
-void ApiState::getWorkers(rapidjson::Document &doc) const
+void ApiRouter::getWorkers(rapidjson::Document &doc) const
 {
     auto &allocator = doc.GetAllocator();
+    auto &list      = m_controller->workers();
+
     rapidjson::Value workers(rapidjson::kArrayType);
 
-    for (const Worker &worker : m_workers) {
+    for (const Worker &worker : list) {
         if (worker.connections() == 0 && worker.lastHash() == 0) {
             continue;
         }
@@ -285,4 +288,31 @@ void ApiState::getWorkers(rapidjson::Document &doc) const
     }
 
     doc.AddMember("workers", workers, allocator);
+}
+
+
+void ApiRouter::setWorkerId(const char *id)
+{
+    memset(m_workerId, 0, sizeof(m_workerId));
+
+    if (id && strlen(id) > 0) {
+        strncpy(m_workerId, id, sizeof(m_workerId) - 1);
+    }
+    else {
+        gethostname(m_workerId, sizeof(m_workerId) - 1);
+    }
+}
+
+
+void ApiRouter::updateWorkerId(const char *id, const char *previousId)
+{
+    if (id == previousId) {
+        return;
+    }
+
+    if (id != nullptr && previousId != nullptr && strcmp(id, previousId) == 0) {
+        return;
+    }
+
+    setWorkerId(id);
 }

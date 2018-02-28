@@ -12,17 +12,24 @@ include (CheckIncludeFile)
 set(HEADERS
     src/3rdparty/align.h
     src/api/Api.h
-    src/api/ApiState.h
+    src/api/ApiRouter.h
     src/App.h
     src/Console.h
+    src/core/Config.h
+    src/core/ConfigLoader.h
+    src/core/ConfigLoader_static.h
+    src/core/ConfigWatcher.h
+    src/core/Controller.h
     src/donate.h
     src/interfaces/IClientListener.h
     src/interfaces/IConsoleListener.h
+    src/interfaces/IControllerListener.h
     src/interfaces/IEvent.h
     src/interfaces/IEventListener.h
     src/interfaces/ILogBackend.h
     src/interfaces/IStrategy.h
     src/interfaces/IStrategyListener.h
+    src/interfaces/IWatcherListener.h
     src/log/AccessLog.h
     src/log/ConsoleLog.h
     src/log/FileLog.h
@@ -35,7 +42,6 @@ set(HEADERS
     src/net/strategies/FailoverStrategy.h
     src/net/strategies/SinglePoolStrategy.h
     src/net/Url.h
-    src/Options.h
     src/Platform.h
     src/proxy/Addr.h
     src/proxy/Counters.h
@@ -70,9 +76,13 @@ set(HEADERS
 
 set(SOURCES
     src/api/Api.cpp
-    src/api/ApiState.cpp
+    src/api/ApiRouter.cpp
     src/App.cpp
     src/Console.cpp
+    src/core/Config.cpp
+    src/core/ConfigLoader.cpp
+    src/core/ConfigWatcher.cpp
+    src/core/Controller.cpp
     src/crypto/c_keccak.c
     src/crypto/c_keccak.h
     src/log/AccessLog.cpp
@@ -87,7 +97,6 @@ set(SOURCES
     src/net/strategies/SinglePoolStrategy.cpp
     src/net/SubmitResult.cpp
     src/net/Url.cpp
-    src/Options.cpp
     src/Platform.cpp
     src/proxy/Counters.cpp
     src/proxy/CustomDiff.cpp

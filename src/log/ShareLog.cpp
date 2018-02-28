@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -25,16 +25,18 @@
 #include <inttypes.h>
 
 
+#include "core/Config.h"
+#include "core/Controller.h"
 #include "log/Log.h"
 #include "log/ShareLog.h"
 #include "net/SubmitResult.h"
-#include "Options.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/Stats.h"
 
 
-ShareLog::ShareLog(const Stats &stats) :
-    m_stats(stats)
+ShareLog::ShareLog(xmrig::Controller *controller, const Stats &stats) :
+    m_stats(stats),
+    m_controller(controller)
 {
 }
 
@@ -72,14 +74,20 @@ void ShareLog::onRejectedEvent(IEvent *event)
 }
 
 
+bool ShareLog::isColors() const
+{
+    return m_controller->config()->colors();
+}
+
+
 void ShareLog::accept(const AcceptEvent *event)
 {
-    if (!Options::i()->verbose()) {
+    if (!m_controller->config()->verbose()) {
         return;
     }
 
-    LOG_INFO(Options::i()->colors() ? "#%03u \x1B[01;32maccepted\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m \x1B[01;30m(%" PRIu64 " ms)"
-                                    : "#%03u accepted (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff %u (%" PRIu64 " ms)",
+    LOG_INFO(isColors() ? "#%03u \x1B[01;32maccepted\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m \x1B[01;30m(%" PRIu64 " ms)"
+                        : "#%03u accepted (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff %u (%" PRIu64 " ms)",
              event->mapperId(), m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, event->result.diff, event->result.elapsed);
 }
 
@@ -90,7 +98,7 @@ void ShareLog::reject(const AcceptEvent *event)
         return;
     }
 
-    LOG_INFO(Options::i()->colors() ? "#%03u \x1B[01;31mrejected\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m \x1B[31m\"%s\"\x1B[0m \x1B[01;30m(%" PRId64 " ms)"
-                                    : "#%03u rejected (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff %u \"%s\" (%" PRId64 " ms)",
+    LOG_INFO(isColors() ? "#%03u \x1B[01;31mrejected\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m \x1B[31m\"%s\"\x1B[0m \x1B[01;30m(%" PRId64 " ms)"
+                        : "#%03u rejected (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff %u \"%s\" (%" PRId64 " ms)",
              event->mapperId(), m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, event->result.diff, event->error(), event->result.elapsed);
 }

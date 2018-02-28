@@ -21,20 +21,16 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __API_H__
-#define __API_H__
+#ifndef __APIROUTER_H__
+#define __APIROUTER_H__
 
 
-#include <uv.h>
-#include <vector>
+#include "interfaces/IControllerListener.h"
+#include "proxy/StatsData.h"
+#include "rapidjson/fwd.h"
 
 
-#include "proxy/workers/Worker.h"
-
-
-class ApiRouter;
 class Hashrate;
-class StatsData;
 
 
 namespace xmrig {
@@ -42,16 +38,33 @@ namespace xmrig {
 }
 
 
-class Api
+class ApiRouter : public xmrig::IControllerListener
 {
 public:
-    static bool start(xmrig::Controller *controller);
-    static void release();
+    ApiRouter(xmrig::Controller *controller);
+    ~ApiRouter();
 
-    static char *get(const char *url, int *status);
+    char *get(const char *url, int *status) const;
+
+protected:
+    void onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig) override;
 
 private:
-    static ApiRouter *m_router;
+    char *finalize(rapidjson::Document &doc) const;
+    void genId();
+    void getHashrate(rapidjson::Document &doc) const;
+    void getIdentify(rapidjson::Document &doc) const;
+    void getMiner(rapidjson::Document &doc) const;
+    void getMinersSummary(rapidjson::Document &doc) const;
+    void getResources(rapidjson::Document &doc) const;
+    void getResults(rapidjson::Document &doc) const;
+    void getWorkers(rapidjson::Document &doc) const;
+    void setWorkerId(const char *id);
+    void updateWorkerId(const char *id, const char *previousId);
+
+    char m_id[17];
+    char m_workerId[128];
+    xmrig::Controller *m_controller;
 };
 
-#endif /* __API_H__ */
+#endif /* __APIROUTER_H__ */

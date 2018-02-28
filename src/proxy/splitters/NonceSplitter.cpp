@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -25,8 +25,9 @@
 #include <inttypes.h>
 
 
+#include "core/Config.h"
+#include "core/Controller.h"
 #include "log/Log.h"
-#include "Options.h"
 #include "Platform.h"
 #include "proxy/Counters.h"
 #include "proxy/events/CloseEvent.h"
@@ -41,7 +42,8 @@
 #define LABEL(x) " \x1B[01;30m" x ":\x1B[0m "
 
 
-NonceSplitter::NonceSplitter()
+NonceSplitter::NonceSplitter(xmrig::Controller *controller) :
+    m_controller(controller)
 {
 }
 
@@ -67,7 +69,7 @@ uint32_t NonceSplitter::activeUpstreams() const
 
 void NonceSplitter::connect()
 {
-    auto upstream = new NonceMapper(m_upstreams.size(), Options::i(), Platform::userAgent());
+    auto upstream = new NonceMapper(m_upstreams.size(), m_controller, Platform::userAgent());
     m_upstreams.push_back(upstream);
 
     upstream->start();
@@ -102,7 +104,7 @@ void NonceSplitter::printConnections()
     const int error    = (int) m_upstreams.size() - active - suspended;
     const double ratio = active > 0 ? ((double) Counters::miners() / active) : 0;
 
-    if (Options::i()->colors()) {
+    if (m_controller->config()->colors()) {
         LOG_INFO("\x1B[01;32m* \x1B[01;37mupstreams\x1B[0m" LABEL("active") "%s%d\x1B[0m" LABEL("sleep") "\x1B[01;37m%d\x1B[0m" LABEL("error") "%s%d\x1B[0m" LABEL("total") "\x1B[01;37m%d",
                  active ? "\x1B[01;32m" : "\x1B[01;31m", active, suspended, error ? "\x1B[01;31m" : "\x1B[01;37m", error, m_upstreams.size());
 

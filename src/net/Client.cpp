@@ -109,19 +109,6 @@ void Client::connect(const Url *url)
 }
 
 
-void Client::disconnect()
-{
-#   ifndef XMRIG_PROXY_PROJECT
-    uv_timer_stop(&m_keepAliveTimer);
-#   endif
-
-    m_expire   = 0;
-    m_failures = -1;
-
-    close();
-}
-
-
 void Client::setUrl(const Url *url)
 {
     if (!url || !url->isValid()) {
@@ -150,6 +137,19 @@ void Client::tick(uint64_t now)
 }
 
 
+bool Client::disconnect()
+{
+#   ifndef XMRIG_PROXY_PROJECT
+    uv_timer_stop(&m_keepAliveTimer);
+#   endif
+
+    m_expire   = 0;
+    m_failures = -1;
+
+    return close();
+}
+
+
 int64_t Client::submit(const JobResult &result)
 {
 #   ifdef XMRIG_PROXY_PROJECT
@@ -171,6 +171,22 @@ int64_t Client::submit(const JobResult &result)
 
     m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff());
     return send(size);
+}
+
+
+bool Client::close()
+{
+    if (m_state == UnconnectedState || m_state == ClosingState || !m_socket) {
+        return false;
+    }
+
+    setState(ClosingState);
+
+    if (uv_is_closing(reinterpret_cast<uv_handle_t*>(m_socket)) == 0) {
+        uv_close(reinterpret_cast<uv_handle_t*>(m_socket), Client::onClose);
+    }
+
+    return true;
 }
 
 
@@ -288,20 +304,6 @@ int64_t Client::send(size_t size)
 
     m_expire = uv_now(uv_default_loop()) + kResponseTimeout;
     return m_sequence++;
-}
-
-
-void Client::close()
-{
-    if (m_state == UnconnectedState || m_state == ClosingState || !m_socket) {
-        return;
-    }
-
-    setState(ClosingState);
-
-    if (uv_is_closing(reinterpret_cast<uv_handle_t*>(m_socket)) == 0) {
-        uv_close(reinterpret_cast<uv_handle_t*>(m_socket), Client::onClose);
-    }
 }
 
 
@@ -456,7 +458,8 @@ void Client::parseResponse(int64_t id, const rapidjson::Value &result, const rap
                 LOG_ERR("[%s:%u] login error code: %d", m_url.host(), m_url.port(), code);
             }
 
-            return close();
+            close();
+            return;
         }
 
         m_failures = 0;
@@ -582,11 +585,13 @@ void Client::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
             LOG_ERR("[%s:%u] read error: \"%s\"", client->m_url.host(), client->m_url.port(), uv_strerror((int) nread));
         }
 
-        return client->close();
+        client->close();
+        return;
     }
 
     if ((size_t) nread > (sizeof(m_buf) - 8 - client->m_recvBufPos)) {
-        return client->close();
+        client->close();
+        return;
     }
 
     client->m_recvBufPos += nread;

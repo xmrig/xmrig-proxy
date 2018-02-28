@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -37,16 +37,23 @@ class IStrategyListener;
 class Url;
 
 
+namespace xmrig {
+    class Controller;
+}
+
+
 class FailoverStrategy : public IStrategy, public IClientListener
 {
 public:
-    FailoverStrategy(const std::vector<Url*> &urls, const char *agent, IStrategyListener *listener);
+    FailoverStrategy(xmrig::Controller *controller, const std::vector<Url*> &urls, const char *agent, IStrategyListener *listener);
+    ~FailoverStrategy();
 
 public:
     inline bool isActive() const override  { return m_active >= 0; }
 
     int64_t submit(const JobResult &result) override;
     void connect() override;
+    void release() override;
     void resume() override;
     void stop() override;
     void tick(uint64_t now) override;
@@ -60,10 +67,13 @@ protected:
 private:
     void add(const Url *url, const char *agent);
 
+    bool m_release;
     int m_active;
     int m_index;
+    int m_remaining;
     IStrategyListener *m_listener;
     std::vector<Client*> m_pools;
+    xmrig::Controller *m_controller;
 };
 
 #endif /* __FAILOVERSTRATEGY_H__ */

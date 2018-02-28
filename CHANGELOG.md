@@ -1,3 +1,12 @@
+# v2.5.0-dev
+- Added dynamic config reload support, pools and some other settings now can changed without proxy restart.
+- Added command line option `--no-watch` and config option `watch` to disable config file watching.
+- Added API endpoint `GET /1/config` to get current active config.
+- Deprecations:
+  - Option `coin` now deprecated, use `algo` instead.
+  - API endpoint `GET /` now deprecated, use `GET /1/summary` instead.
+  - API endpoint `GET /workers.json`, use `GET /1/workers` instead.
+
 # v2.4.5
 - [#109](https://github.com/xmrig/xmrig-proxy/issues/109) Hashrate reports now more detailed for low speed workers.
 - [#200](https://github.com/xmrig/xmrig/issues/200) In some cases proxy was doesn't write log to stdout.

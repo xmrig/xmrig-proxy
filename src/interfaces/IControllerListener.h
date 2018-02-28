@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -21,43 +21,26 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __APISTATE_H__
-#define __APISTATE_H__
+#ifndef __ICONTROLLERLISTENER_H__
+#define __ICONTROLLERLISTENER_H__
 
 
-#include "proxy/StatsData.h"
-#include "proxy/workers/Worker.h"
-#include "rapidjson/fwd.h"
+namespace xmrig {
 
 
-class Hashrate;
+class Config;
 
 
-class ApiState
+class IControllerListener
 {
 public:
-    ApiState();
-    ~ApiState();
+    virtual ~IControllerListener() {}
 
-    char *get(const char *url, int *status) const;
-    void tick(const StatsData &data);
-    void tick(const std::vector<Worker> &workers);
-
-private:
-    char *finalize(rapidjson::Document &doc) const;
-    void genId();
-    void getHashrate(rapidjson::Document &doc) const;
-    void getIdentify(rapidjson::Document &doc) const;
-    void getMiner(rapidjson::Document &doc) const;
-    void getMinersSummary(rapidjson::Document &doc) const;
-    void getResources(rapidjson::Document &doc) const;
-    void getResults(rapidjson::Document &doc) const;
-    void getWorkers(rapidjson::Document &doc) const;
-
-    char m_id[17];
-    char m_workerId[128];
-    StatsData m_stats;
-    std::vector<Worker> m_workers;
+    virtual void onConfigChanged(Config *config, Config *previousConfig) = 0;
 };
 
-#endif /* __APISTATE_H__ */
+
+} /* namespace xmrig */
+
+
+#endif // __ICONTROLLERLISTENER_H__

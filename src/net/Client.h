@@ -56,10 +56,10 @@ public:
     Client(int id, const char *agent, IClientListener *listener);
     ~Client();
 
+    bool disconnect();
     int64_t submit(const JobResult &result);
     void connect();
     void connect(const Url *url);
-    void disconnect();
     void setUrl(const Url *url);
     void tick(uint64_t now);
 
@@ -74,12 +74,12 @@ public:
     inline void setRetryPause(int ms)        { m_retryPause = ms; }
 
 private:
+    bool close();
     bool isCriticalError(const char *message);
     bool parseJob(const rapidjson::Value &params, int *code);
     bool parseLogin(const rapidjson::Value &result, int *code);
     int resolve(const char *host);
     int64_t send(size_t size);
-    void close();
     void connect(struct sockaddr *addr);
     void login();
     void parse(char *line, size_t len);

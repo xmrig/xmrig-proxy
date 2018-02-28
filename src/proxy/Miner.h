@@ -32,7 +32,6 @@
 #include "rapidjson/fwd.h"
 
 
-class IMinerListener;
 class Job;
 class RejectEvent;
 

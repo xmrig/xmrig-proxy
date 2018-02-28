@@ -55,12 +55,12 @@ void Stats::tick(uint64_t ticks, const NonceSplitter &splitter)
         m_data.hashrate[2] = hashrate(3600);
         m_data.hashrate[3] = hashrate(3600 * 12);
         m_data.hashrate[4] = hashrate(3600 * 24);
+        m_data.hashrate[5] = hashrate(m_data.uptime());
 
         m_data.upstreams = splitter.activeUpstreams();
         m_data.miners    = Counters::miners();
         m_data.maxMiners = Counters::maxMiners();
         m_data.expired   = Counters::expired;
-        Api::tick(m_data);
 #       endif
     }
 }

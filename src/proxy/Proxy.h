@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -29,8 +29,10 @@
 #include <uv.h>
 
 
+#include "interfaces/IControllerListener.h"
 #include "proxy/CustomDiff.h"
 #include "proxy/Stats.h"
+#include "proxy/workers/Worker.h"
 
 
 class AccessLog;
@@ -44,10 +46,15 @@ class Url;
 class Workers;
 
 
-class Proxy
+namespace xmrig {
+    class Controller;
+}
+
+
+class Proxy : public xmrig::IControllerListener
 {
 public:
-    Proxy(const Options *options);
+    Proxy(xmrig::Controller *controller);
     ~Proxy();
 
     void connect();
@@ -56,14 +63,21 @@ public:
     void printWorkers();
     void toggleDebug();
 
+    const StatsData &statsData() const;
+    const std::vector<Worker> &workers() const;
+
 #   ifdef APP_DEVEL
     void printState();
 #   endif
+
+protected:
+    void onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig) override;
 
 private:
     constexpr static int kPrintInterval = 60;
     constexpr static int kGCInterval    = 60;
 
+    bool isColors() const;
     void bind(const char *ip, uint16_t port);
     void gc();
     void print();
@@ -83,6 +97,7 @@ private:
     uint64_t m_ticks;
     uv_timer_t m_timer;
     Workers *m_workers;
+    xmrig::Controller *m_controller;
 };
 
 

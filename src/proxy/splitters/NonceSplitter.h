@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -40,10 +40,15 @@ class Stats;
 class SubmitEvent;
 
 
+namespace xmrig {
+    class Controller;
+}
+
+
 class NonceSplitter : public IEventListener
 {
 public:
-    NonceSplitter();
+    NonceSplitter(xmrig::Controller *controller);
     ~NonceSplitter();
 
     uint32_t activeUpstreams() const;
@@ -66,6 +71,7 @@ private:
     void submit(SubmitEvent *event);
 
     std::vector<NonceMapper*> m_upstreams;
+    xmrig::Controller *m_controller;
 };
 
 

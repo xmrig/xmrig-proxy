@@ -21,37 +21,49 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __VERSION_H__
-#define __VERSION_H__
+#ifndef __CONFIGLOADER_H__
+#define __CONFIGLOADER_H__
 
-#define APP_ID        "xmrig-proxy"
-#define APP_NAME      "xmrig-proxy"
-#define APP_DESC      "XMRig Stratum proxy"
-#define APP_VERSION   "2.5.0-dev"
-#define APP_DOMAIN    "xmrig.com"
-#define APP_SITE      "www.xmrig.com"
-#define APP_COPYRIGHT "Copyright (C) 2016-2018 xmrig.com"
-#define APP_KIND      "proxy"
 
-#define APP_VER_MAJOR  2
-#define APP_VER_MINOR  5
-#define APP_VER_BUILD  0
-#define APP_VER_REV    0
+#include <stdint.h>
 
-#ifdef _MSC_VER
-#   if (_MSC_VER >= 1910)
-#       define MSVC_VERSION 2017
-#   elif _MSC_VER == 1900
-#       define MSVC_VERSION 2015
-#   elif _MSC_VER == 1800
-#       define MSVC_VERSION 2013
-#   elif _MSC_VER == 1700
-#       define MSVC_VERSION 2012
-#   elif _MSC_VER == 1600
-#       define MSVC_VERSION 2010
-#   else
-#       define MSVC_VERSION 0
-#   endif
-#endif
 
-#endif /* __VERSION_H__ */
+#include "rapidjson/fwd.h"
+
+
+struct option;
+
+
+namespace xmrig {
+
+
+class Config;
+class ConfigWatcher;
+class IWatcherListener;
+
+
+class ConfigLoader
+{
+    friend class ConfigWatcher;
+
+public:
+    static Config *load(int argc, char **argv, IWatcherListener *listener);
+    static void release();
+
+private:
+    static bool getJSON(const char *fileName, rapidjson::Document &doc);
+    static bool parseArg(Config *config, int key, const char *arg);
+    static bool parseArg(Config *config, int key, uint64_t arg);
+    static bool parseBoolean(Config *config, int key, bool enable);
+    static void parseConfig(Config *config, const char *fileName);
+    static void parseJSON(Config *config, const struct option *option, const rapidjson::Value &object);
+    static void showUsage(int status);
+    static void showVersion(void);
+
+    static ConfigWatcher *m_watcher;
+};
+
+
+} /* namespace xmrig */
+
+#endif /* __CONFIGLOADER_H__ */

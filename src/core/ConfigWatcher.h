@@ -21,37 +21,48 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __VERSION_H__
-#define __VERSION_H__
+#ifndef __CONFIGWATCHER_H__
+#define __CONFIGWATCHER_H__
 
-#define APP_ID        "xmrig-proxy"
-#define APP_NAME      "xmrig-proxy"
-#define APP_DESC      "XMRig Stratum proxy"
-#define APP_VERSION   "2.5.0-dev"
-#define APP_DOMAIN    "xmrig.com"
-#define APP_SITE      "www.xmrig.com"
-#define APP_COPYRIGHT "Copyright (C) 2016-2018 xmrig.com"
-#define APP_KIND      "proxy"
 
-#define APP_VER_MAJOR  2
-#define APP_VER_MINOR  5
-#define APP_VER_BUILD  0
-#define APP_VER_REV    0
+#include <stdint.h>
+#include <uv.h>
 
-#ifdef _MSC_VER
-#   if (_MSC_VER >= 1910)
-#       define MSVC_VERSION 2017
-#   elif _MSC_VER == 1900
-#       define MSVC_VERSION 2015
-#   elif _MSC_VER == 1800
-#       define MSVC_VERSION 2013
-#   elif _MSC_VER == 1700
-#       define MSVC_VERSION 2012
-#   elif _MSC_VER == 1600
-#       define MSVC_VERSION 2010
-#   else
-#       define MSVC_VERSION 0
-#   endif
-#endif
+#include "rapidjson/fwd.h"
 
-#endif /* __VERSION_H__ */
+
+struct option;
+
+
+namespace xmrig {
+
+
+class Config;
+class IWatcherListener;
+
+
+class ConfigWatcher
+{
+public:
+    ConfigWatcher(const char *path, IWatcherListener *listener);
+    ~ConfigWatcher();
+
+private:
+    constexpr static int kDelay = 500;
+
+    static void onFsEvent(uv_fs_event_t* handle, const char *filename, int events, int status);
+    static void onTimer(uv_timer_t* handle);
+    void queueUpdate();
+    void reload();
+    void start();
+
+    char *m_path;
+    IWatcherListener *m_listener;
+    uv_fs_event_t m_fsEvent;
+    uv_timer_t m_timer;
+};
+
+
+} /* namespace xmrig */
+
+#endif /* __CONFIGWATCHER_H__ */

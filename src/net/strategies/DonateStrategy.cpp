@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -22,10 +22,11 @@
  */
 
 
+#include "core/Config.h"
+#include "core/Controller.h"
 #include "interfaces/IStrategyListener.h"
 #include "net/Client.h"
 #include "net/strategies/DonateStrategy.h"
-#include "Options.h"
 
 
 extern "C"
@@ -39,26 +40,27 @@ static inline int random(int min, int max){
 }
 
 
-DonateStrategy::DonateStrategy(const char *agent, IStrategyListener *listener) :
+DonateStrategy::DonateStrategy(xmrig::Controller *controller, const char *agent, IStrategyListener *listener) :
     m_active(false),
     m_suspended(false),
     m_listener(listener),
     m_donateTicks(0),
     m_target(0),
-    m_ticks(0)
+    m_ticks(0),
+    m_controller(controller)
 {
     uint8_t hash[200];
     char userId[65] = { 0 };
-    const char *user = Options::i()->pools().front()->user();
+    const char *user = controller->config()->pools().front()->user();
 
     keccak(reinterpret_cast<const uint8_t *>(user), static_cast<int>(strlen(user)), hash, sizeof(hash));
     Job::toHex(hash, 32, userId);
 
-    Url *url = new Url("proxy-fee.xmrig.com", Options::i()->coin() && strncmp(Options::i()->coin(), "aeon", 4) ? 3333 : 443, userId, nullptr, false, true);
+    Url *url = new Url("proxy-fee.xmrig.com", controller->config()->algorithm() == xmrig::Config::CRYPTONIGHT_LITE ? 3333 : 443, userId, nullptr, false, true);
 
     m_client = new Client(-1, agent, this);
     m_client->setUrl(url);
-    m_client->setRetryPause(Options::i()->retryPause() * 1000);
+    m_client->setRetryPause(controller->config()->retryPause() * 1000);
 
     delete url;
 
@@ -68,7 +70,7 @@ DonateStrategy::DonateStrategy(const char *agent, IStrategyListener *listener) :
 
 bool DonateStrategy::reschedule()
 {
-    const uint64_t level = Options::i()->donateLevel() * 60;
+    const uint64_t level = m_controller->config()->donateLevel() * 60;
     if (m_donateTicks < level) {
         return false;
     }
@@ -90,6 +92,11 @@ int64_t DonateStrategy::submit(const JobResult &result)
 void DonateStrategy::connect()
 {
     m_suspended = false;
+}
+
+
+void DonateStrategy::release()
+{
 }
 
 
@@ -136,10 +143,10 @@ void DonateStrategy::onJobReceived(Client *client, const Job &job)
 {
     if (!isActive()) {
         m_active = true;
-        m_listener->onActive(client);
+        m_listener->onActive(this, client);
     }
 
-    m_listener->onJob(client, job);
+    m_listener->onJob(this, client, job);
 }
 
 
@@ -150,5 +157,5 @@ void DonateStrategy::onLoginSuccess(Client *client)
 
 void DonateStrategy::onResultAccepted(Client *client, const SubmitResult &result, const char *error)
 {
-    m_listener->onResultAccepted(client, result, error);
+    m_listener->onResultAccepted(this, client, result, error);
 }

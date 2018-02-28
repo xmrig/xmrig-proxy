@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -27,13 +27,14 @@
 #include <string.h>
 
 
+#include "core/Config.h"
+#include "core/Controller.h"
 #include "log/Log.h"
 #include "net/Client.h"
 #include "net/strategies/DonateStrategy.h"
 #include "net/strategies/FailoverStrategy.h"
 #include "net/strategies/SinglePoolStrategy.h"
 #include "net/Url.h"
-#include "Options.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"
 #include "proxy/events/AcceptEvent.h"
@@ -44,26 +45,26 @@
 #include "proxy/splitters/NonceStorage.h"
 
 
-NonceMapper::NonceMapper(size_t id, const Options *options, const char *agent) :
+static bool compare(Url *i, Url *j) {
+  return *i == *j;
+}
+
+
+NonceMapper::NonceMapper(size_t id, xmrig::Controller *controller, const char *agent) :
     m_suspended(false),
     m_agent(agent),
-    m_options(options),
     m_donate(nullptr),
-    m_id(id)
+    m_id(id),
+    m_controller(controller)
 {
-    m_storage = new NonceStorage();
-    const std::vector<Url*> &pools = options->pools();
+    m_storage  = new NonceStorage();
+    m_strategy = createStrategy(controller->config()->pools());
 
-    if (pools.size() > 1) {
-        m_strategy = new FailoverStrategy(pools, m_agent, this);
-    }
-    else {
-        m_strategy = new SinglePoolStrategy(pools.front(), m_agent, this);
+    if (id != 0 && controller->config()->donateLevel() > 0) {
+        m_donate = new DonateStrategy(controller, m_agent, this);
     }
 
-    if (id != 0 && m_options->donateLevel() > 0) {
-        m_donate = new DonateStrategy(m_agent, this);
-    }
+    controller->addListener(this);
 }
 
 
@@ -159,7 +160,7 @@ void NonceMapper::printState()
 #endif
 
 
-void NonceMapper::onActive(Client *client)
+void NonceMapper::onActive(IStrategy *strategy, Client *client)
 {
     m_storage->setActive(true);
 
@@ -167,15 +168,27 @@ void NonceMapper::onActive(Client *client)
         return;
     }
 
-    LOG_INFO(m_options->colors() ? "#%03u \x1B[01;37muse pool \x1B[01;36m%s:%d \x1B[01;30m%s" : "#%03u use pool %s:%d %s",
+    if (m_strategy != strategy) {
+        m_strategy->release();
+        m_strategy = strategy;
+
+    }
+
+    LOG_INFO(isColors() ? "#%03u \x1B[01;37muse pool \x1B[01;36m%s:%d \x1B[01;30m%s" : "#%03u use pool %s:%d %s",
              m_id, client->host(), client->port(), client->ip());
 }
 
 
-void NonceMapper::onJob(Client *client, const Job &job)
+void NonceMapper::onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig)
 {
-    if (m_options->verbose()) {
-        LOG_INFO(m_options->colors() ? "#%03u \x1B[01;35mnew job\x1B[0m from \x1B[01;37m%s:%d\x1B[0m diff \x1B[01;37m%d" : "#%03u new job from %s:%d diff %d",
+    reload(config->pools(), previousConfig->pools());
+}
+
+
+void NonceMapper::onJob(IStrategy *strategy, Client *client, const Job &job)
+{
+    if (m_controller->config()->verbose()) {
+        LOG_INFO(isColors() ? "#%03u \x1B[01;35mnew job\x1B[0m from \x1B[01;37m%s:%d\x1B[0m diff \x1B[01;37m%d" : "#%03u new job from %s:%d diff %d",
                  m_id, client->host(), client->port(), job.diff());
     }
 
@@ -197,7 +210,7 @@ void NonceMapper::onPause(IStrategy *strategy)
 }
 
 
-void NonceMapper::onResultAccepted(Client *client, const SubmitResult &result, const char *error)
+void NonceMapper::onResultAccepted(IStrategy *strategy, Client *client, const SubmitResult &result, const char *error)
 {
     const SubmitCtx ctx = submitCtx(result.seq);
 
@@ -213,6 +226,22 @@ void NonceMapper::onResultAccepted(Client *client, const SubmitResult &result, c
     else {
         ctx.miner->success(ctx.id, "OK");
     }
+}
+
+
+bool NonceMapper::isColors() const
+{
+    return m_controller->config()->colors();
+}
+
+
+IStrategy *NonceMapper::createStrategy(const std::vector<Url*> &pools)
+{
+    if (pools.size() > 1) {
+        return new FailoverStrategy(m_controller, pools, m_agent, this);
+    }
+
+    return new SinglePoolStrategy(m_controller, pools.front(), m_agent, this);
 }
 
 
@@ -242,6 +271,17 @@ void NonceMapper::connect()
     if (m_donate) {
         m_donate->connect();
     }
+}
+
+
+void NonceMapper::reload(const std::vector<Url*> &pools, const std::vector<Url*> &previousPools)
+{
+    if (pools.size() == previousPools.size() && std::equal(pools.begin(), pools.end(), previousPools.begin(), compare)) {
+        return;
+    }
+
+    IStrategy *strategy = createStrategy(pools);
+    strategy->connect();
 }
 
 

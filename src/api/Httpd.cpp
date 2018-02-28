@@ -32,7 +32,7 @@
 
 
 Httpd::Httpd(int port, const char *accessToken) :
-    m_accessToken(accessToken),
+    m_accessToken(accessToken ? strdup(accessToken) : nullptr),
     m_port(port),
     m_daemon(nullptr)
 {
@@ -48,6 +48,8 @@ Httpd::~Httpd()
     if (m_daemon) {
         MHD_stop_daemon(m_daemon);
     }
+
+    delete m_accessToken;
 }
 
 

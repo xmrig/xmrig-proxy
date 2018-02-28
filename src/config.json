@@ -1,29 +1,27 @@
 {
-    "background": false,
-    "log-file": null,
     "access-log-file": null,
-    "retries": 5,
-    "retry-pause": 5,
-    "donate-level": 2,
-    "coin": "xmr",
-    "custom-diff": 0,
-    "syslog": false,
-    "verbose": false,
-    "colors": true,
-    "workers": true,
-    "pools": [
-        {
-            "url": "pool.minemonero.pro:5555",
-            "user": "",
-            "pass": "x"
-        }
-    ],
-    "bind": [
-        "0.0.0.0:3333"
-    ],
+    "algo": "cryptonight",
     "api": {
         "port": 0,
         "access-token": null,
         "worker-id": null
-    }
+    },
+    "background": false,
+    "colors": true,
+    "custom-diff": 0,
+    "donate-level": 2,
+    "log-file": null,
+    "pools": [
+        {
+            "url": "failover.xmrig.com:443",
+            "user": "YOUR_WALLET",
+            "pass": "x"
+        }
+    ],
+    "retries": 5,
+    "retry-pause": 5,
+    "user-agent": null,
+    "verbose": false,
+    "watch": true,
+    "workers": true
 }

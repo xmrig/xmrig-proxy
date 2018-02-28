@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -24,6 +24,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 
 #include "net/Url.h"
@@ -40,6 +41,7 @@ Url::Url() :
     m_host(nullptr),
     m_password(nullptr),
     m_user(nullptr),
+    m_url(nullptr),
     m_port(kDefaultPort)
 {
 }
@@ -62,6 +64,7 @@ Url::Url(const char *url) :
     m_host(nullptr),
     m_password(nullptr),
     m_user(nullptr),
+    m_url(nullptr),
     m_port(kDefaultPort)
 {
     parse(url);
@@ -73,6 +76,7 @@ Url::Url(const char *host, uint16_t port, const char *user, const char *password
     m_nicehash(nicehash),
     m_password(password ? strdup(password) : nullptr),
     m_user(user ? strdup(user) : nullptr),
+    m_url(nullptr),
     m_port(port)
 {
     m_host = strdup(host);
@@ -84,12 +88,10 @@ Url::~Url()
     free(m_host);
     free(m_password);
     free(m_user);
-}
 
-
-bool Url::isNicehash() const
-{
-    return isValid() && (m_nicehash || strstr(m_host, ".nicehash.com"));
+    if (m_url) {
+        delete [] m_url;
+    }
 }
 
 
@@ -144,6 +146,36 @@ bool Url::setUserpass(const char *userpass)
 }
 
 
+const char *Url::url() const
+{
+    if (!m_url) {
+        const size_t size = strlen(m_host) + 8;
+        m_url = new char[size];
+
+        snprintf(m_url, size - 1, "%s:%d", m_host, m_port);
+    }
+
+    return m_url;
+}
+
+
+void Url::applyExceptions()
+{
+    if (!isValid()) {
+        return;
+    }
+
+    if (strstr(m_host, ".nicehash.com")) {
+        m_keepAlive = false;
+        m_nicehash  = true;
+    }
+
+    if (strstr(m_host, ".minergate.com")) {
+        m_keepAlive = false;
+    }
+}
+
+
 void Url::setPassword(const char *password)
 {
     if (!password) {
@@ -163,6 +195,20 @@ void Url::setUser(const char *user)
 
     free(m_user);
     m_user = strdup(user);
+}
+
+
+bool Url::operator==(const Url &other) const
+{
+    if (m_port != other.m_port || m_keepAlive != other.m_keepAlive || m_nicehash != other.m_nicehash) {
+        return false;
+    }
+
+    if (strcmp(host(), other.host()) != 0 || strcmp(user(), other.user()) != 0 || strcmp(password(), other.password()) != 0) {
+        return false;
+    }
+
+    return true;
 }
 
 

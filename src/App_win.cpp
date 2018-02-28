@@ -27,12 +27,13 @@
 
 
 #include "App.h"
-#include "Options.h"
+#include "core/Config.h"
+#include "core/Controller.h"
 
 
 void App::background()
 {
-    if (!m_options->background()) {
+    if (!m_controller->config()->background()) {
         return;
     }
 

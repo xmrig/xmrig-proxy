@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -27,6 +27,7 @@
 
 #include <map>
 #include <uv.h>
+#include <vector>
 
 
 #include "net/Job.h"
@@ -80,7 +81,8 @@ private:
     bool parseLogin(const rapidjson::Value &result, int *code);
     int resolve(const char *host);
     int64_t send(size_t size);
-    void connect(struct sockaddr *addr);
+    void connect(const std::vector<addrinfo*> &ipv4, const std::vector<addrinfo*> &ipv6);
+    void connect(sockaddr *addr);
     void login();
     void parse(char *line, size_t len);
     void parseNotification(const char *method, const rapidjson::Value &params, const rapidjson::Value &error);
@@ -99,9 +101,10 @@ private:
     static inline Client *getClient(void *data) { return static_cast<Client*>(data); }
 
     addrinfo m_hints;
+    bool m_ipv6;
     bool m_quiet;
     char m_buf[2048];
-    char m_ip[17];
+    char m_ip[46];
     char m_rpcId[64];
     char m_sendBuf[768];
     const char *m_agent;

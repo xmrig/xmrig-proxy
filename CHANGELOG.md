@@ -3,7 +3,8 @@
 - Added command line option `--no-watch` and config option `watch` to disable config file watching.
 - Added API endpoint `GET /1/config` to get current active config.
 - Added IPv6 support:
-  - `bind` now accept IPv6 addresses, for example `[::]:3333` to bind on all IPv4 and IPv6 interfaces and port 3333. 
+  - IPv6 now fully supported for connections to upstream pools.
+  - `bind` now accept IPv6 addresses, for example, use `[::]:3333` to bind on all IPv4 and IPv6 interfaces and port 3333. 
   - Added command line option `--api-ipv6` and similar config option to enable IPv6 support for HTTP API.
 - Deprecations:
   - Option `coin` now deprecated, use `algo` instead.

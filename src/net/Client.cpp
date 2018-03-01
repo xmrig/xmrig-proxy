@@ -54,6 +54,7 @@ int64_t Client::m_sequence = 1;
 
 
 Client::Client(int id, const char *agent, IClientListener *listener) :
+    m_ipv6(false),
     m_quiet(false),
     m_agent(agent),
     m_listener(listener),
@@ -71,7 +72,7 @@ Client::Client(int id, const char *agent, IClientListener *listener) :
 
     m_resolver.data = this;
 
-    m_hints.ai_family   = PF_INET;
+    m_hints.ai_family   = AF_UNSPEC;
     m_hints.ai_socktype = SOCK_STREAM;
     m_hints.ai_protocol = IPPROTO_TCP;
 
@@ -307,7 +308,25 @@ int64_t Client::send(size_t size)
 }
 
 
-void Client::connect(struct sockaddr *addr)
+void Client::connect(const std::vector<addrinfo*> &ipv4, const std::vector<addrinfo*> &ipv6)
+{
+    addrinfo *addr = nullptr;
+    m_ipv6         = ipv4.empty() && !ipv6.empty();
+
+    if (m_ipv6) {
+        addr = ipv6[ipv6.size() == 1 ? 0 : rand() % ipv6.size()];
+        uv_ip6_name(reinterpret_cast<sockaddr_in6*>(addr->ai_addr), m_ip, 45);
+    }
+    else {
+        addr = ipv4[ipv4.size() == 1 ? 0 : rand() % ipv4.size()];
+        uv_ip4_name(reinterpret_cast<sockaddr_in*>(addr->ai_addr), m_ip, 16);
+    }
+
+    connect(addr->ai_addr);
+}
+
+
+void Client::connect(sockaddr *addr)
 {
     setState(ConnectingState);
 
@@ -633,24 +652,27 @@ void Client::onResolved(uv_getaddrinfo_t *req, int status, struct addrinfo *res)
 
     addrinfo *ptr = res;
     std::vector<addrinfo*> ipv4;
+    std::vector<addrinfo*> ipv6;
 
     while (ptr != nullptr) {
         if (ptr->ai_family == AF_INET) {
             ipv4.push_back(ptr);
         }
 
+        if (ptr->ai_family == AF_INET6) {
+            ipv6.push_back(ptr);
+        }
+
         ptr = ptr->ai_next;
     }
 
-    if (ipv4.empty()) {
-        LOG_ERR("[%s:%u] DNS error: \"No IPv4 records found\"", client->m_url.host(), client->m_url.port());
+    if (ipv4.empty() && ipv6.empty()) {
+        LOG_ERR("[%s:%u] DNS error: \"No IPv4 (A) or IPv6 (AAAA) records found\"", client->m_url.host(), client->m_url.port());
+
+        uv_freeaddrinfo(res);
         return client->reconnect();
     }
 
-    ptr = ipv4[rand() % ipv4.size()];
-
-    uv_ip4_name(reinterpret_cast<sockaddr_in*>(ptr->ai_addr), client->m_ip, 16);
-
-    client->connect(ptr->ai_addr);
+    client->connect(ipv4, ipv6);
     uv_freeaddrinfo(res);
 }

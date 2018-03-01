@@ -112,6 +112,10 @@ bool Url::parse(const char *url)
         return false;
     }
 
+    if (base[0] == '[') {
+        return parseIPv6(base);
+    }
+
     const char *port = strchr(base, ':');
     if (!port) {
         m_host = strdup(base);
@@ -121,7 +125,6 @@ bool Url::parse(const char *url)
     const size_t size = port++ - base + 1;
     m_host = static_cast<char*>(malloc(size));
     memcpy(m_host, base, size - 1);
-    m_host[size - 1] = '\0';
 
     m_port = (uint16_t) strtol(port, nullptr, 10);
     return true;
@@ -225,4 +228,26 @@ Url &Url::operator=(const Url *other)
     setUser(other->m_user);
 
     return *this;
+}
+
+
+bool Url::parseIPv6(const char *addr)
+{
+    const char *end = strchr(addr, ']');
+    if (!end) {
+        return false;
+    }
+
+    const char *port = strchr(end, ':');
+    if (!port) {
+        return false;
+    }
+
+    const size_t size = end - addr;
+    m_host = new char[size]();
+    memcpy(m_host, addr + 1, size - 1);
+
+    m_port = (uint16_t) strtol(port + 1, nullptr, 10);
+
+    return true;
 }

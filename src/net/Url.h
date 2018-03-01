@@ -61,6 +61,8 @@ public:
     Url &operator=(const Url *other);
 
 private:
+    bool parseIPv6(const char *addr);
+
     bool m_keepAlive;
     bool m_nicehash;
     char *m_host;

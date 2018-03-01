@@ -211,6 +211,7 @@ bool xmrig::ConfigLoader::parseArg(xmrig::Config *config, int key, const char *a
     case 'S':  /* --syslog */
     case 1100: /* --verbose */
     case 1101: /* --debug */
+    case 4003: /* --api-ipv6 */
         return parseBoolean(config, key, true);
 
     case 1002: /* --no-color */
@@ -340,6 +341,9 @@ bool xmrig::ConfigLoader::parseBoolean(xmrig::Config *config, int key, bool enab
     case 1105: /* watch */
         config->m_watch = enable;
         break;
+
+    case 4003: /* --api-ipv6 */
+        config->m_apiIPv6 = enable;
 
     default:
         break;

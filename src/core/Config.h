@@ -73,6 +73,7 @@ public:
 
     static Config *load(int argc, char **argv, IWatcherListener *listener);
 
+    inline bool apiIPv6() const                    { return m_apiIPv6; }
     inline bool background() const                 { return m_background; }
     inline bool colors() const                     { return m_colors; }
     inline bool isDebug() const                    { return m_debug; }
@@ -103,6 +104,7 @@ private:
     void setCoin(const char *coin);
     void setFileName(const char *fileName);
 
+    bool m_apiIPv6;
     bool m_background;
     bool m_colors;
     bool m_debug;

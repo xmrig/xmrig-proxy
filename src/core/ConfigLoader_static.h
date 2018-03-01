@@ -47,6 +47,7 @@ static char const usage[] = "\
 Usage: " APP_ID " [OPTIONS]\n\
 Options:\n\
   -b, --bind=ADDR          bind to specified address, example \"0.0.0.0:3333\"\n\
+  -a, --algo=ALGO          cryptonight (default) or cryptonight-lite\n\
   -o, --url=URL            URL of mining server\n\
   -O, --userpass=U:P       username:password pair for mining server\n\
   -u, --user=USERNAME      username for mining server\n\
@@ -56,7 +57,6 @@ Options:\n\
       --custom-diff=N      override pool diff\n\
       --verbose            verbose output\n\
       --user-agent=AGENT   set custom user-agent string for pool\n\
-      --coin=COIN          xmr for all cryptonight coins or aeon\n\
       --no-color           disable colored output\n\
       --no-workers         disable per worker statistics\n\
       --donate-level=N     donate level, default 2%%\n\
@@ -71,8 +71,9 @@ Options:\n\
 "\
   -A  --access-log-file=N  log all workers access to a file\n\
       --api-port=N         port for the miner API\n\
-      --api-access-token=T access token for API\n\
+      --api-access-token=T Bearer access token for API\n\
       --api-worker-id=ID   custom worker-id for API\n\
+      --api-ipv6           enable IPv6 support for API\n\
   -h, --help               display this help and exit\n\
   -V, --version            output version information and exit\n\
 ";
@@ -87,6 +88,7 @@ static struct option const options[] = {
     { "api-access-token", 1, nullptr, 4001 },
     { "api-port",         1, nullptr, 4000 },
     { "api-worker-id",    1, nullptr, 4002 },
+    { "api-ipv6",         0, nullptr, 4003 },
     { "background",       0, nullptr, 'B'  },
     { "bind",             1, nullptr, 'b'  },
     { "coin",             1, nullptr, 1104 },
@@ -149,6 +151,7 @@ static struct option const api_options[] = {
     { "port",          1, nullptr, 4000 },
     { "access-token",  1, nullptr, 4001 },
     { "worker-id",     1, nullptr, 4002 },
+    { "ipv6",          0, nullptr, 4003 },
     { 0, 0, 0, 0 }
 };
 

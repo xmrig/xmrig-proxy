@@ -2,6 +2,8 @@
 - Added graceful reload support, pools and some other settings now can changed without proxy restart.
 - Added command line option `--no-watch` and config option `watch` to disable config file watching.
 - Added API endpoint `GET /1/config` to get current active config.
+- Added support for IPv6:
+  - Added command line option `--api-ipv6` and similar config option to enable IPv6 support for HTTP API.
 - Deprecations:
   - Option `coin` now deprecated, use `algo` instead.
   - API endpoint `GET /` now deprecated, use `GET /1/summary` instead.

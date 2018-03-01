@@ -98,7 +98,7 @@ int App::exec()
 #   endif
 
 #   ifndef XMRIG_NO_HTTPD
-    m_httpd = new Httpd(m_controller->config()->apiPort(), m_controller->config()->apiToken());
+    m_httpd = new Httpd(m_controller->config()->apiPort(), m_controller->config()->apiToken(), m_controller->config()->apiIPv6());
     m_httpd->start();
 #   endif
 

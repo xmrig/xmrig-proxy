@@ -36,7 +36,7 @@ struct MHD_Response;
 class Httpd
 {
 public:
-    Httpd(int port, const char *accessToken);
+    Httpd(int port, const char *accessToken, bool IPv6);
     ~Httpd();
     bool start();
 
@@ -52,6 +52,7 @@ private:
     static void onTimer(uv_timer_t *handle);
 
     bool m_idle;
+    bool m_IPv6;
     const char *m_accessToken;
     const int m_port;
     MHD_Daemon *m_daemon;

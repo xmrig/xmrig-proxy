@@ -49,6 +49,7 @@ static const char *algo_names[] = {
 
 
 xmrig::Config::Config() :
+    m_apiIPv6(false),
     m_background(false),
     m_colors(true),
     m_debug(false),
@@ -121,6 +122,7 @@ void xmrig::Config::getJSON(rapidjson::Document &doc)
     api.AddMember("port",         apiPort(), allocator);
     api.AddMember("access-token", apiToken() ? rapidjson::Value(rapidjson::StringRef(apiToken())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
     api.AddMember("worker-id",    apiWorkerId() ? rapidjson::Value(rapidjson::StringRef(apiWorkerId())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
+    api.AddMember("ipv6",         apiIPv6(), allocator);
     doc.AddMember("api",          api, allocator);
 
     doc.AddMember("background",   background(), allocator);

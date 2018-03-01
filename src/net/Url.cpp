@@ -123,7 +123,7 @@ bool Url::parse(const char *url)
     }
 
     const size_t size = port++ - base + 1;
-    m_host = static_cast<char*>(malloc(size));
+    m_host = new char[size]();
     memcpy(m_host, base, size - 1);
 
     m_port = (uint16_t) strtol(port, nullptr, 10);

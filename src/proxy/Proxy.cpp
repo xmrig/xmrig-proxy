@@ -114,7 +114,7 @@ void Proxy::connect()
 
     const std::vector<Addr*> &addrs = m_controller->config()->addrs();
     for (const Addr *addr : addrs) {
-        bind(addr->host(), addr->port());
+        bind(addr);
     }
 
     uv_timer_start(&m_timer, Proxy::onTick, 1000, 1000);
@@ -183,9 +183,9 @@ bool Proxy::isColors() const
 }
 
 
-void Proxy::bind(const char *ip, uint16_t port)
+void Proxy::bind(const Addr *addr)
 {
-    auto server = new Server(ip, port);
+    auto server = new Server(addr);
 
     if (server->bind()) {
         m_servers.push_back(server);

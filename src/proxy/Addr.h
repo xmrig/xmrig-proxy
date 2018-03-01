@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -37,46 +37,81 @@ public:
 
 
     inline Addr() :
-        m_host(nullptr),
-        m_port(kDefaultPort)
+        m_ip(nullptr),
+        m_version(0),
+        m_port(0)
     {}
 
 
     inline Addr(const char *addr) :
-        m_host(nullptr),
-        m_port(kDefaultPort)
+        m_ip(nullptr),
+        m_version(0),
+        m_port(0)
     {
-        if (!addr) {
+        if (!addr || strlen(addr) < 5) {
             return;
         }
 
-        const char *port = strchr(addr, ':');
-        if (!port) {
-            m_host = strdup(addr);
+        if (addr[0] == '[') {
+            parseIPv6(addr);
             return;
         }
 
-        const size_t size = port++ - addr + 1;
-        m_host = static_cast<char*>(malloc(size));
-        memcpy(m_host, addr, size - 1);
-        m_host[size - 1] = '\0';
-
-        m_port = (uint16_t) strtol(port, nullptr, 10);
+        parseIPv4(addr);
     }
 
 
     inline ~Addr()
     {
-        free(m_host);
+        delete [] m_ip;
     }
 
 
-    inline bool isValid() const     { return m_host && m_port > 0; }
-    inline const char *host() const { return m_host; }
-    inline uint16_t port() const    { return m_port; }
+    inline bool isIPv6() const    { return m_version == 6; }
+    inline bool isValid() const   { return m_version && m_ip && m_port > 0; }
+    inline const char *ip() const { return m_ip; }
+    inline uint16_t port() const  { return m_port; }
 
 private:
-    char *m_host;
+    void parseIPv4(const char *addr)
+    {
+        const char *port = strchr(addr, ':');
+        if (!port) {
+            return;
+        }
+
+        m_version = 4;
+        const size_t size = port++ - addr + 1;
+        m_ip = new char[size]();
+        memcpy(m_ip, addr, size - 1);
+
+        m_port = (uint16_t) strtol(port, nullptr, 10);
+    }
+
+
+    void parseIPv6(const char *addr)
+    {
+        const char *end = strchr(addr, ']');
+        if (!end) {
+            return;
+        }
+
+        const char *port = strchr(end, ':');
+        if (!port) {
+            return;
+        }
+
+        m_version = 6;
+        const size_t size = end - addr;
+        m_ip = new char[size]();
+        memcpy(m_ip, addr + 1, size - 1);
+
+        m_port = (uint16_t) strtol(port + 1, nullptr, 10);
+    }
+
+
+    char *m_ip;
+    int m_version;
     uint16_t m_port;
 };
 

@@ -82,9 +82,11 @@ static void print_bind(xmrig::Controller *controller)
     const std::vector<Addr*> &addrs = controller->config()->addrs();
 
     for (size_t i = 0; i < addrs.size(); ++i) {
-        Log::i()->text(controller->config()->colors() ? "\x1B[01;32m * \x1B[01;37mBIND #%d:\x1B[0m      \x1B[36m%s:%d" : " * BIND #%d:      %s:%d",
+        Log::i()->text(controller->config()->colors() ? "\x1B[01;32m * \x1B[01;37mBIND #%d:\x1B[0m      \x1B[36m%s%s%s:%d" : " * BIND #%d:      %s%s%s:%d",
                        i + 1,
-                       addrs[i]->host(),
+                       addrs[i]->isIPv6() ? "[" : "",
+                       addrs[i]->ip(),
+                       addrs[i]->isIPv6() ? "]" : "",
                        addrs[i]->port());
     }
 }

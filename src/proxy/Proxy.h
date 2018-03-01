@@ -36,6 +36,7 @@
 
 
 class AccessLog;
+class Addr;
 class Miners;
 class NonceSplitter;
 class Options;
@@ -78,7 +79,8 @@ private:
     constexpr static int kGCInterval    = 60;
 
     bool isColors() const;
-    void bind(const char *ip, uint16_t port);
+    void bind(const Addr *addr);
+    void bind(const char *ip, uint16_t port, bool ipv6);
     void gc();
     void print();
     void tick();

@@ -156,42 +156,4 @@ int Httpd::handler(void *cls, struct MHD_Connection *connection, const char *url
 void Httpd::onTimer(uv_timer_t *handle)
 {
     static_cast<Httpd*>(handle->data)->run();
-////    printf("-\n");
-//    MHD_Daemon *daemon = static_cast<Httpd*>(handle->data)->m_daemon;
-
-//    const MHD_DaemonInfo *info = MHD_get_daemon_info(daemon, MHD_DAEMON_INFO_CURRENT_CONNECTIONS);
-//    if (m_idle) {
-//        if (info->num_connections) {
-//            uv_timer_set_repeat(&static_cast<Httpd*>(handle->data)->m_timer, 1000);
-//            m_idle = false;
-//        }
-//    }
-
-
-//    printf("%u\n", info->num_connections);
-
-//    fd_set rs;
-//    fd_set ws;
-//    fd_set es;
-//    FD_ZERO(&rs);
-//    FD_ZERO(&ws);
-//    FD_ZERO(&es);
-//    MHD_socket max = 0;
-
-//    timeval timeout;
-//    timeout.tv_sec  = 0;
-//    timeout.tv_usec = 0;
-
-//    MHD_get_fdset (daemon, &rs, &ws, &es, &max);
-
-//    unsigned long long ltimeout;
-//    if (MHD_get_timeout(daemon, &ltimeout) == MHD_YES) {
-
-//    printf("%llu\n", ltimeout);
-//    }
-
-
-//    select(max + 1, &rs, &ws, &es, &timeout);
-
-//    MHD_run(daemon);
 }

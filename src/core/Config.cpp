@@ -4,7 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -22,14 +23,18 @@
  */
 
 #include <string.h>
+#include <uv.h>
 
 
 #include "core/Config.h"
 #include "core/ConfigLoader.h"
 #include "donate.h"
+#include "log/Log.h"
 #include "net/Url.h"
 #include "proxy/Addr.h"
 #include "rapidjson/document.h"
+#include "rapidjson/filewritestream.h"
+#include "rapidjson/prettywriter.h"
 
 
 static const char *algo_names[] = {
@@ -50,6 +55,7 @@ static const char *algo_names[] = {
 
 xmrig::Config::Config() :
     m_apiIPv6(false),
+    m_apiRestricted(true),
     m_background(false),
     m_colors(true),
     m_debug(false),
@@ -103,6 +109,46 @@ bool xmrig::Config::isValid() const
 }
 
 
+bool xmrig::Config::reload(const char *json)
+{
+    return xmrig::ConfigLoader::reload(this, json);
+}
+
+
+bool xmrig::Config::save()
+{
+    if (!m_fileName) {
+        return false;
+    }
+
+    uv_fs_t req;
+    const int fd = uv_fs_open(uv_default_loop(), &req, m_fileName, O_WRONLY | O_CREAT | O_TRUNC, 0644, nullptr);
+    if (fd < 0) {
+        return false;
+    }
+
+    uv_fs_req_cleanup(&req);
+
+    rapidjson::Document doc;
+    getJSON(doc);
+
+    FILE *fp = fdopen(fd, "w");
+
+    char buf[4096];
+    rapidjson::FileWriteStream os(fp, buf, sizeof(buf));
+    rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
+    doc.Accept(writer);
+
+    fclose(fp);
+
+    uv_fs_close(uv_default_loop(), &req, fd, nullptr);
+    uv_fs_req_cleanup(&req);
+
+    LOG_NOTICE("configuration saved to: \"%s\"", m_fileName);
+    return true;
+}
+
+
 const char *xmrig::Config::algoName() const
 {
     return algo_names[m_algorithm];
@@ -123,6 +169,7 @@ void xmrig::Config::getJSON(rapidjson::Document &doc)
     api.AddMember("access-token", apiToken() ? rapidjson::Value(rapidjson::StringRef(apiToken())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
     api.AddMember("worker-id",    apiWorkerId() ? rapidjson::Value(rapidjson::StringRef(apiWorkerId())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
     api.AddMember("ipv6",         apiIPv6(), allocator);
+    api.AddMember("restricted",   apiRestricted(), allocator);
     doc.AddMember("api",          api, allocator);
 
     doc.AddMember("background",   background(), allocator);
@@ -194,5 +241,5 @@ void xmrig::Config::setCoin(const char *coin)
 void xmrig::Config::setFileName(const char *fileName)
 {
     free(m_fileName);
-    m_fileName = strdup(fileName);
+    m_fileName = fileName ? strdup(fileName) : nullptr;
 }

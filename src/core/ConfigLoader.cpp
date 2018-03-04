@@ -4,7 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -36,6 +37,7 @@
 #include "core/ConfigLoader.h"
 #include "core/ConfigLoader_static.h"
 #include "core/ConfigWatcher.h"
+#include "interfaces/IWatcherListener.h"
 #include "net/Url.h"
 #include "Platform.h"
 #include "proxy/Addr.h"
@@ -45,10 +47,103 @@
 
 
 xmrig::ConfigWatcher *xmrig::ConfigLoader::m_watcher = nullptr;
+xmrig::IWatcherListener *xmrig::ConfigLoader::m_listener = nullptr;
+
+
+bool xmrig::ConfigLoader::loadFromFile(xmrig::Config *config, const char *fileName)
+{
+    rapidjson::Document doc;
+    if (!getJSON(fileName, doc)) {
+        return false;
+    }
+
+    config->setFileName(fileName);
+
+    return loadFromJSON(config, doc);
+}
+
+
+bool xmrig::ConfigLoader::loadFromJSON(xmrig::Config *config, const char *json)
+{
+    rapidjson::Document doc;
+    doc.Parse(json);
+
+    if (doc.HasParseError() || !doc.IsObject()) {
+        return false;
+    }
+
+    return loadFromJSON(config, doc);
+}
+
+
+bool xmrig::ConfigLoader::loadFromJSON(xmrig::Config *config, const rapidjson::Document &doc)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(config_options); i++) {
+        parseJSON(config, &config_options[i], doc);
+    }
+
+    const rapidjson::Value &pools = doc["pools"];
+    if (pools.IsArray()) {
+        for (const rapidjson::Value &value : pools.GetArray()) {
+            if (!value.IsObject()) {
+                continue;
+            }
+
+            for (size_t i = 0; i < ARRAY_SIZE(pool_options); i++) {
+                parseJSON(config, &pool_options[i], value);
+            }
+        }
+    }
+
+    const rapidjson::Value &bind = doc["bind"];
+    if (bind.IsArray()) {
+        for (const rapidjson::Value &value : bind.GetArray()) {
+            if (!value.IsString()) {
+                continue;
+            }
+
+            parseArg(config, 'b', value.GetString());
+        }
+    }
+
+    const rapidjson::Value &api = doc["api"];
+    if (api.IsObject()) {
+        for (size_t i = 0; i < ARRAY_SIZE(api_options); i++) {
+            parseJSON(config, &api_options[i], api);
+        }
+    }
+
+    return config->isValid();
+}
+
+
+bool xmrig::ConfigLoader::reload(xmrig::Config *oldConfig, const char *json)
+{
+    xmrig::Config *config = new xmrig::Config();
+    if (!loadFromJSON(config, json)) {
+        delete config;
+
+        return false;
+    }
+
+    config->setFileName(oldConfig->fileName());
+    const bool saved = config->save();
+
+    if (config->watch() && m_watcher && saved) {
+        delete config;
+
+        return true;
+    }
+
+    m_listener->onNewConfig(config);
+    return true;
+}
 
 
 xmrig::Config *xmrig::ConfigLoader::load(int argc, char **argv, IWatcherListener *listener)
 {
+    m_listener = listener;
+
     xmrig::Config *config = new xmrig::Config();
     int key;
 
@@ -71,7 +166,7 @@ xmrig::Config *xmrig::ConfigLoader::load(int argc, char **argv, IWatcherListener
     }
 
     if (!config->isValid()) {
-        parseConfig(config, Platform::defaultConfigName());
+        loadFromFile(config, Platform::defaultConfigName());
     }
 
     if (!config->isValid()) {
@@ -217,6 +312,7 @@ bool xmrig::ConfigLoader::parseArg(xmrig::Config *config, int key, const char *a
     case 1002: /* --no-color */
     case 1103: /* --no-workers */
     case 1105: /* --no-watch */
+    case 4004: /* ----api-no-restricted */
         return parseBoolean(config, key, false);
 
     case 1003: /* --donate-level */
@@ -241,7 +337,7 @@ bool xmrig::ConfigLoader::parseArg(xmrig::Config *config, int key, const char *a
         return false;
 
     case 'c': /* --config */
-        parseConfig(config, arg);
+        loadFromFile(config, arg);
         break;
 
     case 1008: /* --user-agent */
@@ -342,60 +438,17 @@ bool xmrig::ConfigLoader::parseBoolean(xmrig::Config *config, int key, bool enab
         config->m_watch = enable;
         break;
 
-    case 4003: /* --api-ipv6 */
+    case 4003: /* ipv6 */
         config->m_apiIPv6 = enable;
+
+    case 4004: /* restricted */
+        config->m_apiRestricted = enable;
 
     default:
         break;
     }
 
     return true;
-}
-
-
-void xmrig::ConfigLoader::parseConfig(xmrig::Config *config, const char *fileName)
-{
-    rapidjson::Document doc;
-    if (!getJSON(fileName, doc)) {
-        return;
-    }
-
-    config->setFileName(fileName);
-
-    for (size_t i = 0; i < ARRAY_SIZE(config_options); i++) {
-        parseJSON(config, &config_options[i], doc);
-    }
-
-    const rapidjson::Value &pools = doc["pools"];
-    if (pools.IsArray()) {
-        for (const rapidjson::Value &value : pools.GetArray()) {
-            if (!value.IsObject()) {
-                continue;
-            }
-
-            for (size_t i = 0; i < ARRAY_SIZE(pool_options); i++) {
-                parseJSON(config, &pool_options[i], value);
-            }
-        }
-    }
-
-    const rapidjson::Value &bind = doc["bind"];
-    if (bind.IsArray()) {
-        for (const rapidjson::Value &value : bind.GetArray()) {
-            if (!value.IsString()) {
-                continue;
-            }
-
-            parseArg(config, 'b', value.GetString());
-        }
-    }
-
-    const rapidjson::Value &api = doc["api"];
-    if (api.IsObject()) {
-        for (size_t i = 0; i < ARRAY_SIZE(api_options); i++) {
-            parseJSON(config, &api_options[i], api);
-        }
-    }
 }
 
 

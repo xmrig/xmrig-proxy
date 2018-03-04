@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -33,6 +33,8 @@
 
 
 #include "api/ApiRouter.h"
+#include "api/HttpReply.h"
+#include "api/HttpRequest.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "net/Job.h"
@@ -74,28 +76,33 @@ ApiRouter::~ApiRouter()
 }
 
 
-char *ApiRouter::get(const char *url, int *status) const
+void ApiRouter::get(const xmrig::HttpRequest &req, xmrig::HttpReply &reply) const
 {
     rapidjson::Document doc;
     doc.SetObject();
 
-    if (strncmp(url, "/1/workers", 10) == 0 || strncmp(url, "/workers.json", 13) == 0) {
+    if (req.match("/1/workers") || req.match("/workers.json")) {
         getHashrate(doc);
         getWorkers(doc);
 
-        return finalize(doc);
+        return finalize(reply, doc);
     }
 
-    if (strncmp(url, "/1/config", 9) == 0) {
+    if (req.match("/1/config")) {
+        if (req.isRestricted()) {
+            reply.status = 403;
+            return;
+        }
+
         m_controller->config()->getJSON(doc);
 
-        return finalize(doc);
+        return finalize(reply, doc);
     }
 
-    if (strncmp(url, "/resources.json", 15) == 0) {
+    if (req.match("/1/resources") || req.match("/resources.json")) {
         getResources(doc);
 
-        return finalize(doc);
+        return finalize(reply, doc);
     }
 
     getIdentify(doc);
@@ -104,7 +111,17 @@ char *ApiRouter::get(const char *url, int *status) const
     getMinersSummary(doc);
     getResults(doc);
 
-    return finalize(doc);
+    return finalize(reply, doc);
+}
+
+void ApiRouter::exec(const xmrig::HttpRequest &req, xmrig::HttpReply &reply)
+{
+    if (req.method() == xmrig::HttpRequest::Put && req.match("/1/config")) {
+        m_controller->config()->reload(req.body());
+        return;
+    }
+
+    reply.status = 404;
 }
 
 
@@ -114,14 +131,16 @@ void ApiRouter::onConfigChanged(xmrig::Config *config, xmrig::Config *previousCo
 }
 
 
-char *ApiRouter::finalize(rapidjson::Document &doc) const
+void ApiRouter::finalize(xmrig::HttpReply &reply, rapidjson::Document &doc) const
 {
     rapidjson::StringBuffer buffer(0, 4096);
     rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
     writer.SetMaxDecimalPlaces(10);
     doc.Accept(writer);
 
-    return strdup(buffer.GetString());
+    reply.status = 200;
+    reply.buf    = strdup(buffer.GetString());
+    reply.size   = buffer.GetSize();
 }
 
 

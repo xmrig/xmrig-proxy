@@ -1,11 +1,16 @@
 # v2.5.0-dev
-- Added graceful reload support, pools and some other settings now can changed without proxy restart.
-- Added command line option `--no-watch` and config option `watch` to disable config file watching.
+- [#119](https://github.com/xmrig/xmrig-proxy/issues/119) Added graceful reload support, pools and some other settings now can changed without proxy restart.
 - Added API endpoint `GET /1/config` to get current active config.
+- Added API endpoint `PUT /1/config` to update current config.
 - Added IPv6 support:
   - IPv6 now fully supported for connections to upstream pools.
   - `bind` now accept IPv6 addresses, for example, use `[::]:3333` to bind on all IPv4 and IPv6 interfaces and port 3333. 
-  - Added command line option `--api-ipv6` and similar config option to enable IPv6 support for HTTP API.
+  - Internal HTTP server now support IPv6 for incoming connections (disabled by default).
+- New command line options (with equivalent config file options):
+  - Added `--no-watch` and config option `watch` to disable config file watching.
+  - Added `--api-ipv6` and similar config option to enable IPv6 support for HTTP API.
+  - Added `--algo` to specify algorithm cryptonight or cryptonight-lite.
+  - Added `--api-no-restricted` to enable full access to api, this option has no effect if `--api-access-token` not specified
 - Deprecations:
   - Option `coin` now deprecated, use `algo` instead.
   - API endpoint `GET /` now deprecated, use `GET /1/summary` instead.

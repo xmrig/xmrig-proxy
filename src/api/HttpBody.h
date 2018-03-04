@@ -22,51 +22,48 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __CONFIGLOADER_H__
-#define __CONFIGLOADER_H__
+#ifndef __HTTPBODY_H__
+#define __HTTPBODY_H__
 
 
-#include <stdint.h>
-
-
-#include "rapidjson/fwd.h"
-
-
-struct option;
+#include <string.h>
 
 
 namespace xmrig {
 
 
-class Config;
-class ConfigWatcher;
-class IWatcherListener;
-
-
-class ConfigLoader
+class HttpBody
 {
 public:
-    static bool loadFromFile(Config *config, const char *fileName);
-    static bool loadFromJSON(Config *config, const char *json);
-    static bool loadFromJSON(Config *config, const rapidjson::Document &doc);
-    static bool reload(Config *oldConfig, const char *json);
-    static Config *load(int argc, char **argv, IWatcherListener *listener);
-    static void release();
+    inline HttpBody() :
+        m_pos(0)
+    {}
+
+
+    inline bool write(const char *data, size_t size)
+    {
+        if (size > (sizeof(m_data) - m_pos - 1)) {
+            return false;
+        }
+
+        memcpy(m_data + m_pos, data, size);
+
+        m_pos += size;
+        m_data[m_pos] = '\0';
+
+        return true;
+    }
+
+
+    inline const char *data() const { return m_data; }
 
 private:
-    static bool getJSON(const char *fileName, rapidjson::Document &doc);
-    static bool parseArg(Config *config, int key, const char *arg);
-    static bool parseArg(Config *config, int key, uint64_t arg);
-    static bool parseBoolean(Config *config, int key, bool enable);
-    static void parseJSON(Config *config, const struct option *option, const rapidjson::Value &object);
-    static void showUsage(int status);
-    static void showVersion(void);
-
-    static ConfigWatcher *m_watcher;
-    static IWatcherListener *m_listener;
+    char m_data[32768];
+    size_t m_pos;
 };
 
 
 } /* namespace xmrig */
 
-#endif /* __CONFIGLOADER_H__ */
+
+#endif /* __HTTPBODY_H__ */

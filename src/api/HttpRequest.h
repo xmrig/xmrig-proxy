@@ -22,51 +22,64 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __CONFIGLOADER_H__
-#define __CONFIGLOADER_H__
+#ifndef __HTTPREQUEST_H__
+#define __HTTPREQUEST_H__
 
 
 #include <stdint.h>
 
 
-#include "rapidjson/fwd.h"
-
-
-struct option;
+struct MHD_Connection;
+struct MHD_Response;
 
 
 namespace xmrig {
 
 
-class Config;
-class ConfigWatcher;
-class IWatcherListener;
+class HttpBody;
+class HttpReply;
 
 
-class ConfigLoader
+class HttpRequest
 {
 public:
-    static bool loadFromFile(Config *config, const char *fileName);
-    static bool loadFromJSON(Config *config, const char *json);
-    static bool loadFromJSON(Config *config, const rapidjson::Document &doc);
-    static bool reload(Config *oldConfig, const char *json);
-    static Config *load(int argc, char **argv, IWatcherListener *listener);
-    static void release();
+    enum Method {
+        Unsupported,
+        Options,
+        Get,
+        Put
+    };
+
+    HttpRequest(MHD_Connection *connection, const char *url, const char *method, const char *uploadData, size_t *uploadSize, void **cls);
+    ~HttpRequest();
+
+    inline bool isFulfilled() const  { return m_fulfilled; }
+    inline bool isRestricted() const { return m_restricted; }
+    inline Method method() const     { return m_method; }
+
+    bool match(const char *path) const;
+    bool process(const char *accessToken, bool restricted, xmrig::HttpReply &reply);
+    const char *body() const;
+    int end(const HttpReply &reply);
+    int end(int status, MHD_Response *rsp);
 
 private:
-    static bool getJSON(const char *fileName, rapidjson::Document &doc);
-    static bool parseArg(Config *config, int key, const char *arg);
-    static bool parseArg(Config *config, int key, uint64_t arg);
-    static bool parseBoolean(Config *config, int key, bool enable);
-    static void parseJSON(Config *config, const struct option *option, const rapidjson::Value &object);
-    static void showUsage(int status);
-    static void showVersion(void);
+    int auth(const char *accessToken);
 
-    static ConfigWatcher *m_watcher;
-    static IWatcherListener *m_listener;
+    bool m_fulfilled;
+    bool m_restricted;
+    const char *m_rawMethod;
+    const char *m_uploadData;
+    const char *m_url;
+    HttpBody *m_body;
+    Method m_method;
+    MHD_Connection *m_connection;
+    size_t *m_uploadSize;
+    void **m_cls;
 };
 
 
 } /* namespace xmrig */
 
-#endif /* __CONFIGLOADER_H__ */
+
+#endif /* __HTTPREQUEST_H__ */

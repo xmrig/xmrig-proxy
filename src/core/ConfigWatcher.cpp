@@ -82,7 +82,7 @@ void xmrig::ConfigWatcher::reload()
     LOG_WARN("\"%s\" was changed, reloading configuration", m_path);
 
     xmrig::Config *config = new xmrig::Config();
-    ConfigLoader::parseConfig(config, m_path);
+    ConfigLoader::loadFromFile(config, m_path);
 
     if (!config->isValid()) {
         LOG_ERR("reloading failed");

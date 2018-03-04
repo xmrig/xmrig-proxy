@@ -4,7 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -71,9 +72,10 @@ Options:\n\
 "\
   -A  --access-log-file=N  log all workers access to a file\n\
       --api-port=N         port for the miner API\n\
-      --api-access-token=T Bearer access token for API\n\
+      --api-access-token=T use Bearer access token for API\n\
       --api-worker-id=ID   custom worker-id for API\n\
       --api-ipv6           enable IPv6 support for API\n\
+      --api-no-restricted  enable full remote access (only if API token set)\n\
   -h, --help               display this help and exit\n\
   -V, --version            output version information and exit\n\
 ";
@@ -83,35 +85,36 @@ static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:A:a:";
 
 
 static struct option const options[] = {
-    { "access-log-file",  1, nullptr, 'A'  },
-    { "algo",             1, nullptr, 'a'  },
-    { "api-access-token", 1, nullptr, 4001 },
-    { "api-port",         1, nullptr, 4000 },
-    { "api-worker-id",    1, nullptr, 4002 },
-    { "api-ipv6",         0, nullptr, 4003 },
-    { "background",       0, nullptr, 'B'  },
-    { "bind",             1, nullptr, 'b'  },
-    { "coin",             1, nullptr, 1104 },
-    { "config",           1, nullptr, 'c'  },
-    { "custom-diff",      1, nullptr, 1102 },
-    { "debug",            0, nullptr, 1101 },
-    { "donate-level",     1, nullptr, 1003 },
-    { "help",             0, nullptr, 'h'  },
-    { "keepalive",        0, nullptr ,'k'  },
-    { "log-file",         1, nullptr, 'l'  },
-    { "no-color",         0, nullptr, 1002 },
-    { "no-watch",         0, nullptr, 1105 },
-    { "no-workers",       0, nullptr, 1103 },
-    { "pass",             1, nullptr, 'p'  },
-    { "retries",          1, nullptr, 'r'  },
-    { "retry-pause",      1, nullptr, 'R'  },
-    { "syslog",           0, nullptr, 'S'  },
-    { "url",              1, nullptr, 'o'  },
-    { "user",             1, nullptr, 'u'  },
-    { "user-agent",       1, nullptr, 1008 },
-    { "userpass",         1, nullptr, 'O'  },
-    { "verbose",          0, nullptr, 1100 },
-    { "version",          0, nullptr, 'V'  },
+    { "access-log-file",   1, nullptr, 'A'  },
+    { "algo",              1, nullptr, 'a'  },
+    { "api-access-token",  1, nullptr, 4001 },
+    { "api-ipv6",          0, nullptr, 4003 },
+    { "api-no-restricted", 0, nullptr, 4004 },
+    { "api-port",          1, nullptr, 4000 },
+    { "api-worker-id",     1, nullptr, 4002 },
+    { "background",        0, nullptr, 'B'  },
+    { "bind",              1, nullptr, 'b'  },
+    { "coin",              1, nullptr, 1104 },
+    { "config",            1, nullptr, 'c'  },
+    { "custom-diff",       1, nullptr, 1102 },
+    { "debug",             0, nullptr, 1101 },
+    { "donate-level",      1, nullptr, 1003 },
+    { "help",              0, nullptr, 'h'  },
+    { "keepalive",         0, nullptr ,'k'  },
+    { "log-file",          1, nullptr, 'l'  },
+    { "no-color",          0, nullptr, 1002 },
+    { "no-watch",          0, nullptr, 1105 },
+    { "no-workers",        0, nullptr, 1103 },
+    { "pass",              1, nullptr, 'p'  },
+    { "retries",           1, nullptr, 'r'  },
+    { "retry-pause",       1, nullptr, 'R'  },
+    { "syslog",            0, nullptr, 'S'  },
+    { "url",               1, nullptr, 'o'  },
+    { "user",              1, nullptr, 'u'  },
+    { "user-agent",        1, nullptr, 1008 },
+    { "userpass",          1, nullptr, 'O'  },
+    { "verbose",           0, nullptr, 1100 },
+    { "version",           0, nullptr, 'V'  },
     { 0, 0, 0, 0 }
 };
 
@@ -152,6 +155,7 @@ static struct option const api_options[] = {
     { "access-token",  1, nullptr, 4001 },
     { "worker-id",     1, nullptr, 4002 },
     { "ipv6",          0, nullptr, 4003 },
+    { "restricted",    0, nullptr, 4004 },
     { 0, 0, 0, 0 }
 };
 

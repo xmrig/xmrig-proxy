@@ -227,7 +227,14 @@ if (WITH_HTTPD)
 
     if (MHD_FOUND)
         include_directories(${MHD_INCLUDE_DIRS})
-        set(HTTPD_SOURCES src/api/Httpd.h src/api/Httpd.cpp)
+        set(HTTPD_SOURCES
+            src/api/HttpBody.h
+            src/api/Httpd.h
+            src/api/HttpReply.h
+            src/api/HttpRequest.h
+            src/api/Httpd.cpp
+            src/api/HttpRequest.cpp
+            )
     else()
         message(FATAL_ERROR "microhttpd NOT found: use `-DWITH_HTTPD=OFF` to build without http deamon support")
     endif()

@@ -42,8 +42,6 @@ SinglePoolStrategy::SinglePoolStrategy(xmrig::Controller *controller, const Url 
 
 SinglePoolStrategy::~SinglePoolStrategy()
 {
-    printf("~SinglePoolStrategy\n");
-
     delete m_client;
 }
 

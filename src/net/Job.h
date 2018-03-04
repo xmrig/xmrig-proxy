@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@
 
 
 #include "align.h"
-#include "net/JobId.h"
+#include "net/Id.h"
 
 
 class Job
@@ -42,20 +42,21 @@ public:
     bool setBlob(const char *blob);
     bool setTarget(const char *target);
 
-    inline bool isNicehash() const         { return m_nicehash; }
-    inline bool isValid() const            { return m_size > 0 && m_diff > 0; }
-    inline bool setId(const char *id)      { return m_id.setId(id); }
-    inline const JobId &id() const         { return m_id; }
-    inline const uint32_t *nonce() const   { return reinterpret_cast<const uint32_t*>(m_blob + 39); }
-    inline const uint8_t *blob() const     { return m_blob; }
-    inline int poolId() const              { return m_poolId; }
-    inline int threadId() const            { return m_threadId; }
-    inline size_t size() const             { return m_size; }
-    inline uint32_t *nonce()               { return reinterpret_cast<uint32_t*>(m_blob + 39); }
-    inline uint32_t diff() const           { return (uint32_t) m_diff; }
-    inline uint64_t target() const         { return m_target; }
-    inline void setNicehash(bool nicehash) { m_nicehash = nicehash; }
-    inline void setThreadId(int threadId)  { m_threadId = threadId; }
+    inline bool isNicehash() const               { return m_nicehash; }
+    inline bool isValid() const                  { return m_size > 0 && m_diff > 0; }
+    inline bool setId(const char *id)            { return m_id.setId(id); }
+    inline const uint32_t *nonce() const         { return reinterpret_cast<const uint32_t*>(m_blob + 39); }
+    inline const uint8_t *blob() const           { return m_blob; }
+    inline const xmrig::Id &clientId() const     { return m_clientId; }
+    inline const xmrig::Id &id() const           { return m_id; }
+    inline int poolId() const                    { return m_poolId; }
+    inline size_t size() const                   { return m_size; }
+    inline uint32_t *nonce()                     { return reinterpret_cast<uint32_t*>(m_blob + 39); }
+    inline uint32_t diff() const                 { return (uint32_t) m_diff; }
+    inline uint64_t target() const               { return m_target; }
+    inline void reset()                          { m_size = 0; m_diff = 0; }
+    inline void setClientId(const xmrig::Id &id) { m_clientId = id; }
+    inline void setNicehash(bool nicehash)       { m_nicehash = nicehash; }
 
 #   ifdef XMRIG_PROXY_PROJECT
     inline char *rawBlob()                 { return m_rawBlob; }
@@ -74,11 +75,11 @@ private:
 
     bool m_nicehash;
     int m_poolId;
-    int m_threadId;
-    JobId m_id;
     size_t m_size;
     uint64_t m_diff;
     uint64_t m_target;
+    xmrig::Id m_clientId;
+    xmrig::Id m_id;
 
 #   ifdef XMRIG_PROXY_PROJECT
     VAR_ALIGN(16, char m_rawBlob[169]);

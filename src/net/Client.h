@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <vector>
 
 
+#include "net/Id.h"
 #include "net/Job.h"
 #include "net/SubmitResult.h"
 #include "net/Url.h"
@@ -105,7 +106,6 @@ private:
     bool m_quiet;
     char m_buf[2048];
     char m_ip[46];
-    char m_rpcId[64];
     char m_sendBuf[768];
     const char *m_agent;
     IClientListener *m_listener;
@@ -123,6 +123,7 @@ private:
     uv_getaddrinfo_t m_resolver;
     uv_stream_t *m_stream;
     uv_tcp_t *m_socket;
+    xmrig::Id m_rpcId;
 
 #   ifndef XMRIG_PROXY_PROJECT
     uv_timer_t m_keepAliveTimer;

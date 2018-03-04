@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -168,7 +168,7 @@ int64_t Client::submit(const JobResult &result)
 #   endif
 
     const size_t size = snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRIu64 ",\"jsonrpc\":\"2.0\",\"method\":\"submit\",\"params\":{\"id\":\"%s\",\"job_id\":\"%s\",\"nonce\":\"%s\",\"result\":\"%s\"}}\n",
-                                 m_sequence, m_rpcId, result.jobId.data(), nonce, data);
+                                 m_sequence, m_rpcId.data(), result.jobId.data(), nonce, data);
 
     m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff());
     return send(size);
@@ -236,6 +236,8 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
         return false;
     }
 
+    job.setClientId(m_rpcId);
+
     if (m_job == job) {
         if (!m_quiet) {
             LOG_WARN("[%s:%u] duplicate job received, reconnect", m_url.host(), m_url.port());
@@ -252,14 +254,10 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
 
 bool Client::parseLogin(const rapidjson::Value &result, int *code)
 {
-    const char *id = result["id"].GetString();
-    if (!id || strlen(id) >= sizeof(m_rpcId)) {
+    if (!m_rpcId.setId(result["id"].GetString())) {
         *code = 1;
         return false;
     }
-
-    memset(m_rpcId, 0, sizeof(m_rpcId));
-    memcpy(m_rpcId, id, strlen(id));
 
     return parseJob(result["job"], code);
 }
@@ -498,7 +496,7 @@ void Client::parseResponse(int64_t id, const rapidjson::Value &result, const rap
 
 void Client::ping()
 {
-    send(snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"method\":\"keepalived\",\"params\":{\"id\":\"%s\"}}\n", m_sequence, m_rpcId));
+    send(snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"method\":\"keepalived\",\"params\":{\"id\":\"%s\"}}\n", m_sequence, m_rpcId.data()));
 }
 
 

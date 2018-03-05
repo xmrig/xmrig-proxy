@@ -614,7 +614,7 @@ void Client::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
     client->m_recvBufPos += nread;
 
     char* end;
-    char* start = buf->base;
+    char* start = client->m_recvBuf.base;
     size_t remaining = client->m_recvBufPos;
 
     while ((end = static_cast<char*>(memchr(start, '\n', remaining))) != nullptr) {
@@ -631,11 +631,11 @@ void Client::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
         return;
     }
 
-    if (start == buf->base) {
+    if (start == client->m_recvBuf.base) {
         return;
     }
 
-    memcpy(buf->base, start, remaining);
+    memcpy(client->m_recvBuf.base, start, remaining);
     client->m_recvBufPos = remaining;
 }
 

@@ -7,7 +7,6 @@
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
- *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
@@ -29,6 +28,11 @@
 #include "api/HttpBody.h"
 #include "api/HttpRequest.h"
 #include "api/HttpReply.h"
+
+
+#ifndef MHD_HTTP_PAYLOAD_TOO_LARGE
+#   define MHD_HTTP_PAYLOAD_TOO_LARGE 413
+#endif
 
 
 xmrig::HttpRequest::HttpRequest(MHD_Connection *connection, const char *url, const char *method, const char *uploadData, size_t *uploadSize, void **cls) :

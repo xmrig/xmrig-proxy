@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -51,9 +51,9 @@ static bool compare(Url *i, Url *j) {
 
 
 NonceMapper::NonceMapper(size_t id, xmrig::Controller *controller, const char *agent) :
-    m_suspended(false),
     m_agent(agent),
     m_donate(nullptr),
+    m_suspended(0),
     m_id(id),
     m_controller(controller)
 {
@@ -82,7 +82,7 @@ bool NonceMapper::add(Miner *miner, const LoginRequest &request)
         return false;
     }
 
-    if (m_suspended) {
+    if (isSuspended()) {
         connect();
     }
 
@@ -93,13 +93,18 @@ bool NonceMapper::add(Miner *miner, const LoginRequest &request)
 
 bool NonceMapper::isActive() const
 {
-    return m_storage->isActive() && !m_suspended;
+    return m_storage->isActive() && !isSuspended();
 }
 
 
 void NonceMapper::gc()
 {
-    if (m_suspended || m_id == 0 || m_storage->isUsed()) {
+    if (isSuspended()) {
+        m_suspended++;
+        return;
+    }
+
+    if (m_id == 0 || m_storage->isUsed()) {
         return;
     }
 
@@ -151,7 +156,7 @@ void NonceMapper::tick(uint64_t ticks, uint64_t now)
 #ifdef APP_DEVEL
 void NonceMapper::printState()
 {
-    if (m_suspended) {
+    if (isSuspended()) {
         return;
     }
 
@@ -204,7 +209,7 @@ void NonceMapper::onPause(IStrategy *strategy)
 {
     m_storage->setActive(false);
 
-    if (!m_suspended) {
+    if (!isSuspended()) {
         LOG_ERR("#%03u no active pools, stop", m_id);
     }
 }
@@ -265,7 +270,7 @@ SubmitCtx NonceMapper::submitCtx(int64_t seq)
 
 void NonceMapper::connect()
 {
-    m_suspended = false;
+    m_suspended = 0;
     m_strategy->connect();
 
     if (m_donate) {
@@ -287,7 +292,7 @@ void NonceMapper::reload(const std::vector<Url*> &pools, const std::vector<Url*>
 
 void NonceMapper::suspend()
 {
-    m_suspended = true;
+    m_suspended = 1;
     m_storage->setActive(false);
     m_storage->reset();
     m_strategy->stop();

@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -77,7 +77,8 @@ public:
     void submit(SubmitEvent *event);
     void tick(uint64_t ticks, uint64_t now);
 
-    inline bool isSuspended() const { return m_suspended; }
+    inline bool isSuspended() const { return m_suspended > 0; }
+    inline int suspended() const    { return m_suspended; }
 
 #   ifdef APP_DEVEL
     void printState();
@@ -98,9 +99,9 @@ private:
     void reload(const std::vector<Url*> &pools, const std::vector<Url*> &previousPools);
     void suspend();
 
-    bool m_suspended;
     const char *m_agent;
     DonateStrategy *m_donate;
+    int m_suspended;
     IStrategy *m_strategy;
     NonceStorage *m_storage;
     size_t m_id;

@@ -1,5 +1,6 @@
 # v2.5.0-dev
 - [#119](https://github.com/xmrig/xmrig-proxy/issues/119) Added graceful reload support, pools and some other settings now can changed without proxy restart.
+- [#123](https://github.com/xmrig/xmrig-proxy/issues/123) Fixed regression (all versions since 2.4 affected) fragmented responses from pool/miner was parsed incorrectly.
 - Added API endpoint `GET /1/config` to get current active config.
 - Added API endpoint `PUT /1/config` to update current config.
 - Added IPv6 support:

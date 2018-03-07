@@ -393,6 +393,11 @@ void Client::parse(char *line, size_t len)
 
     LOG_DEBUG("[%s:%u] received (%d bytes): \"%s\"", m_url.host(), m_url.port(), len, line);
 
+    if (len < 32 || line[0] != '{') {
+        LOG_ERR("[%s:%u] JSON decode failed", m_url.host(), m_url.port());
+        return;
+    }
+
     rapidjson::Document doc;
     if (doc.ParseInsitu(line).HasParseError()) {
         if (!m_quiet) {

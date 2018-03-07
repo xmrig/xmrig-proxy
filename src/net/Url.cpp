@@ -227,6 +227,11 @@ Url &Url::operator=(const Url *other)
     setPassword(other->m_password);
     setUser(other->m_user);
 
+    if (m_url) {
+        delete [] m_url;
+        m_url = nullptr;
+    }
+
     return *this;
 }
 

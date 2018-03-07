@@ -63,8 +63,6 @@ NonceMapper::NonceMapper(size_t id, xmrig::Controller *controller, const char *a
     if (id != 0 && controller->config()->donateLevel() > 0) {
         m_donate = new DonateStrategy(controller, m_agent, this);
     }
-
-    controller->addListener(this);
 }
 
 
@@ -109,6 +107,17 @@ void NonceMapper::gc()
     }
 
     suspend();
+}
+
+
+void NonceMapper::reload(const std::vector<Url*> &pools, const std::vector<Url*> &previousPools)
+{
+    if (pools.size() == previousPools.size() && std::equal(pools.begin(), pools.end(), previousPools.begin(), compare)) {
+        return;
+    }
+
+    IStrategy *strategy = createStrategy(pools);
+    strategy->connect();
 }
 
 
@@ -181,12 +190,6 @@ void NonceMapper::onActive(IStrategy *strategy, Client *client)
 
     LOG_INFO(isColors() ? "#%03u \x1B[01;37muse pool \x1B[01;36m%s:%d \x1B[01;30m%s" : "#%03u use pool %s:%d %s",
              m_id, client->host(), client->port(), client->ip());
-}
-
-
-void NonceMapper::onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig)
-{
-    reload(config->pools(), previousConfig->pools());
 }
 
 
@@ -276,17 +279,6 @@ void NonceMapper::connect()
     if (m_donate) {
         m_donate->connect();
     }
-}
-
-
-void NonceMapper::reload(const std::vector<Url*> &pools, const std::vector<Url*> &previousPools)
-{
-    if (pools.size() == previousPools.size() && std::equal(pools.begin(), pools.end(), previousPools.begin(), compare)) {
-        return;
-    }
-
-    IStrategy *strategy = createStrategy(pools);
-    strategy->connect();
 }
 
 

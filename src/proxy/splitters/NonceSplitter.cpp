@@ -45,6 +45,7 @@
 NonceSplitter::NonceSplitter(xmrig::Controller *controller) :
     m_controller(controller)
 {
+    controller->addListener(this);
 }
 
 
@@ -145,6 +146,14 @@ void NonceSplitter::printState()
     }
 }
 #endif
+
+
+void NonceSplitter::onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig)
+{
+    for (NonceMapper *mapper : m_upstreams) {
+        mapper->reload(config->pools(), previousConfig->pools());
+    }
+}
 
 
 void NonceSplitter::onEvent(IEvent *event)

@@ -30,7 +30,6 @@
 #include <vector>
 
 
-#include "interfaces/IControllerListener.h"
 #include "interfaces/IStrategyListener.h"
 #include "net/Job.h"
 
@@ -63,7 +62,7 @@ public:
 };
 
 
-class NonceMapper : public IStrategyListener, public xmrig::IControllerListener
+class NonceMapper : public IStrategyListener
 {
 public:
     NonceMapper(size_t id, xmrig::Controller *controller, const char *agent);
@@ -72,6 +71,7 @@ public:
     bool add(Miner *miner, const LoginRequest &request);
     bool isActive() const;
     void gc();
+    void reload(const std::vector<Url*> &pools, const std::vector<Url*> &previousPools);
     void remove(const Miner *miner);
     void start();
     void submit(SubmitEvent *event);
@@ -86,7 +86,6 @@ public:
 
 protected:
     void onActive(IStrategy *strategy, Client *client) override;
-    void onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig) override;
     void onJob(IStrategy *strategy, Client *client, const Job &job) override;
     void onPause(IStrategy *strategy) override;
     void onResultAccepted(IStrategy *strategy, Client *client, const SubmitResult &result, const char *error) override;
@@ -96,7 +95,6 @@ private:
     IStrategy *createStrategy(const std::vector<Url*> &pools);
     SubmitCtx submitCtx(int64_t seq);
     void connect();
-    void reload(const std::vector<Url*> &pools, const std::vector<Url*> &previousPools);
     void suspend();
 
     const char *m_agent;

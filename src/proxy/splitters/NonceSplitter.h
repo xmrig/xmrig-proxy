@@ -29,6 +29,7 @@
 #include <vector>
 
 
+#include "interfaces/IControllerListener.h"
 #include "interfaces/IEventListener.h"
 
 
@@ -45,7 +46,7 @@ namespace xmrig {
 }
 
 
-class NonceSplitter : public IEventListener
+class NonceSplitter : public IEventListener, public xmrig::IControllerListener
 {
 public:
     NonceSplitter(xmrig::Controller *controller);
@@ -62,8 +63,9 @@ public:
 #   endif
 
 protected:
-    void onEvent(IEvent *event) override;
     inline void onRejectedEvent(IEvent *event) override {}
+    void onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig) override;
+    void onEvent(IEvent *event) override;
 
 private:
     void login(LoginEvent *event);

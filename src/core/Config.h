@@ -72,6 +72,7 @@ public:
     bool reload(const char *json);
     bool save();
     const char *algoName() const;
+    void adjust();
     void getJSON(rapidjson::Document &doc);
 
     static Config *load(int argc, char **argv, IWatcherListener *listener);
@@ -108,6 +109,7 @@ private:
     void setCoin(const char *coin);
     void setFileName(const char *fileName);
 
+    bool m_adjusted;
     bool m_apiIPv6;
     bool m_apiRestricted;
     bool m_background;

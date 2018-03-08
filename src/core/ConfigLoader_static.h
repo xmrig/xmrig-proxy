@@ -81,7 +81,7 @@ Options:\n\
 ";
 
 
-static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:A:a:";
+static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:A:a:C:";
 
 
 static struct option const options[] = {
@@ -106,6 +106,7 @@ static struct option const options[] = {
     { "no-watch",          0, nullptr, 1105 },
     { "no-workers",        0, nullptr, 1103 },
     { "pass",              1, nullptr, 'p'  },
+    { "pool-coin",         1, nullptr, 'C'  },
     { "retries",           1, nullptr, 'r'  },
     { "retry-pause",       1, nullptr, 'R'  },
     { "syslog",            0, nullptr, 'S'  },
@@ -145,7 +146,7 @@ static struct option const pool_options[] = {
     { "pass",          1, nullptr, 'p'  },
     { "user",          1, nullptr, 'u'  },
     { "userpass",      1, nullptr, 'O'  },
-    { "keepalive",     0, nullptr ,'k'  },
+    { "coin",          1, nullptr, 'C'  },
     { 0, 0, 0, 0 }
 };
 

@@ -113,6 +113,7 @@ bool xmrig::ConfigLoader::loadFromJSON(xmrig::Config *config, const rapidjson::D
         }
     }
 
+    config->adjust();
     return config->isValid();
 }
 
@@ -183,6 +184,7 @@ xmrig::Config *xmrig::ConfigLoader::load(int argc, char **argv, IWatcherListener
         m_watcher = new xmrig::ConfigWatcher(config->fileName(), listener);
     }
 
+    config->adjust();
     return config;
 }
 
@@ -274,6 +276,10 @@ bool xmrig::ConfigLoader::parseArg(xmrig::Config *config, int key, const char *a
 
     case 'p': /* --pass */
         config->m_pools.back()->setPassword(arg);
+        break;
+
+    case 'C':
+        config->m_pools.back()->setCoin(arg);
         break;
 
     case 'l': /* --log-file */

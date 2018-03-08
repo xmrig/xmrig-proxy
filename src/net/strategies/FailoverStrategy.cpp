@@ -28,6 +28,8 @@
 #include "net/Client.h"
 #include "net/strategies/FailoverStrategy.h"
 
+#include "log/Log.h"
+
 
 FailoverStrategy::FailoverStrategy(xmrig::Controller *controller, const std::vector<Url*> &urls, const char *agent, IStrategyListener *listener) :
     m_release(false),

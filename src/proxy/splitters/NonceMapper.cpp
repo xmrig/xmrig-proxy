@@ -45,11 +45,6 @@
 #include "proxy/splitters/NonceStorage.h"
 
 
-static bool compare(Url *i, Url *j) {
-  return *i == *j;
-}
-
-
 NonceMapper::NonceMapper(size_t id, xmrig::Controller *controller, const char *agent) :
     m_agent(agent),
     m_donate(nullptr),
@@ -112,10 +107,6 @@ void NonceMapper::gc()
 
 void NonceMapper::reload(const std::vector<Url*> &pools, const std::vector<Url*> &previousPools)
 {
-    if (pools.size() == previousPools.size() && std::equal(pools.begin(), pools.end(), previousPools.begin(), compare)) {
-        return;
-    }
-
     IStrategy *strategy = createStrategy(pools);
     strategy->connect();
 }

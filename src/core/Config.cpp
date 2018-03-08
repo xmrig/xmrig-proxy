@@ -54,6 +54,7 @@ static const char *algo_names[] = {
 
 
 xmrig::Config::Config() :
+    m_adjusted(false),
     m_apiIPv6(false),
     m_apiRestricted(true),
     m_background(false),
@@ -155,6 +156,20 @@ const char *xmrig::Config::algoName() const
 }
 
 
+void xmrig::Config::adjust()
+{
+    if (m_adjusted) {
+        return;
+    }
+
+    m_adjusted = true;
+
+    for (Url *url : m_pools) {
+        url->adjust(algorithm());
+    }
+}
+
+
 void xmrig::Config::getJSON(rapidjson::Document &doc)
 {
     doc.SetObject();
@@ -186,6 +201,7 @@ void xmrig::Config::getJSON(rapidjson::Document &doc)
         obj.AddMember("url",       rapidjson::StringRef(url->url()), allocator);
         obj.AddMember("user",      rapidjson::StringRef(url->user()), allocator);
         obj.AddMember("pass",      rapidjson::StringRef(url->password()), allocator);
+        obj.AddMember("coin",      rapidjson::StringRef(url->coin()), allocator);
 
         pools.PushBack(obj, allocator);
     }

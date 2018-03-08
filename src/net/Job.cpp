@@ -55,13 +55,13 @@ static inline char hf_bin2hex(unsigned char c)
 }
 
 
-Job::Job(int poolId, bool nicehash) :
-    m_nicehash(nicehash),
+Job::Job(int poolId) :
     m_poolId(poolId),
     m_size(0),
     m_diff(0),
     m_target(0)
 {
+    memset(m_coin, 0, sizeof(m_coin));
 }
 
 
@@ -88,10 +88,6 @@ bool Job::setBlob(const char *blob)
 
     if (!fromHex(blob, (int) m_size * 2, m_blob)) {
         return false;
-    }
-
-    if (*nonce() != 0 && !m_nicehash) {
-        m_nicehash = true;
     }
 
 #   ifdef XMRIG_PROXY_PROJECT
@@ -145,6 +141,16 @@ bool Job::setTarget(const char *target)
 }
 
 
+void Job::setCoin(const char *coin)
+{
+    if (strlen(coin) > 4) {
+        return;
+    }
+
+    strncpy(m_coin, coin, sizeof(m_coin));
+}
+
+
 bool Job::fromHex(const char* in, unsigned int len, unsigned char* out)
 {
     bool error = false;
@@ -155,6 +161,7 @@ bool Job::fromHex(const char* in, unsigned int len, unsigned char* out)
             return false;
         }
     }
+
     return true;
 }
 

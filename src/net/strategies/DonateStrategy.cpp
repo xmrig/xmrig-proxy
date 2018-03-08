@@ -56,7 +56,7 @@ DonateStrategy::DonateStrategy(xmrig::Controller *controller, const char *agent,
     keccak(reinterpret_cast<const uint8_t *>(user), static_cast<int>(strlen(user)), hash, sizeof(hash));
     Job::toHex(hash, 32, userId);
 
-    Url *url = new Url("proxy-fee.xmrig.com", controller->config()->algorithm() == xmrig::Config::CRYPTONIGHT_LITE ? 3333 : 443, userId, nullptr, false, true);
+    Url *url = new Url("proxy-fee.xmrig.com", controller->config()->algorithm() == xmrig::Config::CRYPTONIGHT_LITE ? 3333 : 443, userId, nullptr);
 
     m_client = new Client(-1, agent, this);
     m_client->setUrl(url);

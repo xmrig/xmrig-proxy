@@ -36,15 +36,16 @@
 class Job
 {
 public:
-    Job(int poolId = -2, bool nicehash = false);
+    Job(int poolId = -2);
     ~Job();
 
     bool setBlob(const char *blob);
     bool setTarget(const char *target);
+    void setCoin(const char *coin);
 
-    inline bool isNicehash() const               { return m_nicehash; }
     inline bool isValid() const                  { return m_size > 0 && m_diff > 0; }
     inline bool setId(const char *id)            { return m_id.setId(id); }
+    inline const char *coin() const              { return m_coin; }
     inline const uint32_t *nonce() const         { return reinterpret_cast<const uint32_t*>(m_blob + 39); }
     inline const uint8_t *blob() const           { return m_blob; }
     inline const xmrig::Id &clientId() const     { return m_clientId; }
@@ -56,7 +57,6 @@ public:
     inline uint64_t target() const               { return m_target; }
     inline void reset()                          { m_size = 0; m_diff = 0; }
     inline void setClientId(const xmrig::Id &id) { m_clientId = id; }
-    inline void setNicehash(bool nicehash)       { m_nicehash = nicehash; }
 
 #   ifdef XMRIG_PROXY_PROJECT
     inline char *rawBlob()                 { return m_rawBlob; }
@@ -73,7 +73,7 @@ public:
 private:
     VAR_ALIGN(16, uint8_t m_blob[84]); // Max blob size is 84 (75 fixed + 9 variable), aligned to 96. https://github.com/xmrig/xmrig/issues/1 Thanks fireice-uk.
 
-    bool m_nicehash;
+    char m_coin[5];
     int m_poolId;
     size_t m_size;
     uint64_t m_diff;

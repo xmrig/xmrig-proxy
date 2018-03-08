@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,11 +22,13 @@
  */
 
 
-#include <string.h>
-#include <stdlib.h>
+#include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 
+#include "core/Config.h"
 #include "net/Url.h"
 
 
@@ -36,11 +38,10 @@
 
 
 Url::Url() :
-    m_keepAlive(false),
-    m_nicehash(false),
     m_host(nullptr),
     m_password(nullptr),
     m_user(nullptr),
+    m_coin(""),
     m_url(nullptr),
     m_port(kDefaultPort)
 {
@@ -59,11 +60,10 @@ Url::Url() :
  * @param url
  */
 Url::Url(const char *url) :
-    m_keepAlive(false),
-    m_nicehash(false),
     m_host(nullptr),
     m_password(nullptr),
     m_user(nullptr),
+    m_coin(""),
     m_url(nullptr),
     m_port(kDefaultPort)
 {
@@ -71,11 +71,10 @@ Url::Url(const char *url) :
 }
 
 
-Url::Url(const char *host, uint16_t port, const char *user, const char *password, bool keepAlive, bool nicehash) :
-    m_keepAlive(keepAlive),
-    m_nicehash(nicehash),
+Url::Url(const char *host, uint16_t port, const char *user, const char *password) :
     m_password(password ? strdup(password) : nullptr),
     m_user(user ? strdup(user) : nullptr),
+    m_coin(""),
     m_url(nullptr),
     m_port(port)
 {
@@ -162,19 +161,35 @@ const char *Url::url() const
 }
 
 
-void Url::applyExceptions()
+void Url::adjust(int algorithm)
 {
     if (!isValid()) {
         return;
     }
 
-    if (strstr(m_host, ".nicehash.com")) {
-        m_keepAlive = false;
-        m_nicehash  = true;
+    if (strlen(m_coin) == 0) {
+        if (algorithm == xmrig::Config::CRYPTONIGHT) {
+            memcpy(m_coin, "XMR", 4);
+        }
+        else {
+            memcpy(m_coin, "AEON", 5);
+        }
+    }
+}
+
+
+void Url::setCoin(const char *coin)
+{
+    if (!coin || strlen(coin) > 4) {
+        return;
     }
 
-    if (strstr(m_host, ".minergate.com")) {
-        m_keepAlive = false;
+    strncpy(m_coin, coin, sizeof(m_coin));
+
+    char *s = m_coin;
+    while (*s) {
+        *s = toupper((unsigned char) *s);
+        s++;
     }
 }
 
@@ -203,11 +218,11 @@ void Url::setUser(const char *user)
 
 bool Url::operator==(const Url &other) const
 {
-    if (m_port != other.m_port || m_keepAlive != other.m_keepAlive || m_nicehash != other.m_nicehash) {
+    if (m_port != other.m_port) {
         return false;
     }
 
-    if (strcmp(host(), other.host()) != 0 || strcmp(user(), other.user()) != 0 || strcmp(password(), other.password()) != 0) {
+    if (strcmp(host(), other.host()) != 0 || strcmp(user(), other.user()) != 0 || strcmp(password(), other.password()) != 0 || strcmp(coin(), other.coin()) != 0) {
         return false;
     }
 
@@ -217,15 +232,15 @@ bool Url::operator==(const Url &other) const
 
 Url &Url::operator=(const Url *other)
 {
-    m_keepAlive = other->m_keepAlive;
-    m_nicehash  = other->m_nicehash;
-    m_port      = other->m_port;
+    m_port = other->m_port;
 
     free(m_host);
     m_host = strdup(other->m_host);
 
     setPassword(other->m_password);
     setUser(other->m_user);
+
+    memcpy(m_coin, other->coin(), sizeof(m_coin));
 
     if (m_url) {
         delete [] m_url;

@@ -220,7 +220,7 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
         return false;
     }
 
-    Job job(m_id, m_url.isNicehash());
+    Job job(m_id);
     if (!job.setId(params["job_id"].GetString())) {
         *code = 3;
         return false;
@@ -237,6 +237,7 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
     }
 
     job.setClientId(m_rpcId);
+    job.setCoin(m_url.coin());
 
     if (m_job == job) {
         if (!m_quiet) {
@@ -274,7 +275,7 @@ int Client::resolve(const char *host)
         m_failures = 0;
     }
 
-    const int r = uv_getaddrinfo(uv_default_loop(), &m_resolver, Client::onResolved, host, NULL, &m_hints);
+    const int r = uv_getaddrinfo(uv_default_loop(), &m_resolver, Client::onResolved, host, nullptr, &m_hints);
     if (r) {
         if (!m_quiet) {
             LOG_ERR("[%s:%u] getaddrinfo error: \"%s\"", host, m_url.port(), uv_strerror(r));

@@ -28,6 +28,7 @@
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "log/Log.h"
+#include "net/Url.h"
 #include "Platform.h"
 #include "proxy/Counters.h"
 #include "proxy/events/CloseEvent.h"
@@ -40,6 +41,11 @@
 
 
 #define LABEL(x) " \x1B[01;30m" x ":\x1B[0m "
+
+
+static bool compare(Url *i, Url *j) {
+  return *i == *j;
+}
 
 
 NonceSplitter::NonceSplitter(xmrig::Controller *controller) :
@@ -150,8 +156,13 @@ void NonceSplitter::printState()
 
 void NonceSplitter::onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig)
 {
-    for (NonceMapper *mapper : m_upstreams) {
-        mapper->reload(config->pools(), previousConfig->pools());
+    const std::vector<Url*> &pools         = config->pools();
+    const std::vector<Url*> &previousPools = previousConfig->pools();
+
+    if (pools.size() != previousPools.size() || !std::equal(pools.begin(), pools.end(), previousPools.begin(), compare)) {
+        for (NonceMapper *mapper : m_upstreams) {
+            mapper->reload(pools, previousPools);
+        }
     }
 }
 

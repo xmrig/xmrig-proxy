@@ -59,8 +59,8 @@ void Workers::printWorkers()
     char workerName[24];
     size_t size = 0;
 
-    Log::i()->text(Options::i()->colors() ? "\x1B[01;37m%-23s | %-15s | %-5s | %-8s | %-3s | %10s |" : "%-23s | %-15s | %-5s | %-8s | %-3s | %10s |",
-                   "WORKER NAME", "LAST IP", "COUNT", "ACCEPTED", "REJ", "10 MIN");
+    Log::i()->text(Options::i()->colors() ? "\x1B[01;37m%-23s | %-15s | %-5s | %-8s | %-3s | %11s | %11s |" : "%-23s | %-15s | %-5s | %-8s | %-3s | %11s | %11s |",
+                   "WORKER NAME", "LAST IP", "COUNT", "ACCEPTED", "REJ", "10 MINUTES", "24 HOURS");
 
     for (const Worker &worker : m_workers) {
         const char *name = worker.name();
@@ -76,8 +76,8 @@ void Workers::printWorkers()
             strncpy(workerName, name, sizeof(workerName) - 1);
         }
 
-        Log::i()->text("%-23s | %-15s | %5" PRIu64 " | %8" PRIu64 " | %3" PRIu64 " | %5.1f kH/s |",
-                       workerName, worker.ip(), worker.connections(), worker.accepted(), worker.rejected(), worker.hashrate(600));
+        Log::i()->text("%-23s | %-15s | %5" PRIu64 " | %8" PRIu64 " | %3" PRIu64 " | %6.2f kH/s | %6.2f kH/s |",
+                       workerName, worker.ip(), worker.connections(), worker.accepted(), worker.rejected(), worker.hashrate(600), worker.hashrate(86400));
     }
 }
 

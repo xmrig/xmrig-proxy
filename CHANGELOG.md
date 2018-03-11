@@ -1,3 +1,7 @@
+# v2.4.5
+- [#109](https://github.com/xmrig/xmrig-proxy/issues/109) Hashrate reports now more detailed for low speed workers.
+- [#200](https://github.com/xmrig/xmrig/issues/200) In some cases proxy was doesn't write log to stdout.
+
 # v2.4.4
  - Added libmicrohttpd version to --version output.
  - Fixed bug in singal handler, in some cases proxy wasn't shutdown properly.

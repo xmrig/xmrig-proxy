@@ -55,7 +55,7 @@ static const char *algo_names[] = {
 
 xmrig::Config::Config() :
     m_adjusted(false),
-    m_apiIPv6(false),
+    m_apiIPv6(true),
     m_apiRestricted(true),
     m_background(false),
     m_colors(true),

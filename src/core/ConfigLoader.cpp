@@ -177,7 +177,7 @@ xmrig::Config *xmrig::ConfigLoader::load(int argc, char **argv, IWatcherListener
     }
 
     if (config->m_addrs.empty()) {
-        config->m_addrs.push_back(new Addr("0.0.0.0:3333"));
+        config->m_addrs.push_back(new Addr("[::]:3333"));
     }
 
     if (config->watch()) {
@@ -313,13 +313,13 @@ bool xmrig::ConfigLoader::parseArg(xmrig::Config *config, int key, const char *a
     case 'S':  /* --syslog */
     case 1100: /* --verbose */
     case 1101: /* --debug */
-    case 4003: /* --api-ipv6 */
         return parseBoolean(config, key, true);
 
     case 1002: /* --no-color */
     case 1103: /* --no-workers */
     case 1105: /* --no-watch */
     case 4004: /* ----api-no-restricted */
+    case 4003: /* --api-no-ipv6 */
         return parseBoolean(config, key, false);
 
     case 1003: /* --donate-level */

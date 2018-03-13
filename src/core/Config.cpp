@@ -184,10 +184,11 @@ void xmrig::Config::getJSON(rapidjson::Document &doc)
     for (const Url *url : m_pools) {
         rapidjson::Value obj(rapidjson::kObjectType);
 
-        obj.AddMember("url",       rapidjson::StringRef(url->url()), allocator);
-        obj.AddMember("user",      rapidjson::StringRef(url->user()), allocator);
-        obj.AddMember("pass",      rapidjson::StringRef(url->password()), allocator);
-        obj.AddMember("coin",      rapidjson::StringRef(url->coin()), allocator);
+        obj.AddMember("url",     rapidjson::StringRef(url->url()), allocator);
+        obj.AddMember("user",    rapidjson::StringRef(url->user()), allocator);
+        obj.AddMember("pass",    rapidjson::StringRef(url->password()), allocator);
+        obj.AddMember("coin",    rapidjson::StringRef(url->coin()), allocator);
+        obj.AddMember("variant", url->variant(), allocator);
 
         pools.PushBack(obj, allocator);
     }

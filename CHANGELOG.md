@@ -6,12 +6,13 @@
 - Added IPv6 support:
   - IPv6 now fully supported for connections to upstream pools.
   - `bind` now accept IPv6 addresses, for example, use `[::]:3333` to bind on all IPv4 and IPv6 interfaces and port 3333. 
-  - Internal HTTP server now support IPv6 for incoming connections (disabled by default).
+  - Internal HTTP server now support IPv6 for incoming connections.
 - New command line options (with equivalent config file options):
   - Added `--no-watch` and config option `watch` to disable config file watching.
-  - Added `--api-ipv6` and similar config option to enable IPv6 support for HTTP API.
+  - Added `--variant` to override PoW settings on xmrig miners.
+  - Added `--api-no-ipv6` and similar config option to disable IPv6 support for HTTP API.
   - Added `--algo` to specify algorithm cryptonight or cryptonight-lite.
-  - Added `--api-no-restricted` to enable full access to api, this option has no effect if `--api-access-token` not specified
+  - Added `--api-no-restricted` to enable full access to api, this option has no effect if `--api-access-token` not specified.
 - Deprecations:
   - Option `coin` now deprecated, use `algo` instead.
   - API endpoint `GET /` now deprecated, use `GET /1/summary` instead.

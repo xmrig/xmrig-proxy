@@ -26,6 +26,7 @@
 
 
 #include "net/Job.h"
+#include "xmrig.h"
 
 
 static inline unsigned char hf_hex2bin(char c, bool &err)
@@ -55,8 +56,20 @@ static inline char hf_bin2hex(unsigned char c)
 }
 
 
-Job::Job(int poolId) :
+Job::Job() :
+    m_poolId(-2),
+    m_variant(xmrig::VARIANT_AUTO),
+    m_size(0),
+    m_diff(0),
+    m_target(0)
+{
+    memset(m_coin, 0, sizeof(m_coin));
+}
+
+
+Job::Job(int poolId, int variant) :
     m_poolId(poolId),
+    m_variant(variant),
     m_size(0),
     m_diff(0),
     m_target(0)

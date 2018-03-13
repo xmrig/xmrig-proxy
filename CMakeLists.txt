@@ -72,6 +72,7 @@ set(HEADERS
     src/proxy/workers/Workers.h
     src/Summary.h
     src/version.h
+    src/xmrig.h
    )
 
 set(SOURCES

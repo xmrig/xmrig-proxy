@@ -304,6 +304,7 @@ bool xmrig::ConfigLoader::parseArg(xmrig::Config *config, int key, const char *a
 
     case 'r':  /* --retries */
     case 'R':  /* --retry-pause */
+    case 1010: /* --variant */
     case 1102: /* --custom-diff */
     case 4000: /* --api-port */
         return parseArg(config, key, strtol(arg, nullptr, 10));
@@ -389,6 +390,10 @@ bool xmrig::ConfigLoader::parseArg(xmrig::Config *config, int key, uint64_t arg)
         config->m_donateLevel = (int) arg;
         break;
 
+    case 1010: /* --variant */
+        config->m_pools.back()->setVariant((int) arg);
+        break;
+
     case 4000: /* --api-port */
         if (arg <= 65536) {
             config->m_apiPort = (int) arg;
@@ -469,7 +474,7 @@ void xmrig::ConfigLoader::parseJSON(xmrig::Config *config, const struct option *
     if (option->has_arg && value.IsString()) {
         parseArg(config, option->val, value.GetString());
     }
-    else if (option->has_arg && value.IsUint64()) {
+    else if (option->has_arg && value.IsInt64()) {
         parseArg(config, option->val, value.GetUint64());
     }
     else if (!option->has_arg && value.IsBool()) {

@@ -220,7 +220,7 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
         return false;
     }
 
-    Job job(m_id);
+    Job job(m_id, m_url.variant());
     if (!job.setId(params["job_id"].GetString())) {
         *code = 3;
         return false;

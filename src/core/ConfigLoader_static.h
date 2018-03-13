@@ -60,6 +60,7 @@ Options:\n\
       --user-agent=AGENT   set custom user-agent string for pool\n\
       --no-color           disable colored output\n\
       --no-workers         disable per worker statistics\n\
+      --variant            algorithm PoW variant\n\
       --donate-level=N     donate level, default 2%%\n\
   -B, --background         run the miner in the background\n\
   -c, --config=FILE        load a JSON-format configuration file\n\
@@ -116,6 +117,7 @@ static struct option const options[] = {
     { "userpass",          1, nullptr, 'O'  },
     { "verbose",           0, nullptr, 1100 },
     { "version",           0, nullptr, 'V'  },
+    { "variant",           1, nullptr, 1010 },
     { 0, 0, 0, 0 }
 };
 
@@ -147,6 +149,7 @@ static struct option const pool_options[] = {
     { "user",          1, nullptr, 'u'  },
     { "userpass",      1, nullptr, 'O'  },
     { "coin",          1, nullptr, 'C'  },
+    { "variant",       1, nullptr, 1010 },
     { 0, 0, 0, 0 }
 };
 

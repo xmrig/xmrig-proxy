@@ -156,20 +156,6 @@ const char *xmrig::Config::algoName() const
 }
 
 
-void xmrig::Config::adjust()
-{
-    if (m_adjusted) {
-        return;
-    }
-
-    m_adjusted = true;
-
-    for (Url *url : m_pools) {
-        url->adjust(algorithm());
-    }
-}
-
-
 void xmrig::Config::getJSON(rapidjson::Document &doc)
 {
     doc.SetObject();
@@ -225,6 +211,20 @@ void xmrig::Config::getJSON(rapidjson::Document &doc)
 xmrig::Config *xmrig::Config::load(int argc, char **argv, IWatcherListener *listener)
 {
     return xmrig::ConfigLoader::load(argc, argv, listener);
+}
+
+
+void xmrig::Config::adjust()
+{
+    if (m_adjusted) {
+        return;
+    }
+
+    m_adjusted = true;
+
+    for (Url *url : m_pools) {
+        url->adjust(algorithm());
+    }
 }
 
 

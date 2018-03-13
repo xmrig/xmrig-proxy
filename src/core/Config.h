@@ -72,7 +72,6 @@ public:
     bool reload(const char *json);
     bool save();
     const char *algoName() const;
-    void adjust();
     void getJSON(rapidjson::Document &doc);
 
     static Config *load(int argc, char **argv, IWatcherListener *listener);
@@ -105,6 +104,7 @@ public:
     inline void toggleVerbose()                    { m_verbose = !m_verbose; }
 
 private:
+    void adjust();
     void setAlgo(const char *algo);
     void setCoin(const char *coin);
     void setFileName(const char *fileName);

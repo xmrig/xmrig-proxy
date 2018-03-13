@@ -127,13 +127,13 @@ void Miner::setJob(Job &job)
     if (m_state == WaitReadyState) {
         setState(ReadyState);
         size = snprintf(m_sendBuf, sizeof(m_sendBuf),
-                        "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"result\":{\"id\":\"%s\",\"job\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx0\",\"target\":\"%s\",\"coin\":\"%s\"},\"extensions\":[\"nicehash\"],\"status\":\"OK\"}}\n",
-                        m_loginId, m_rpcId, job.rawBlob(), job.id().data(), m_fixedByte, customDiff ? target : job.rawTarget(), job.coin());
+                        "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"result\":{\"id\":\"%s\",\"job\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx0\",\"target\":\"%s\",\"coin\":\"%s\",\"variant\":%d},\"extensions\":[\"nicehash\"],\"status\":\"OK\"}}\n",
+                        m_loginId, m_rpcId, job.rawBlob(), job.id().data(), m_fixedByte, customDiff ? target : job.rawTarget(), job.coin(), job.variant());
     }
     else {
         size = snprintf(m_sendBuf, sizeof(m_sendBuf),
-                        "{\"jsonrpc\":\"2.0\",\"method\":\"job\",\"params\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx0\",\"target\":\"%s\",\"coin\":\"%s\"}}\n",
-                        job.rawBlob(), job.id().data(), m_fixedByte, customDiff ? target : job.rawTarget(), job.coin());
+                        "{\"jsonrpc\":\"2.0\",\"method\":\"job\",\"params\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx0\",\"target\":\"%s\",\"coin\":\"%s\",\"variant\":%d}}\n",
+                        job.rawBlob(), job.id().data(), m_fixedByte, customDiff ? target : job.rawTarget(), job.coin(), job.variant());
     }
 
     send(size);

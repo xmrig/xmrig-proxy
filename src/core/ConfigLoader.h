@@ -60,7 +60,7 @@ private:
     static bool parseBoolean(Config *config, int key, bool enable);
     static void parseJSON(Config *config, const struct option *option, const rapidjson::Value &object);
     static void showUsage(int status);
-    static void showVersion(void);
+    static void showVersion();
 
     static ConfigWatcher *m_watcher;
     static IWatcherListener *m_listener;

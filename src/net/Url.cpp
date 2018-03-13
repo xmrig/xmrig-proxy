@@ -30,6 +30,7 @@
 
 #include "core/Config.h"
 #include "net/Url.h"
+#include "xmrig.h"
 
 
 #ifdef _MSC_VER
@@ -42,6 +43,7 @@ Url::Url() :
     m_password(nullptr),
     m_user(nullptr),
     m_coin(""),
+    m_variant(xmrig::VARIANT_AUTO),
     m_url(nullptr),
     m_port(kDefaultPort)
 {
@@ -64,6 +66,7 @@ Url::Url(const char *url) :
     m_password(nullptr),
     m_user(nullptr),
     m_coin(""),
+    m_variant(xmrig::VARIANT_AUTO),
     m_url(nullptr),
     m_port(kDefaultPort)
 {
@@ -75,6 +78,7 @@ Url::Url(const char *host, uint16_t port, const char *user, const char *password
     m_password(password ? strdup(password) : nullptr),
     m_user(user ? strdup(user) : nullptr),
     m_coin(""),
+    m_variant(xmrig::VARIANT_AUTO),
     m_url(nullptr),
     m_port(port)
 {
@@ -216,9 +220,24 @@ void Url::setUser(const char *user)
 }
 
 
+void Url::setVariant(int variant)
+{
+   switch (variant) {
+   case xmrig::VARIANT_AUTO:
+   case xmrig::VARIANT_NONE:
+   case xmrig::VARIANT_V1:
+       m_variant = variant;
+       break;
+
+   default:
+       break;
+   }
+}
+
+
 bool Url::operator==(const Url &other) const
 {
-    if (m_port != other.m_port) {
+    if (m_port != other.m_port || m_variant != other.m_variant) {
         return false;
     }
 
@@ -232,7 +251,8 @@ bool Url::operator==(const Url &other) const
 
 Url &Url::operator=(const Url *other)
 {
-    m_port = other->m_port;
+    m_port    = other->m_port;
+    m_variant = other->m_variant;
 
     free(m_host);
     m_host = strdup(other->m_host);

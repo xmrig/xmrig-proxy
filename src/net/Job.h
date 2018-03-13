@@ -36,7 +36,8 @@
 class Job
 {
 public:
-    Job(int poolId = -2);
+    Job();
+    Job(int poolId, int variant);
     ~Job();
 
     bool setBlob(const char *blob);
@@ -51,12 +52,14 @@ public:
     inline const xmrig::Id &clientId() const     { return m_clientId; }
     inline const xmrig::Id &id() const           { return m_id; }
     inline int poolId() const                    { return m_poolId; }
+    inline int variant() const                   { return m_variant; }
     inline size_t size() const                   { return m_size; }
     inline uint32_t *nonce()                     { return reinterpret_cast<uint32_t*>(m_blob + 39); }
     inline uint32_t diff() const                 { return (uint32_t) m_diff; }
     inline uint64_t target() const               { return m_target; }
     inline void reset()                          { m_size = 0; m_diff = 0; }
     inline void setClientId(const xmrig::Id &id) { m_clientId = id; }
+    inline void setVariant(int variant)          { m_variant = variant; }
 
 #   ifdef XMRIG_PROXY_PROJECT
     inline char *rawBlob()                 { return m_rawBlob; }
@@ -75,6 +78,7 @@ private:
 
     char m_coin[5];
     int m_poolId;
+    int m_variant;
     size_t m_size;
     uint64_t m_diff;
     uint64_t m_target;

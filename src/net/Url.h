@@ -45,6 +45,7 @@ public:
     inline const char *host() const          { return m_host; }
     inline const char *password() const      { return m_password ? m_password : kDefaultPassword; }
     inline const char *user() const          { return m_user ? m_user : kDefaultUser; }
+    inline int variant() const               { return m_variant; }
     inline uint16_t port() const             { return m_port; }
 
     bool parse(const char *url);
@@ -54,6 +55,7 @@ public:
     void setCoin(const char *coin);
     void setPassword(const char *password);
     void setUser(const char *user);
+    void setVariant(int variant);
 
     bool operator==(const Url &other) const;
     Url &operator=(const Url *other);
@@ -65,6 +67,7 @@ private:
     char *m_password;
     char *m_user;
     char m_coin[5];
+    int m_variant;
     mutable char *m_url;
     uint16_t m_port;
 };

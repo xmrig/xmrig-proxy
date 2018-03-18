@@ -395,7 +395,10 @@ void Client::parse(char *line, size_t len)
     LOG_DEBUG("[%s:%u] received (%d bytes): \"%s\"", m_url.host(), m_url.port(), len, line);
 
     if (len < 32 || line[0] != '{') {
-        LOG_ERR("[%s:%u] JSON decode failed", m_url.host(), m_url.port());
+        if (!m_quiet) {
+            LOG_ERR("[%s:%u] JSON decode failed", m_url.host(), m_url.port());
+        }
+
         return;
     }
 
@@ -650,7 +653,10 @@ void Client::onResolved(uv_getaddrinfo_t *req, int status, struct addrinfo *res)
 {
     auto client = getClient(req->data);
     if (status < 0) {
-        LOG_ERR("[%s:%u] DNS error: \"%s\"", client->m_url.host(), client->m_url.port(), uv_strerror(status));
+        if (!client->m_quiet) {
+            LOG_ERR("[%s:%u] DNS error: \"%s\"", client->m_url.host(), client->m_url.port(), uv_strerror(status));
+        }
+
         return client->reconnect();
     }
 
@@ -671,7 +677,9 @@ void Client::onResolved(uv_getaddrinfo_t *req, int status, struct addrinfo *res)
     }
 
     if (ipv4.empty() && ipv6.empty()) {
-        LOG_ERR("[%s:%u] DNS error: \"No IPv4 (A) or IPv6 (AAAA) records found\"", client->m_url.host(), client->m_url.port());
+        if (!client->m_quiet) {
+            LOG_ERR("[%s:%u] DNS error: \"No IPv4 (A) or IPv6 (AAAA) records found\"", client->m_url.host(), client->m_url.port());
+        }
 
         uv_freeaddrinfo(res);
         return client->reconnect();

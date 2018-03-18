@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,25 +22,24 @@
  */
 
 
-#include "core/Config.h"
-#include "core/Controller.h"
 #include "interfaces/IStrategyListener.h"
 #include "net/Client.h"
 #include "net/strategies/FailoverStrategy.h"
+#include "Platform.h"
 
-#include "log/Log.h"
 
-
-FailoverStrategy::FailoverStrategy(xmrig::Controller *controller, const std::vector<Url*> &urls, const char *agent, IStrategyListener *listener) :
+FailoverStrategy::FailoverStrategy(const std::vector<Url*> &urls, int retryPause, int retries, IStrategyListener *listener, bool quiet) :
     m_release(false),
+    m_quiet(quiet),
+    m_retries(retries),
+    m_retryPause(retryPause),
     m_active(-1),
     m_index(0),
     m_remaining(0),
-    m_listener(listener),
-    m_controller(controller)
+    m_listener(listener)
 {
     for (const Url *url : urls) {
-        add(url, agent);
+        add(url);
     }
 }
 
@@ -127,7 +126,7 @@ void FailoverStrategy::onClose(Client *client, int failures)
         m_listener->onPause(this);
     }
 
-    if (m_index == 0 && failures < m_controller->config()->retries()) {
+    if (m_index == 0 && failures < m_retries) {
         return;
     }
 
@@ -172,11 +171,12 @@ void FailoverStrategy::onResultAccepted(Client *client, const SubmitResult &resu
 }
 
 
-void FailoverStrategy::add(const Url *url, const char *agent)
+void FailoverStrategy::add(const Url *url)
 {
-    Client *client = new Client((int) m_pools.size(), agent, this);
+    Client *client = new Client((int) m_pools.size(), Platform::userAgent(), this);
     client->setUrl(url);
-    client->setRetryPause(m_controller->config()->retryPause() * 1000);
+    client->setRetryPause(m_retryPause * 1000);
+    client->setQuiet(m_quiet);
 
     m_pools.push_back(client);
 }

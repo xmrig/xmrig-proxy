@@ -2,13 +2,16 @@
 - [#119](https://github.com/xmrig/xmrig-proxy/issues/119) Added graceful reload support, pools and some other settings now can changed without proxy restart.
 - [#123](https://github.com/xmrig/xmrig-proxy/issues/123) Fixed regression (all versions since 2.4 affected) fragmented responses from pool/miner was parsed incorrectly.
 - [#40](https://github.com/xmrig/xmrig-proxy/issues/40#issuecomment-370202169) Added API endpoint `PUT /1/config` to update current config.
+- [#118](https://github.com/xmrig/xmrig-proxy/issues/118#issuecomment-375172833) Added alternative working mode, in that mode proxy support chaining and nicehash.com but lose ability to reduce connection count.
 - Added API endpoint `GET /1/config` to get current active config.
 - Messages `use pool` now shown only in verbose mode.
 - Added IPv6 support:
   - IPv6 now fully supported for connections to upstream pools.
-  - `bind` now accept IPv6 addresses, for example, use `[::]:3333` to bind on all IPv4 and IPv6 interfaces and port 3333. 
+  - `bind` now accept IPv6 addresses, for example, use `[::]:3333` to bind on all IPv6 interfaces and port 3333. 
   - Internal HTTP server now support IPv6 for incoming connections.
 - New command line options (with equivalent config file options):
+  - Added `--mode` to switch working mode.
+  - Added `--reuse-timeout` to set timeout in seconds for reuse pool connections in simple mode.
   - Added `--no-watch` and config option `watch` to disable config file watching.
   - Added `--variant` to override PoW settings on xmrig miners.
   - Added `--api-no-ipv6` and similar config option to disable IPv6 support for HTTP API.

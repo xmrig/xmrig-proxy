@@ -177,6 +177,7 @@ xmrig::Config *xmrig::ConfigLoader::load(int argc, char **argv, IWatcherListener
     }
 
     if (config->m_addrs.empty()) {
+        config->m_addrs.push_back(new Addr("0.0.0.0:3333"));
         config->m_addrs.push_back(new Addr("[::]:3333"));
     }
 

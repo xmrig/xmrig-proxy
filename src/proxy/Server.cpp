@@ -64,7 +64,7 @@ bool Server::bind()
     }
 
     const sockaddr *addr = m_version == 6 ? reinterpret_cast<const sockaddr*>(&m_addr6) : reinterpret_cast<const sockaddr*>(&m_addr);
-    uv_tcp_bind(&m_server, addr, 0);
+    uv_tcp_bind(&m_server, addr, m_version == 6 ? UV_TCP_IPV6ONLY : 0);
 
     const int r = uv_listen(reinterpret_cast<uv_stream_t*>(&m_server), 511, Server::onConnection);
     if (r) {
@@ -83,7 +83,7 @@ void Server::create(uv_stream_t *server, int status)
         return;
     }
 
-    Miner *miner = new Miner(m_nicehash);
+    Miner *miner = new Miner(m_nicehash, m_version == 6);
     if (!miner) {
         return;
     }

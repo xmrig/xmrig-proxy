@@ -45,7 +45,8 @@
 static int64_t nextId = 0;
 
 
-Miner::Miner(bool nicehash) :
+Miner::Miner(bool nicehash, bool ipv6) :
+    m_ipv6(ipv6),
     m_nicehash(nicehash),
     m_id(++nextId),
     m_loginId(0),
@@ -93,7 +94,12 @@ bool Miner::accept(uv_stream_t *server)
     int size = sizeof(addr);
 
     uv_tcp_getpeername(&m_socket, reinterpret_cast<sockaddr*>(&addr), &size);
-    uv_ip4_name(reinterpret_cast<sockaddr_in*>(&addr), m_ip, 16);
+
+    if (m_ipv6) {
+        uv_ip6_name(reinterpret_cast<sockaddr_in6*>(&addr), m_ip, 45);
+    } else {
+        uv_ip4_name(reinterpret_cast<sockaddr_in*>(&addr), m_ip, 16);
+    }
 
     uv_read_start(reinterpret_cast<uv_stream_t*>(&m_socket), Miner::onAllocBuffer, Miner::onRead);
 

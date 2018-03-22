@@ -152,8 +152,10 @@ void SimpleMapper::onActive(IStrategy *strategy, Client *client)
         m_pending  = nullptr;
     }
 
-    LOG_INFO(isColors() ? "#%03u \x1B[01;37muse pool \x1B[01;36m%s:%d \x1B[01;30m%s" : "#%03u use pool %s:%d %s",
-             m_id, client->host(), client->port(), client->ip());
+    if (m_controller->config()->verbose()) {
+        LOG_INFO(isColors() ? "#%03u \x1B[01;37muse pool \x1B[01;36m%s:%d \x1B[01;30m%s" : "#%03u use pool %s:%d %s",
+                 m_id, client->host(), client->port(), client->ip());
+    }
 }
 
 

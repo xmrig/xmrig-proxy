@@ -21,40 +21,15 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SHARELOG_H__
-#define __SHARELOG_H__
+
+#include "proxy/events/MinerEvent.h"
+#include "proxy/Miner.h"
 
 
-#include "interfaces/IEventListener.h"
+static const char *kDefaultIP = "0.0.0.0";
 
 
-class AcceptEvent;
-class Stats;
-
-
-namespace xmrig {
-    class Controller;
-}
-
-
-class ShareLog : public IEventListener
+const char *MinerEvent::ip() const
 {
-public:
-    ShareLog(xmrig::Controller *controller, const Stats &stats);
-    ~ShareLog();
-
-protected:
-    void onEvent(IEvent *event) override;
-    void onRejectedEvent(IEvent *event) override;
-
-private:
-    bool isColors() const;
-    void accept(const AcceptEvent *event);
-    void reject(const AcceptEvent *event);
-
-    const Stats &m_stats;
-    xmrig::Controller *m_controller;
-};
-
-
-#endif /* __SHARELOG_H__ */
+    return m_miner ? m_miner->ip() : kDefaultIP;
+}

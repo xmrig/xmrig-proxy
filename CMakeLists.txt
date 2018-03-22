@@ -109,6 +109,7 @@ set(SOURCES
     src/proxy/Events.cpp
     src/proxy/events/ConnectionEvent.h
     src/proxy/events/Event.cpp
+    src/proxy/events/MinerEvent.cpp
     src/proxy/JobResult.cpp
     src/proxy/LoginRequest.cpp
     src/proxy/Miner.cpp

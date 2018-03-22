@@ -1,8 +1,8 @@
 # v2.5.0-dev
 - [#119](https://github.com/xmrig/xmrig-proxy/issues/119) Added graceful reload support, pools and some other settings now can changed without proxy restart.
 - [#123](https://github.com/xmrig/xmrig-proxy/issues/123) Fixed regression (all versions since 2.4 affected) fragmented responses from pool/miner was parsed incorrectly.
+- [#40](https://github.com/xmrig/xmrig-proxy/issues/40#issuecomment-370202169) Added API endpoint `PUT /1/config` to update current config.
 - Added API endpoint `GET /1/config` to get current active config.
-- Added API endpoint `PUT /1/config` to update current config.
 - Added IPv6 support:
   - IPv6 now fully supported for connections to upstream pools.
   - `bind` now accept IPv6 addresses, for example, use `[::]:3333` to bind on all IPv4 and IPv6 interfaces and port 3333. 

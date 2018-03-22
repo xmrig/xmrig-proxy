@@ -56,12 +56,12 @@ public:
     constexpr static int kKeepAliveTimeout = 60 * 1000;
 
     Client(int id, const char *agent, IClientListener *listener);
-    ~Client();
 
     bool disconnect();
     int64_t submit(const JobResult &result);
     void connect();
     void connect(const Url *url);
+    void deleteLater();
     void setUrl(const Url *url);
     void tick(uint64_t now);
 
@@ -76,6 +76,8 @@ public:
     inline void setRetryPause(int ms)        { m_retryPause = ms; }
 
 private:
+    ~Client();
+
     bool close();
     bool isCriticalError(const char *message);
     bool parseJob(const rapidjson::Value &params, int *code);
@@ -86,6 +88,7 @@ private:
     void connect(sockaddr *addr);
     void login();
     void parse(char *line, size_t len);
+    void parseExtensions(const rapidjson::Value &value);
     void parseNotification(const char *method, const rapidjson::Value &params, const rapidjson::Value &error);
     void parseResponse(int64_t id, const rapidjson::Value &result, const rapidjson::Value &error);
     void ping();
@@ -103,6 +106,7 @@ private:
 
     addrinfo m_hints;
     bool m_ipv6;
+    bool m_nicehash;
     bool m_quiet;
     char m_buf[2048];
     char m_ip[46];
@@ -118,6 +122,7 @@ private:
     static int64_t m_sequence;
     std::map<int64_t, SubmitResult> m_results;
     uint64_t m_expire;
+    uint64_t m_jobs;
     Url m_url;
     uv_buf_t m_recvBuf;
     uv_getaddrinfo_t m_resolver;

@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -45,7 +45,8 @@
 #include "proxy/Proxy.h"
 #include "proxy/ProxyDebug.h"
 #include "proxy/Server.h"
-#include "proxy/splitters/NonceSplitter.h"
+#include "proxy/splitters/nicehash/NonceSplitter.h"
+#include "proxy/splitters/simple/SimpleSplitter.h"
 #include "proxy/Stats.h"
 #include "proxy/workers/Workers.h"
 
@@ -57,8 +58,18 @@ Proxy::Proxy(xmrig::Controller *controller) :
 {
     srand(time(0) ^ (uintptr_t) this);
 
-    m_miners    = new Miners();
-    m_splitter  = new NonceSplitter(controller);
+    m_miners = new Miners();
+
+    Splitter *splitter = nullptr;
+    if (controller->config()->mode() == xmrig::Config::NICEHASH_MODE) {
+        splitter = new NonceSplitter(controller);
+    }
+    else {
+        splitter  = new SimpleSplitter(controller);
+    }
+
+    m_splitter = splitter;
+
     m_shareLog  = new ShareLog(controller, m_stats);
     m_accessLog = new AccessLog(controller);
     m_workers   = new Workers(controller);
@@ -70,18 +81,18 @@ Proxy::Proxy(xmrig::Controller *controller) :
     Events::subscribe(IEvent::ConnectionType, &m_stats);
 
     Events::subscribe(IEvent::CloseType, m_miners);
-    Events::subscribe(IEvent::CloseType, m_splitter);
+    Events::subscribe(IEvent::CloseType, splitter);
     Events::subscribe(IEvent::CloseType, &m_stats);
     Events::subscribe(IEvent::CloseType, m_accessLog);
     Events::subscribe(IEvent::CloseType, m_workers);
 
     Events::subscribe(IEvent::LoginType, &m_customDiff);
-    Events::subscribe(IEvent::LoginType, m_splitter);
+    Events::subscribe(IEvent::LoginType, splitter);
     Events::subscribe(IEvent::LoginType, &m_stats);
     Events::subscribe(IEvent::LoginType, m_accessLog);
     Events::subscribe(IEvent::LoginType, m_workers);
 
-    Events::subscribe(IEvent::SubmitType, m_splitter);
+    Events::subscribe(IEvent::SubmitType, splitter);
     Events::subscribe(IEvent::SubmitType, &m_stats);
     Events::subscribe(IEvent::SubmitType, m_workers);
 
@@ -185,7 +196,7 @@ bool Proxy::isColors() const
 
 void Proxy::bind(const Addr *addr)
 {
-    auto server = new Server(addr);
+    auto server = new Server(addr, m_controller->config()->mode() == xmrig::Config::NICEHASH_MODE);
 
     if (server->bind()) {
         m_servers.push_back(server);
@@ -215,7 +226,7 @@ void Proxy::print()
 
 void Proxy::tick()
 {
-    m_stats.tick(m_ticks, *m_splitter);
+    m_stats.tick(m_ticks, m_splitter);
 
     m_ticks++;
 

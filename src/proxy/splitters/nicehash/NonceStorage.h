@@ -21,25 +21,53 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <uv.h>
-
-
-#include "net/SubmitResult.h"
+#ifndef __NONCESTORAGE_H__
+#define __NONCESTORAGE_H__
 
 
-SubmitResult::SubmitResult(int64_t seq, uint32_t diff, uint64_t actualDiff, int64_t reqId) :
-    reqId(reqId),
-    seq(seq),
-    diff(diff),
-    actualDiff(actualDiff),
-    elapsed(0)
+#include <map>
+#include <vector>
+
+
+#include "net/Job.h"
+
+
+class LoginRequest;
+class Miner;
+
+
+class NonceStorage
 {
-    start = uv_hrtime();
-}
+public:
+    NonceStorage();
+    ~NonceStorage();
+
+    bool add(Miner *miner, const LoginRequest &request);
+    bool isUsed() const;
+    bool isValidJobId(const xmrig::Id &id) const;
+    Miner *miner(int64_t id);
+    void remove(const Miner *miner);
+    void reset();
+    void setJob(const Job &job);
+
+    inline bool isActive() const       { return m_active; }
+    inline const Job &job() const      { return m_job; }
+    inline void setActive(bool active) { m_active = active; }
+
+#   ifdef APP_DEVEL
+    void printState(size_t id);
+#   endif
+
+private:
+    int nextIndex(int start) const;
+
+    bool m_active;
+    Job m_job;
+    Job m_prevJob;
+    std::map<int64_t, Miner*> m_miners;
+    std::vector<int64_t> m_used;
+    uint8_t m_index;
+};
 
 
-void SubmitResult::done()
-{
-    elapsed = (uv_hrtime() - start) / 1000000;
-}
+#endif /* __NONCESTORAGE_H__ */

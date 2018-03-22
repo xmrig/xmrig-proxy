@@ -231,6 +231,10 @@ bool xmrig::ConfigLoader::parseArg(xmrig::Config *config, int key, const char *a
         config->setAlgo(arg);
         break;
 
+    case 'm': /* --mode */
+        config->setMode(arg);
+        break;
+
     case 'b': /* --bind */
         {
             Addr *addr = new Addr(arg);
@@ -383,7 +387,7 @@ bool xmrig::ConfigLoader::parseArg(xmrig::Config *config, int key, uint64_t arg)
         break;
 
     case 1003: /* --donate-level */
-        if (arg < 1 || arg > 99) {
+        if ((int) arg < 0 || arg > 99) {
             return true;
         }
 
@@ -404,6 +408,10 @@ bool xmrig::ConfigLoader::parseArg(xmrig::Config *config, int key, uint64_t arg)
         if (arg >= 100 && arg < INT_MAX) {
             config->m_diff = arg;
         }
+        break;
+
+    case 1106: /* --reuse-timeout */
+        config->m_reuseTimeout = (int) arg;
         break;
 
     default:

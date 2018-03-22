@@ -28,7 +28,7 @@
 #include "proxy/Counters.h"
 #include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
-#include "proxy/splitters/NonceStorage.h"
+#include "proxy/splitters/nicehash/NonceStorage.h"
 
 
 NonceStorage::NonceStorage() :
@@ -77,7 +77,7 @@ bool NonceStorage::isUsed() const
 }
 
 
-bool NonceStorage::isValidJobId(const xmrig::Id &id)
+bool NonceStorage::isValidJobId(const xmrig::Id &id) const
 {
     if (m_job.id() == id) {
         return true;

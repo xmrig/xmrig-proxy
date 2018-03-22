@@ -37,9 +37,15 @@
 #include "rapidjson/prettywriter.h"
 
 
-static const char *algo_names[] = {
+static const char *algoNames[] = {
     "cryptonight",
     "cryptonight-lite"
+};
+
+
+static const char *modeNames[] = {
+    "nicehash",
+    "simple"
 };
 
 
@@ -74,8 +80,10 @@ xmrig::Config::Config() :
     m_algorithm(CRYPTONIGHT),
     m_apiPort(0),
     m_donateLevel(kDonateLevel),
-    m_retries(5),
-    m_retryPause(5),
+    m_mode(NICEHASH_MODE),
+    m_retries(2),
+    m_retryPause(1),
+    m_reuseTimeout(0),
     m_diff(0)
 {
     m_pools.push_back(new Url());
@@ -152,7 +160,13 @@ bool xmrig::Config::save()
 
 const char *xmrig::Config::algoName() const
 {
-    return algo_names[m_algorithm];
+    return algoNames[m_algorithm];
+}
+
+
+const char *xmrig::Config::modeName() const
+{
+    return modeNames[m_mode];
 }
 
 
@@ -174,10 +188,18 @@ void xmrig::Config::getJSON(rapidjson::Document &doc)
     doc.AddMember("api",          api, allocator);
 
     doc.AddMember("background",   background(), allocator);
+
+    rapidjson::Value bind(rapidjson::kArrayType);
+    for (const Addr *addr : m_addrs) {
+        bind.PushBack(rapidjson::StringRef(addr->addr()), allocator);
+    }
+
+    doc.AddMember("bind",         bind, allocator);
     doc.AddMember("colors",       colors(), allocator);
     doc.AddMember("custom-diff",  diff(), allocator);
     doc.AddMember("donate-level", donateLevel(), allocator);
     doc.AddMember("log-file",     logFile() ? rapidjson::Value(rapidjson::StringRef(logFile())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
+    doc.AddMember("mode",         rapidjson::StringRef(modeName()), allocator);
 
     rapidjson::Value pools(rapidjson::kArrayType);
 
@@ -195,9 +217,10 @@ void xmrig::Config::getJSON(rapidjson::Document &doc)
 
     doc.AddMember("pools", pools, allocator);
 
-    doc.AddMember("retries",      retries(), allocator);
-    doc.AddMember("retry-pause",  retryPause(), allocator);
-    doc.AddMember("user-agent",   userAgent() ? rapidjson::Value(rapidjson::StringRef(userAgent())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
+    doc.AddMember("retries",       retries(), allocator);
+    doc.AddMember("retry-pause",   retryPause(), allocator);
+    doc.AddMember("reuse-timeout", reuseTimeout(), allocator);
+    doc.AddMember("user-agent",    userAgent() ? rapidjson::Value(rapidjson::StringRef(userAgent())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
 
 #   ifdef HAVE_SYSLOG_H
     doc.AddMember("syslog", syslog(), allocator);
@@ -231,10 +254,10 @@ void xmrig::Config::adjust()
 
 void xmrig::Config::setAlgo(const char *algo)
 {
-    const size_t size = sizeof(algo_names) / sizeof((algo_names)[0]);
+    const size_t size = sizeof(algoNames) / sizeof((algoNames)[0]);
 
     for (size_t i = 0; i < size; i++) {
-        if (algo_names[i] && !strcmp(algo, algo_names[i])) {
+        if (algoNames[i] && !strcmp(algo, algoNames[i])) {
             m_algorithm = (int) i;
             break;
         }
@@ -259,4 +282,17 @@ void xmrig::Config::setFileName(const char *fileName)
 {
     free(m_fileName);
     m_fileName = fileName ? strdup(fileName) : nullptr;
+}
+
+
+void xmrig::Config::setMode(const char *mode)
+{
+    const size_t size = sizeof(modeNames) / sizeof((modeNames)[0]);
+
+    for (size_t i = 0; i < size; i++) {
+        if (modeNames[i] && !strcmp(mode, modeNames[i])) {
+            m_mode = (int) i;
+            break;
+        }
+    }
 }

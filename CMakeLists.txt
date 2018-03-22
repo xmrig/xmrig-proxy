@@ -27,6 +27,7 @@ set(HEADERS
     src/interfaces/IEvent.h
     src/interfaces/IEventListener.h
     src/interfaces/ILogBackend.h
+    src/interfaces/ISplitter.h
     src/interfaces/IStrategy.h
     src/interfaces/IStrategyListener.h
     src/interfaces/IWatcherListener.h
@@ -61,9 +62,12 @@ set(HEADERS
     src/proxy/Proxy.h
     src/proxy/ProxyDebug.h
     src/proxy/Server.h
-    src/proxy/splitters/NonceMapper.h
-    src/proxy/splitters/NonceSplitter.h
-    src/proxy/splitters/NonceStorage.h
+    src/proxy/splitters/nicehash/NonceMapper.h
+    src/proxy/splitters/nicehash/NonceSplitter.h
+    src/proxy/splitters/nicehash/NonceStorage.h
+    src/proxy/splitters/simple/SimpleMapper.h
+    src/proxy/splitters/simple/SimpleSplitter.h
+    src/proxy/splitters/Splitter.h
     src/proxy/Stats.h
     src/proxy/StatsData.h
     src/proxy/TickingCounter.h
@@ -112,9 +116,12 @@ set(SOURCES
     src/proxy/Proxy.cpp
     src/proxy/ProxyDebug.cpp
     src/proxy/Server.cpp
-    src/proxy/splitters/NonceMapper.cpp
-    src/proxy/splitters/NonceSplitter.cpp
-    src/proxy/splitters/NonceStorage.cpp
+    src/proxy/splitters/nicehash/NonceMapper.cpp
+    src/proxy/splitters/nicehash/NonceSplitter.cpp
+    src/proxy/splitters/nicehash/NonceStorage.cpp
+    src/proxy/splitters/simple/SimpleMapper.cpp
+    src/proxy/splitters/simple/SimpleSplitter.cpp
+    src/proxy/splitters/Splitter.cpp
     src/proxy/Stats.cpp
     src/proxy/workers/Worker.cpp
     src/proxy/workers/Workers.cpp

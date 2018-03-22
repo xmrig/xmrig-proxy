@@ -65,6 +65,11 @@ public:
         CRYPTONIGHT_LITE, /* CryptoNight-Lite (AEON) */
     };
 
+    enum Mode {
+        NICEHASH_MODE,
+        SIMPLE_MODE
+    };
+
     Config();
     ~Config();
 
@@ -72,6 +77,7 @@ public:
     bool reload(const char *json);
     bool save();
     const char *algoName() const;
+    const char *modeName() const;
     void getJSON(rapidjson::Document &doc);
 
     static Config *load(int argc, char **argv, IWatcherListener *listener);
@@ -96,8 +102,10 @@ public:
     inline int algorithm() const                   { return m_algorithm; }
     inline int apiPort() const                     { return m_apiPort; }
     inline int donateLevel() const                 { return m_donateLevel; }
+    inline int mode() const                        { return m_mode; }
     inline int retries() const                     { return m_retries; }
     inline int retryPause() const                  { return m_retryPause; }
+    inline int reuseTimeout() const                { return m_reuseTimeout; }
     inline uint64_t diff() const                   { return m_diff; }
     inline void setColors(bool colors)             { m_colors = colors; }
     inline void setVerbose(bool verbose)           { m_verbose = verbose; }
@@ -108,6 +116,7 @@ private:
     void setAlgo(const char *algo);
     void setCoin(const char *coin);
     void setFileName(const char *fileName);
+    void setMode(const char *mode);
 
     bool m_adjusted;
     bool m_apiIPv6;
@@ -129,8 +138,10 @@ private:
     int m_algorithm;
     int m_apiPort;
     int m_donateLevel;
+    int m_mode;
     int m_retries;
     int m_retryPause;
+    int m_reuseTimeout;
     std::vector<Addr*> m_addrs;
     std::vector<Url*> m_pools;
     uint64_t m_diff;

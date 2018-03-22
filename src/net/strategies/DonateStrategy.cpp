@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #include "interfaces/IStrategyListener.h"
 #include "net/Client.h"
 #include "net/strategies/DonateStrategy.h"
+#include "Platform.h"
 
 
 extern "C"
@@ -40,7 +41,7 @@ static inline int random(int min, int max){
 }
 
 
-DonateStrategy::DonateStrategy(xmrig::Controller *controller, const char *agent, IStrategyListener *listener) :
+DonateStrategy::DonateStrategy(xmrig::Controller *controller, IStrategyListener *listener) :
     m_active(false),
     m_suspended(false),
     m_listener(listener),
@@ -56,15 +57,21 @@ DonateStrategy::DonateStrategy(xmrig::Controller *controller, const char *agent,
     keccak(reinterpret_cast<const uint8_t *>(user), static_cast<int>(strlen(user)), hash, sizeof(hash));
     Job::toHex(hash, 32, userId);
 
-    Url *url = new Url("proxy-fee.xmrig.com", controller->config()->algorithm() == xmrig::Config::CRYPTONIGHT_LITE ? 3333 : 443, userId, nullptr);
+    Url *url = new Url("proxy.fee.xmrig.com", controller->config()->algorithm() == xmrig::Config::CRYPTONIGHT_LITE ? 7777 : 4444, userId, nullptr);
 
-    m_client = new Client(-1, agent, this);
+    m_client = new Client(-1, Platform::userAgent(), this);
     m_client->setUrl(url);
     m_client->setRetryPause(controller->config()->retryPause() * 1000);
 
     delete url;
 
     m_target = random(3000, 9000);
+}
+
+
+DonateStrategy::~DonateStrategy()
+{
+    m_client->deleteLater();
 }
 
 
@@ -92,11 +99,6 @@ int64_t DonateStrategy::submit(const JobResult &result)
 void DonateStrategy::connect()
 {
     m_suspended = false;
-}
-
-
-void DonateStrategy::release()
-{
 }
 
 

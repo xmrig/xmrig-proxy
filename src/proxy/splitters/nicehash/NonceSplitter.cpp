@@ -21,7 +21,6 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <assert.h>
 #include <inttypes.h>
 
 
@@ -29,15 +28,13 @@
 #include "core/Controller.h"
 #include "log/Log.h"
 #include "net/Url.h"
-#include "Platform.h"
 #include "proxy/Counters.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"
 #include "proxy/Miner.h"
-#include "proxy/splitters/NonceMapper.h"
-#include "proxy/splitters/NonceSplitter.h"
-#include "proxy/Stats.h"
+#include "proxy/splitters/nicehash/NonceMapper.h"
+#include "proxy/splitters/nicehash/NonceSplitter.h"
 
 
 #define LABEL(x) " \x1B[01;30m" x ":\x1B[0m "
@@ -48,10 +45,8 @@ static bool compare(Url *i, Url *j) {
 }
 
 
-NonceSplitter::NonceSplitter(xmrig::Controller *controller) :
-    m_controller(controller)
+NonceSplitter::NonceSplitter(xmrig::Controller *controller) : Splitter(controller)
 {
-    controller->addListener(this);
 }
 
 
@@ -60,9 +55,9 @@ NonceSplitter::~NonceSplitter()
 }
 
 
-uint32_t NonceSplitter::activeUpstreams() const
+uint64_t NonceSplitter::activeUpstreams() const
 {
-    uint32_t active = 0;
+    uint64_t active = 0;
 
     for (const NonceMapper *mapper : m_upstreams) {
         if (mapper->isActive()) {
@@ -76,7 +71,7 @@ uint32_t NonceSplitter::activeUpstreams() const
 
 void NonceSplitter::connect()
 {
-    auto upstream = new NonceMapper(m_upstreams.size(), m_controller, Platform::userAgent());
+    auto upstream = new NonceMapper(m_upstreams.size(), m_controller);
     m_upstreams.push_back(upstream);
 
     upstream->start();
@@ -161,7 +156,7 @@ void NonceSplitter::onConfigChanged(xmrig::Config *config, xmrig::Config *previo
 
     if (pools.size() != previousPools.size() || !std::equal(pools.begin(), pools.end(), previousPools.begin(), compare)) {
         for (NonceMapper *mapper : m_upstreams) {
-            mapper->reload(pools, previousPools);
+            mapper->reload(pools);
         }
     }
 }
@@ -222,7 +217,5 @@ void NonceSplitter::remove(Miner *miner)
 
 void NonceSplitter::submit(SubmitEvent *event)
 {
-    assert(event->miner()->mapperId() >= 0);
-
     m_upstreams[event->miner()->mapperId()]->submit(event);
 }

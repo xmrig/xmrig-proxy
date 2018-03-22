@@ -41,28 +41,29 @@
 #include "proxy/events/SubmitEvent.h"
 #include "proxy/JobResult.h"
 #include "proxy/Miner.h"
-#include "proxy/splitters/NonceMapper.h"
-#include "proxy/splitters/NonceStorage.h"
+#include "proxy/splitters/nicehash/NonceMapper.h"
+#include "proxy/splitters/nicehash/NonceStorage.h"
 
 
-NonceMapper::NonceMapper(size_t id, xmrig::Controller *controller, const char *agent) :
-    m_agent(agent),
+NonceMapper::NonceMapper(size_t id, xmrig::Controller *controller) :
     m_donate(nullptr),
     m_suspended(0),
+    m_pending(nullptr),
     m_id(id),
     m_controller(controller)
 {
     m_storage  = new NonceStorage();
     m_strategy = createStrategy(controller->config()->pools());
 
-    if (id != 0 && controller->config()->donateLevel() > 0) {
-        m_donate = new DonateStrategy(controller, m_agent, this);
+    if (controller->config()->donateLevel() > 0) {
+        m_donate = new DonateStrategy(controller, this);
     }
 }
 
 
 NonceMapper::~NonceMapper()
 {
+    delete m_pending;
     delete m_strategy;
     delete m_storage;
     delete m_donate;
@@ -105,10 +106,12 @@ void NonceMapper::gc()
 }
 
 
-void NonceMapper::reload(const std::vector<Url*> &pools, const std::vector<Url*> &previousPools)
+void NonceMapper::reload(const std::vector<Url*> &pools)
 {
-    IStrategy *strategy = createStrategy(pools);
-    strategy->connect();
+    delete m_pending;
+
+    m_pending = createStrategy(pools);
+    m_pending->connect();
 }
 
 
@@ -173,10 +176,11 @@ void NonceMapper::onActive(IStrategy *strategy, Client *client)
         return;
     }
 
-    if (m_strategy != strategy) {
-        m_strategy->release();
-        m_strategy = strategy;
+    if (m_pending && strategy == m_pending) {
+        delete m_strategy;
 
+        m_strategy = strategy;
+        m_pending  = nullptr;
     }
 
     LOG_INFO(isColors() ? "#%03u \x1B[01;37muse pool \x1B[01;36m%s:%d \x1B[01;30m%s" : "#%03u use pool %s:%d %s",

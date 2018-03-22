@@ -58,6 +58,13 @@ static void print_versions(xmrig::Controller *controller)
 }
 
 
+static void print_mode(xmrig::Controller *controller)
+{
+    Log::i()->text(controller->config()->colors() ? "\x1B[01;32m * \x1B[01;37mMODE:\x1B[0m         \x1B[01;37m%s" : " * MODE:         %s",
+                   controller->config()->modeName());
+}
+
+
 static void print_pools(xmrig::Controller *controller)
 {
     const std::vector<Url*> &pools = controller->config()->pools();
@@ -120,6 +127,7 @@ static void print_commands(xmrig::Controller *controller)
 void Summary::print(xmrig::Controller *controller)
 {
     print_versions(controller);
+    print_mode(controller);
     print_pools(controller);
     print_bind(controller);
 

@@ -21,25 +21,28 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <uv.h>
-
-
-#include "net/SubmitResult.h"
+#ifndef __ISPLITTER_H__
+#define __ISPLITTER_H__
 
 
-SubmitResult::SubmitResult(int64_t seq, uint32_t diff, uint64_t actualDiff, int64_t reqId) :
-    reqId(reqId),
-    seq(seq),
-    diff(diff),
-    actualDiff(actualDiff),
-    elapsed(0)
+#include <stdint.h>
+
+
+class ISplitter
 {
-    start = uv_hrtime();
-}
+public:
+    virtual ~ISplitter() {}
+
+    virtual uint64_t activeUpstreams() const = 0;
+    virtual void connect()                   = 0;
+    virtual void gc()                        = 0;
+    virtual void printConnections()          = 0;
+    virtual void tick(uint64_t ticks)        = 0;
+
+#   ifdef APP_DEVEL
+    virtual void printState()                = 0;
+#   endif
+};
 
 
-void SubmitResult::done()
-{
-    elapsed = (uv_hrtime() - start) / 1000000;
-}
+#endif // __ISPLITTER_H__

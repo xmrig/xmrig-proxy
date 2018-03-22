@@ -21,25 +21,28 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <uv.h>
-
-
-#include "net/SubmitResult.h"
+#ifndef __SPLITTER_H__
+#define __SPLITTER_H__
 
 
-SubmitResult::SubmitResult(int64_t seq, uint32_t diff, uint64_t actualDiff, int64_t reqId) :
-    reqId(reqId),
-    seq(seq),
-    diff(diff),
-    actualDiff(actualDiff),
-    elapsed(0)
-{
-    start = uv_hrtime();
+#include "interfaces/IControllerListener.h"
+#include "interfaces/IEventListener.h"
+#include "interfaces/ISplitter.h"
+
+
+namespace xmrig {
+    class Controller;
 }
 
 
-void SubmitResult::done()
+class Splitter : public IEventListener, public ISplitter, public xmrig::IControllerListener
 {
-    elapsed = (uv_hrtime() - start) / 1000000;
-}
+public:
+    Splitter(xmrig::Controller *controller);
+
+protected:
+    xmrig::Controller *m_controller;
+};
+
+
+#endif /* __SPLITTER_H__ */

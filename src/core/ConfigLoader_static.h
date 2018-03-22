@@ -49,13 +49,15 @@ Usage: " APP_ID " [OPTIONS]\n\
 Options:\n\
   -b, --bind=ADDR          bind to specified address, example \"0.0.0.0:3333\"\n\
   -a, --algo=ALGO          cryptonight (default) or cryptonight-lite\n\
+  -m, --mode=MODE          proxy mode, nicehash (default) or simple\n\
   -o, --url=URL            URL of mining server\n\
   -O, --userpass=U:P       username:password pair for mining server\n\
   -u, --user=USERNAME      username for mining server\n\
   -p, --pass=PASSWORD      password for mining server\n\
-  -r, --retries=N          number of times to retry before switch to backup server (default: 5)\n\
-  -R, --retry-pause=N      time to pause between retries (default: 5)\n\
+  -r, --retries=N          number of times to retry before switch to backup server (default: 1)\n\
+  -R, --retry-pause=N      time to pause between retries (default: 1 second)\n\
       --custom-diff=N      override pool diff\n\
+      --reuse-timeout=N    timeout in seconds for reuse pool connections in simple mode\n\
       --verbose            verbose output\n\
       --user-agent=AGENT   set custom user-agent string for pool\n\
       --no-color           disable colored output\n\
@@ -82,7 +84,7 @@ Options:\n\
 ";
 
 
-static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:A:a:C:";
+static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:A:a:C:m:";
 
 
 static struct option const options[] = {
@@ -118,6 +120,8 @@ static struct option const options[] = {
     { "verbose",           0, nullptr, 1100 },
     { "version",           0, nullptr, 'V'  },
     { "variant",           1, nullptr, 1010 },
+    { "reuse-timeout",     1, nullptr, 1106 },
+    { "mode",              1, nullptr, 'm'  },
     { 0, 0, 0, 0 }
 };
 
@@ -139,6 +143,8 @@ static struct option const config_options[] = {
     { "verbose",          0, nullptr, 1100 },
     { "watch",            0, nullptr, 1105 },
     { "workers",          0, nullptr, 1103 },
+    { "reuse-timeout",    1, nullptr, 1106 },
+    { "mode",             1, nullptr, 'm'  },
     { 0, 0, 0, 0 }
 };
 

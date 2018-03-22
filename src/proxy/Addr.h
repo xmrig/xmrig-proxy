@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ public:
 
 
     inline Addr() :
+        m_addr(nullptr),
         m_ip(nullptr),
         m_version(0),
         m_port(0)
@@ -44,6 +45,7 @@ public:
 
 
     inline Addr(const char *addr) :
+        m_addr(strdup(addr)),
         m_ip(nullptr),
         m_version(0),
         m_port(0)
@@ -63,14 +65,16 @@ public:
 
     inline ~Addr()
     {
+        delete [] m_addr;
         delete [] m_ip;
     }
 
 
-    inline bool isIPv6() const    { return m_version == 6; }
-    inline bool isValid() const   { return m_version && m_ip && m_port > 0; }
-    inline const char *ip() const { return m_ip; }
-    inline uint16_t port() const  { return m_port; }
+    inline bool isIPv6() const      { return m_version == 6; }
+    inline bool isValid() const     { return m_version && m_ip && m_port > 0; }
+    inline const char *addr() const { return m_addr; }
+    inline const char *ip() const   { return m_ip; }
+    inline uint16_t port() const    { return m_port; }
 
 private:
     void parseIPv4(const char *addr)
@@ -110,6 +114,7 @@ private:
     }
 
 
+    char *m_addr;
     char *m_ip;
     int m_version;
     uint16_t m_port;

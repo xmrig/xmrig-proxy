@@ -21,54 +21,63 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __FAILOVERSTRATEGY_H__
-#define __FAILOVERSTRATEGY_H__
+#ifndef __SIMPLESPLITTER_H__
+#define __SIMPLESPLITTER_H__
 
 
-#include <vector>
+#include <stdint.h>
+#include <map>
 
 
-#include "interfaces/IClientListener.h"
-#include "interfaces/IStrategy.h"
+#include "proxy/splitters/Splitter.h"
 
 
-class Client;
-class IStrategyListener;
-class Url;
+class LoginEvent;
+class Miner;
+class Options;
+class SimpleMapper;
+class Stats;
+class SubmitEvent;
 
 
-class FailoverStrategy : public IStrategy, public IClientListener
+namespace xmrig {
+    class Controller;
+}
+
+
+class SimpleSplitter : public Splitter
 {
 public:
-    FailoverStrategy(const std::vector<Url*> &urls, int retryPause, int retries, IStrategyListener *listener, bool quiet = false);
-    ~FailoverStrategy();
-
-public:
-    inline bool isActive() const override  { return m_active >= 0; }
-
-    int64_t submit(const JobResult &result) override;
-    void connect() override;
-    void resume() override;
-    void stop() override;
-    void tick(uint64_t now) override;
+    SimpleSplitter(xmrig::Controller *controller);
+    ~SimpleSplitter();
 
 protected:
-    void onClose(Client *client, int failures) override;
-    void onJobReceived(Client *client, const Job &job) override;
-    void onLoginSuccess(Client *client) override;
-    void onResultAccepted(Client *client, const SubmitResult &result, const char *error) override;
+    uint64_t activeUpstreams() const override;
+    void connect() override;
+    void gc() override;
+    void printConnections() override;
+    void tick(uint64_t ticks) override;
+
+#   ifdef APP_DEVEL
+    void printState() override;
+#   endif
+
+    inline void onRejectedEvent(IEvent *event) override {}
+    void onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig) override;
+    void onEvent(IEvent *event) override;
 
 private:
-    void add(const Url *url);
+    void login(LoginEvent *event);
+    void remove(Miner *miner);
+    void removeIdle(uint64_t id);
+    void removeUpstream(uint64_t id);
+    void submit(SubmitEvent *event);
 
-    const bool m_quiet;
-    const int m_retries;
-    const int m_retryPause;
-    int m_active;
-    int m_index;
-    int m_remaining;
-    IStrategyListener *m_listener;
-    std::vector<Client*> m_pools;
+    std::map<uint64_t, SimpleMapper *> m_idles;
+    std::map<uint64_t, SimpleMapper *> m_upstreams;
+    uint64_t m_reuseTimeout;
+    uint64_t m_sequence;
 };
 
-#endif /* __FAILOVERSTRATEGY_H__ */
+
+#endif /* __SIMPLESPLITTER_H__ */

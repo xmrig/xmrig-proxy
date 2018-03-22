@@ -21,60 +21,13 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __NONCESPLITTER_H__
-#define __NONCESPLITTER_H__
+
+#include "core/Controller.h"
+#include "proxy/splitters/Splitter.h"
 
 
-#include <stdint.h>
-#include <vector>
-
-
-#include "interfaces/IControllerListener.h"
-#include "interfaces/IEventListener.h"
-
-
-class LoginEvent;
-class Miner;
-class NonceMapper;
-class Options;
-class Stats;
-class SubmitEvent;
-
-
-namespace xmrig {
-    class Controller;
-}
-
-
-class NonceSplitter : public IEventListener, public xmrig::IControllerListener
+Splitter::Splitter(xmrig::Controller *controller) :
+    m_controller(controller)
 {
-public:
-    NonceSplitter(xmrig::Controller *controller);
-    ~NonceSplitter();
-
-    uint32_t activeUpstreams() const;
-    void connect();
-    void gc();
-    void printConnections();
-    void tick(uint64_t ticks);
-
-#   ifdef APP_DEVEL
-    void printState();
-#   endif
-
-protected:
-    inline void onRejectedEvent(IEvent *event) override {}
-    void onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig) override;
-    void onEvent(IEvent *event) override;
-
-private:
-    void login(LoginEvent *event);
-    void remove(Miner *miner);
-    void submit(SubmitEvent *event);
-
-    std::vector<NonceMapper*> m_upstreams;
-    xmrig::Controller *m_controller;
-};
-
-
-#endif /* __PROXY_H__ */
+    controller->addListener(this);
+}

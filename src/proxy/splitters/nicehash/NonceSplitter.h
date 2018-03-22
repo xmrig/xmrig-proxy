@@ -21,53 +21,58 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __NONCESTORAGE_H__
-#define __NONCESTORAGE_H__
+#ifndef __NONCESPLITTER_H__
+#define __NONCESPLITTER_H__
 
 
-#include <map>
+#include <stdint.h>
 #include <vector>
 
 
-#include "net/Job.h"
+#include "proxy/splitters/Splitter.h"
 
 
-class LoginRequest;
+class LoginEvent;
 class Miner;
+class NonceMapper;
+class Options;
+class Stats;
+class SubmitEvent;
 
 
-class NonceStorage
+namespace xmrig {
+    class Controller;
+}
+
+
+class NonceSplitter : public Splitter
 {
 public:
-    NonceStorage();
-    ~NonceStorage();
+    NonceSplitter(xmrig::Controller *controller);
+    ~NonceSplitter();
 
-    bool add(Miner *miner, const LoginRequest &request);
-    bool isUsed() const;
-    bool isValidJobId(const xmrig::Id &id);
-    Miner *miner(int64_t id);
-    void remove(const Miner *miner);
-    void reset();
-    void setJob(const Job &job);
-
-    inline bool isActive() const       { return m_active; }
-    inline const Job &job() const      { return m_job; }
-    inline void setActive(bool active) { m_active = active; }
+protected:
+    uint64_t activeUpstreams() const override;
+    void connect() override;
+    void gc() override;
+    void printConnections() override;
+    void tick(uint64_t ticks) override;
 
 #   ifdef APP_DEVEL
-    void printState(size_t id);
+    void printState() override;
 #   endif
 
-private:
-    int nextIndex(int start) const;
+    inline void onRejectedEvent(IEvent *event) override {}
+    void onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig) override;
+    void onEvent(IEvent *event) override;
 
-    bool m_active;
-    Job m_job;
-    Job m_prevJob;
-    std::map<int64_t, Miner*> m_miners;
-    std::vector<int64_t> m_used;
-    uint8_t m_index;
+private:
+    void login(LoginEvent *event);
+    void remove(Miner *miner);
+    void submit(SubmitEvent *event);
+
+    std::vector<NonceMapper*> m_upstreams;
 };
 
 
-#endif /* __NONCESTORAGE_H__ */
+#endif /* __PROXY_H__ */

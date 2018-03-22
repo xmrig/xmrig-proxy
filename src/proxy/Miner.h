@@ -46,7 +46,7 @@ public:
         ClosingState
     };
 
-    Miner();
+    Miner(bool nicehash);
     ~Miner();
     bool accept(uv_stream_t *server);
     void replyWithError(int64_t id, const char *message);
@@ -87,8 +87,9 @@ private:
 
     static inline Miner *getMiner(void *data) { return static_cast<Miner*>(data); }
 
+    bool m_nicehash;
     char m_buf[2048];
-    char m_ip[17];
+    char m_ip[46];
     char m_rpcId[37];
     char m_sendBuf[768];
     int64_t m_id;

@@ -45,7 +45,8 @@
 static int64_t nextId = 0;
 
 
-Miner::Miner() :
+Miner::Miner(bool nicehash) :
+    m_nicehash(nicehash),
     m_id(++nextId),
     m_loginId(0),
     m_recvBufPos(0),
@@ -108,9 +109,10 @@ void Miner::replyWithError(int64_t id, const char *message)
 
 void Miner::setJob(Job &job)
 {
-    snprintf(m_sendBuf, 4, "%02hhx", m_fixedByte);
-
-    memcpy(job.rawBlob() + 84, m_sendBuf, 2);
+    if (m_nicehash) {
+        snprintf(m_sendBuf, 4, "%02hhx", m_fixedByte);
+        memcpy(job.rawBlob() + 84, m_sendBuf, 2);
+    }
 
     m_diff = job.diff();
     bool customDiff = false;
@@ -127,8 +129,8 @@ void Miner::setJob(Job &job)
     if (m_state == WaitReadyState) {
         setState(ReadyState);
         size = snprintf(m_sendBuf, sizeof(m_sendBuf),
-                        "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"result\":{\"id\":\"%s\",\"job\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx0\",\"target\":\"%s\",\"coin\":\"%s\",\"variant\":%d},\"extensions\":[\"nicehash\"],\"status\":\"OK\"}}\n",
-                        m_loginId, m_rpcId, job.rawBlob(), job.id().data(), m_fixedByte, customDiff ? target : job.rawTarget(), job.coin(), job.variant());
+                        "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"result\":{\"id\":\"%s\",\"job\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx0\",\"target\":\"%s\",\"coin\":\"%s\",\"variant\":%d}%s,\"status\":\"OK\"}}\n",
+                        m_loginId, m_rpcId, job.rawBlob(), job.id().data(), m_fixedByte, customDiff ? target : job.rawTarget(), job.coin(), job.variant(), m_nicehash ? ",\"extensions\":[\"nicehash\"]" : "");
     }
     else {
         size = snprintf(m_sendBuf, sizeof(m_sendBuf),
@@ -182,7 +184,7 @@ bool Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value 
         if (!event->request.isValid() || event->request.actualDiff() < diff()) {
             event->reject(Error::LowDifficulty);
         }
-        else if (!event->request.isCompatible(m_fixedByte)) {
+        else if (m_nicehash && !event->request.isCompatible(m_fixedByte)) {
             event->reject(Error::InvalidNonce);
         }
 
@@ -298,8 +300,13 @@ void Miner::shutdown(bool had_error)
 
         if (uv_is_closing(reinterpret_cast<uv_handle_t*>(req->handle)) == 0) {
             uv_close(reinterpret_cast<uv_handle_t*>(req->handle), [](uv_handle_t *handle) {
-                CloseEvent::start(getMiner(handle->data));
-                delete static_cast<Miner*>(handle->data);
+                Miner *miner = getMiner(handle->data);
+                if (!miner) {
+                    return;
+                }
+
+                CloseEvent::start(miner);
+                delete miner;
             });
         }
 
@@ -311,6 +318,9 @@ void Miner::shutdown(bool had_error)
 void Miner::onAllocBuffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 {
     auto miner = getMiner(handle->data);
+    if (!miner) {
+        return;
+    }
 
     buf->base = &miner->m_recvBuf.base[miner->m_recvBufPos];
     buf->len  = miner->m_recvBuf.len - miner->m_recvBufPos;
@@ -320,6 +330,10 @@ void Miner::onAllocBuffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *
 void Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
 {
     auto miner = getMiner(stream->data);
+    if (!miner) {
+        return;
+    }
+
     if (nread < 0 || (size_t) nread > (sizeof(m_buf) - 8 - miner->m_recvBufPos)) {
         return miner->shutdown(nread != UV_EOF);;
     }
@@ -357,6 +371,10 @@ void Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
 void Miner::onTimeout(uv_timer_t *handle)
 {
     auto miner = getMiner(handle->data);
+    if (!miner) {
+        return;
+    }
+
     miner->m_recvBuf.base[sizeof(m_buf) - 1] = '\0';
 
     miner->shutdown(true);

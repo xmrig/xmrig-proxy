@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __NONCEMAPPER_H__
-#define __NONCEMAPPER_H__
+#ifndef __SIMPLEMAPPER_H__
+#define __SIMPLEMAPPER_H__
 
 
 #include <map>
@@ -50,39 +50,23 @@ namespace xmrig {
 }
 
 
-class SubmitCtx
+class SimpleMapper : public IStrategyListener
 {
 public:
-    inline SubmitCtx() : id(0), minerId(0), miner(nullptr) {}
-    inline SubmitCtx(int64_t id, int64_t minerId) : id(id), minerId(minerId), miner(nullptr) {}
+    SimpleMapper(uint64_t id, xmrig::Controller *controller);
+    ~SimpleMapper();
 
-    int64_t id;
-    int64_t minerId;
-    Miner *miner;
-};
-
-
-class NonceMapper : public IStrategyListener
-{
-public:
-    NonceMapper(size_t id, xmrig::Controller *controller, const char *agent);
-    ~NonceMapper();
-
-    bool add(Miner *miner, const LoginRequest &request);
-    bool isActive() const;
-    void gc();
-    void reload(const std::vector<Url*> &pools, const std::vector<Url*> &previousPools);
+    void add(Miner *miner, const LoginRequest &request);
+    void reload(const std::vector<Url*> &pools);
     void remove(const Miner *miner);
-    void start();
+    void reuse(Miner *miner, const LoginRequest &request);
     void submit(SubmitEvent *event);
     void tick(uint64_t ticks, uint64_t now);
 
-    inline bool isSuspended() const { return m_suspended > 0; }
-    inline int suspended() const    { return m_suspended; }
-
-#   ifdef APP_DEVEL
-    void printState();
-#   endif
+    inline bool isActive() const     { return m_active && m_miner; }
+    inline bool isReusable() const   { return m_active && !m_miner && !m_dirty; }
+    inline uint64_t id() const       { return m_id; }
+    inline uint64_t idleTime() const { return m_idleTime; }
 
 protected:
     void onActive(IStrategy *strategy, Client *client) override;
@@ -92,20 +76,23 @@ protected:
 
 private:
     bool isColors() const;
+    bool isValidJobId(const xmrig::Id &id) const;
     IStrategy *createStrategy(const std::vector<Url*> &pools);
-    SubmitCtx submitCtx(int64_t seq);
     void connect();
-    void suspend();
+    void setJob(const Job &job);
 
-    const char *m_agent;
+    bool m_active;
+    bool m_dirty;
     DonateStrategy *m_donate;
-    int m_suspended;
+    IStrategy *m_pending;
     IStrategy *m_strategy;
-    NonceStorage *m_storage;
-    size_t m_id;
-    std::map<int64_t, SubmitCtx> m_results;
+    Job m_job;
+    Job m_prevJob;
+    Miner *m_miner;
+    uint64_t m_id;
+    uint64_t m_idleTime;
     xmrig::Controller *m_controller;
 };
 
 
-#endif /* __NONCEMAPPER_H__ */
+#endif /* __SIMPLEMAPPER_H__ */

@@ -55,9 +55,9 @@ SimpleMapper::SimpleMapper(uint64_t id, xmrig::Controller *controller) :
 {
     m_strategy = createStrategy(controller->config()->pools());
 
-    if (controller->config()->donateLevel() > 0) {
-        m_donate = new DonateStrategy(controller, this);
-    }
+//    if (controller->config()->donateLevel() > 0) {
+//        m_donate = new DonateStrategy(id, controller, this);
+//    }
 }
 
 

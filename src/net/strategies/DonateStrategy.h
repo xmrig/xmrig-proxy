@@ -42,7 +42,7 @@ namespace xmrig {
 class DonateStrategy : public IStrategy, public IClientListener
 {
 public:
-    DonateStrategy(xmrig::Controller *controller, IStrategyListener *listener);
+    DonateStrategy(size_t id, xmrig::Controller *controller, IStrategyListener *listener);
     ~DonateStrategy();
 
     bool reschedule();
@@ -66,6 +66,7 @@ private:
     bool m_suspended;
     Client *m_client;
     IStrategyListener *m_listener;
+    size_t m_id;
     uint64_t m_donateTicks;
     uint64_t m_target;
     uint64_t m_ticks;

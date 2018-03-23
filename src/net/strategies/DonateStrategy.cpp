@@ -28,6 +28,7 @@
 #include "net/Client.h"
 #include "net/strategies/DonateStrategy.h"
 #include "Platform.h"
+#include "proxy/StatsData.h"
 
 
 extern "C"
@@ -41,10 +42,11 @@ static inline int random(int min, int max){
 }
 
 
-DonateStrategy::DonateStrategy(xmrig::Controller *controller, IStrategyListener *listener) :
+DonateStrategy::DonateStrategy(size_t id, xmrig::Controller *controller, IStrategyListener *listener) :
     m_active(false),
     m_suspended(false),
     m_listener(listener),
+    m_id(id),
     m_donateTicks(0),
     m_target(0),
     m_ticks(0),
@@ -61,7 +63,7 @@ DonateStrategy::DonateStrategy(xmrig::Controller *controller, IStrategyListener 
 
     m_client = new Client(-1, Platform::userAgent(), this);
     m_client->setUrl(url);
-    m_client->setRetryPause(controller->config()->retryPause() * 1000);
+    m_client->setRetryPause(1000);
 
     delete url;
 
@@ -121,6 +123,11 @@ void DonateStrategy::tick(uint64_t now)
     m_ticks++;
 
     if (m_ticks == m_target) {
+        if (m_id == 0 && m_controller->statsData().upstreams.active == 1) {
+            m_target += 600;
+            return;
+        }
+
         m_client->connect();
     }
 

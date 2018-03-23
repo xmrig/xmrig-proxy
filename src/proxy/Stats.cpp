@@ -57,7 +57,7 @@ void Stats::tick(uint64_t ticks, const ISplitter *splitter)
         m_data.hashrate[4] = hashrate(3600 * 24);
         m_data.hashrate[5] = hashrate(m_data.uptime());
 
-        m_data.upstreams = splitter->activeUpstreams();
+        m_data.upstreams = splitter->upstreams();
         m_data.miners    = Counters::miners();
         m_data.maxMiners = Counters::maxMiners();
         m_data.expired   = Counters::expired;

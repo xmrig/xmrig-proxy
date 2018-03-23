@@ -108,7 +108,7 @@ void ApiRouter::get(const xmrig::HttpRequest &req, xmrig::HttpReply &reply) cons
     getIdentify(doc);
     getMiner(doc);
     getHashrate(doc);
-    getMinersSummary(doc);
+    getMinersSummary(doc, req.match("/1/summary"));
     getResults(doc);
 
     return finalize(reply, doc);
@@ -209,6 +209,7 @@ void ApiRouter::getMiner(rapidjson::Document &doc) const
 
     doc.AddMember("version",      APP_VERSION, allocator);
     doc.AddMember("kind",         APP_KIND, allocator);
+    doc.AddMember("mode",         rapidjson::StringRef(m_controller->config()->modeName()), allocator);
     doc.AddMember("ua",           rapidjson::StringRef(Platform::userAgent()), allocator);
     doc.AddMember("uptime",       stats.uptime(), allocator);
     doc.AddMember("donate_level", m_controller->config()->donateLevel(), allocator);
@@ -222,7 +223,7 @@ void ApiRouter::getMiner(rapidjson::Document &doc) const
 }
 
 
-void ApiRouter::getMinersSummary(rapidjson::Document &doc) const
+void ApiRouter::getMinersSummary(rapidjson::Document &doc, bool advanced) const
 {
     auto &allocator = doc.GetAllocator();
     auto &stats = m_controller->statsData();
@@ -232,8 +233,22 @@ void ApiRouter::getMinersSummary(rapidjson::Document &doc) const
     miners.AddMember("now", stats.miners, allocator);
     miners.AddMember("max", stats.maxMiners, allocator);
 
-    doc.AddMember("miners",    miners, allocator);
-    doc.AddMember("upstreams", stats.upstreams, allocator);
+    doc.AddMember("miners", miners, allocator);
+
+    if (advanced) {
+        rapidjson::Value upstreams(rapidjson::kObjectType);
+
+        upstreams.AddMember("active", stats.upstreams.active, allocator);
+        upstreams.AddMember("sleep",  stats.upstreams.sleep, allocator);
+        upstreams.AddMember("error",  stats.upstreams.error, allocator);
+        upstreams.AddMember("total",  stats.upstreams.total, allocator);
+        upstreams.AddMember("ratio",  normalize(stats.upstreams.ratio), allocator);
+
+        doc.AddMember("upstreams", upstreams, allocator);
+    }
+    else {
+        doc.AddMember("upstreams", stats.upstreams.active, allocator);
+    }
 }
 
 

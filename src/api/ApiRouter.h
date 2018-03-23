@@ -7,7 +7,6 @@
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
- *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
@@ -59,7 +58,7 @@ private:
     void getHashrate(rapidjson::Document &doc) const;
     void getIdentify(rapidjson::Document &doc) const;
     void getMiner(rapidjson::Document &doc) const;
-    void getMinersSummary(rapidjson::Document &doc) const;
+    void getMinersSummary(rapidjson::Document &doc, bool advanced) const;
     void getResources(rapidjson::Document &doc) const;
     void getResults(rapidjson::Document &doc) const;
     void getWorkers(rapidjson::Document &doc) const;

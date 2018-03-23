@@ -52,7 +52,7 @@ public:
     ~SimpleSplitter();
 
 protected:
-    uint64_t activeUpstreams() const override;
+    Upstreams upstreams() const override;
     void connect() override;
     void gc() override;
     void printConnections() override;

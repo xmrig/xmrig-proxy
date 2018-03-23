@@ -28,12 +28,35 @@
 #include <stdint.h>
 
 
+class Upstreams
+{
+public:
+    inline Upstreams() : active(0), sleep(0), total(0), error(0), ratio(0.0) {}
+
+
+    inline Upstreams(uint64_t active, uint64_t sleep, uint64_t total, uint64_t miners) :
+        active(active),
+        sleep(sleep),
+        total(total),
+        error(total - active - sleep),
+        ratio(active > 0 ? ((double) miners / active) : 0.0)
+    {}
+
+
+    uint64_t active;
+    uint64_t sleep;
+    uint64_t total;
+    uint64_t error;
+    double ratio;
+};
+
+
 class ISplitter
 {
 public:
     virtual ~ISplitter() {}
 
-    virtual uint64_t activeUpstreams() const = 0;
+    virtual Upstreams upstreams() const      = 0;
     virtual void connect()                   = 0;
     virtual void gc()                        = 0;
     virtual void printConnections()          = 0;

@@ -35,6 +35,7 @@
 #include "proxy/Miner.h"
 #include "proxy/splitters/nicehash/NonceMapper.h"
 #include "proxy/splitters/nicehash/NonceSplitter.h"
+#include "Summary.h"
 
 
 #define LABEL(x) " \x1B[01;30m" x ":\x1B[0m "
@@ -146,6 +147,8 @@ void NonceSplitter::onConfigChanged(xmrig::Config *config, xmrig::Config *previo
     const std::vector<Url*> &previousPools = previousConfig->pools();
 
     if (pools.size() != previousPools.size() || !std::equal(pools.begin(), pools.end(), previousPools.begin(), compare)) {
+        Summary::printPools(config);
+
         for (NonceMapper *mapper : m_upstreams) {
             mapper->reload(pools);
         }

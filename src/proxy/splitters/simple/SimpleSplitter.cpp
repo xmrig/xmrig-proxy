@@ -36,6 +36,7 @@
 #include "proxy/Miner.h"
 #include "proxy/splitters/simple/SimpleMapper.h"
 #include "proxy/splitters/simple/SimpleSplitter.h"
+#include "Summary.h"
 
 
 #define LABEL(x) " \x1B[01;30m" x ":\x1B[0m "
@@ -145,6 +146,8 @@ void SimpleSplitter::onConfigChanged(xmrig::Config *config, xmrig::Config *previ
     const std::vector<Url*> &previousPools = previousConfig->pools();
 
     if (pools.size() != previousPools.size() || !std::equal(pools.begin(), pools.end(), previousPools.begin(), compare)) {
+        Summary::printPools(config);
+
         for (auto const &kv : m_upstreams) {
             kv.second->reload(pools);
         }

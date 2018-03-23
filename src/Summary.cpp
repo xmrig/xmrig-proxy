@@ -65,25 +65,6 @@ static void print_mode(xmrig::Controller *controller)
 }
 
 
-static void print_pools(xmrig::Controller *controller)
-{
-    const std::vector<Url*> &pools = controller->config()->pools();
-
-    for (size_t i = 0; i < pools.size(); ++i) {
-        Log::i()->text(controller->config()->colors() ? "\x1B[01;32m * \x1B[01;37mPOOL #%d:\x1B[0m      \x1B[36m%s:%d" : " * POOL #%d:      %s:%d",
-                       i + 1,
-                       pools[i]->host(),
-                       pools[i]->port());
-    }
-
-#   ifdef APP_DEBUG
-    for (size_t i = 0; i < pools.size(); ++i) {
-        Log::i()->text("%s:%d, user: %s, pass: %s", pools[i]->host(), pools[i]->port(), pools[i]->user(), pools[i]->password());
-    }
-#   endif
-}
-
-
 static void print_bind(xmrig::Controller *controller)
 {
     const std::vector<Addr*> &addrs = controller->config()->addrs();
@@ -128,7 +109,7 @@ void Summary::print(xmrig::Controller *controller)
 {
     print_versions(controller);
     print_mode(controller);
-    print_pools(controller);
+    printPools(controller->config());
     print_bind(controller);
 
 #   ifndef XMRIG_NO_API
@@ -136,6 +117,25 @@ void Summary::print(xmrig::Controller *controller)
 #   endif
 
     print_commands(controller);
+}
+
+
+void Summary::printPools(xmrig::Config *config)
+{
+    const std::vector<Url*> &pools = config->pools();
+
+    for (size_t i = 0; i < pools.size(); ++i) {
+        Log::i()->text(config->colors() ? "\x1B[01;32m * \x1B[01;37mPOOL #%d:\x1B[0m      \x1B[36m%s:%d" : " * POOL #%d:      %s:%d",
+                       i + 1,
+                       pools[i]->host(),
+                       pools[i]->port());
+    }
+
+#   ifdef APP_DEBUG
+    for (size_t i = 0; i < pools.size(); ++i) {
+        Log::i()->text("%s:%d, user: %s, pass: %s", pools[i]->host(), pools[i]->port(), pools[i]->user(), pools[i]->password());
+    }
+#   endif
 }
 
 

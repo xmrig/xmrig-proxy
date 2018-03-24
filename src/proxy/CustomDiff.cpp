@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -27,14 +27,16 @@
 #include <string.h>
 
 
-#include "Options.h"
+#include "core/Config.h"
+#include "core/Controller.h"
 #include "proxy/CustomDiff.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
 
 
-CustomDiff::CustomDiff()
+CustomDiff::CustomDiff(xmrig::Controller *controller) :
+    m_controller(controller)
 {
 }
 
@@ -61,7 +63,7 @@ void CustomDiff::onEvent(IEvent *event)
 
 void CustomDiff::login(LoginEvent *event)
 {
-    event->miner()->setCustomDiff(Options::i()->diff());
+    event->miner()->setCustomDiff(m_controller->config()->diff());
 
     if (!event->request.login()) {
         return;

@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -26,8 +26,9 @@
 
 
 #include "api/Api.h"
+#include "core/Config.h"
+#include "core/Controller.h"
 #include "log/Log.h"
-#include "Options.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
@@ -37,8 +38,9 @@
 #include "proxy/workers/Workers.h"
 
 
-Workers::Workers() :
-    m_enabled(Options::i()->workers())
+Workers::Workers(xmrig::Controller *controller) :
+    m_enabled(controller->config()->workers()),
+    m_controller(controller)
 {
 }
 
@@ -59,7 +61,7 @@ void Workers::printWorkers()
     char workerName[24];
     size_t size = 0;
 
-    Log::i()->text(Options::i()->colors() ? "\x1B[01;37m%-23s | %-15s | %-5s | %-8s | %-3s | %11s | %11s |" : "%-23s | %-15s | %-5s | %-8s | %-3s | %11s | %11s |",
+    Log::i()->text(m_controller->config()->colors() ? "\x1B[01;37m%-23s | %-15s | %-5s | %-8s | %-3s | %11s | %11s |" : "%-23s | %-15s | %-5s | %-8s | %-3s | %11s | %11s |",
                    "WORKER NAME", "LAST IP", "COUNT", "ACCEPTED", "REJ", "10 MINUTES", "24 HOURS");
 
     for (const Worker &worker : m_workers) {
@@ -91,8 +93,6 @@ void Workers::tick(uint64_t ticks)
     for (Worker &worker : m_workers) {
         worker.tick(ticks);
     }
-
-    Api::tick(m_workers);
 }
 
 

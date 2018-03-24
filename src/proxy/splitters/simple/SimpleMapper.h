@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __NONCEMAPPER_H__
-#define __NONCEMAPPER_H__
+#ifndef __SIMPLEMAPPER_H__
+#define __SIMPLEMAPPER_H__
 
 
 #include <map>
@@ -45,58 +45,54 @@ class SubmitEvent;
 class Url;
 
 
-class SubmitCtx
+namespace xmrig {
+    class Controller;
+}
+
+
+class SimpleMapper : public IStrategyListener
 {
 public:
-    inline SubmitCtx() : id(0), minerId(0), miner(nullptr) {}
-    inline SubmitCtx(int64_t id, int64_t minerId) : id(id), minerId(minerId), miner(nullptr) {}
+    SimpleMapper(uint64_t id, xmrig::Controller *controller);
+    ~SimpleMapper();
 
-    int64_t id;
-    int64_t minerId;
-    Miner *miner;
-};
-
-
-class NonceMapper : public IStrategyListener
-{
-public:
-    NonceMapper(size_t id, const Options *options, const char *agent);
-    ~NonceMapper();
-
-    bool add(Miner *miner, const LoginRequest &request);
-    bool isActive() const;
-    void gc();
+    void add(Miner *miner, const LoginRequest &request);
+    void reload(const std::vector<Url*> &pools);
     void remove(const Miner *miner);
-    void start();
+    void reuse(Miner *miner, const LoginRequest &request);
     void submit(SubmitEvent *event);
     void tick(uint64_t ticks, uint64_t now);
 
-    inline bool isSuspended() const { return m_suspended; }
-
-#   ifdef APP_DEVEL
-    void printState();
-#   endif
+    inline bool isActive() const     { return m_active && m_miner; }
+    inline bool isReusable() const   { return m_active && !m_miner && !m_dirty; }
+    inline uint64_t id() const       { return m_id; }
+    inline uint64_t idleTime() const { return m_idleTime; }
 
 protected:
-    void onActive(Client *client) override;
-    void onJob(Client *client, const Job &job) override;
+    void onActive(IStrategy *strategy, Client *client) override;
+    void onJob(IStrategy *strategy, Client *client, const Job &job) override;
     void onPause(IStrategy *strategy) override;
-    void onResultAccepted(Client *client, const SubmitResult &result, const char *error) override;
+    void onResultAccepted(IStrategy *strategy, Client *client, const SubmitResult &result, const char *error) override;
 
 private:
-    SubmitCtx submitCtx(int64_t seq);
+    bool isColors() const;
+    bool isValidJobId(const xmrig::Id &id) const;
+    IStrategy *createStrategy(const std::vector<Url*> &pools);
     void connect();
-    void suspend();
+    void setJob(const Job &job);
 
-    bool m_suspended;
-    const char *m_agent;
-    const Options *m_options;
+    bool m_active;
+    bool m_dirty;
     DonateStrategy *m_donate;
+    IStrategy *m_pending;
     IStrategy *m_strategy;
-    NonceStorage *m_storage;
-    size_t m_id;
-    std::map<int64_t, SubmitCtx> m_results;
+    Job m_job;
+    Job m_prevJob;
+    Miner *m_miner;
+    uint64_t m_id;
+    uint64_t m_idleTime;
+    xmrig::Controller *m_controller;
 };
 
 
-#endif /* __NONCEMAPPER_H__ */
+#endif /* __SIMPLEMAPPER_H__ */

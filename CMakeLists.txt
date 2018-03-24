@@ -12,30 +12,37 @@ include (CheckIncludeFile)
 set(HEADERS
     src/3rdparty/align.h
     src/api/Api.h
-    src/api/ApiState.h
+    src/api/ApiRouter.h
     src/App.h
     src/Console.h
+    src/core/Config.h
+    src/core/ConfigLoader.h
+    src/core/ConfigLoader_static.h
+    src/core/ConfigWatcher.h
+    src/core/Controller.h
     src/donate.h
     src/interfaces/IClientListener.h
     src/interfaces/IConsoleListener.h
+    src/interfaces/IControllerListener.h
     src/interfaces/IEvent.h
     src/interfaces/IEventListener.h
     src/interfaces/ILogBackend.h
+    src/interfaces/ISplitter.h
     src/interfaces/IStrategy.h
     src/interfaces/IStrategyListener.h
+    src/interfaces/IWatcherListener.h
     src/log/AccessLog.h
     src/log/ConsoleLog.h
     src/log/FileLog.h
     src/log/Log.h
     src/log/ShareLog.h
     src/net/Client.h
+    src/net/Id.h
     src/net/Job.h
-    src/net/JobId.h
     src/net/strategies/DonateStrategy.h
     src/net/strategies/FailoverStrategy.h
     src/net/strategies/SinglePoolStrategy.h
     src/net/Url.h
-    src/Options.h
     src/Platform.h
     src/proxy/Addr.h
     src/proxy/Counters.h
@@ -55,9 +62,12 @@ set(HEADERS
     src/proxy/Proxy.h
     src/proxy/ProxyDebug.h
     src/proxy/Server.h
-    src/proxy/splitters/NonceMapper.h
-    src/proxy/splitters/NonceSplitter.h
-    src/proxy/splitters/NonceStorage.h
+    src/proxy/splitters/nicehash/NonceMapper.h
+    src/proxy/splitters/nicehash/NonceSplitter.h
+    src/proxy/splitters/nicehash/NonceStorage.h
+    src/proxy/splitters/simple/SimpleMapper.h
+    src/proxy/splitters/simple/SimpleSplitter.h
+    src/proxy/splitters/Splitter.h
     src/proxy/Stats.h
     src/proxy/StatsData.h
     src/proxy/TickingCounter.h
@@ -66,13 +76,18 @@ set(HEADERS
     src/proxy/workers/Workers.h
     src/Summary.h
     src/version.h
+    src/xmrig.h
    )
 
 set(SOURCES
     src/api/Api.cpp
-    src/api/ApiState.cpp
+    src/api/ApiRouter.cpp
     src/App.cpp
     src/Console.cpp
+    src/core/Config.cpp
+    src/core/ConfigLoader.cpp
+    src/core/ConfigWatcher.cpp
+    src/core/Controller.cpp
     src/crypto/c_keccak.c
     src/crypto/c_keccak.h
     src/log/AccessLog.cpp
@@ -87,7 +102,6 @@ set(SOURCES
     src/net/strategies/SinglePoolStrategy.cpp
     src/net/SubmitResult.cpp
     src/net/Url.cpp
-    src/Options.cpp
     src/Platform.cpp
     src/proxy/Counters.cpp
     src/proxy/CustomDiff.cpp
@@ -95,6 +109,7 @@ set(SOURCES
     src/proxy/Events.cpp
     src/proxy/events/ConnectionEvent.h
     src/proxy/events/Event.cpp
+    src/proxy/events/MinerEvent.cpp
     src/proxy/JobResult.cpp
     src/proxy/LoginRequest.cpp
     src/proxy/Miner.cpp
@@ -102,9 +117,12 @@ set(SOURCES
     src/proxy/Proxy.cpp
     src/proxy/ProxyDebug.cpp
     src/proxy/Server.cpp
-    src/proxy/splitters/NonceMapper.cpp
-    src/proxy/splitters/NonceSplitter.cpp
-    src/proxy/splitters/NonceStorage.cpp
+    src/proxy/splitters/nicehash/NonceMapper.cpp
+    src/proxy/splitters/nicehash/NonceSplitter.cpp
+    src/proxy/splitters/nicehash/NonceStorage.cpp
+    src/proxy/splitters/simple/SimpleMapper.cpp
+    src/proxy/splitters/simple/SimpleSplitter.cpp
+    src/proxy/splitters/Splitter.cpp
     src/proxy/Stats.cpp
     src/proxy/workers/Worker.cpp
     src/proxy/workers/Workers.cpp
@@ -218,7 +236,14 @@ if (WITH_HTTPD)
 
     if (MHD_FOUND)
         include_directories(${MHD_INCLUDE_DIRS})
-        set(HTTPD_SOURCES src/api/Httpd.h src/api/Httpd.cpp)
+        set(HTTPD_SOURCES
+            src/api/HttpBody.h
+            src/api/Httpd.h
+            src/api/HttpReply.h
+            src/api/HttpRequest.h
+            src/api/Httpd.cpp
+            src/api/HttpRequest.cpp
+            )
     else()
         message(FATAL_ERROR "microhttpd NOT found: use `-DWITH_HTTPD=OFF` to build without http deamon support")
     endif()

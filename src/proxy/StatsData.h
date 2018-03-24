@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -31,6 +31,9 @@
 #include <vector>
 
 
+#include "interfaces/ISplitter.h"
+
+
 class StatsData
 {
 public:
@@ -44,8 +47,7 @@ public:
         maxMiners(0),
         miners(0),
         rejected(0),
-        startTime(0),
-        upstreams(0)
+        startTime(0)
     {
     }
 
@@ -84,7 +86,7 @@ public:
     }
 
 
-    double hashrate[5] { 0.0 };
+    double hashrate[6] { 0.0 };
     std::array<uint64_t, 10> topDiff { { } };
     std::vector<uint16_t> latency;
     uint64_t accepted;
@@ -97,7 +99,7 @@ public:
     uint64_t miners;
     uint64_t rejected;
     uint64_t startTime;
-    uint64_t upstreams;
+    Upstreams upstreams;
 };
 
 

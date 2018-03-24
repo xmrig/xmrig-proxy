@@ -4,7 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -21,63 +22,48 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __JOBID_H__
-#define __JOBID_H__
+#ifndef __HTTPBODY_H__
+#define __HTTPBODY_H__
 
 
 #include <string.h>
 
 
-class JobId
+namespace xmrig {
+
+
+class HttpBody
 {
 public:
-    inline JobId()
+    inline HttpBody() :
+        m_pos(0)
+    {}
+
+
+    inline bool write(const char *data, size_t size)
     {
-        memset(m_data, 0, sizeof(m_data));
-    }
-
-
-    inline JobId(const char *id, size_t sizeFix = 0)
-    {
-        setId(id, sizeFix);
-    }
-
-
-    inline bool operator==(const JobId &other) const
-    {
-        return memcmp(m_data, other.m_data, sizeof(m_data)) == 0;
-    }
-
-
-    inline bool operator!=(const JobId &other) const
-    {
-        return memcmp(m_data, other.m_data, sizeof(m_data)) != 0;
-    }
-
-
-    inline bool setId(const char *id, size_t sizeFix = 0)
-    {
-        memset(m_data, 0, sizeof(m_data));
-        if (!id) {
+        if (size > (sizeof(m_data) - m_pos - 1)) {
             return false;
         }
 
-        const size_t size = strlen(id);
-        if (size >= sizeof(m_data)) {
-            return false;
-        }
+        memcpy(m_data + m_pos, data, size);
 
-        memcpy(m_data, id, size - sizeFix);
+        m_pos += size;
+        m_data[m_pos] = '\0';
+
         return true;
     }
 
 
     inline const char *data() const { return m_data; }
-    inline bool isValid() const     { return *m_data != '\0'; }
-
 
 private:
-    char m_data[64];
+    char m_data[32768];
+    size_t m_pos;
 };
 
-#endif /* __JOBID_H__ */
+
+} /* namespace xmrig */
+
+
+#endif /* __HTTPBODY_H__ */

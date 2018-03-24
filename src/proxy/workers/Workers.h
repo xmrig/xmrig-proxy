@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -41,14 +41,21 @@ class Miner;
 class SubmitEvent;
 
 
+namespace xmrig {
+    class Controller;
+}
+
+
 class Workers : public IEventListener
 {
 public:
-    Workers();
+    Workers(xmrig::Controller *controller);
     ~Workers();
 
     void printWorkers();
     void tick(uint64_t ticks);
+
+    inline const std::vector<Worker> &workers() const { return m_workers; }
 
 protected:
     void onEvent(IEvent *event) override;
@@ -65,6 +72,7 @@ private:
     std::map<int64_t, size_t> m_miners;
     std::map<std::string, size_t> m_map;
     std::vector<Worker> m_workers;
+    xmrig::Controller *m_controller;
 };
 
 

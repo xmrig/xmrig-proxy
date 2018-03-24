@@ -38,7 +38,6 @@
 xmrig::HttpRequest::HttpRequest(MHD_Connection *connection, const char *url, const char *method, const char *uploadData, size_t *uploadSize, void **cls) :
     m_fulfilled(true),
     m_restricted(true),
-    m_rawMethod(method),
     m_uploadData(uploadData),
     m_url(url),
     m_body(static_cast<HttpBody*>(*cls)),

@@ -68,7 +68,6 @@ private:
 
     bool m_fulfilled;
     bool m_restricted;
-    const char *m_rawMethod;
     const char *m_uploadData;
     const char *m_url;
     HttpBody *m_body;

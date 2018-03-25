@@ -69,6 +69,13 @@ Default donation fee is 2% can be reduced to 1% or disabled via `donate-level` o
 * XMR: `48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzKt52XU5xvqgzYnDK9URnRoJMk1j8nLwEVsaSWJ4fhdUyZijBGUicoD`
 * BTC: `1P7ujsXeX7GxQwHNnJsRMgAdNkFZmNVqJT`
 
+## Release checksums
+### SHA-256
+```
+7759af2a0a2fe32c0c2311953616b1f6f378abd495bed116c16a1403dd31a0e9 xmrig-proxy-2.5.0-win32/xmrig-proxy.exe
+653ca6aa83c4011f8795eaeb83d31fb19e4ac5e2c51902e2f6753e9119d71856 xmrig-proxy-2.5.0-win64/xmrig-proxy.exe
+```
+
 ## Contacts
 * support@xmrig.com
 * [reddit](https://www.reddit.com/user/XMRig/)

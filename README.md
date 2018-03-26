@@ -72,8 +72,8 @@ Default donation fee is 2% can be reduced to 1% or disabled via `donate-level` o
 ## Release checksums
 ### SHA-256
 ```
-7759af2a0a2fe32c0c2311953616b1f6f378abd495bed116c16a1403dd31a0e9 xmrig-proxy-2.5.0-win32/xmrig-proxy.exe
-653ca6aa83c4011f8795eaeb83d31fb19e4ac5e2c51902e2f6753e9119d71856 xmrig-proxy-2.5.0-win64/xmrig-proxy.exe
+005a90c13d0f1f37f5f1bafb41a5c20149df6e42e6a6991621335ccae9215c29 xmrig-proxy-2.5.2-win32/xmrig-proxy.exe
+58d1a6f03485a4ba7b3ab048831ac4886de8adf2e4f2448dab0d28ac29251d4c xmrig-proxy-2.5.2-win64/xmrig-proxy.exe
 ```
 
 ## Contacts

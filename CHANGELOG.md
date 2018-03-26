@@ -1,3 +1,6 @@
+# v2.5.2
+- [#448](https://github.com/xmrig/xmrig/issues/478) Fixed broken reconnect.
+
 # v2.5.0
 - [#119](https://github.com/xmrig/xmrig-proxy/issues/119) Added graceful reload support, pools and some other settings now can changed without proxy restart.
 - [#123](https://github.com/xmrig/xmrig-proxy/issues/123) Fixed regression (all versions since 2.4 affected) fragmented responses from pool/miner was parsed incorrectly.

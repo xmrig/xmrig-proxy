@@ -25,8 +25,9 @@
 #define __SIMPLESPLITTER_H__
 
 
-#include <stdint.h>
 #include <map>
+#include <stdint.h>
+#include <vector>
 
 
 #include "proxy/splitters/Splitter.h"
@@ -71,10 +72,12 @@ private:
     void remove(Miner *miner);
     void removeIdle(uint64_t id);
     void removeUpstream(uint64_t id);
+    void stop(SimpleMapper *mapper);
     void submit(SubmitEvent *event);
 
     std::map<uint64_t, SimpleMapper *> m_idles;
     std::map<uint64_t, SimpleMapper *> m_upstreams;
+    std::vector<SimpleMapper *> m_released;
     uint64_t m_reuseTimeout;
     uint64_t m_sequence;
 };

@@ -60,6 +60,7 @@ public:
     void reload(const std::vector<Url*> &pools);
     void remove(const Miner *miner);
     void reuse(Miner *miner, const LoginRequest &request);
+    void stop();
     void submit(SubmitEvent *event);
     void tick(uint64_t ticks, uint64_t now);
 

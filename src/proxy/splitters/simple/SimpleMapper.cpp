@@ -102,6 +102,20 @@ void SimpleMapper::reuse(Miner *miner, const LoginRequest &request)
 }
 
 
+void SimpleMapper::stop()
+{
+    m_strategy->stop();
+
+    if (m_pending) {
+        m_pending->stop();
+    }
+
+    if (m_donate) {
+        m_donate->stop();
+    }
+}
+
+
 void SimpleMapper::submit(SubmitEvent *event)
 {
     if (!isActive()) {

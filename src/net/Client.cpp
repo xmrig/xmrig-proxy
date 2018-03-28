@@ -52,6 +52,7 @@
 
 
 int64_t Client::m_sequence = 1;
+xmrig::Storage<Client> Client::m_storage;
 
 
 Client::Client(int id, const char *agent, IClientListener *listener) :
@@ -67,13 +68,16 @@ Client::Client(int id, const char *agent, IClientListener *listener) :
     m_state(UnconnectedState),
     m_expire(0),
     m_jobs(0),
+    m_key(0),
     m_stream(nullptr),
     m_socket(nullptr)
 {
+    m_key = m_storage.add(this);
+
     memset(m_ip, 0, sizeof(m_ip));
     memset(&m_hints, 0, sizeof(m_hints));
 
-    m_resolver.data = this;
+    m_resolver.data = m_storage.ptr(m_key);
 
     m_hints.ai_family   = AF_UNSPEC;
     m_hints.ai_socktype = SOCK_STREAM;
@@ -83,7 +87,7 @@ Client::Client(int id, const char *agent, IClientListener *listener) :
     m_recvBuf.len  = sizeof(m_buf);
 
 #   ifndef XMRIG_PROXY_PROJECT
-    m_keepAliveTimer.data = this;
+    m_keepAliveTimer.data = m_storage.ptr(m_key);
     uv_timer_init(uv_default_loop(), &m_keepAliveTimer);
 #   endif
 }
@@ -121,8 +125,13 @@ void Client::deleteLater()
 
     m_listener = nullptr;
 
-    if (!disconnect()) {
-        delete this;
+    if (state() == HostLookupState) {
+        uv_cancel(reinterpret_cast<uv_req_t*>(&m_resolver));
+        return;
+    }
+
+    if (!disconnect() && m_state != ClosingState) {
+        m_storage.remove(m_key);
     }
 }
 
@@ -404,10 +413,10 @@ void Client::connect(sockaddr *addr)
     delete m_socket;
 
     uv_connect_t *req = new uv_connect_t;
-    req->data = this;
+    req->data = m_storage.ptr(m_key);
 
     m_socket = new uv_tcp_t;
-    m_socket->data = this;
+    m_socket->data = m_storage.ptr(m_key);
 
     uv_tcp_init(uv_default_loop(), m_socket);
     uv_tcp_nodelay(m_socket, 1);
@@ -613,7 +622,7 @@ void Client::ping()
 void Client::reconnect()
 {
     if (!m_listener) {
-        delete this;
+        m_storage.remove(m_key);
 
         return;
     }
@@ -690,6 +699,7 @@ void Client::onConnect(uv_connect_t *req, int status)
 {
     auto client = getClient(req->data);
     if (!client) {
+        delete req;
         return;
     }
 
@@ -735,6 +745,11 @@ void Client::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
         return;
     }
 
+    assert(client->m_listener != nullptr);
+    if (!client->m_listener) {
+        return client->reconnect();
+    }
+
     client->m_recvBufPos += nread;
 
     char* end;
@@ -769,6 +784,11 @@ void Client::onResolved(uv_getaddrinfo_t *req, int status, struct addrinfo *res)
     auto client = getClient(req->data);
     if (!client) {
         return;
+    }
+
+    assert(client->m_listener != nullptr);
+    if (!client->m_listener) {
+        return client->reconnect();
     }
 
     if (status < 0) {

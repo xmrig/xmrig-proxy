@@ -107,26 +107,27 @@ void SimpleSplitter::printConnections()
 void SimpleSplitter::tick(uint64_t ticks)
 {
     const uint64_t now = uv_now(uv_default_loop());
-    std::vector<SimpleMapper *> released;
+
+    for (SimpleMapper *mapper : m_released) {
+        delete mapper;
+    }
+    m_released.clear();
 
     for (auto const &kv : m_upstreams) {
         if (kv.second->idleTime() > m_reuseTimeout) {
-            released.push_back(kv.second);
+            m_released.push_back(kv.second);
             continue;
         }
 
         kv.second->tick(ticks, now);
     }
 
-    if (released.empty()) {
+    if (m_released.empty()) {
         return;
     }
 
-    for (SimpleMapper *mapper : released) {
-        removeIdle(mapper->id());
-        removeUpstream(mapper->id());
-
-        delete mapper;
+    for (SimpleMapper *mapper : m_released) {
+        stop(mapper);
     }
 }
 
@@ -197,6 +198,15 @@ void SimpleSplitter::login(LoginEvent *event)
 }
 
 
+void SimpleSplitter::stop(SimpleMapper *mapper)
+{
+    removeIdle(mapper->id());
+    removeUpstream(mapper->id());
+
+    mapper->stop();
+}
+
+
 void SimpleSplitter::remove(Miner *miner)
 {
     const ssize_t id = miner->mapperId();
@@ -209,9 +219,9 @@ void SimpleSplitter::remove(Miner *miner)
     mapper->remove(miner);
 
     if (m_reuseTimeout == 0) {
-        removeUpstream(id);
+        stop(mapper);
 
-        delete mapper;
+        m_released.push_back(mapper);
     }
     else {
         m_idles[id] = mapper;

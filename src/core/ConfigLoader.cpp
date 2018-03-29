@@ -316,6 +316,7 @@ bool xmrig::ConfigLoader::parseArg(xmrig::Config *config, int key, const char *a
 
     case 'B':  /* --background */
     case 'S':  /* --syslog */
+    case 'k':  /* --keepalive */
     case 1100: /* --verbose */
     case 1101: /* --debug */
         return parseBoolean(config, key, true);
@@ -387,6 +388,10 @@ bool xmrig::ConfigLoader::parseArg(xmrig::Config *config, int key, uint64_t arg)
         config->m_retryPause = (int) arg;
         break;
 
+    case 'k': /* --keepalive */
+        config->m_pools.back()->setKeepAlive(static_cast<int>(arg));
+        break;
+
     case 1003: /* --donate-level */
         if ((int) arg < 0 || arg > 99) {
             return true;
@@ -432,6 +437,10 @@ bool xmrig::ConfigLoader::parseBoolean(xmrig::Config *config, int key, bool enab
 
     case 'S': /* --syslog */
         config->m_syslog = enable;
+        break;
+
+    case 'k': /* --keepalive */
+        config->m_pools.back()->setKeepAlive(enable ? Url::kKeepAliveTimeout : 0);
         break;
 
     case 1002: /* --no-color */
@@ -486,7 +495,7 @@ void xmrig::ConfigLoader::parseJSON(xmrig::Config *config, const struct option *
     else if (option->has_arg && value.IsInt64()) {
         parseArg(config, option->val, value.GetUint64());
     }
-    else if (!option->has_arg && value.IsBool()) {
+    else if ((option->has_arg == 0 || option->has_arg == 2) && value.IsBool()) {
         parseBoolean(config, option->val, value.IsTrue());
     }
 }

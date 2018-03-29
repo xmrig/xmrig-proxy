@@ -68,6 +68,7 @@ Client::Client(int id, const char *agent, IClientListener *listener) :
     m_state(UnconnectedState),
     m_expire(0),
     m_jobs(0),
+    m_keepAlive(0),
     m_key(0),
     m_stream(nullptr),
     m_socket(nullptr)
@@ -85,11 +86,6 @@ Client::Client(int id, const char *agent, IClientListener *listener) :
 
     m_recvBuf.base = m_buf;
     m_recvBuf.len  = sizeof(m_buf);
-
-#   ifndef XMRIG_PROXY_PROJECT
-    m_keepAliveTimer.data = m_storage.ptr(m_key);
-    uv_timer_init(uv_default_loop(), &m_keepAliveTimer);
-#   endif
 }
 
 
@@ -148,17 +144,17 @@ void Client::setUrl(const Url *url)
 
 void Client::tick(uint64_t now)
 {
-    if (m_expire == 0 || now < m_expire) {
-        return;
-    }
-
     if (m_state == ConnectedState) {
-        LOG_DEBUG_ERR("[%s:%u] timeout", m_url.host(), m_url.port());
-        close();
+        if (m_expire && now > m_expire) {
+            LOG_DEBUG_ERR("[%s:%u] timeout", m_url.host(), m_url.port());
+            close();
+        }
+        else if (m_keepAlive && now > m_keepAlive) {
+            ping();
+        }
     }
 
-
-    if (m_state == ConnectingState) {
+    if (m_expire && now > m_expire && m_state == ConnectingState) {
         connect();
     }
 }
@@ -166,12 +162,9 @@ void Client::tick(uint64_t now)
 
 bool Client::disconnect()
 {
-#   ifndef XMRIG_PROXY_PROJECT
-    uv_timer_stop(&m_keepAliveTimer);
-#   endif
-
-    m_expire   = 0;
-    m_failures = -1;
+    m_keepAlive = 0;
+    m_expire    = 0;
+    m_failures  = -1;
 
     return close();
 }
@@ -576,7 +569,7 @@ void Client::parseResponse(int64_t id, const rapidjson::Value &result, const rap
             LOG_ERR("[%s:%u] error: \"%s\", code: %d", m_url.host(), m_url.port(), message, error["code"].GetInt());
         }
 
-        if (id == 1 || isCriticalError(message)) {
+        if (isCriticalError(message)) {
             close();
         }
 
@@ -628,12 +621,7 @@ void Client::reconnect()
     }
 
     setState(ConnectingState);
-
-#   ifndef XMRIG_PROXY_PROJECT
-    if (m_url.isKeepAlive()) {
-        uv_timer_stop(&m_keepAliveTimer);
-    }
-#   endif
+    m_keepAlive = 0;
 
     if (m_failures == -1) {
         return m_listener->onClose(this, -1);
@@ -662,13 +650,9 @@ void Client::startTimeout()
 {
     m_expire = 0;
 
-#   ifndef XMRIG_PROXY_PROJECT
-    if (!m_url.isKeepAlive()) {
-        return;
+    if (m_url.keepAlive()) {
+        m_keepAlive = uv_now(uv_default_loop()) + (m_url.keepAlive() * 1000);
     }
-
-    uv_timer_start(&m_keepAliveTimer, [](uv_timer_t *handle) { getClient(handle->data)->ping(); }, kKeepAliveTimeout, 0);
-#   endif
 }
 
 

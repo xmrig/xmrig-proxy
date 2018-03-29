@@ -54,6 +54,7 @@ Options:\n\
   -O, --userpass=U:P       username:password pair for mining server\n\
   -u, --user=USERNAME      username for mining server\n\
   -p, --pass=PASSWORD      password for mining server\n\
+  -k, --keepalive          prevent timeout (need pool support)\n\
   -r, --retries=N          number of times to retry before switch to backup server (default: 1)\n\
   -R, --retry-pause=N      time to pause between retries (default: 1 second)\n\
       --custom-diff=N      override pool diff\n\
@@ -155,6 +156,7 @@ static struct option const pool_options[] = {
     { "user",          1, nullptr, 'u'  },
     { "userpass",      1, nullptr, 'O'  },
     { "coin",          1, nullptr, 'C'  },
+    { "keepalive",     2, nullptr ,'k'  },
     { "variant",       1, nullptr, 1010 },
     { 0, 0, 0, 0 }
 };

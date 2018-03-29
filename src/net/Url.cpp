@@ -43,6 +43,7 @@ Url::Url() :
     m_password(nullptr),
     m_user(nullptr),
     m_coin(),
+    m_keepAlive(0),
     m_variant(xmrig::VARIANT_AUTO),
     m_url(nullptr),
     m_port(kDefaultPort)
@@ -66,6 +67,7 @@ Url::Url(const char *url) :
     m_password(nullptr),
     m_user(nullptr),
     m_coin(),
+    m_keepAlive(0),
     m_variant(xmrig::VARIANT_AUTO),
     m_url(nullptr),
     m_port(kDefaultPort)
@@ -74,10 +76,11 @@ Url::Url(const char *url) :
 }
 
 
-Url::Url(const char *host, uint16_t port, const char *user, const char *password) :
+Url::Url(const char *host, uint16_t port, const char *user, const char *password, int keepAlive) :
     m_password(password ? strdup(password) : nullptr),
     m_user(user ? strdup(user) : nullptr),
     m_coin(),
+    m_keepAlive(keepAlive),
     m_variant(xmrig::VARIANT_AUTO),
     m_url(nullptr),
     m_port(port)
@@ -237,7 +240,7 @@ void Url::setVariant(int variant)
 
 bool Url::operator==(const Url &other) const
 {
-    if (m_port != other.m_port || m_variant != other.m_variant) {
+    if (m_port != other.m_port || m_variant != other.m_variant || m_keepAlive != other.m_keepAlive) {
         return false;
     }
 
@@ -251,8 +254,9 @@ bool Url::operator==(const Url &other) const
 
 Url &Url::operator=(const Url *other)
 {
-    m_port    = other->m_port;
-    m_variant = other->m_variant;
+    m_port      = other->m_port;
+    m_variant   = other->m_variant;
+    m_keepAlive = other->m_keepAlive;
 
     free(m_host);
     m_host = strdup(other->m_host);

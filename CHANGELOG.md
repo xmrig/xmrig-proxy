@@ -1,3 +1,6 @@
+# v2.5.3
+- Added configurable keepalive support, now possible override default timeout (60 seconds) via config file (only).
+
 # v2.5.2
 - [#448](https://github.com/xmrig/xmrig/issues/478) Fixed broken reconnect.
 

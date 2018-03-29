@@ -34,10 +34,11 @@ public:
     constexpr static const char *kDefaultPassword = "x";
     constexpr static const char *kDefaultUser     = "x";
     constexpr static uint16_t kDefaultPort        = 3333;
+    constexpr static int kKeepAliveTimeout        = 60;
 
     Url();
     Url(const char *url);
-    Url(const char *host, uint16_t port, const char *user = nullptr, const char *password = nullptr);
+    Url(const char *host, uint16_t port, const char *user = nullptr, const char *password = nullptr, int keepAlive = 0);
     ~Url();
 
     inline bool isValid() const              { return m_host && m_port > 0; }
@@ -45,8 +46,10 @@ public:
     inline const char *host() const          { return m_host; }
     inline const char *password() const      { return m_password ? m_password : kDefaultPassword; }
     inline const char *user() const          { return m_user ? m_user : kDefaultUser; }
+    inline int keepAlive() const             { return m_keepAlive; }
     inline int variant() const               { return m_variant; }
     inline uint16_t port() const             { return m_port; }
+    inline void setKeepAlive(int keepAlive)  { m_keepAlive = keepAlive >= 0 ? keepAlive : 0; }
 
     bool parse(const char *url);
     bool setUserpass(const char *userpass);
@@ -67,6 +70,7 @@ private:
     char *m_password;
     char *m_user;
     char m_coin[5];
+    int m_keepAlive;
     int m_variant;
     mutable char *m_url;
     uint16_t m_port;

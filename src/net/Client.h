@@ -54,7 +54,6 @@ public:
     };
 
     constexpr static int kResponseTimeout  = 20 * 1000;
-    constexpr static int kKeepAliveTimeout = 60 * 1000;
 
     Client(int id, const char *agent, IClientListener *listener);
     ~Client();
@@ -123,6 +122,7 @@ private:
     std::map<int64_t, SubmitResult> m_results;
     uint64_t m_expire;
     uint64_t m_jobs;
+    uint64_t m_keepAlive;
     uintptr_t m_key;
     Url m_url;
     uv_buf_t m_recvBuf;
@@ -133,10 +133,6 @@ private:
 
     static int64_t m_sequence;
     static xmrig::Storage<Client> m_storage;
-
-#   ifndef XMRIG_PROXY_PROJECT
-    uv_timer_t m_keepAliveTimer;
-#   endif
 };
 
 

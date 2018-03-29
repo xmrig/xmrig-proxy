@@ -210,6 +210,14 @@ void xmrig::Config::getJSON(rapidjson::Document &doc)
         obj.AddMember("user",    rapidjson::StringRef(url->user()), allocator);
         obj.AddMember("pass",    rapidjson::StringRef(url->password()), allocator);
         obj.AddMember("coin",    rapidjson::StringRef(url->coin()), allocator);
+
+        if (url->keepAlive() == 0 || url->keepAlive() == Url::kKeepAliveTimeout) {
+            obj.AddMember("keepalive", url->keepAlive() > 0, allocator);
+        }
+        else {
+            obj.AddMember("keepalive", url->keepAlive(), allocator);
+        }
+
         obj.AddMember("variant", url->variant(), allocator);
 
         pools.PushBack(obj, allocator);

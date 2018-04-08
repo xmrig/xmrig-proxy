@@ -327,15 +327,6 @@ bool xmrig::ConfigLoader::parseArg(xmrig::Config *config, int key, const char *a
     case 4003: /* --api-no-ipv6 */
         return parseBoolean(config, key, false);
 
-    case 1003: /* --donate-level */
-        if (strncmp(arg, "minemonero.pro", 14) == 0) {
-            config->m_donateLevel = 0;
-        }
-        else {
-            parseArg(config, key, strtol(arg, nullptr, 10));
-        }
-        break;
-
     case 1104: /* --coin */
         config->setCoin(arg);
         break;
@@ -385,14 +376,6 @@ bool xmrig::ConfigLoader::parseArg(xmrig::Config *config, int key, uint64_t arg)
         }
 
         config->m_retryPause = (int) arg;
-        break;
-
-    case 1003: /* --donate-level */
-        if ((int) arg < 0 || arg > 99) {
-            return true;
-        }
-
-        config->m_donateLevel = (int) arg;
         break;
 
     case 1010: /* --variant */

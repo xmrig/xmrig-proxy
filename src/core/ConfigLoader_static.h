@@ -63,7 +63,6 @@ Options:\n\
       --no-color           disable colored output\n\
       --no-workers         disable per worker statistics\n\
       --variant            algorithm PoW variant\n\
-      --donate-level=N     donate level, default 2%%\n\
   -B, --background         run the miner in the background\n\
   -c, --config=FILE        load a JSON-format configuration file\n\
       --no-watch           disable configuration file watching\n\
@@ -101,7 +100,6 @@ static struct option const options[] = {
     { "config",            1, nullptr, 'c'  },
     { "custom-diff",       1, nullptr, 1102 },
     { "debug",             0, nullptr, 1101 },
-    { "donate-level",      1, nullptr, 1003 },
     { "help",              0, nullptr, 'h'  },
     { "keepalive",         0, nullptr ,'k'  },
     { "log-file",          1, nullptr, 'l'  },
@@ -134,7 +132,6 @@ static struct option const config_options[] = {
     { "colors",           0, nullptr, 2000 },
     { "custom-diff",      1, nullptr, 1102 },
     { "debug",            0, nullptr, 1101 },
-    { "donate-level",     1, nullptr, 1003 },
     { "log-file",         1, nullptr, 'l'  },
     { "retries",          1, nullptr, 'r'  },
     { "retry-pause",      1, nullptr, 'R'  },

@@ -96,7 +96,6 @@ private:
     void connect();
     void suspend();
 
-    DonateStrategy *m_donate;
     int m_suspended;
     IStrategy *m_pending;
     IStrategy *m_strategy;

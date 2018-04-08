@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -34,7 +34,8 @@ public:
     ProxyDebug(bool enabled);
     ~ProxyDebug();
 
-    inline void toggle() { m_enabled = !m_enabled; }
+    inline void setEnabled(bool enabled) { m_enabled = enabled; }
+    inline void toggle()                 { m_enabled = !m_enabled; }
 
 protected:
     void onEvent(IEvent *event) override;

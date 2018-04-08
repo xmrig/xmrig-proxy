@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 
 
 #include "net/Job.h"
+#include "xmrig.h"
 
 
 static inline unsigned char hf_hex2bin(char c, bool &err)
@@ -55,14 +56,25 @@ static inline char hf_bin2hex(unsigned char c)
 }
 
 
-Job::Job(int poolId, bool nicehash) :
-    m_nicehash(nicehash),
-    m_poolId(poolId),
-    m_threadId(-1),
+Job::Job() :
+    m_poolId(-2),
+    m_variant(xmrig::VARIANT_AUTO),
     m_size(0),
     m_diff(0),
     m_target(0)
 {
+    memset(m_coin, 0, sizeof(m_coin));
+}
+
+
+Job::Job(int poolId, int variant) :
+    m_poolId(poolId),
+    m_variant(variant),
+    m_size(0),
+    m_diff(0),
+    m_target(0)
+{
+    memset(m_coin, 0, sizeof(m_coin));
 }
 
 
@@ -89,10 +101,6 @@ bool Job::setBlob(const char *blob)
 
     if (!fromHex(blob, (int) m_size * 2, m_blob)) {
         return false;
-    }
-
-    if (*nonce() != 0 && !m_nicehash) {
-        m_nicehash = true;
     }
 
 #   ifdef XMRIG_PROXY_PROJECT
@@ -146,6 +154,16 @@ bool Job::setTarget(const char *target)
 }
 
 
+void Job::setCoin(const char *coin)
+{
+    if (strlen(coin) > 4) {
+        return;
+    }
+
+    strncpy(m_coin, coin, sizeof(m_coin));
+}
+
+
 bool Job::fromHex(const char* in, unsigned int len, unsigned char* out)
 {
     bool error = false;
@@ -156,6 +174,7 @@ bool Job::fromHex(const char* in, unsigned int len, unsigned char* out)
             return false;
         }
     }
+
     return true;
 }
 
@@ -172,4 +191,10 @@ void Job::toHex(const unsigned char* in, unsigned int len, char* out)
 bool Job::operator==(const Job &other) const
 {
     return m_id == other.m_id && memcmp(m_blob, other.m_blob, sizeof(m_blob)) == 0;
+}
+
+
+bool Job::operator!=(const Job &other) const
+{
+    return m_id != other.m_id || memcmp(m_blob, other.m_blob, sizeof(m_blob)) != 0;
 }

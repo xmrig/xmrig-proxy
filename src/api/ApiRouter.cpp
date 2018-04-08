@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -32,13 +32,16 @@
 #endif
 
 
-#include "api/ApiState.h"
+#include "api/ApiRouter.h"
+#include "api/HttpReply.h"
+#include "api/HttpRequest.h"
+#include "core/Config.h"
+#include "core/Controller.h"
 #include "net/Job.h"
-#include "Options.h"
 #include "Platform.h"
 #include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
 #include "rapidjson/prettywriter.h"
+#include "rapidjson/stringbuffer.h"
 #include "version.h"
 
 
@@ -58,78 +61,90 @@ static inline double normalize(double d)
 }
 
 
-ApiState::ApiState()
+ApiRouter::ApiRouter(xmrig::Controller *controller) :
+    m_controller(controller)
 {
-    memset(m_workerId, 0, sizeof(m_workerId));
-
-    if (Options::i()->apiWorkerId()) {
-        strncpy(m_workerId, Options::i()->apiWorkerId(), sizeof(m_workerId) - 1);
-    }
-    else {
-        gethostname(m_workerId, sizeof(m_workerId) - 1);
-    }
-
+    setWorkerId(controller->config()->apiWorkerId());
     genId();
+
+    controller->addListener(this);
 }
 
 
-ApiState::~ApiState()
+ApiRouter::~ApiRouter()
 {
 }
 
 
-char *ApiState::get(const char *url, int *status) const
+void ApiRouter::get(const xmrig::HttpRequest &req, xmrig::HttpReply &reply) const
 {
     rapidjson::Document doc;
     doc.SetObject();
 
-    if (strncmp(url, "/workers.json", 13) == 0) {
+    if (req.match("/1/workers") || req.match("/workers.json")) {
         getHashrate(doc);
         getWorkers(doc);
 
-        return finalize(doc);
+        return finalize(reply, doc);
     }
 
-    if (strncmp(url, "/resources.json", 15) == 0) {
+    if (req.match("/1/config")) {
+        if (req.isRestricted()) {
+            reply.status = 403;
+            return;
+        }
+
+        m_controller->config()->getJSON(doc);
+
+        return finalize(reply, doc);
+    }
+
+    if (req.match("/1/resources") || req.match("/resources.json")) {
         getResources(doc);
 
-        return finalize(doc);
+        return finalize(reply, doc);
     }
 
     getIdentify(doc);
     getMiner(doc);
     getHashrate(doc);
-    getMinersSummary(doc);
+    getMinersSummary(doc, req.match("/1/summary"));
     getResults(doc);
 
-    return finalize(doc);
+    return finalize(reply, doc);
 }
 
-
-void ApiState::tick(const StatsData &data)
+void ApiRouter::exec(const xmrig::HttpRequest &req, xmrig::HttpReply &reply)
 {
-    m_stats = data;
+    if (req.method() == xmrig::HttpRequest::Put && req.match("/1/config")) {
+        m_controller->config()->reload(req.body());
+        return;
+    }
+
+    reply.status = 404;
 }
 
 
-void ApiState::tick(const std::vector<Worker> &workers)
+void ApiRouter::onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig)
 {
-    m_workers = workers;
+    updateWorkerId(config->apiWorkerId(), previousConfig->apiWorkerId());
 }
 
 
-char *ApiState::finalize(rapidjson::Document &doc) const
+void ApiRouter::finalize(xmrig::HttpReply &reply, rapidjson::Document &doc) const
 {
     rapidjson::StringBuffer buffer(0, 4096);
     rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
     writer.SetMaxDecimalPlaces(10);
     doc.Accept(writer);
 
-    return strdup(buffer.GetString());
+    reply.status = 200;
+    reply.buf    = strdup(buffer.GetString());
+    reply.size   = buffer.GetSize();
 }
 
 
-void ApiState::genId()
+void ApiRouter::genId()
 {
     memset(m_id, 0, sizeof(m_id));
 
@@ -162,15 +177,17 @@ void ApiState::genId()
 }
 
 
-void ApiState::getHashrate(rapidjson::Document &doc) const
+void ApiRouter::getHashrate(rapidjson::Document &doc) const
 {
     auto &allocator = doc.GetAllocator();
 
     rapidjson::Value hashrate(rapidjson::kObjectType);
     rapidjson::Value total(rapidjson::kArrayType);
 
-    for (size_t i = 0; i < sizeof(m_stats.hashrate) / sizeof(m_stats.hashrate[0]); i++) {
-        total.PushBack(normalize(m_stats.hashrate[i]), allocator);
+    auto &stats = m_controller->statsData();
+
+    for (size_t i = 0; i < sizeof(stats.hashrate) / sizeof(stats.hashrate[0]); i++) {
+        total.PushBack(normalize(stats.hashrate[i]), allocator);
     }
 
     hashrate.AddMember("total", total, allocator);
@@ -178,40 +195,57 @@ void ApiState::getHashrate(rapidjson::Document &doc) const
 }
 
 
-void ApiState::getIdentify(rapidjson::Document &doc) const
+void ApiRouter::getIdentify(rapidjson::Document &doc) const
 {
     doc.AddMember("id",        rapidjson::StringRef(m_id),       doc.GetAllocator());
     doc.AddMember("worker_id", rapidjson::StringRef(m_workerId), doc.GetAllocator());
 }
 
 
-void ApiState::getMiner(rapidjson::Document &doc) const
+void ApiRouter::getMiner(rapidjson::Document &doc) const
 {
     auto &allocator = doc.GetAllocator();
+    auto &stats = m_controller->statsData();
 
     doc.AddMember("version",      APP_VERSION, allocator);
     doc.AddMember("kind",         APP_KIND, allocator);
+    doc.AddMember("mode",         rapidjson::StringRef(m_controller->config()->modeName()), allocator);
     doc.AddMember("ua",           rapidjson::StringRef(Platform::userAgent()), allocator);
-    doc.AddMember("uptime",       m_stats.uptime(), allocator);
+    doc.AddMember("uptime",       stats.uptime(), allocator);
 }
 
 
-void ApiState::getMinersSummary(rapidjson::Document &doc) const
+void ApiRouter::getMinersSummary(rapidjson::Document &doc, bool advanced) const
 {
     auto &allocator = doc.GetAllocator();
+    auto &stats = m_controller->statsData();
 
     rapidjson::Value miners(rapidjson::kObjectType);
 
-    miners.AddMember("now", m_stats.miners, allocator);
-    miners.AddMember("max", m_stats.maxMiners, allocator);
+    miners.AddMember("now", stats.miners, allocator);
+    miners.AddMember("max", stats.maxMiners, allocator);
 
-    doc.AddMember("miners",    miners, allocator);
-    doc.AddMember("upstreams", m_stats.upstreams, allocator);
+    doc.AddMember("miners", miners, allocator);
+
+    if (advanced) {
+        rapidjson::Value upstreams(rapidjson::kObjectType);
+
+        upstreams.AddMember("active", stats.upstreams.active, allocator);
+        upstreams.AddMember("sleep",  stats.upstreams.sleep, allocator);
+        upstreams.AddMember("error",  stats.upstreams.error, allocator);
+        upstreams.AddMember("total",  stats.upstreams.total, allocator);
+        upstreams.AddMember("ratio",  normalize(stats.upstreams.ratio), allocator);
+
+        doc.AddMember("upstreams", upstreams, allocator);
+    }
+    else {
+        doc.AddMember("upstreams", stats.upstreams.active, allocator);
+    }
 }
 
 
 
-void ApiState::getResources(rapidjson::Document &doc) const
+void ApiRouter::getResources(rapidjson::Document &doc) const
 {
     auto &allocator = doc.GetAllocator();
     size_t rss = 0;
@@ -222,12 +256,14 @@ void ApiState::getResources(rapidjson::Document &doc) const
 }
 
 
-void ApiState::getResults(rapidjson::Document &doc) const
+void ApiRouter::getResults(rapidjson::Document &doc) const
 {
     auto &allocator = doc.GetAllocator();
+    auto &stats = m_controller->statsData();
 
     rapidjson::Value results(rapidjson::kObjectType);
 
+<<<<<<< HEAD:src/api/ApiState.cpp
     results.AddMember("accepted",      m_stats.accepted, allocator);
     results.AddMember("rejected",      m_stats.rejected, allocator);
     results.AddMember("invalid",       m_stats.invalid, allocator);
@@ -235,10 +271,20 @@ void ApiState::getResults(rapidjson::Document &doc) const
     results.AddMember("avg_time",      m_stats.avgTime(), allocator);
     results.AddMember("latency",       m_stats.avgLatency(), allocator);
     results.AddMember("hashes_total",  m_stats.hashes, allocator);
+=======
+    results.AddMember("accepted",      stats.accepted, allocator);
+    results.AddMember("rejected",      stats.rejected, allocator);
+    results.AddMember("invalid",       stats.invalid, allocator);
+    results.AddMember("expired",       stats.expired, allocator);
+    results.AddMember("avg_time",      stats.avgTime(), allocator);
+    results.AddMember("latency",       stats.avgLatency(), allocator);
+    results.AddMember("hashes_total",  stats.hashes, allocator);
+    results.AddMember("hashes_donate", stats.donateHashes, allocator);
+>>>>>>> 694446bb72b1b31fba6d46f6d8ee13f2f08407c0:src/api/ApiRouter.cpp
 
     rapidjson::Value best(rapidjson::kArrayType);
-    for (size_t i = 0; i < m_stats.topDiff.size(); ++i) {
-        best.PushBack(m_stats.topDiff[i], allocator);
+    for (size_t i = 0; i < stats.topDiff.size(); ++i) {
+        best.PushBack(stats.topDiff[i], allocator);
     }
 
     results.AddMember("best", best, allocator);
@@ -247,12 +293,14 @@ void ApiState::getResults(rapidjson::Document &doc) const
 }
 
 
-void ApiState::getWorkers(rapidjson::Document &doc) const
+void ApiRouter::getWorkers(rapidjson::Document &doc) const
 {
     auto &allocator = doc.GetAllocator();
+    auto &list      = m_controller->workers();
+
     rapidjson::Value workers(rapidjson::kArrayType);
 
-    for (const Worker &worker : m_workers) {
+    for (const Worker &worker : list) {
         if (worker.connections() == 0 && worker.lastHash() == 0) {
             continue;
         }
@@ -276,4 +324,31 @@ void ApiState::getWorkers(rapidjson::Document &doc) const
     }
 
     doc.AddMember("workers", workers, allocator);
+}
+
+
+void ApiRouter::setWorkerId(const char *id)
+{
+    memset(m_workerId, 0, sizeof(m_workerId));
+
+    if (id && strlen(id) > 0) {
+        strncpy(m_workerId, id, sizeof(m_workerId) - 1);
+    }
+    else {
+        gethostname(m_workerId, sizeof(m_workerId) - 1);
+    }
+}
+
+
+void ApiRouter::updateWorkerId(const char *id, const char *previousId)
+{
+    if (id == previousId) {
+        return;
+    }
+
+    if (id != nullptr && previousId != nullptr && strcmp(id, previousId) == 0) {
+        return;
+    }
+
+    setWorkerId(id);
 }

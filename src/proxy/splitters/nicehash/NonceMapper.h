@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -44,6 +44,11 @@ class SubmitEvent;
 class Url;
 
 
+namespace xmrig {
+    class Controller;
+}
+
+
 class SubmitCtx
 {
 public:
@@ -59,41 +64,46 @@ public:
 class NonceMapper : public IStrategyListener
 {
 public:
-    NonceMapper(size_t id, const Options *options, const char *agent);
+    NonceMapper(size_t id, xmrig::Controller *controller);
     ~NonceMapper();
 
     bool add(Miner *miner, const LoginRequest &request);
     bool isActive() const;
     void gc();
+    void reload(const std::vector<Url*> &pools);
     void remove(const Miner *miner);
     void start();
     void submit(SubmitEvent *event);
     void tick(uint64_t ticks, uint64_t now);
 
-    inline bool isSuspended() const { return m_suspended; }
+    inline bool isSuspended() const { return m_suspended > 0; }
+    inline int suspended() const    { return m_suspended; }
 
 #   ifdef APP_DEVEL
     void printState();
 #   endif
 
 protected:
-    void onActive(Client *client) override;
-    void onJob(Client *client, const Job &job) override;
+    void onActive(IStrategy *strategy, Client *client) override;
+    void onJob(IStrategy *strategy, Client *client, const Job &job) override;
     void onPause(IStrategy *strategy) override;
-    void onResultAccepted(Client *client, const SubmitResult &result, const char *error) override;
+    void onResultAccepted(IStrategy *strategy, Client *client, const SubmitResult &result, const char *error) override;
 
 private:
+    bool isColors() const;
+    IStrategy *createStrategy(const std::vector<Url*> &pools);
     SubmitCtx submitCtx(int64_t seq);
     void connect();
     void suspend();
 
-    bool m_suspended;
-    const char *m_agent;
-    const Options *m_options;
+    DonateStrategy *m_donate;
+    int m_suspended;
+    IStrategy *m_pending;
     IStrategy *m_strategy;
     NonceStorage *m_storage;
     size_t m_id;
     std::map<int64_t, SubmitCtx> m_results;
+    xmrig::Controller *m_controller;
 };
 
 

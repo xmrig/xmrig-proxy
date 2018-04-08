@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -32,7 +32,6 @@
 #include "rapidjson/fwd.h"
 
 
-class IMinerListener;
 class Job;
 class RejectEvent;
 
@@ -47,7 +46,7 @@ public:
         ClosingState
     };
 
-    Miner();
+    Miner(bool nicehash, bool ipv6);
     ~Miner();
     bool accept(uv_stream_t *server);
     void replyWithError(int64_t id, const char *message);
@@ -88,8 +87,10 @@ private:
 
     static inline Miner *getMiner(void *data) { return static_cast<Miner*>(data); }
 
+    bool m_ipv6;
+    bool m_nicehash;
     char m_buf[2048];
-    char m_ip[17];
+    char m_ip[46];
     char m_rpcId[37];
     char m_sendBuf[768];
     int64_t m_id;

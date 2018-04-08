@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,14 +26,16 @@
 #include <uv.h>
 
 
+#include "core/Config.h"
+#include "core/Controller.h"
 #include "log/Log.h"
 #include "net/Url.h"
-#include "Options.h"
+#include "proxy/Addr.h"
 #include "Summary.h"
 #include "version.h"
 
 
-static void print_versions()
+static void print_versions(xmrig::Controller *controller)
 {
     char buf[16];
 
@@ -48,7 +50,7 @@ static void print_versions()
 #   endif
 
 
-    if (Options::i()->colors()) {
+    if (controller->config()->colors()) {
         Log::i()->text("\x1B[01;32m * \x1B[01;37mVERSIONS:     \x1B[01;36mxmrig-proxy/%s\x1B[01;37m libuv/%s%s", APP_VERSION, uv_version_string(), buf);
     } else {
         Log::i()->text(" * VERSIONS:     xmrig-proxy/%s libuv/%s%s", APP_VERSION, uv_version_string(), buf);
@@ -56,53 +58,45 @@ static void print_versions()
 }
 
 
-static void print_pools()
+static void print_mode(xmrig::Controller *controller)
 {
-    const std::vector<Url*> &pools = Options::i()->pools();
-
-    for (size_t i = 0; i < pools.size(); ++i) {
-        Log::i()->text(Options::i()->colors() ? "\x1B[01;32m * \x1B[01;37mPOOL #%d:\x1B[0m      \x1B[36m%s:%d" : " * POOL #%d:      %s:%d",
-                       i + 1,
-                       pools[i]->host(),
-                       pools[i]->port());
-    }
-
-#   ifdef APP_DEBUG
-    for (size_t i = 0; i < pools.size(); ++i) {
-        Log::i()->text("%s:%d, user: %s, pass: %s, ka: %d, nicehash: %d", pools[i]->host(), pools[i]->port(), pools[i]->user(), pools[i]->password(), pools[i]->isKeepAlive(), pools[i]->isNicehash());
-    }
-#   endif
+    Log::i()->text(controller->config()->colors() ? "\x1B[01;32m * \x1B[01;37mMODE:\x1B[0m         \x1B[01;37m%s" : " * MODE:         %s",
+                   controller->config()->modeName());
 }
 
 
-static void print_bind()
+static void print_bind(xmrig::Controller *controller)
 {
-    const std::vector<Addr*> &addrs = Options::i()->addrs();
+    const std::vector<Addr*> &addrs = controller->config()->addrs();
 
     for (size_t i = 0; i < addrs.size(); ++i) {
-        Log::i()->text(Options::i()->colors() ? "\x1B[01;32m * \x1B[01;37mBIND #%d:\x1B[0m      \x1B[36m%s:%d" : " * BIND #%d:      %s:%d",
+        Log::i()->text(controller->config()->colors() ? "\x1B[01;32m * \x1B[01;37mBIND #%d:\x1B[0m      \x1B[36m%s%s%s:%d" : " * BIND #%d:      %s%s%s:%d",
                        i + 1,
-                       addrs[i]->host(),
+                       addrs[i]->isIPv6() ? "[" : "",
+                       addrs[i]->ip(),
+                       addrs[i]->isIPv6() ? "]" : "",
                        addrs[i]->port());
     }
 }
 
 
 #ifndef XMRIG_NO_API
-static void print_api()
+static void print_api(xmrig::Controller *controller)
 {
-    if (Options::i()->apiPort() == 0) {
+    const int port = controller->config()->apiPort();
+    if (port == 0) {
         return;
     }
 
-    Log::i()->text(Options::i()->colors() ? "\x1B[01;32m * \x1B[01;37mAPI PORT:     \x1B[01;36m%d" : " * API PORT:     %d", Options::i()->apiPort());
+    Log::i()->text(controller->config()->colors() ? "\x1B[01;32m * \x1B[01;37mAPI BIND:     \x1B[01;36m%s:%d" : " * API BIND:     %s:%d",
+                   controller->config()->apiIPv6() ? "[::]" : "0.0.0.0", port);
 }
 #endif
 
 
-static void print_commands()
+static void print_commands(xmrig::Controller *controller)
 {
-    if (Options::i()->colors()) {
+    if (controller->config()->colors()) {
         Log::i()->text("\x1B[01;32m * \x1B[01;37mCOMMANDS:     \x1B[01;35mh\x1B[01;37mashrate, \x1B[01;35mc\x1B[01;37monnections, \x1B[01;35mv\x1B[01;37merbose, \x1B[01;35mw\x1B[01;37morkers");
     }
     else {
@@ -111,17 +105,37 @@ static void print_commands()
 }
 
 
-void Summary::print()
+void Summary::print(xmrig::Controller *controller)
 {
-    print_versions();
-    print_pools();
-    print_bind();
+    print_versions(controller);
+    print_mode(controller);
+    printPools(controller->config());
+    print_bind(controller);
 
 #   ifndef XMRIG_NO_API
-    print_api();
+    print_api(controller);
 #   endif
 
-    print_commands();
+    print_commands(controller);
+}
+
+
+void Summary::printPools(xmrig::Config *config)
+{
+    const std::vector<Url*> &pools = config->pools();
+
+    for (size_t i = 0; i < pools.size(); ++i) {
+        Log::i()->text(config->colors() ? "\x1B[01;32m * \x1B[01;37mPOOL #%d:\x1B[0m      \x1B[36m%s:%d" : " * POOL #%d:      %s:%d",
+                       i + 1,
+                       pools[i]->host(),
+                       pools[i]->port());
+    }
+
+#   ifdef APP_DEBUG
+    for (size_t i = 0; i < pools.size(); ++i) {
+        Log::i()->text("%s:%d, user: %s, pass: %s", pools[i]->host(), pools[i]->port(), pools[i]->user(), pools[i]->password());
+    }
+#   endif
 }
 
 

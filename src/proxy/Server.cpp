@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,26 +23,48 @@
 
 
 #include "log/Log.h"
+#include "proxy/Addr.h"
 #include "proxy/events/ConnectionEvent.h"
 #include "proxy/Miner.h"
 #include "proxy/Server.h"
 
 
-Server::Server(const char *ip, uint16_t port) :
-    m_ip(ip),
-    m_port(port)
+Server::Server(const Addr *addr, bool nicehash) :
+    m_nicehash(nicehash),
+    m_ip(strdup(addr->ip())),
+    m_version(0),
+    m_port(addr->port())
 {
     uv_tcp_init(uv_default_loop(), &m_server);
     m_server.data = this;
 
-    uv_ip4_addr(ip, port, &m_addr);
     uv_tcp_nodelay(&m_server, 1);
+
+    if (addr->isIPv6() && uv_ip6_addr(m_ip, m_port, &m_addr6) == 0) {
+        m_version = 6;
+        return;
+    }
+
+    if (uv_ip4_addr(m_ip, m_port, &m_addr) == 0) {
+        m_version = 4;
+    }
+}
+
+
+Server::~Server()
+{
+    free(m_ip);
 }
 
 
 bool Server::bind()
 {
-    uv_tcp_bind(&m_server, reinterpret_cast<const sockaddr*>(&m_addr), 0);
+    if (!m_version) {
+        return false;
+    }
+
+    const sockaddr *addr = m_version == 6 ? reinterpret_cast<const sockaddr*>(&m_addr6) : reinterpret_cast<const sockaddr*>(&m_addr);
+    uv_tcp_bind(&m_server, addr, m_version == 6 ? UV_TCP_IPV6ONLY : 0);
 
     const int r = uv_listen(reinterpret_cast<uv_stream_t*>(&m_server), 511, Server::onConnection);
     if (r) {
@@ -54,18 +76,15 @@ bool Server::bind()
 }
 
 
-void Server::onConnection(uv_stream_t *server, int status)
+void Server::create(uv_stream_t *server, int status)
 {
-    auto instance = static_cast<Server*>(server->data);
-
     if (status < 0) {
-        LOG_ERR("[%s:%u] new connection error: \"%s\"", instance->m_ip, instance->m_port, uv_strerror(status));
+        LOG_ERR("[%s:%u] new connection error: \"%s\"", m_ip, m_port, uv_strerror(status));
         return;
     }
 
-    Miner *miner = new Miner();
+    Miner *miner = new Miner(m_nicehash, m_version == 6);
     if (!miner) {
-        LOG_ERR("NEW FAILED");
         return;
     }
 
@@ -74,5 +93,11 @@ void Server::onConnection(uv_stream_t *server, int status)
         return;
     }
 
-    ConnectionEvent::start(miner, instance->m_port);
+    ConnectionEvent::start(miner, m_port);
+}
+
+
+void Server::onConnection(uv_stream_t *server, int status)
+{
+    static_cast<Server*>(server->data)->create(server, status);
 }

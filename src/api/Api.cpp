@@ -4,7 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -25,17 +26,17 @@
 
 
 #include "api/Api.h"
-#include "api/ApiState.h"
+#include "api/ApiRouter.h"
+#include "api/HttpReply.h"
+#include "api/HttpRequest.h"
 
 
-ApiState *Api::m_state = nullptr;
-uv_mutex_t Api::m_mutex;
+ApiRouter *Api::m_router = nullptr;
 
 
-bool Api::start()
+bool Api::start(xmrig::Controller *controller)
 {
-    uv_mutex_init(&m_mutex);
-    m_state = new ApiState();
+    m_router = new ApiRouter(controller);
 
     return true;
 }
@@ -43,43 +44,20 @@ bool Api::start()
 
 void Api::release()
 {
-    delete m_state;
+    delete m_router;
 }
 
 
-char *Api::get(const char *url, int *status)
+void Api::exec(const xmrig::HttpRequest &req, xmrig::HttpReply &reply)
 {
-    if (!m_state) {
-        return nullptr;
-    }
-
-    uv_mutex_lock(&m_mutex);
-    char *buf = m_state->get(url, status);
-    uv_mutex_unlock(&m_mutex);
-
-    return buf;
-}
-
-
-void Api::tick(const StatsData &data)
-{
-    if (!m_state) {
+    if (!m_router) {
+        reply.status = 500;
         return;
     }
 
-    uv_mutex_lock(&m_mutex);
-    m_state->tick(data);
-    uv_mutex_unlock(&m_mutex);
-}
-
-
-void Api::tick(const std::vector<Worker> &workers)
-{
-    if (!m_state) {
-        return;
+    if (req.method() == xmrig::HttpRequest::Get) {
+        return m_router->get(req, reply);
     }
 
-    uv_mutex_lock(&m_mutex);
-    m_state->tick(workers);
-    uv_mutex_unlock(&m_mutex);
+    m_router->exec(req, reply);
 }

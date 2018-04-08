@@ -34,7 +34,6 @@
 #include "net/Job.h"
 
 
-class DonateStrategy;
 class IStrategy;
 class JobResult;
 class LoginRequest;
@@ -83,7 +82,6 @@ private:
 
     bool m_active;
     bool m_dirty;
-    DonateStrategy *m_donate;
     IStrategy *m_pending;
     IStrategy *m_strategy;
     Job m_job;

@@ -31,7 +31,6 @@
 #include "core/Controller.h"
 #include "log/Log.h"
 #include "net/Client.h"
-#include "net/strategies/DonateStrategy.h"
 #include "net/strategies/FailoverStrategy.h"
 #include "net/strategies/SinglePoolStrategy.h"
 #include "net/Url.h"
@@ -46,7 +45,6 @@
 
 SimpleMapper::SimpleMapper(uint64_t id, xmrig::Controller *controller) :
     m_active(false),
-    m_donate(nullptr),
     m_pending(nullptr),
     m_miner(nullptr),
     m_id(id),
@@ -54,10 +52,6 @@ SimpleMapper::SimpleMapper(uint64_t id, xmrig::Controller *controller) :
     m_controller(controller)
 {
     m_strategy = createStrategy(controller->config()->pools());
-
-//    if (controller->config()->donateLevel() > 0) {
-//        m_donate = new DonateStrategy(id, controller, this);
-//    }
 }
 
 
@@ -65,7 +59,6 @@ SimpleMapper::~SimpleMapper()
 {
     delete m_pending;
     delete m_strategy;
-    delete m_donate;
 }
 
 
@@ -115,7 +108,7 @@ void SimpleMapper::submit(SubmitEvent *event)
     JobResult req = event->request;
     req.diff = m_job.diff();
 
-    IStrategy *strategy = m_donate && m_donate->isActive() ? m_donate : m_strategy;
+    IStrategy *strategy = m_strategy;
 
     if (strategy) {
         strategy->submit(req);
@@ -129,10 +122,6 @@ void SimpleMapper::tick(uint64_t ticks, uint64_t now)
 
     if (!m_miner) {
         m_idleTime++;
-    }
-
-    if (m_donate) {
-        m_donate->tick(now);
     }
 }
 
@@ -165,11 +154,6 @@ void SimpleMapper::onJob(IStrategy *strategy, Client *client, const Job &job)
         LOG_INFO(isColors() ? "#%03u \x1B[01;35mnew job\x1B[0m from \x1B[01;37m%s:%d\x1B[0m diff \x1B[01;37m%d" : "#%03u new job from %s:%d diff %d",
                  m_id, client->host(), client->port(), job.diff());
     }
-
-    if (m_donate && m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {
-        return;
-    }
-
     setJob(job);
 }
 
@@ -233,10 +217,6 @@ IStrategy *SimpleMapper::createStrategy(const std::vector<Url*> &pools)
 void SimpleMapper::connect()
 {
     m_strategy->connect();
-
-    if (m_donate) {
-        m_donate->connect();
-    }
 }
 
 

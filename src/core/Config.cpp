@@ -24,8 +24,6 @@
 
 #include <string.h>
 #include <uv.h>
-
-
 #include "core/Config.h"
 #include "core/ConfigLoader.h"
 #include "log/Log.h"

@@ -168,7 +168,7 @@ void SimpleMapper::onPause(IStrategy *strategy)
 
 void SimpleMapper::onResultAccepted(IStrategy *strategy, Client *client, const SubmitResult &result, const char *error)
 {
-    AcceptEvent::start(m_id, m_miner, result, client->id() == -1, error);
+    AcceptEvent::start(m_id, m_miner, result, error);
 
     if (!m_miner) {
         return;

@@ -190,7 +190,7 @@ void Proxy::onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig
 
 bool Proxy::isColors() const
 {
-    return m_controller->config()->colors();
+    return m_controller->config()->isColors();
 }
 
 

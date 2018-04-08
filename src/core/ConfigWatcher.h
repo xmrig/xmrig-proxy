@@ -37,14 +37,14 @@ struct option;
 namespace xmrig {
 
 
-class Config;
+class IConfigCreator;
 class IWatcherListener;
 
 
 class ConfigWatcher
 {
 public:
-    ConfigWatcher(const char *path, IWatcherListener *listener);
+    ConfigWatcher(const char *path, IConfigCreator *creator, IWatcherListener *listener);
     ~ConfigWatcher();
 
 private:
@@ -57,6 +57,7 @@ private:
     void start();
 
     char *m_path;
+    IConfigCreator *m_creator;
     IWatcherListener *m_listener;
     uv_fs_event_t m_fsEvent;
     uv_timer_t m_timer;

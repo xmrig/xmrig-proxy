@@ -25,15 +25,16 @@
 #include <stdio.h>
 
 
-#include "core/Config.h"
+#include "core/ConfigCreator.h"
 #include "core/ConfigLoader.h"
 #include "core/ConfigWatcher.h"
 #include "interfaces/IWatcherListener.h"
 #include "log/Log.h"
 
 
-xmrig::ConfigWatcher::ConfigWatcher(const char *path, IWatcherListener *listener) :
+xmrig::ConfigWatcher::ConfigWatcher(const char *path, IConfigCreator *creator, IWatcherListener *listener) :
     m_path(strdup(path)),
+    m_creator(creator),
     m_listener(listener)
 {
     uv_fs_event_init(uv_default_loop(), &m_fsEvent);
@@ -81,7 +82,7 @@ void xmrig::ConfigWatcher::reload()
 {
     LOG_WARN("\"%s\" was changed, reloading configuration", m_path);
 
-    xmrig::Config *config = new xmrig::Config();
+    IConfig *config = m_creator->create();
     ConfigLoader::loadFromFile(config, m_path);
 
     if (!config->isValid()) {

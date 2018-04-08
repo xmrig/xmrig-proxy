@@ -29,6 +29,7 @@
 #include "net/strategies/DonateStrategy.h"
 #include "Platform.h"
 #include "proxy/StatsData.h"
+#include "xmrig.h"
 
 
 extern "C"
@@ -59,7 +60,7 @@ DonateStrategy::DonateStrategy(size_t id, xmrig::Controller *controller, IStrate
     keccak(reinterpret_cast<const uint8_t *>(user), static_cast<int>(strlen(user)), hash, sizeof(hash));
     Job::toHex(hash, 32, userId);
 
-    Url *url = new Url("proxy.fee.xmrig.com", controller->config()->algorithm() == xmrig::Config::CRYPTONIGHT_LITE ? 7777 : 4444, userId, nullptr);
+    Url *url = new Url("proxy.fee.xmrig.com", controller->config()->algorithm() == xmrig::CRYPTONIGHT ? 7777 : 4444, userId, nullptr);
 
     m_client = new Client(-1, Platform::userAgent(), this);
     m_client->setUrl(url);

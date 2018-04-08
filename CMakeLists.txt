@@ -13,13 +13,16 @@ set(HEADERS
     src/3rdparty/align.h
     src/App.h
     src/Console.h
+    src/core/CommonConfig.h
     src/core/Config.h
     src/core/ConfigLoader.h
-    src/core/ConfigLoader_static.h
+    src/core/ConfigLoader_platform.h
     src/core/ConfigWatcher.h
     src/core/Controller.h
     src/donate.h
     src/interfaces/IClientListener.h
+    src/interfaces/IConfig.h
+    src/interfaces/IConfigCreator.h
     src/interfaces/IConsoleListener.h
     src/interfaces/IControllerListener.h
     src/interfaces/IEvent.h
@@ -81,6 +84,7 @@ set(HEADERS
 set(SOURCES
     src/App.cpp
     src/Console.cpp
+    src/core/CommonConfig.cpp
     src/core/Config.cpp
     src/core/ConfigLoader.cpp
     src/core/ConfigWatcher.cpp

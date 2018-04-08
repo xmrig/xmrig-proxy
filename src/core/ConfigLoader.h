@@ -7,7 +7,6 @@
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
- *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
@@ -38,31 +37,31 @@ struct option;
 namespace xmrig {
 
 
-class Config;
 class ConfigWatcher;
+class IConfigCreator;
 class IWatcherListener;
+class IConfig;
 
 
 class ConfigLoader
 {
 public:
-    static bool loadFromFile(Config *config, const char *fileName);
-    static bool loadFromJSON(Config *config, const char *json);
-    static bool loadFromJSON(Config *config, const rapidjson::Document &doc);
-    static bool reload(Config *oldConfig, const char *json);
-    static Config *load(int argc, char **argv, IWatcherListener *listener);
+    static bool loadFromFile(IConfig *config, const char *fileName);
+    static bool loadFromJSON(IConfig *config, const char *json);
+    static bool loadFromJSON(IConfig *config, const rapidjson::Document &doc);
+    static bool reload(IConfig *oldConfig, const char *json);
+    static IConfig *load(int argc, char **argv, IConfigCreator *creator, IWatcherListener *listener);
     static void release();
 
 private:
     static bool getJSON(const char *fileName, rapidjson::Document &doc);
-    static bool parseArg(Config *config, int key, const char *arg);
-    static bool parseArg(Config *config, int key, uint64_t arg);
-    static bool parseBoolean(Config *config, int key, bool enable);
-    static void parseJSON(Config *config, const struct option *option, const rapidjson::Value &object);
-    static void showUsage(int status);
+    static bool parseArg(IConfig *config, int key, const char *arg);
+    static void parseJSON(IConfig *config, const struct option *option, const rapidjson::Value &object);
+    static void showUsage();
     static void showVersion();
 
     static ConfigWatcher *m_watcher;
+    static IConfigCreator *m_creator;
     static IWatcherListener *m_listener;
 };
 

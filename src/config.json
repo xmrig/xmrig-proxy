@@ -5,7 +5,7 @@
         "port": 0,
         "access-token": null,
         "worker-id": null,
-        "ipv6": true,
+        "ipv6": false,
         "restricted": true
     },
     "background": false,

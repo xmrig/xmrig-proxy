@@ -7,7 +7,6 @@
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
- *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
@@ -22,11 +21,13 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <limits.h>
 #include <string.h>
 #include <uv.h>
 
 
 #include "core/Config.h"
+#include "core/ConfigCreator.h"
 #include "core/ConfigLoader.h"
 #include "donate.h"
 #include "log/Log.h"
@@ -35,12 +36,7 @@
 #include "rapidjson/document.h"
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/prettywriter.h"
-
-
-static const char *algoNames[] = {
-    "cryptonight",
-    "cryptonight-lite"
-};
+#include "xmrig.h"
 
 
 static const char *modeNames[] = {
@@ -49,44 +45,22 @@ static const char *modeNames[] = {
 };
 
 
-#ifndef ARRAY_SIZE
-#   define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-#endif
-
-
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(strncasecmp)
 #   define strncasecmp _strnicmp
 #endif
 
 
-xmrig::Config::Config() :
-    m_adjusted(false),
-    m_apiIPv6(true),
-    m_apiRestricted(true),
-    m_background(false),
-    m_colors(true),
+xmrig::Config::Config() : xmrig::CommonConfig(),
     m_debug(false),
     m_ready(false),
-    m_syslog(false),
     m_verbose(false),
-    m_watch(true),
     m_workers(true),
     m_accessLog(nullptr),
-    m_apiToken(nullptr),
-    m_apiWorkerId(nullptr),
-    m_fileName(nullptr),
-    m_logFile(nullptr),
-    m_userAgent(nullptr),
-    m_algorithm(CRYPTONIGHT),
-    m_apiPort(0),
-    m_donateLevel(kDonateLevel),
     m_mode(NICEHASH_MODE),
-    m_retries(2),
-    m_retryPause(1),
     m_reuseTimeout(0),
     m_diff(0)
 {
-    m_pools.push_back(new Url());
+
 }
 
 
@@ -96,25 +70,9 @@ xmrig::Config::~Config()
         delete addr;
     }
 
-    for (Url *url : m_pools) {
-        delete url;
-    }
-
     m_addrs.clear();
-    m_pools.clear();
 
-    free(m_fileName);
     free(m_accessLog);
-    free(m_apiToken);
-    free(m_apiWorkerId);
-    free(m_logFile);
-    free(m_userAgent);
-}
-
-
-bool xmrig::Config::isValid() const
-{
-    return m_pools[0]->isValid();
 }
 
 
@@ -124,53 +82,13 @@ bool xmrig::Config::reload(const char *json)
 }
 
 
-bool xmrig::Config::save()
-{
-    if (!m_fileName) {
-        return false;
-    }
-
-    uv_fs_t req;
-    const int fd = uv_fs_open(uv_default_loop(), &req, m_fileName, O_WRONLY | O_CREAT | O_TRUNC, 0644, nullptr);
-    if (fd < 0) {
-        return false;
-    }
-
-    uv_fs_req_cleanup(&req);
-
-    rapidjson::Document doc;
-    getJSON(doc);
-
-    FILE *fp = fdopen(fd, "w");
-
-    char buf[4096];
-    rapidjson::FileWriteStream os(fp, buf, sizeof(buf));
-    rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(os);
-    doc.Accept(writer);
-
-    fclose(fp);
-
-    uv_fs_close(uv_default_loop(), &req, fd, nullptr);
-    uv_fs_req_cleanup(&req);
-
-    LOG_NOTICE("configuration saved to: \"%s\"", m_fileName);
-    return true;
-}
-
-
-const char *xmrig::Config::algoName() const
-{
-    return algoNames[m_algorithm];
-}
-
-
 const char *xmrig::Config::modeName() const
 {
     return modeNames[m_mode];
 }
 
 
-void xmrig::Config::getJSON(rapidjson::Document &doc)
+void xmrig::Config::getJSON(rapidjson::Document &doc) const
 {
     doc.SetObject();
 
@@ -183,11 +101,11 @@ void xmrig::Config::getJSON(rapidjson::Document &doc)
     api.AddMember("port",         apiPort(), allocator);
     api.AddMember("access-token", apiToken() ? rapidjson::Value(rapidjson::StringRef(apiToken())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
     api.AddMember("worker-id",    apiWorkerId() ? rapidjson::Value(rapidjson::StringRef(apiWorkerId())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
-    api.AddMember("ipv6",         apiIPv6(), allocator);
-    api.AddMember("restricted",   apiRestricted(), allocator);
+    api.AddMember("ipv6",         isApiIPv6(), allocator);
+    api.AddMember("restricted",   isApiRestricted(), allocator);
     doc.AddMember("api",          api, allocator);
 
-    doc.AddMember("background",   background(), allocator);
+    doc.AddMember("background",   isBackground(), allocator);
 
     rapidjson::Value bind(rapidjson::kArrayType);
     for (const Addr *addr : m_addrs) {
@@ -195,7 +113,7 @@ void xmrig::Config::getJSON(rapidjson::Document &doc)
     }
 
     doc.AddMember("bind",         bind, allocator);
-    doc.AddMember("colors",       colors(), allocator);
+    doc.AddMember("colors",       isColors(), allocator);
     doc.AddMember("custom-diff",  diff(), allocator);
     doc.AddMember("donate-level", donateLevel(), allocator);
     doc.AddMember("log-file",     logFile() ? rapidjson::Value(rapidjson::StringRef(logFile())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
@@ -231,48 +149,148 @@ void xmrig::Config::getJSON(rapidjson::Document &doc)
     doc.AddMember("user-agent",    userAgent() ? rapidjson::Value(rapidjson::StringRef(userAgent())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
 
 #   ifdef HAVE_SYSLOG_H
-    doc.AddMember("syslog", syslog(), allocator);
+    doc.AddMember("syslog", isSyslog(), allocator);
 #   endif
 
-    doc.AddMember("verbose",      verbose(), allocator);
-    doc.AddMember("watch",        m_watch,   allocator);
-    doc.AddMember("workers",      workers(), allocator);
+    doc.AddMember("verbose",      isVerbose(), allocator);
+    doc.AddMember("watch",        m_watch,     allocator);
+    doc.AddMember("workers",      isWorkers(), allocator);
 }
 
 
 xmrig::Config *xmrig::Config::load(int argc, char **argv, IWatcherListener *listener)
 {
-    return xmrig::ConfigLoader::load(argc, argv, listener);
+    return static_cast<Config*>(ConfigLoader::load(argc, argv, new ConfigCreator(), listener));
 }
 
 
-void xmrig::Config::adjust()
+bool xmrig::Config::adjust()
 {
-    if (m_adjusted) {
-        return;
+    if (!CommonConfig::adjust()) {
+        return false;
     }
 
-    m_adjusted = true;
-
-    for (Url *url : m_pools) {
-        url->adjust(algorithm());
+    if (m_addrs.empty()) {
+        m_addrs.push_back(new Addr("0.0.0.0:3333"));
+        m_addrs.push_back(new Addr("[::]:3333"));
     }
+
+    return true;
 }
 
 
-void xmrig::Config::setAlgo(const char *algo)
+bool xmrig::Config::parseBoolean(int key, bool enable)
 {
-    const size_t size = sizeof(algoNames) / sizeof((algoNames)[0]);
+    if (!CommonConfig::parseBoolean(key, enable)) {
+        return false;
+    }
 
-    for (size_t i = 0; i < size; i++) {
-        if (algoNames[i] && !strcmp(algo, algoNames[i])) {
-            m_algorithm = (int) i;
-            break;
+    switch (key) {
+    case VerboseKey: /* --verbose */
+        m_verbose = enable;
+        break;
+
+    case DebugKey: /* --debug */
+        m_debug = enable;
+        break;
+
+    case WorkersKey: /* workers */
+        m_workers = enable;
+        break;
+
+    default:
+        break;
+    }
+
+    return true;
+}
+
+
+bool xmrig::Config::parseString(int key, const char *arg)
+{
+    if (!CommonConfig::parseString(key, arg)) {
+        return false;
+    }
+
+    switch (key) {
+    case ModeKey: /* --mode */
+        setMode(arg);
+        break;
+
+    case BindKey: /* --bind */
+        {
+            Addr *addr = new Addr(arg);
+            if (addr->isValid()) {
+                m_addrs.push_back(addr);
+            }
+            else {
+                delete addr;
+            }
         }
+        break;
 
-        if (i == size - 1 && !strcmp(algo, "cryptonight-light")) {
-            m_algorithm = CRYPTONIGHT_LITE;
-            break;
+    case CoinKey: /* --coin */
+        m_pools.back()->setCoin(arg);
+        break;
+
+    case AccessLogFileKey: /* --access-log-file **/
+        free(m_accessLog);
+        m_accessLog = strdup(arg);
+        break;
+
+    case VerboseKey: /* --verbose */
+    case DebugKey:   /* --debug */
+        return parseBoolean(key, true);
+
+    case WorkersKey: /* --no-workers */
+        return parseBoolean(key, false);
+
+    case CustomDiffKey: /* --custom-diff */
+        return parseUint64(key, strtol(arg, nullptr, 10));
+
+    default:
+        break;
+    }
+
+    return true;
+}
+
+
+bool xmrig::Config::parseUint64(int key, uint64_t arg)
+{
+    if (!CommonConfig::parseUint64(key, arg)) {
+        return false;
+    }
+
+    switch (key) {
+    case CustomDiffKey: /* --custom-diff */
+        if (arg >= 100 && arg < INT_MAX) {
+            m_diff = arg;
+        }
+        break;
+
+    case ReuseTimeoutKey: /* --reuse-timeout */
+        m_reuseTimeout = static_cast<int>(arg);
+        break;
+
+    default:
+        break;
+    }
+
+    return true;
+}
+
+
+void xmrig::Config::parseJSON(const rapidjson::Document &doc)
+{
+    const rapidjson::Value &bind = doc["bind"];
+    if (bind.IsArray()) {
+        for (const rapidjson::Value &value : bind.GetArray()) {
+            if (!value.IsString()) {
+                continue;
+            }
+
+            parseString(BindKey, value.GetString());
         }
     }
 }
@@ -283,13 +301,6 @@ void xmrig::Config::setCoin(const char *coin)
     if (strncasecmp(coin, "aeon", 4) == 0) {
         m_algorithm = CRYPTONIGHT_LITE;
     }
-}
-
-
-void xmrig::Config::setFileName(const char *fileName)
-{
-    free(m_fileName);
-    m_fileName = fileName ? strdup(fileName) : nullptr;
 }
 
 

@@ -77,13 +77,13 @@ void ShareLog::onRejectedEvent(IEvent *event)
 
 bool ShareLog::isColors() const
 {
-    return m_controller->config()->colors();
+    return m_controller->config()->isColors();
 }
 
 
 void ShareLog::accept(const AcceptEvent *event)
 {
-    if (!m_controller->config()->verbose()) {
+    if (!m_controller->config()->isVerbose()) {
         return;
     }
 

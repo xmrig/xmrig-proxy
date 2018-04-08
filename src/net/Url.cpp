@@ -175,7 +175,7 @@ void Url::adjust(int algorithm)
     }
 
     if (strlen(m_coin) == 0) {
-        if (algorithm == xmrig::Config::CRYPTONIGHT) {
+        if (algorithm == xmrig::CRYPTONIGHT) {
             memcpy(m_coin, "XMR", 4);
         }
         else {

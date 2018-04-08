@@ -78,7 +78,7 @@ void ConsoleLog::message(int level, const char* fmt, va_list args)
 #   endif
 
     const char* color = nullptr;
-    const bool colors = m_controller->config()->colors();
+    const bool colors = m_controller->config()->isColors();
 
     if (colors) {
         switch (level) {
@@ -122,7 +122,7 @@ void ConsoleLog::message(int level, const char* fmt, va_list args)
 
 void ConsoleLog::text(const char* fmt, va_list args)
 {
-    snprintf(m_fmt, sizeof(m_fmt) - 1, "%s%s\n", fmt, m_controller->config()->colors() ? Log::kCL_N : "");
+    snprintf(m_fmt, sizeof(m_fmt) - 1, "%s%s\n", fmt, m_controller->config()->isColors() ? Log::kCL_N : "");
 
     print(args);
 }

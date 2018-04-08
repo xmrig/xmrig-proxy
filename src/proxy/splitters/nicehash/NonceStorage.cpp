@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
 #include "proxy/Counters.h"
 #include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
-#include "proxy/splitters/NonceStorage.h"
+#include "proxy/splitters/nicehash/NonceStorage.h"
 
 
 NonceStorage::NonceStorage() :
@@ -77,7 +77,7 @@ bool NonceStorage::isUsed() const
 }
 
 
-bool NonceStorage::isValidJobId(const JobId &id)
+bool NonceStorage::isValidJobId(const xmrig::Id &id) const
 {
     if (m_job.id() == id) {
         return true;
@@ -127,8 +127,14 @@ void NonceStorage::setJob(const Job &job)
         }
     }
 
-    m_prevJob = m_job;
-    m_job     = job;
+    if (m_job.clientId() == job.clientId()) {
+        m_prevJob = m_job;
+    }
+    else {
+        m_prevJob.reset();
+    }
+
+    m_job = job;
 
     for (size_t i = 0; i < 256; ++i) {
         const int64_t index = m_used[i];

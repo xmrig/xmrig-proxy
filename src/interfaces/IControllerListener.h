@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2016-2018 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -21,53 +21,26 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __NONCESTORAGE_H__
-#define __NONCESTORAGE_H__
+#ifndef __ICONTROLLERLISTENER_H__
+#define __ICONTROLLERLISTENER_H__
 
 
-#include <map>
-#include <vector>
+namespace xmrig {
 
 
-#include "net/Job.h"
+class Config;
 
 
-class LoginRequest;
-class Miner;
-
-
-class NonceStorage
+class IControllerListener
 {
 public:
-    NonceStorage();
-    ~NonceStorage();
+    virtual ~IControllerListener() {}
 
-    bool add(Miner *miner, const LoginRequest &request);
-    bool isUsed() const;
-    bool isValidJobId(const JobId &id);
-    Miner *miner(int64_t id);
-    void remove(const Miner *miner);
-    void reset();
-    void setJob(const Job &job);
-
-    inline bool isActive() const       { return m_active; }
-    inline const Job &job() const      { return m_job; }
-    inline void setActive(bool active) { m_active = active; }
-
-#   ifdef APP_DEVEL
-    void printState(size_t id);
-#   endif
-
-private:
-    int nextIndex(int start) const;
-
-    bool m_active;
-    Job m_job;
-    Job m_prevJob;
-    std::map<int64_t, Miner*> m_miners;
-    std::vector<int64_t> m_used;
-    uint8_t m_index;
+    virtual void onConfigChanged(Config *config, Config *previousConfig) = 0;
 };
 
 
-#endif /* __NONCESTORAGE_H__ */
+} /* namespace xmrig */
+
+
+#endif // __ICONTROLLERLISTENER_H__

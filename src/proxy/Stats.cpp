@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,9 +24,9 @@
 
 #include "api/Api.h"
 #include "Counters.h"
+#include "interfaces/ISplitter.h"
 #include "net/SubmitResult.h"
 #include "proxy/events/AcceptEvent.h"
-#include "proxy/splitters/NonceSplitter.h"
 #include "proxy/Stats.h"
 
 
@@ -42,7 +42,7 @@ Stats::~Stats()
 }
 
 
-void Stats::tick(uint64_t ticks, const NonceSplitter &splitter)
+void Stats::tick(uint64_t ticks, const ISplitter *splitter)
 {
     ticks++;
 
@@ -55,12 +55,12 @@ void Stats::tick(uint64_t ticks, const NonceSplitter &splitter)
         m_data.hashrate[2] = hashrate(3600);
         m_data.hashrate[3] = hashrate(3600 * 12);
         m_data.hashrate[4] = hashrate(3600 * 24);
+        m_data.hashrate[5] = hashrate(m_data.uptime());
 
-        m_data.upstreams = splitter.activeUpstreams();
+        m_data.upstreams = splitter->upstreams();
         m_data.miners    = Counters::miners();
         m_data.maxMiners = Counters::maxMiners();
         m_data.expired   = Counters::expired;
-        Api::tick(m_data);
 #       endif
     }
 }

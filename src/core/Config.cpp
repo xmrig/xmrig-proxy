@@ -24,11 +24,8 @@
 
 #include <string.h>
 #include <uv.h>
-
-
 #include "core/Config.h"
 #include "core/ConfigLoader.h"
-#include "donate.h"
 #include "log/Log.h"
 #include "net/Url.h"
 #include "proxy/Addr.h"
@@ -79,7 +76,6 @@ xmrig::Config::Config() :
     m_userAgent(nullptr),
     m_algorithm(CRYPTONIGHT),
     m_apiPort(0),
-    m_donateLevel(kDonateLevel),
     m_mode(NICEHASH_MODE),
     m_retries(2),
     m_retryPause(1),
@@ -197,7 +193,6 @@ void xmrig::Config::getJSON(rapidjson::Document &doc)
     doc.AddMember("bind",         bind, allocator);
     doc.AddMember("colors",       colors(), allocator);
     doc.AddMember("custom-diff",  diff(), allocator);
-    doc.AddMember("donate-level", donateLevel(), allocator);
     doc.AddMember("log-file",     logFile() ? rapidjson::Value(rapidjson::StringRef(logFile())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
     doc.AddMember("mode",         rapidjson::StringRef(modeName()), allocator);
 

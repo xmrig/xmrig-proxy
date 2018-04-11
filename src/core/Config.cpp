@@ -32,7 +32,6 @@
 #include "donate.h"
 #include "log/Log.h"
 #include "net/Pool.h"
-#include "proxy/Addr.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/prettywriter.h"
@@ -55,24 +54,10 @@ xmrig::Config::Config() : xmrig::CommonConfig(),
     m_ready(false),
     m_verbose(false),
     m_workers(true),
-    m_accessLog(nullptr),
     m_mode(NICEHASH_MODE),
     m_reuseTimeout(0),
     m_diff(0)
 {
-
-}
-
-
-xmrig::Config::~Config()
-{
-    for (Addr *addr : m_addrs) {
-        delete addr;
-    }
-
-    m_addrs.clear();
-
-    free(m_accessLog);
 }
 
 
@@ -108,8 +93,8 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("background",   isBackground(), allocator);
 
     rapidjson::Value bind(rapidjson::kArrayType);
-    for (const Addr *addr : m_addrs) {
-        bind.PushBack(rapidjson::StringRef(addr->addr()), allocator);
+    for (const Addr &addr : m_addrs) {
+        bind.PushBack(rapidjson::StringRef(addr.addr()), allocator);
     }
 
     doc.AddMember("bind",         bind, allocator);
@@ -170,8 +155,8 @@ bool xmrig::Config::adjust()
     }
 
     if (m_addrs.empty()) {
-        m_addrs.push_back(new Addr("0.0.0.0:3333"));
-        m_addrs.push_back(new Addr("[::]:3333"));
+        m_addrs.push_back(Addr("0.0.0.0:3333"));
+        m_addrs.push_back(Addr("[::]:3333"));
     }
 
     return true;
@@ -218,12 +203,9 @@ bool xmrig::Config::parseString(int key, const char *arg)
 
     case BindKey: /* --bind */
         {
-            Addr *addr = new Addr(arg);
-            if (addr->isValid()) {
-                m_addrs.push_back(addr);
-            }
-            else {
-                delete addr;
+            Addr addr(arg);
+            if (addr.isValid()) {
+                m_addrs.push_back(std::move(addr));
             }
         }
         break;
@@ -233,8 +215,7 @@ bool xmrig::Config::parseString(int key, const char *arg)
         break;
 
     case AccessLogFileKey: /* --access-log-file **/
-        free(m_accessLog);
-        m_accessLog = strdup(arg);
+        m_accessLog = arg;
         break;
 
     case VerboseKey: /* --verbose */

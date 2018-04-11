@@ -67,15 +67,15 @@ static void print_mode(xmrig::Controller *controller)
 
 static void print_bind(xmrig::Controller *controller)
 {
-    const std::vector<Addr*> &addrs = controller->config()->addrs();
+    const std::vector<Addr> &addrs = controller->config()->addrs();
 
     for (size_t i = 0; i < addrs.size(); ++i) {
         Log::i()->text(controller->config()->isColors() ? "\x1B[01;32m * \x1B[01;37mBIND #%d:\x1B[0m      \x1B[36m%s%s%s:%d" : " * BIND #%d:      %s%s%s:%d",
                        i + 1,
-                       addrs[i]->isIPv6() ? "[" : "",
-                       addrs[i]->ip(),
-                       addrs[i]->isIPv6() ? "]" : "",
-                       addrs[i]->port());
+                       addrs[i].isIPv6() ? "[" : "",
+                       addrs[i].ip(),
+                       addrs[i].isIPv6() ? "]" : "",
+                       addrs[i].port());
     }
 }
 

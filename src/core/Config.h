@@ -29,8 +29,10 @@
 #include <vector>
 
 
-#include "rapidjson/fwd.h"
 #include "core/CommonConfig.h"
+#include "core/utils/c_str.h"
+#include "proxy/Addr.h"
+#include "rapidjson/fwd.h"
 
 
 class Addr;
@@ -66,7 +68,6 @@ public:
     };
 
     Config();
-    ~Config();
 
     bool reload(const char *json);
 
@@ -78,8 +79,8 @@ public:
     inline bool isDebug() const                    { return m_debug; }
     inline bool isVerbose() const                  { return m_verbose; }
     inline bool isWorkers() const                  { return m_workers; }
-    inline const char *accessLog() const           { return m_accessLog; }
-    inline const std::vector<Addr*> &addrs() const { return m_addrs; }
+    inline const char *accessLog() const           { return m_accessLog.data(); }
+    inline const std::vector<Addr> &addrs() const  { return m_addrs; }
     inline int mode() const                        { return m_mode; }
     inline int reuseTimeout() const                { return m_reuseTimeout; }
     inline uint64_t diff() const                   { return m_diff; }
@@ -103,11 +104,11 @@ private:
     bool m_verbose;
 
     bool m_workers;
-    char *m_accessLog;
     int m_mode;
     int m_reuseTimeout;
-    std::vector<Addr*> m_addrs;
+    std::vector<Addr> m_addrs;
     uint64_t m_diff;
+    xmrig::c_str m_accessLog;
 };
 
 

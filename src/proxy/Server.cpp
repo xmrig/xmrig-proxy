@@ -29,31 +29,25 @@
 #include "proxy/Server.h"
 
 
-Server::Server(const Addr *addr, bool nicehash) :
+Server::Server(const Addr &addr, bool nicehash) :
     m_nicehash(nicehash),
-    m_ip(strdup(addr->ip())),
     m_version(0),
-    m_port(addr->port())
+    m_port(addr.port()),
+    m_ip(addr.ip())
 {
     uv_tcp_init(uv_default_loop(), &m_server);
     m_server.data = this;
 
     uv_tcp_nodelay(&m_server, 1);
 
-    if (addr->isIPv6() && uv_ip6_addr(m_ip, m_port, &m_addr6) == 0) {
+    if (addr.isIPv6() && uv_ip6_addr(m_ip.data(), m_port, &m_addr6) == 0) {
         m_version = 6;
         return;
     }
 
-    if (uv_ip4_addr(m_ip, m_port, &m_addr) == 0) {
+    if (uv_ip4_addr(m_ip.data(), m_port, &m_addr) == 0) {
         m_version = 4;
     }
-}
-
-
-Server::~Server()
-{
-    free(m_ip);
 }
 
 
@@ -68,7 +62,7 @@ bool Server::bind()
 
     const int r = uv_listen(reinterpret_cast<uv_stream_t*>(&m_server), 511, Server::onConnection);
     if (r) {
-        LOG_ERR("[%s:%u] listen error: \"%s\"", m_ip, m_port, uv_strerror(r));
+        LOG_ERR("[%s:%u] listen error: \"%s\"", m_ip.data(), m_port, uv_strerror(r));
         return false;
     }
 

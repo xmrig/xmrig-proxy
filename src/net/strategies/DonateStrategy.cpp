@@ -55,18 +55,27 @@ DonateStrategy::DonateStrategy(size_t id, xmrig::Controller *controller, IStrate
 {
     uint8_t hash[200];
     char userId[65] = { 0 };
-    const char *user = controller->config()->pools().front()->user();
+    const char *user = controller->config()->pools().front().user();
 
     keccak(reinterpret_cast<const uint8_t *>(user), static_cast<int>(strlen(user)), hash, sizeof(hash));
     Job::toHex(hash, 32, userId);
 
-    Url *url = new Url("proxy.fee.xmrig.com", controller->config()->algorithm() == xmrig::CRYPTONIGHT ? 7777 : 4444, userId, nullptr);
+    uint16_t port = 4444;
+    switch (controller->config()->algorithm()) {
+    case xmrig::CRYPTONIGHT_LITE:
+        port = 7777;
+        break;
+
+    case xmrig::CRYPTONIGHT_HEAVY:
+        port = 8887;
+
+    default:
+        break;
+    }
 
     m_client = new Client(-1, Platform::userAgent(), this);
-    m_client->setUrl(url);
+    m_client->setPool(Pool("proxy.fee.xmrig.com", port, userId, nullptr));
     m_client->setRetryPause(1000);
-
-    delete url;
 
     m_target = random(3000, 9000);
 }

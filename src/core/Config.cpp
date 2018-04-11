@@ -31,7 +31,7 @@
 #include "core/ConfigLoader.h"
 #include "donate.h"
 #include "log/Log.h"
-#include "net/Url.h"
+#include "net/Pool.h"
 #include "proxy/Addr.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filewritestream.h"
@@ -121,22 +121,21 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
 
     rapidjson::Value pools(rapidjson::kArrayType);
 
-    for (const Url *url : m_pools) {
+    for (const Pool &pool : m_pools) {
         rapidjson::Value obj(rapidjson::kObjectType);
 
-        obj.AddMember("url",     rapidjson::StringRef(url->url()), allocator);
-        obj.AddMember("user",    rapidjson::StringRef(url->user()), allocator);
-        obj.AddMember("pass",    rapidjson::StringRef(url->password()), allocator);
-        obj.AddMember("coin",    rapidjson::StringRef(url->coin()), allocator);
+        obj.AddMember("url",     rapidjson::StringRef(pool.url()), allocator);
+        obj.AddMember("user",    rapidjson::StringRef(pool.user()), allocator);
+        obj.AddMember("pass",    rapidjson::StringRef(pool.password()), allocator);
 
-        if (url->keepAlive() == 0 || url->keepAlive() == Url::kKeepAliveTimeout) {
-            obj.AddMember("keepalive", url->keepAlive() > 0, allocator);
+        if (pool.keepAlive() == 0 || pool.keepAlive() == Pool::kKeepAliveTimeout) {
+            obj.AddMember("keepalive", pool.keepAlive() > 0, allocator);
         }
         else {
-            obj.AddMember("keepalive", url->keepAlive(), allocator);
+            obj.AddMember("keepalive", pool.keepAlive(), allocator);
         }
 
-        obj.AddMember("variant", url->variant(), allocator);
+        obj.AddMember("variant", pool.variant(), allocator);
 
         pools.PushBack(obj, allocator);
     }
@@ -230,7 +229,7 @@ bool xmrig::Config::parseString(int key, const char *arg)
         break;
 
     case CoinKey: /* --coin */
-        m_pools.back()->setCoin(arg);
+//        m_pools.back()->setCoin(arg);
         break;
 
     case AccessLogFileKey: /* --access-log-file **/

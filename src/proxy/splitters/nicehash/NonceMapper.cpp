@@ -34,7 +34,6 @@
 #include "net/strategies/DonateStrategy.h"
 #include "net/strategies/FailoverStrategy.h"
 #include "net/strategies/SinglePoolStrategy.h"
-#include "net/Url.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"
 #include "proxy/events/AcceptEvent.h"
@@ -106,7 +105,7 @@ void NonceMapper::gc()
 }
 
 
-void NonceMapper::reload(const std::vector<Url*> &pools)
+void NonceMapper::reload(const std::vector<Pool> &pools)
 {
     delete m_pending;
 
@@ -240,7 +239,7 @@ bool NonceMapper::isColors() const
 }
 
 
-IStrategy *NonceMapper::createStrategy(const std::vector<Url*> &pools)
+IStrategy *NonceMapper::createStrategy(const std::vector<Pool> &pools)
 {
     if (pools.size() > 1) {
         return new FailoverStrategy(pools, m_controller->config()->retryPause(), m_controller->config()->retries(), this);

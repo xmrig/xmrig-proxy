@@ -40,11 +40,11 @@ set(HEADERS
     src/net/Client.h
     src/net/Id.h
     src/net/Job.h
+    src/net/Pool.h
     src/net/Storage.h
     src/net/strategies/DonateStrategy.h
     src/net/strategies/FailoverStrategy.h
     src/net/strategies/SinglePoolStrategy.h
-    src/net/Url.h
     src/Platform.h
     src/proxy/Addr.h
     src/proxy/Counters.h
@@ -98,11 +98,11 @@ set(SOURCES
     src/log/ShareLog.cpp
     src/net/Client.cpp
     src/net/Job.cpp
+    src/net/Pool.cpp
     src/net/strategies/DonateStrategy.cpp
     src/net/strategies/FailoverStrategy.cpp
     src/net/strategies/SinglePoolStrategy.cpp
     src/net/SubmitResult.cpp
-    src/net/Url.cpp
     src/Platform.cpp
     src/proxy/Counters.cpp
     src/proxy/CustomDiff.cpp

@@ -32,6 +32,7 @@
 
 #include "interfaces/IStrategyListener.h"
 #include "net/Job.h"
+#include "net/Pool.h"
 
 
 class DonateStrategy;
@@ -57,7 +58,7 @@ public:
     ~SimpleMapper();
 
     void add(Miner *miner, const LoginRequest &request);
-    void reload(const std::vector<Url*> &pools);
+    void reload(const std::vector<Pool> &pools);
     void remove(const Miner *miner);
     void reuse(Miner *miner, const LoginRequest &request);
     void stop();
@@ -78,7 +79,7 @@ protected:
 private:
     bool isColors() const;
     bool isValidJobId(const xmrig::Id &id) const;
-    IStrategy *createStrategy(const std::vector<Url*> &pools);
+    IStrategy *createStrategy(const std::vector<Pool> &pools);
     void connect();
     void setJob(const Job &job);
 

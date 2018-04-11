@@ -32,6 +32,7 @@
 
 #include "interfaces/IStrategyListener.h"
 #include "net/Job.h"
+#include "net/Pool.h"
 
 
 class DonateStrategy;
@@ -71,7 +72,7 @@ public:
     bool add(Miner *miner, const LoginRequest &request);
     bool isActive() const;
     void gc();
-    void reload(const std::vector<Url*> &pools);
+    void reload(const std::vector<Pool> &pools);
     void remove(const Miner *miner);
     void start();
     void submit(SubmitEvent *event);
@@ -92,7 +93,7 @@ protected:
 
 private:
     bool isColors() const;
-    IStrategy *createStrategy(const std::vector<Url*> &pools);
+    IStrategy *createStrategy(const std::vector<Pool> &pools);
     SubmitCtx submitCtx(int64_t seq);
     void connect();
     void suspend();

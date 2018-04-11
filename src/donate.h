@@ -42,7 +42,7 @@
  * You can check actual donation via API.
  */
 constexpr const int kDefaultDonateLevel = 2;
-constexpr const int kMinDonateLevel     = 0;
+constexpr const int kMinimumDonateLevel = 0;
 
 
 #endif /* __DONATE_H__ */

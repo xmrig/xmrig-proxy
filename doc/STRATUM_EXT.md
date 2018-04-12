@@ -16,7 +16,7 @@ Miner should send list of algorithms supported. Multiple algorithms in list mean
 In case if miner not support dynamic algorithm change, miner should send list with one item, for example `"algo": ["cn-heavy"]`, pool/proxy should provide work for selected algorithm or send error.
 
 ### Extended job object
-To each `job` object pool/proxy should add 2 additional fields `algo` and optional `variant`.
+To each `job` object pool/proxy should add 2 additional fields `algo` and `variant`.
 
 ```json
 {
@@ -47,7 +47,7 @@ Possible values for `variant`:
 * `0` Force use original cn/cn-lite algorithm.
 * `-1` or missing field, leave miner autodetect algorithm by block version.
 
-Note about `cn-heavy`, this algorithm not support `variant` option, miner should ignore `variant` field for this algorithm, but pool/proxy should never send `"variant": 1` if `cn-heavy` used.
+Note about `cn-heavy` this algorithm now support only one (original) variant, so only valid values `-1` or `0`. `1` is reserved for future use, current pool/proxy implementation should never send `"variant": 1` if `cn-heavy` algorithm used.
 
 If miner not support algorithm connection should be closed by miner to initiate switch to backup pool.
 

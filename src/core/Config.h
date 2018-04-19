@@ -29,8 +29,8 @@
 #include <vector>
 
 
-#include "core/CommonConfig.h"
-#include "core/utils/c_str.h"
+#include "common/config/CommonConfig.h"
+#include "common/utils/c_str.h"
 #include "proxy/Addr.h"
 #include "rapidjson/fwd.h"
 

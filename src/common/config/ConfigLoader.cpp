@@ -32,14 +32,14 @@
 #endif
 
 
+#include "common/config/ConfigLoader.h"
+#include "common/config/ConfigWatcher.h"
+#include "common/Platform.h"
 #include "core/ConfigCreator.h"
-#include "core/ConfigLoader.h"
 #include "core/ConfigLoader_platform.h"
-#include "core/ConfigWatcher.h"
 #include "interfaces/IConfig.h"
 #include "interfaces/IWatcherListener.h"
 #include "net/Pool.h"
-#include "Platform.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
 #include "rapidjson/filereadstream.h"
@@ -168,7 +168,7 @@ xmrig::IConfig *xmrig::ConfigLoader::load(int argc, char **argv, IConfigCreator 
     }
 
     if (!config->isValid()) {
-        fprintf(stderr, "No pool URL supplied. Exiting.\n");
+        fprintf(stderr, "No valid configuration found. Exiting.\n");
         delete config;
         return nullptr;
     }
@@ -293,13 +293,13 @@ void xmrig::ConfigLoader::showVersion()
 
     printf("\n features:"
 #   if defined(__i386__) || defined(_M_IX86)
-    " i386"
+    " 32-bit"
 #   elif defined(__x86_64__) || defined(_M_AMD64)
-    " x86_64"
+    " 64-bit"
 #   endif
 
 #   if defined(__AES__) || defined(_MSC_VER)
-    " AES-NI"
+    " AES"
 #   endif
     "\n");
 

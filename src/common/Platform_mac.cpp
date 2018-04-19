@@ -4,7 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
+ * Copyright 2016-2017 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -22,6 +22,8 @@
  */
 
 
+#include <mach/thread_act.h>
+#include <mach/thread_policy.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/resource.h>
@@ -53,15 +55,24 @@ static inline char *createUserAgent()
 }
 
 
-void Platform::init(const char *userAgent)
+bool Platform::setThreadAffinity(uint64_t cpu_id)
 {
-    m_userAgent = userAgent ? strdup(userAgent) : createUserAgent();
+    thread_port_t mach_thread;
+    thread_affinity_policy_data_t policy = { static_cast<integer_t>(cpu_id) };
+    mach_thread = pthread_mach_thread_np(pthread_self());
+
+    return thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1) == KERN_SUCCESS;
 }
 
 
-void Platform::release()
+void Platform::init(const char *userAgent)
 {
-    delete [] m_userAgent;
+    if (userAgent) {
+        m_userAgent = userAgent;
+    }
+    else {
+        m_userAgent = createUserAgent();
+    }
 }
 
 

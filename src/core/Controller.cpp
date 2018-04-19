@@ -22,15 +22,15 @@
  */
 
 
+#include "common/config/ConfigLoader.h"
+#include "common/Platform.h"
 #include "core/Config.h"
-#include "core/ConfigLoader.h"
 #include "core/Controller.h"
+#include "interfaces/IControllerListener.h"
 #include "log/ConsoleLog.h"
 #include "log/FileLog.h"
 #include "log/Log.h"
-#include "Platform.h"
 #include "proxy/Proxy.h"
-#include "interfaces/IControllerListener.h"
 
 
 #ifdef HAVE_SYSLOG_H

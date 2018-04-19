@@ -27,7 +27,6 @@
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "log/Log.h"
-#include "Platform.h"
 #include "proxy/Counters.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"

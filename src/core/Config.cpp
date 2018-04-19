@@ -26,16 +26,16 @@
 #include <uv.h>
 
 
+#include "common/config/ConfigLoader.h"
+#include "common/xmrig.h"
 #include "core/Config.h"
 #include "core/ConfigCreator.h"
-#include "core/ConfigLoader.h"
 #include "donate.h"
 #include "log/Log.h"
 #include "net/Pool.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/prettywriter.h"
-#include "xmrig.h"
 
 
 static const char *modeNames[] = {

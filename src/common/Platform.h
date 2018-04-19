@@ -4,8 +4,7 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2016-2017 XMRig       <support@xmrig.com>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -22,42 +21,31 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
+#ifndef __PLATFORM_H__
+#define __PLATFORM_H__
 
 
-#include "api/Api.h"
-#include "api/ApiRouter.h"
-#include "common/api/HttpReply.h"
-#include "common/api/HttpRequest.h"
+#include <stdint.h>
 
 
-ApiRouter *Api::m_router = nullptr;
+#include "common/utils/c_str.h"
 
 
-bool Api::start(xmrig::Controller *controller)
+class Platform
 {
-    m_router = new ApiRouter(controller);
+public:
+    static bool setThreadAffinity(uint64_t cpu_id);
+    static const char *defaultConfigName();
+    static void init(const char *userAgent);
+    static void setProcessPriority(int priority);
+    static void setThreadPriority(int priority);
 
-    return true;
-}
+    static inline const char *userAgent() { return m_userAgent.data(); }
+
+private:
+    static char m_defaultConfigName[520];
+    static xmrig::c_str m_userAgent;
+};
 
 
-void Api::release()
-{
-    delete m_router;
-}
-
-
-void Api::exec(const xmrig::HttpRequest &req, xmrig::HttpReply &reply)
-{
-    if (!m_router) {
-        reply.status = 500;
-        return;
-    }
-
-    if (req.method() == xmrig::HttpRequest::Get) {
-        return m_router->get(req, reply);
-    }
-
-    m_router->exec(req, reply);
-}
+#endif /* __PLATFORM_H__ */

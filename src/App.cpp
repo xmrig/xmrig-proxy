@@ -30,17 +30,17 @@
 
 #include "api/Api.h"
 #include "App.h"
+#include "common/Platform.h"
 #include "Console.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "log/Log.h"
-#include "Platform.h"
 #include "proxy/Proxy.h"
 #include "Summary.h"
 #include "version.h"
 
 #ifndef XMRIG_NO_HTTPD
-#   include "api/Httpd.h"
+#   include "common/api/Httpd.h"
 #endif
 
 
@@ -113,8 +113,6 @@ int App::exec()
 
     const int r = uv_run(uv_default_loop(), UV_RUN_DEFAULT);
     uv_loop_close(uv_default_loop());
-
-    Platform::release();
 
     return r;
 }

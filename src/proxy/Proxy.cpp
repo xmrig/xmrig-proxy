@@ -30,13 +30,13 @@
 #include <time.h>
 
 
+#include "common/Platform.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "Counters.h"
 #include "log/AccessLog.h"
 #include "log/Log.h"
 #include "log/ShareLog.h"
-#include "Platform.h"
 #include "proxy/Addr.h"
 #include "proxy/Events.h"
 #include "proxy/events/ConnectionEvent.h"

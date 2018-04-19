@@ -22,12 +22,12 @@
  */
 
 
+#include "common/Platform.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "interfaces/IStrategyListener.h"
 #include "net/Client.h"
 #include "net/strategies/DonateStrategy.h"
-#include "Platform.h"
 #include "proxy/StatsData.h"
 #include "xmrig.h"
 

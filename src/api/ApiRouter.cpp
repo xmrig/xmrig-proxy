@@ -33,12 +33,12 @@
 
 
 #include "api/ApiRouter.h"
-#include "api/HttpReply.h"
-#include "api/HttpRequest.h"
+#include "common/api/HttpReply.h"
+#include "common/api/HttpRequest.h"
+#include "common/Platform.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "net/Job.h"
-#include "Platform.h"
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/stringbuffer.h"

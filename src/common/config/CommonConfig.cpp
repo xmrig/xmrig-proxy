@@ -29,14 +29,13 @@
 #include <uv.h>
 
 
-#include "core/CommonConfig.h"
+#include "common/config/CommonConfig.h"
 #include "donate.h"
 #include "log/Log.h"
 #include "net/Pool.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/prettywriter.h"
-#include "xmrig.h"
 
 
 xmrig::CommonConfig::CommonConfig() :
@@ -92,7 +91,7 @@ bool xmrig::CommonConfig::adjust()
 
 bool xmrig::CommonConfig::isValid() const
 {
-    return m_pools[0].isValid();
+    return m_pools[0].isValid() && m_algorithm != INVALID_ALGO;
 }
 
 
@@ -206,12 +205,12 @@ bool xmrig::CommonConfig::parseString(int key, const char *arg)
     case SyslogKey:     /* --syslog */
     case KeepAliveKey:  /* --keepalive */
     case NicehashKey:   /* --nicehash */
+    case ApiIPv6Key:       /* --api-ipv6 */
         return parseBoolean(key, true);
 
     case ColorKey:         /* --no-color */
     case WatchKey:         /* --no-watch */
     case ApiRestrictedKey: /* --api-no-restricted */
-    case ApiIPv6Key:       /* --api-no-ipv6 */
         return parseBoolean(key, false);
 
     case DonateLevelKey: /* --donate-level */
@@ -266,7 +265,7 @@ bool xmrig::CommonConfig::save()
     uv_fs_close(uv_default_loop(), &req, fd, nullptr);
     uv_fs_req_cleanup(&req);
 
-    LOG_NOTICE("configuration saved to: \"%s\"", m_fileName);
+    LOG_NOTICE("configuration saved to: \"%s\"", m_fileName.data());
     return true;
 }
 

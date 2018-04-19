@@ -12,12 +12,13 @@ include (CheckIncludeFile)
 set(HEADERS
     src/3rdparty/align.h
     src/App.h
+    src/common/config/CommonConfig.h
+    src/common/config/ConfigLoader.h
+    src/common/config/ConfigWatcher.h
+    src/common/Platform.h
     src/Console.h
-    src/core/CommonConfig.h
     src/core/Config.h
-    src/core/ConfigLoader.h
     src/core/ConfigLoader_platform.h
-    src/core/ConfigWatcher.h
     src/core/Controller.h
     src/donate.h
     src/interfaces/IClientListener.h
@@ -45,7 +46,6 @@ set(HEADERS
     src/net/strategies/DonateStrategy.h
     src/net/strategies/FailoverStrategy.h
     src/net/strategies/SinglePoolStrategy.h
-    src/Platform.h
     src/proxy/Addr.h
     src/proxy/Counters.h
     src/proxy/CustomDiff.h
@@ -83,11 +83,12 @@ set(HEADERS
 
 set(SOURCES
     src/App.cpp
+    src/common/config/CommonConfig.cpp
+    src/common/config/ConfigLoader.cpp
+    src/common/config/ConfigWatcher.cpp
+    src/common/Platform.cpp
     src/Console.cpp
-    src/core/CommonConfig.cpp
     src/core/Config.cpp
-    src/core/ConfigLoader.cpp
-    src/core/ConfigWatcher.cpp
     src/core/Controller.cpp
     src/crypto/c_keccak.c
     src/crypto/c_keccak.h
@@ -103,7 +104,6 @@ set(SOURCES
     src/net/strategies/FailoverStrategy.cpp
     src/net/strategies/SinglePoolStrategy.cpp
     src/net/SubmitResult.cpp
-    src/Platform.cpp
     src/proxy/Counters.cpp
     src/proxy/CustomDiff.cpp
     src/proxy/Error.cpp
@@ -135,7 +135,7 @@ if (WIN32)
     set(SOURCES_OS
         res/app.rc
         src/App_win.cpp
-        src/Platform_win.cpp
+        src/common/Platform_win.cpp
         src/proxy/Uuid_win.cpp
         )
 
@@ -144,7 +144,7 @@ if (WIN32)
 elseif (APPLE)
     set(SOURCES_OS
         src/App_unix.cpp
-        src/Platform_mac.cpp
+        src/common/Platform_mac.cpp
         src/proxy/Uuid_mac.cpp
         )
 
@@ -153,7 +153,7 @@ elseif (APPLE)
 else()
     set(SOURCES_OS
         src/App_unix.cpp
-        src/Platform_unix.cpp
+        src/common/Platform_unix.cpp
         src/proxy/Uuid_unix.cpp
         )
 
@@ -240,14 +240,14 @@ if (WITH_HTTPD)
         set(HTTPD_SOURCES
             src/api/Api.h
             src/api/ApiRouter.h
-            src/api/HttpBody.h
-            src/api/Httpd.h
-            src/api/HttpReply.h
-            src/api/HttpRequest.h
+            src/common/api/HttpBody.h
+            src/common/api/Httpd.h
+            src/common/api/HttpReply.h
+            src/common/api/HttpRequest.h
             src/api/Api.cpp
             src/api/ApiRouter.cpp
-            src/api/Httpd.cpp
-            src/api/HttpRequest.cpp
+            src/common/api/Httpd.cpp
+            src/common/api/HttpRequest.cpp
             )
     else()
         message(FATAL_ERROR "microhttpd NOT found: use `-DWITH_HTTPD=OFF` to build without http deamon support")

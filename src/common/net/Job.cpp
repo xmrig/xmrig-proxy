@@ -5,6 +5,7 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -22,11 +23,11 @@
  */
 
 
+#include <assert.h>
 #include <string.h>
 
 
-#include "common/xmrig.h"
-#include "net/Job.h"
+#include "common/net/Job.h"
 
 
 static inline unsigned char hf_hex2bin(char c, bool &err)
@@ -57,24 +58,31 @@ static inline char hf_bin2hex(unsigned char c)
 
 
 Job::Job() :
+    m_nicehash(false),
     m_poolId(-2),
-    m_variant(xmrig::VARIANT_AUTO),
+    m_threadId(-1),
     m_size(0),
     m_diff(0),
-    m_target(0)
+    m_target(0),
+    m_blob(),
+    m_algo(xmrig::INVALID_ALGO),
+    m_variant(xmrig::VARIANT_AUTO)
 {
-    memset(m_coin, 0, sizeof(m_coin));
 }
 
 
-Job::Job(int poolId, int variant) :
+Job::Job(int poolId, bool nicehash, xmrig::Algo algo, xmrig::Variant variant, const xmrig::Id &clientId) :
+    m_nicehash(nicehash),
     m_poolId(poolId),
-    m_variant(variant),
+    m_threadId(-1),
     m_size(0),
     m_diff(0),
-    m_target(0)
+    m_target(0),
+    m_blob(),
+    m_algo(algo),
+    m_clientId(clientId),
+    m_variant(variant)
 {
-    memset(m_coin, 0, sizeof(m_coin));
 }
 
 
@@ -101,6 +109,10 @@ bool Job::setBlob(const char *blob)
 
     if (!fromHex(blob, (int) m_size * 2, m_blob)) {
         return false;
+    }
+
+    if (*nonce() != 0 && !m_nicehash) {
+        m_nicehash = true;
     }
 
 #   ifdef XMRIG_PROXY_PROJECT
@@ -154,13 +166,20 @@ bool Job::setTarget(const char *target)
 }
 
 
-void Job::setCoin(const char *coin)
+void Job::setVariant(int variant)
 {
-    if (strlen(coin) > 4) {
-        return;
-    }
+    switch (variant) {
+    case xmrig::VARIANT_AUTO:
+    case xmrig::VARIANT_NONE:
+    case xmrig::VARIANT_V1:
+        m_variant = static_cast<xmrig::Variant>(variant);
+        break;
 
-    strncpy(m_coin, coin, sizeof(m_coin));
+    default:
+        assert(false);
+        m_variant = xmrig::VARIANT_AUTO;
+        break;
+    }
 }
 
 
@@ -174,7 +193,6 @@ bool Job::fromHex(const char* in, unsigned int len, unsigned char* out)
             return false;
         }
     }
-
     return true;
 }
 
@@ -186,6 +204,17 @@ void Job::toHex(const unsigned char* in, unsigned int len, char* out)
         out[i * 2 + 1] = hf_bin2hex(in[i] & 0x0F);
     }
 }
+
+
+#ifdef APP_DEBUG
+char *Job::toHex(const unsigned char* in, unsigned int len)
+{
+    char *out = new char[len * 2 + 1]();
+    toHex(in, len, out);
+
+    return out;
+}
+#endif
 
 
 bool Job::operator==(const Job &other) const

@@ -25,8 +25,8 @@
 #include <stdio.h>
 
 
-#include "net/Job.h"
-#include "proxy/JobResult.h"
+#include "common/net/Job.h"
+#include "net/JobResult.h"
 
 
 JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, const char *result) :

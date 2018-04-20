@@ -33,12 +33,12 @@
 #include "common/net/strategies/SinglePoolStrategy.h"
 #include "core/Config.h"
 #include "core/Controller.h"
+#include "net/JobResult.h"
 #include "net/strategies/DonateStrategy.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/events/SubmitEvent.h"
-#include "proxy/JobResult.h"
 #include "proxy/Miner.h"
 #include "proxy/splitters/simple/SimpleMapper.h"
 

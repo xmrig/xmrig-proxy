@@ -22,6 +22,7 @@ set(HEADERS
     src/common/log/Log.h
     src/common/net/Client.h
     src/common/net/Id.h
+    src/common/net/Job.h
     src/common/net/Pool.h
     src/common/net/Storage.h
     src/common/net/strategies/FailoverStrategy.h
@@ -46,7 +47,7 @@ set(HEADERS
     src/interfaces/IWatcherListener.h
     src/log/AccessLog.h
     src/log/ShareLog.h
-    src/net/Job.h
+    src/net/JobResult.h
     src/net/strategies/DonateStrategy.h
     src/proxy/Addr.h
     src/proxy/Counters.h
@@ -60,7 +61,6 @@ set(HEADERS
     src/proxy/events/LoginEvent.h
     src/proxy/events/MinerEvent.h
     src/proxy/events/SubmitEvent.h
-    src/proxy/JobResult.h
     src/proxy/Miner.h
     src/proxy/Miners.h
     src/proxy/Proxy.h
@@ -93,6 +93,7 @@ set(SOURCES
     src/common/log/FileLog.cpp
     src/common/log/Log.cpp
     src/common/net/Client.cpp
+    src/common/net/Job.cpp
     src/common/net/Pool.cpp
     src/common/net/strategies/FailoverStrategy.cpp
     src/common/net/strategies/SinglePoolStrategy.cpp
@@ -102,7 +103,7 @@ set(SOURCES
     src/core/Controller.cpp
     src/log/AccessLog.cpp
     src/log/ShareLog.cpp
-    src/net/Job.cpp
+    src/net/JobResult.cpp
     src/net/strategies/DonateStrategy.cpp
     src/proxy/Counters.cpp
     src/proxy/CustomDiff.cpp
@@ -111,7 +112,6 @@ set(SOURCES
     src/proxy/events/ConnectionEvent.h
     src/proxy/events/Event.cpp
     src/proxy/events/MinerEvent.cpp
-    src/proxy/JobResult.cpp
     src/proxy/LoginRequest.cpp
     src/proxy/Miner.cpp
     src/proxy/Miners.cpp
@@ -129,6 +129,7 @@ set(SOURCES
     src/proxy/workers/Workers.cpp
     src/Summary.cpp
     src/xmrig.cpp
+
    )
 
 if (WIN32)

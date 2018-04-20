@@ -27,14 +27,14 @@
 
 
 #include "common/log/Log.h"
-#include "net/Job.h"
+#include "common/net/Job.h"
+#include "net/JobResult.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"
 #include "proxy/Events.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"
-#include "proxy/JobResult.h"
 #include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
 #include "proxy/Uuid.h"
@@ -136,12 +136,12 @@ void Miner::setJob(Job &job)
         setState(ReadyState);
         size = snprintf(m_sendBuf, sizeof(m_sendBuf),
                         "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"result\":{\"id\":\"%s\",\"job\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx0\",\"target\":\"%s\",\"coin\":\"%s\",\"variant\":%d}%s,\"status\":\"OK\"}}\n",
-                        m_loginId, m_rpcId, job.rawBlob(), job.id().data(), m_fixedByte, customDiff ? target : job.rawTarget(), job.coin(), job.variant(), m_nicehash ? ",\"extensions\":[\"nicehash\"]" : "");
+                        m_loginId, m_rpcId, job.rawBlob(), job.id().data(), m_fixedByte, customDiff ? target : job.rawTarget(), "", job.variant(), m_nicehash ? ",\"extensions\":[\"nicehash\"]" : "");
     }
     else {
         size = snprintf(m_sendBuf, sizeof(m_sendBuf),
                         "{\"jsonrpc\":\"2.0\",\"method\":\"job\",\"params\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx0\",\"target\":\"%s\",\"coin\":\"%s\",\"variant\":%d}}\n",
-                        job.rawBlob(), job.id().data(), m_fixedByte, customDiff ? target : job.rawTarget(), job.coin(), job.variant());
+                        job.rawBlob(), job.id().data(), m_fixedByte, customDiff ? target : job.rawTarget(), "", job.variant());
     }
 
     send(size);

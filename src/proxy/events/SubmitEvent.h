@@ -25,9 +25,9 @@
 #define __SUBMITEVENT_H__
 
 
+#include "net/JobResult.h"
 #include "proxy/Error.h"
 #include "proxy/events/MinerEvent.h"
-#include "proxy/JobResult.h"
 
 
 class SubmitEvent : public MinerEvent

@@ -22,6 +22,7 @@
  */
 
 
+#include "common/crypto/keccak.h"
 #include "common/net/Client.h"
 #include "common/Platform.h"
 #include "common/xmrig.h"
@@ -30,12 +31,6 @@
 #include "interfaces/IStrategyListener.h"
 #include "net/strategies/DonateStrategy.h"
 #include "proxy/StatsData.h"
-
-
-extern "C"
-{
-#include "crypto/c_keccak.h"
-}
 
 
 static inline int random(int min, int max){
@@ -57,7 +52,7 @@ DonateStrategy::DonateStrategy(size_t id, xmrig::Controller *controller, IStrate
     char userId[65] = { 0 };
     const char *user = controller->config()->pools().front().user();
 
-    keccak(reinterpret_cast<const uint8_t *>(user), static_cast<int>(strlen(user)), hash, sizeof(hash));
+    xmrig::keccak(reinterpret_cast<const uint8_t *>(user), strlen(user), hash);
     Job::toHex(hash, 32, userId);
 
     uint16_t port = 4444;

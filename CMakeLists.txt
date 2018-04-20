@@ -16,6 +16,7 @@ set(HEADERS
     src/common/config/ConfigLoader.h
     src/common/config/ConfigWatcher.h
     src/common/Console.h
+    src/common/crypto/keccak.h
     src/common/net/Client.h
     src/common/net/Id.h
     src/common/net/Pool.h
@@ -87,6 +88,7 @@ set(SOURCES
     src/common/config/ConfigLoader.cpp
     src/common/config/ConfigWatcher.cpp
     src/common/Console.cpp
+    src/common/crypto/keccak.cpp
     src/common/net/Client.cpp
     src/common/net/Pool.cpp
     src/common/net/strategies/FailoverStrategy.cpp
@@ -95,8 +97,6 @@ set(SOURCES
     src/common/Platform.cpp
     src/core/Config.cpp
     src/core/Controller.cpp
-    src/crypto/c_keccak.c
-    src/crypto/c_keccak.h
     src/log/AccessLog.cpp
     src/log/ConsoleLog.cpp
     src/log/FileLog.cpp
@@ -164,7 +164,6 @@ add_definitions(/DXMRIG_PROXY_PROJECT)
 add_definitions(/DUNICODE)
 add_definitions(/D__STDC_FORMAT_MACROS)
 add_definitions(/DAPP_DEVEL)
-add_definitions(/DNDEBUG)
 #add_definitions(/DAPP_DEBUG)
 
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$" AND CMAKE_SIZEOF_VOID_P EQUAL 8)

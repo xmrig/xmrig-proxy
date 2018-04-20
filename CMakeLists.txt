@@ -17,6 +17,9 @@ set(HEADERS
     src/common/config/ConfigWatcher.h
     src/common/Console.h
     src/common/crypto/keccak.h
+    src/common/log/ConsoleLog.h
+    src/common/log/FileLog.h
+    src/common/log/Log.h
     src/common/net/Client.h
     src/common/net/Id.h
     src/common/net/Pool.h
@@ -42,9 +45,6 @@ set(HEADERS
     src/interfaces/IStrategyListener.h
     src/interfaces/IWatcherListener.h
     src/log/AccessLog.h
-    src/log/ConsoleLog.h
-    src/log/FileLog.h
-    src/log/Log.h
     src/log/ShareLog.h
     src/net/Job.h
     src/net/strategies/DonateStrategy.h
@@ -89,6 +89,9 @@ set(SOURCES
     src/common/config/ConfigWatcher.cpp
     src/common/Console.cpp
     src/common/crypto/keccak.cpp
+    src/common/log/ConsoleLog.cpp
+    src/common/log/FileLog.cpp
+    src/common/log/Log.cpp
     src/common/net/Client.cpp
     src/common/net/Pool.cpp
     src/common/net/strategies/FailoverStrategy.cpp
@@ -98,9 +101,6 @@ set(SOURCES
     src/core/Config.cpp
     src/core/Controller.cpp
     src/log/AccessLog.cpp
-    src/log/ConsoleLog.cpp
-    src/log/FileLog.cpp
-    src/log/Log.cpp
     src/log/ShareLog.cpp
     src/net/Job.cpp
     src/net/strategies/DonateStrategy.cpp
@@ -221,7 +221,7 @@ endif()
 CHECK_INCLUDE_FILE (syslog.h HAVE_SYSLOG_H)
 if (HAVE_SYSLOG_H)
     add_definitions(/DHAVE_SYSLOG_H)
-    set(SOURCES_SYSLOG src/log/SysLog.h src/log/SysLog.cpp)
+    set(SOURCES_SYSLOG src/common/log/SysLog.h src/common/log/SysLog.cpp)
 endif()
 
 if (WITH_GOOGLE_BREAKPAD)

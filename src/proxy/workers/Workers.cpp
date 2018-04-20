@@ -25,9 +25,9 @@
 #include <inttypes.h>
 
 
+#include "common/log/Log.h"
 #include "core/Config.h"
 #include "core/Controller.h"
-#include "log/Log.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"

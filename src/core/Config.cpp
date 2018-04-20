@@ -27,12 +27,12 @@
 
 
 #include "common/config/ConfigLoader.h"
+#include "common/log/Log.h"
 #include "common/net/Pool.h"
 #include "common/xmrig.h"
 #include "core/Config.h"
 #include "core/ConfigCreator.h"
 #include "donate.h"
-#include "log/Log.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/prettywriter.h"

@@ -26,7 +26,7 @@
 #include <string.h>
 
 
-#include "log/Log.h"
+#include "common/log/Log.h"
 #include "net/Job.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"

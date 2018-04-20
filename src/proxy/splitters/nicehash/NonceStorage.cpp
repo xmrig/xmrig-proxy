@@ -24,7 +24,7 @@
 #include <inttypes.h>
 
 
-#include "log/Log.h"
+#include "common/log/Log.h"
 #include "proxy/Counters.h"
 #include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"

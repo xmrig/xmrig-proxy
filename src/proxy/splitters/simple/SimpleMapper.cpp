@@ -27,12 +27,12 @@
 #include <string.h>
 
 
+#include "common/log/Log.h"
 #include "common/net/Client.h"
 #include "common/net/strategies/FailoverStrategy.h"
 #include "common/net/strategies/SinglePoolStrategy.h"
 #include "core/Config.h"
 #include "core/Controller.h"
-#include "log/Log.h"
 #include "net/strategies/DonateStrategy.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"

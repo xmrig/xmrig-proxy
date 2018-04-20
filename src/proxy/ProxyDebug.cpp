@@ -25,6 +25,7 @@
 #include <inttypes.h>
 
 
+#include "common/net/SubmitResult.h"
 #include "log/Log.h"
 #include "proxy/Events.h"
 #include "proxy/events/AcceptEvent.h"
@@ -36,7 +37,6 @@
 #include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
 #include "proxy/ProxyDebug.h"
-#include "net/SubmitResult.h"
 
 
 ProxyDebug::ProxyDebug(bool enabled) :

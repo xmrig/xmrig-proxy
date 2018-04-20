@@ -22,14 +22,14 @@
  */
 
 
+#include "common/net/Client.h"
 #include "common/Platform.h"
+#include "common/xmrig.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "interfaces/IStrategyListener.h"
-#include "net/Client.h"
 #include "net/strategies/DonateStrategy.h"
 #include "proxy/StatsData.h"
-#include "xmrig.h"
 
 
 extern "C"

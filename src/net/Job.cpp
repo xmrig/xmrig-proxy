@@ -25,8 +25,8 @@
 #include <string.h>
 
 
+#include "common/xmrig.h"
 #include "net/Job.h"
-#include "xmrig.h"
 
 
 static inline unsigned char hf_hex2bin(char c, bool &err)

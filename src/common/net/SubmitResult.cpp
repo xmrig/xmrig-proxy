@@ -25,7 +25,7 @@
 #include <uv.h>
 
 
-#include "net/SubmitResult.h"
+#include "common/net/SubmitResult.h"
 
 
 SubmitResult::SubmitResult(int64_t seq, uint32_t diff, uint64_t actualDiff, int64_t reqId) :

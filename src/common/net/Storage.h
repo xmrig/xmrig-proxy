@@ -58,7 +58,7 @@ public:
     inline TYPE *get(void *id) const { return get(reinterpret_cast<uintptr_t>(id)); }
     inline TYPE *get(uintptr_t id) const
     {
-        assert(m_data.count(id) == 0);
+        assert(m_data.count(id) > 0);
 
         if (m_data.count(id) == 0) {
             return nullptr;

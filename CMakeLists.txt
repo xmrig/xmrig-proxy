@@ -15,6 +15,7 @@ set(HEADERS
     src/common/config/CommonConfig.h
     src/common/config/ConfigLoader.h
     src/common/config/ConfigWatcher.h
+    src/common/Console.h
     src/common/net/Client.h
     src/common/net/Id.h
     src/common/net/Pool.h
@@ -23,7 +24,6 @@ set(HEADERS
     src/common/net/strategies/SinglePoolStrategy.h
     src/common/Platform.h
     src/common/xmrig.h
-    src/Console.h
     src/core/Config.h
     src/core/ConfigLoader_platform.h
     src/core/Controller.h
@@ -86,13 +86,13 @@ set(SOURCES
     src/common/config/CommonConfig.cpp
     src/common/config/ConfigLoader.cpp
     src/common/config/ConfigWatcher.cpp
+    src/common/Console.cpp
     src/common/net/Client.cpp
     src/common/net/Pool.cpp
     src/common/net/strategies/FailoverStrategy.cpp
     src/common/net/strategies/SinglePoolStrategy.cpp
     src/common/net/SubmitResult.cpp
     src/common/Platform.cpp
-    src/Console.cpp
     src/core/Config.cpp
     src/core/Controller.cpp
     src/crypto/c_keccak.c

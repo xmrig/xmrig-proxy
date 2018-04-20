@@ -7,7 +7,6 @@
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
- *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
@@ -30,8 +29,8 @@
 
 #include "api/Api.h"
 #include "App.h"
+#include "common/Console.h"
 #include "common/Platform.h"
-#include "Console.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "log/Log.h"

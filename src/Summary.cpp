@@ -132,8 +132,8 @@ void Summary::printPools(xmrig::Config *config)
     }
 
 #   ifdef APP_DEBUG
-    for (size_t i = 0; i < pools.size(); ++i) {
-        Log::i()->text("%s:%d, user: %s, pass: %s", pools[i].host(), pools[i].port(), pools[i].user(), pools[i].password());
+    for (const Pool &pool : pools) {
+        pool.print();
     }
 #   endif
 }

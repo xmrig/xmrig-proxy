@@ -78,11 +78,11 @@ public:
         // xmrig-proxy
         AccessLogFileKey  = 'A',
         BindKey           = 'b',
-        CoinKey           = 1104,
+        CoinKey           = 1104, // unused since v2.6.
         CustomDiffKey     = 1102,
         DebugKey          = 1101,
         ModeKey           = 'm',
-        PoolCoinKey       = 'C',
+        PoolCoinKey       = 'C',  // unused since v2.6.
         ReuseTimeoutKey   = 1106,
         WorkersKey        = 1103,
     };

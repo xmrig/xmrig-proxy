@@ -34,6 +34,7 @@ enum Algo {
     CRYPTONIGHT,       /* CryptoNight (Monero) */
     CRYPTONIGHT_LITE,  /* CryptoNight-Lite (AEON) */
     CRYPTONIGHT_HEAVY, /* CryptoNight-Heavy (SUMO) */
+    CRYPTONIGHT_IPBC   /* CryptoNight-IPBC (IPBC) */
 };
 
 
@@ -59,7 +60,7 @@ enum AlgoVariant {
 
 enum Variant {
     VARIANT_AUTO = -1, // Autodetect
-    VARIANT_NONE = 0,  // Original CryptoNight
+    VARIANT_V0   = 0,  // Original CryptoNight or CryptoNight-Heavy
     VARIANT_V1   = 1   // Monero v7 PoW
 };
 

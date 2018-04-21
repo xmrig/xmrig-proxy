@@ -211,7 +211,6 @@ bool xmrig::Config::parseString(int key, const char *arg)
         break;
 
     case CoinKey: /* --coin */
-//        m_pools.back()->setCoin(arg);
         break;
 
     case AccessLogFileKey: /* --access-log-file **/

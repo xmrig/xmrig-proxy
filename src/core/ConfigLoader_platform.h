@@ -151,7 +151,6 @@ static struct option const pool_options[] = {
     { "pass",          1, nullptr, xmrig::IConfig::PasswordKey   },
     { "user",          1, nullptr, xmrig::IConfig::UserKey       },
     { "userpass",      1, nullptr, xmrig::IConfig::UserpassKey   },
-    { "coin",          1, nullptr, xmrig::IConfig::PoolCoinKey   },
     { "keepalive",     2, nullptr, xmrig::IConfig::KeepAliveKey  },
     { "variant",       1, nullptr, xmrig::IConfig::VariantKey    },
     { 0, 0, 0, 0 }

@@ -27,7 +27,6 @@
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "log/Log.h"
-#include "net/Url.h"
 #include "Platform.h"
 #include "proxy/Counters.h"
 #include "proxy/events/CloseEvent.h"
@@ -40,11 +39,6 @@
 
 
 #define LABEL(x) " \x1B[01;30m" x ":\x1B[0m "
-
-
-static bool compare(Url *i, Url *j) {
-  return *i == *j;
-}
 
 
 SimpleSplitter::SimpleSplitter(xmrig::Controller *controller) : Splitter(controller),
@@ -87,7 +81,7 @@ void SimpleSplitter::printConnections()
 {
     const Upstreams info = upstreams();
 
-    if (m_controller->config()->colors()) {
+    if (m_controller->config()->isColors()) {
         LOG_INFO("\x1B[01;32m* \x1B[01;37mupstreams\x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("sleep") "\x1B[01;37m%" PRIu64 "\x1B[0m" LABEL("error") "%s%" PRIu64 "\x1B[0m" LABEL("total") "\x1B[01;37m%" PRIu64,
                  info.active ? "\x1B[01;32m" : "\x1B[01;31m", info.active, info.sleep, info.error ? "\x1B[01;31m" : "\x1B[01;37m", info.error, m_upstreams.size());
 
@@ -107,26 +101,27 @@ void SimpleSplitter::printConnections()
 void SimpleSplitter::tick(uint64_t ticks)
 {
     const uint64_t now = uv_now(uv_default_loop());
-    std::vector<SimpleMapper *> released;
+
+    for (SimpleMapper *mapper : m_released) {
+        delete mapper;
+    }
+    m_released.clear();
 
     for (auto const &kv : m_upstreams) {
         if (kv.second->idleTime() > m_reuseTimeout) {
-            released.push_back(kv.second);
+            m_released.push_back(kv.second);
             continue;
         }
 
         kv.second->tick(ticks, now);
     }
 
-    if (released.empty()) {
+    if (m_released.empty()) {
         return;
     }
 
-    for (SimpleMapper *mapper : released) {
-        removeIdle(mapper->id());
-        removeUpstream(mapper->id());
-
-        delete mapper;
+    for (SimpleMapper *mapper : m_released) {
+        stop(mapper);
     }
 }
 
@@ -142,10 +137,10 @@ void SimpleSplitter::onConfigChanged(xmrig::Config *config, xmrig::Config *previ
 {
     m_reuseTimeout = config->reuseTimeout();
 
-    const std::vector<Url*> &pools         = config->pools();
-    const std::vector<Url*> &previousPools = previousConfig->pools();
+    const std::vector<Pool> &pools         = config->pools();
+    const std::vector<Pool> &previousPools = previousConfig->pools();
 
-    if (pools.size() != previousPools.size() || !std::equal(pools.begin(), pools.end(), previousPools.begin(), compare)) {
+    if (pools.size() != previousPools.size() || !std::equal(pools.begin(), pools.end(), previousPools.begin())) {
         Summary::printPools(config);
 
         for (auto const &kv : m_upstreams) {
@@ -197,6 +192,15 @@ void SimpleSplitter::login(LoginEvent *event)
 }
 
 
+void SimpleSplitter::stop(SimpleMapper *mapper)
+{
+    removeIdle(mapper->id());
+    removeUpstream(mapper->id());
+
+    mapper->stop();
+}
+
+
 void SimpleSplitter::remove(Miner *miner)
 {
     const ssize_t id = miner->mapperId();
@@ -209,9 +213,9 @@ void SimpleSplitter::remove(Miner *miner)
     mapper->remove(miner);
 
     if (m_reuseTimeout == 0) {
-        removeUpstream(id);
+        stop(mapper);
 
-        delete mapper;
+        m_released.push_back(mapper);
     }
     else {
         m_idles[id] = mapper;

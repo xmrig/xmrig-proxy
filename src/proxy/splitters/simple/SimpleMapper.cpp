@@ -34,7 +34,6 @@
 #include "net/strategies/DonateStrategy.h"
 #include "net/strategies/FailoverStrategy.h"
 #include "net/strategies/SinglePoolStrategy.h"
-#include "net/Url.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"
 #include "proxy/events/AcceptEvent.h"
@@ -78,7 +77,7 @@ void SimpleMapper::add(Miner *miner, const LoginRequest &request)
 }
 
 
-void SimpleMapper::reload(const std::vector<Url*> &pools)
+void SimpleMapper::reload(const std::vector<Pool> &pools)
 {
     delete m_pending;
 
@@ -99,6 +98,20 @@ void SimpleMapper::reuse(Miner *miner, const LoginRequest &request)
     m_idleTime = 0;
     m_miner    = miner;
     m_miner->setMapperId(m_id);
+}
+
+
+void SimpleMapper::stop()
+{
+    m_strategy->stop();
+
+    if (m_pending) {
+        m_pending->stop();
+    }
+
+    if (m_donate) {
+        m_donate->stop();
+    }
 }
 
 
@@ -152,7 +165,7 @@ void SimpleMapper::onActive(IStrategy *strategy, Client *client)
         m_pending  = nullptr;
     }
 
-    if (m_controller->config()->verbose()) {
+    if (m_controller->config()->isVerbose()) {
         LOG_INFO(isColors() ? "#%03u \x1B[01;37muse pool \x1B[01;36m%s:%d \x1B[01;30m%s" : "#%03u use pool %s:%d %s",
                  m_id, client->host(), client->port(), client->ip());
     }
@@ -161,7 +174,7 @@ void SimpleMapper::onActive(IStrategy *strategy, Client *client)
 
 void SimpleMapper::onJob(IStrategy *strategy, Client *client, const Job &job)
 {
-    if (m_controller->config()->verbose()) {
+    if (m_controller->config()->isVerbose()) {
         LOG_INFO(isColors() ? "#%03u \x1B[01;35mnew job\x1B[0m from \x1B[01;37m%s:%d\x1B[0m diff \x1B[01;37m%d" : "#%03u new job from %s:%d diff %d",
                  m_id, client->host(), client->port(), job.diff());
     }
@@ -201,7 +214,7 @@ void SimpleMapper::onResultAccepted(IStrategy *strategy, Client *client, const S
 
 bool SimpleMapper::isColors() const
 {
-    return m_controller->config()->colors();
+    return m_controller->config()->isColors();
 }
 
 
@@ -220,7 +233,7 @@ bool SimpleMapper::isValidJobId(const xmrig::Id &id) const
 }
 
 
-IStrategy *SimpleMapper::createStrategy(const std::vector<Url*> &pools)
+IStrategy *SimpleMapper::createStrategy(const std::vector<Pool> &pools)
 {
     if (pools.size() > 1) {
         return new FailoverStrategy(pools, m_controller->config()->retryPause(), m_controller->config()->retries(), this);

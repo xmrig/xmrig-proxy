@@ -38,7 +38,7 @@
 
 
 Workers::Workers(xmrig::Controller *controller) :
-    m_enabled(controller->config()->workers()),
+    m_enabled(controller->config()->isWorkers()),
     m_controller(controller)
 {
 }
@@ -60,7 +60,7 @@ void Workers::printWorkers()
     char workerName[24];
     size_t size = 0;
 
-    Log::i()->text(m_controller->config()->colors() ? "\x1B[01;37m%-23s | %-15s | %-5s | %-8s | %-3s | %11s | %11s |" : "%-23s | %-15s | %-5s | %-8s | %-3s | %11s | %11s |",
+    Log::i()->text(m_controller->config()->isColors() ? "\x1B[01;37m%-23s | %-15s | %-5s | %-8s | %-3s | %11s | %11s |" : "%-23s | %-15s | %-5s | %-8s | %-3s | %11s | %11s |",
                    "WORKER NAME", "LAST IP", "COUNT", "ACCEPTED", "REJ", "10 MINUTES", "24 HOURS");
 
     for (const Worker &worker : m_workers) {

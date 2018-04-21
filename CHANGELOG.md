@@ -1,3 +1,8 @@
+# v2.5.3
+- Fixed critical bug, in some cases proxy was can't recovery connection and switch to failover pool, version 2.5.2 affected.
+- Added configurable keepalive support, now possible override default timeout (60 seconds) via config file (only).
+- Fixed wrong miners count in 32 bit builds.
+
 # v2.5.2
 - [#448](https://github.com/xmrig/xmrig/issues/478) Fixed broken reconnect.
 

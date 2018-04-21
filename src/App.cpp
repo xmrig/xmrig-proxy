@@ -53,7 +53,7 @@ App::App(int argc, char **argv) :
         return;
     }
 
-    if (!m_controller->config()->background()) {
+    if (!m_controller->config()->isBackground()) {
         m_console = new Console(this);
     }
 
@@ -102,8 +102,8 @@ int App::exec()
     m_httpd = new Httpd(
                 m_controller->config()->apiPort(),
                 m_controller->config()->apiToken(),
-                m_controller->config()->apiIPv6(),
-                m_controller->config()->apiRestricted()
+                m_controller->config()->isApiIPv6(),
+                m_controller->config()->isApiRestricted()
                 );
 
     m_httpd->start();
@@ -133,7 +133,7 @@ void App::onConsoleCommand(char command)
     case 'v':
     case 'V':
         m_controller->config()->toggleVerbose();
-        LOG_NOTICE("verbose: %d", m_controller->config()->verbose());
+        LOG_NOTICE("verbose: %d", m_controller->config()->isVerbose());
         break;
 
     case 'h':

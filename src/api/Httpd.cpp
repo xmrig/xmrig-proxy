@@ -7,7 +7,6 @@
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
- *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
@@ -32,37 +31,6 @@
 #include "api/HttpReply.h"
 #include "api/HttpRequest.h"
 #include "log/Log.h"
-
-
-class UploadCtx
-{
-public:
-    inline UploadCtx() :
-        m_pos(0)
-    {}
-
-
-    inline bool write(const char *data, size_t size)
-    {
-        if (size > (sizeof(m_data) - m_pos - 1)) {
-            return false;
-        }
-
-        memcpy(m_data + m_pos, data, size);
-
-        m_pos += size;
-        m_data[m_pos] = '\0';
-
-        return true;
-    }
-
-
-    inline const char *data() const { return m_data; }
-
-private:
-    char m_data[32768];
-    size_t m_pos;
-};
 
 
 Httpd::Httpd(int port, const char *accessToken, bool IPv6, bool restricted) :
@@ -97,6 +65,7 @@ bool Httpd::start()
     }
 
     unsigned int flags = 0;
+#   if MHD_VERSION >= 0x00093500
     if (m_IPv6 && MHD_is_feature_supported(MHD_FEATURE_IPv6)) {
         flags |= MHD_USE_DUAL_STACK;
     }
@@ -104,6 +73,7 @@ bool Httpd::start()
     if (MHD_is_feature_supported(MHD_FEATURE_EPOLL)) {
         flags |= MHD_USE_EPOLL_LINUX_ONLY;
     }
+#   endif
 
     m_daemon = MHD_start_daemon(flags, m_port, nullptr, nullptr, &Httpd::handler, this, MHD_OPTION_END);
     if (!m_daemon) {

@@ -29,7 +29,7 @@
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "log/Log.h"
-#include "net/Url.h"
+#include "net/Pool.h"
 #include "proxy/Addr.h"
 #include "Summary.h"
 #include "version.h"
@@ -50,7 +50,7 @@ static void print_versions(xmrig::Controller *controller)
 #   endif
 
 
-    if (controller->config()->colors()) {
+    if (controller->config()->isColors()) {
         Log::i()->text("\x1B[01;32m * \x1B[01;37mVERSIONS:     \x1B[01;36mxmrig-proxy/%s\x1B[01;37m libuv/%s%s", APP_VERSION, uv_version_string(), buf);
     } else {
         Log::i()->text(" * VERSIONS:     xmrig-proxy/%s libuv/%s%s", APP_VERSION, uv_version_string(), buf);
@@ -60,22 +60,22 @@ static void print_versions(xmrig::Controller *controller)
 
 static void print_mode(xmrig::Controller *controller)
 {
-    Log::i()->text(controller->config()->colors() ? "\x1B[01;32m * \x1B[01;37mMODE:\x1B[0m         \x1B[01;37m%s" : " * MODE:         %s",
+    Log::i()->text(controller->config()->isColors() ? "\x1B[01;32m * \x1B[01;37mMODE:\x1B[0m         \x1B[01;37m%s" : " * MODE:         %s",
                    controller->config()->modeName());
 }
 
 
 static void print_bind(xmrig::Controller *controller)
 {
-    const std::vector<Addr*> &addrs = controller->config()->addrs();
+    const std::vector<Addr> &addrs = controller->config()->addrs();
 
     for (size_t i = 0; i < addrs.size(); ++i) {
-        Log::i()->text(controller->config()->colors() ? "\x1B[01;32m * \x1B[01;37mBIND #%d:\x1B[0m      \x1B[36m%s%s%s:%d" : " * BIND #%d:      %s%s%s:%d",
+        Log::i()->text(controller->config()->isColors() ? "\x1B[01;32m * \x1B[01;37mBIND #%d:\x1B[0m      \x1B[36m%s%s%s:%d" : " * BIND #%d:      %s%s%s:%d",
                        i + 1,
-                       addrs[i]->isIPv6() ? "[" : "",
-                       addrs[i]->ip(),
-                       addrs[i]->isIPv6() ? "]" : "",
-                       addrs[i]->port());
+                       addrs[i].isIPv6() ? "[" : "",
+                       addrs[i].ip(),
+                       addrs[i].isIPv6() ? "]" : "",
+                       addrs[i].port());
     }
 }
 
@@ -88,15 +88,15 @@ static void print_api(xmrig::Controller *controller)
         return;
     }
 
-    Log::i()->text(controller->config()->colors() ? "\x1B[01;32m * \x1B[01;37mAPI BIND:     \x1B[01;36m%s:%d" : " * API BIND:     %s:%d",
-                   controller->config()->apiIPv6() ? "[::]" : "0.0.0.0", port);
+    Log::i()->text(controller->config()->isColors() ? "\x1B[01;32m * \x1B[01;37mAPI BIND:     \x1B[01;36m%s:%d" : " * API BIND:     %s:%d",
+                   controller->config()->isApiIPv6() ? "[::]" : "0.0.0.0", port);
 }
 #endif
 
 
 static void print_commands(xmrig::Controller *controller)
 {
-    if (controller->config()->colors()) {
+    if (controller->config()->isColors()) {
         Log::i()->text("\x1B[01;32m * \x1B[01;37mCOMMANDS:     \x1B[01;35mh\x1B[01;37mashrate, \x1B[01;35mc\x1B[01;37monnections, \x1B[01;35mv\x1B[01;37merbose, \x1B[01;35mw\x1B[01;37morkers");
     }
     else {
@@ -122,18 +122,18 @@ void Summary::print(xmrig::Controller *controller)
 
 void Summary::printPools(xmrig::Config *config)
 {
-    const std::vector<Url*> &pools = config->pools();
+    const std::vector<Pool> &pools = config->pools();
 
     for (size_t i = 0; i < pools.size(); ++i) {
-        Log::i()->text(config->colors() ? "\x1B[01;32m * \x1B[01;37mPOOL #%d:\x1B[0m      \x1B[36m%s:%d" : " * POOL #%d:      %s:%d",
+        Log::i()->text(config->isColors() ? "\x1B[01;32m * \x1B[01;37mPOOL #%d:\x1B[0m      \x1B[36m%s" : " * POOL #%d:      %s",
                        i + 1,
-                       pools[i]->host(),
-                       pools[i]->port());
+                       pools[i].url()
+                       );
     }
 
 #   ifdef APP_DEBUG
     for (size_t i = 0; i < pools.size(); ++i) {
-        Log::i()->text("%s:%d, user: %s, pass: %s", pools[i]->host(), pools[i]->port(), pools[i]->user(), pools[i]->password());
+        Log::i()->text("%s:%d, user: %s, pass: %s", pools[i].host(), pools[i].port(), pools[i].user(), pools[i].password());
     }
 #   endif
 }

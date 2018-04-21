@@ -55,7 +55,7 @@ public:
     void addListener(IControllerListener *listener);
 
 protected:
-    void onNewConfig(Config *config) override;
+    void onNewConfig(IConfig *config) override;
 
 private:
     ControllerPrivate *d_ptr;

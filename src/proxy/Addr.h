@@ -30,6 +30,9 @@
 #include <stdlib.h>
 
 
+#include "core/utils/c_str.h"
+
+
 class Addr
 {
 public:
@@ -37,18 +40,15 @@ public:
 
 
     inline Addr() :
-        m_addr(nullptr),
-        m_ip(nullptr),
         m_version(0),
         m_port(0)
     {}
 
 
     inline Addr(const char *addr) :
-        m_addr(strdup(addr)),
-        m_ip(nullptr),
         m_version(0),
-        m_port(0)
+        m_port(0),
+        m_addr(addr)
     {
         if (!addr || strlen(addr) < 5) {
             return;
@@ -63,17 +63,10 @@ public:
     }
 
 
-    inline ~Addr()
-    {
-        delete [] m_addr;
-        delete [] m_ip;
-    }
-
-
     inline bool isIPv6() const      { return m_version == 6; }
-    inline bool isValid() const     { return m_version && m_ip && m_port > 0; }
-    inline const char *addr() const { return m_addr; }
-    inline const char *ip() const   { return m_ip; }
+    inline bool isValid() const     { return m_version && !m_ip.isNull() && m_port > 0; }
+    inline const char *addr() const { return m_addr.data(); }
+    inline const char *ip() const   { return m_ip.data(); }
     inline uint16_t port() const    { return m_port; }
 
 private:
@@ -86,10 +79,11 @@ private:
 
         m_version = 4;
         const size_t size = port++ - addr + 1;
-        m_ip = new char[size]();
-        memcpy(m_ip, addr, size - 1);
+        char *ip = new char[size]();
+        memcpy(ip, addr, size - 1);
 
-        m_port = (uint16_t) strtol(port, nullptr, 10);
+        m_ip   = ip;
+        m_port = static_cast<uint16_t>(strtol(port, nullptr, 10));
     }
 
 
@@ -107,17 +101,18 @@ private:
 
         m_version = 6;
         const size_t size = end - addr;
-        m_ip = new char[size]();
-        memcpy(m_ip, addr + 1, size - 1);
+        char *ip = new char[size]();
+        memcpy(ip, addr + 1, size - 1);
 
-        m_port = (uint16_t) strtol(port + 1, nullptr, 10);
+        m_ip   = ip;
+        m_port = static_cast<uint16_t>(strtol(port + 1, nullptr, 10));
     }
 
 
-    char *m_addr;
-    char *m_ip;
     int m_version;
     uint16_t m_port;
+    xmrig::c_str m_addr;
+    xmrig::c_str m_ip;
 };
 
 #endif /* __ADDR_H__ */

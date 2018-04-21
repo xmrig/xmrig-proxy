@@ -79,8 +79,7 @@ private:
     constexpr static int kGCInterval    = 60;
 
     bool isColors() const;
-    void bind(const Addr *addr);
-    void bind(const char *ip, uint16_t port, bool ipv6);
+    void bind(const Addr &addr);
     void gc();
     void print();
     void tick();

@@ -28,6 +28,8 @@
 #include <stdint.h>
 #include <uv.h>
 
+
+#include "core/utils/c_str.h"
 #include "rapidjson/fwd.h"
 
 
@@ -37,14 +39,14 @@ struct option;
 namespace xmrig {
 
 
-class Config;
+class IConfigCreator;
 class IWatcherListener;
 
 
 class ConfigWatcher
 {
 public:
-    ConfigWatcher(const char *path, IWatcherListener *listener);
+    ConfigWatcher(const char *path, IConfigCreator *creator, IWatcherListener *listener);
     ~ConfigWatcher();
 
 private:
@@ -56,10 +58,11 @@ private:
     void reload();
     void start();
 
-    char *m_path;
+    IConfigCreator *m_creator;
     IWatcherListener *m_listener;
     uv_fs_event_t m_fsEvent;
     uv_timer_t m_timer;
+    xmrig::c_str m_path;
 };
 
 

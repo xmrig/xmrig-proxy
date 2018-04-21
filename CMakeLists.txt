@@ -13,13 +13,16 @@ set(HEADERS
     src/3rdparty/align.h
     src/App.h
     src/Console.h
+    src/core/CommonConfig.h
     src/core/Config.h
     src/core/ConfigLoader.h
-    src/core/ConfigLoader_static.h
+    src/core/ConfigLoader_platform.h
     src/core/ConfigWatcher.h
     src/core/Controller.h
     src/donate.h
     src/interfaces/IClientListener.h
+    src/interfaces/IConfig.h
+    src/interfaces/IConfigCreator.h
     src/interfaces/IConsoleListener.h
     src/interfaces/IControllerListener.h
     src/interfaces/IEvent.h
@@ -37,10 +40,11 @@ set(HEADERS
     src/net/Client.h
     src/net/Id.h
     src/net/Job.h
+    src/net/Pool.h
+    src/net/Storage.h
     src/net/strategies/DonateStrategy.h
     src/net/strategies/FailoverStrategy.h
     src/net/strategies/SinglePoolStrategy.h
-    src/net/Url.h
     src/Platform.h
     src/proxy/Addr.h
     src/proxy/Counters.h
@@ -80,6 +84,7 @@ set(HEADERS
 set(SOURCES
     src/App.cpp
     src/Console.cpp
+    src/core/CommonConfig.cpp
     src/core/Config.cpp
     src/core/ConfigLoader.cpp
     src/core/ConfigWatcher.cpp
@@ -93,11 +98,11 @@ set(SOURCES
     src/log/ShareLog.cpp
     src/net/Client.cpp
     src/net/Job.cpp
+    src/net/Pool.cpp
     src/net/strategies/DonateStrategy.cpp
     src/net/strategies/FailoverStrategy.cpp
     src/net/strategies/SinglePoolStrategy.cpp
     src/net/SubmitResult.cpp
-    src/net/Url.cpp
     src/Platform.cpp
     src/proxy/Counters.cpp
     src/proxy/CustomDiff.cpp

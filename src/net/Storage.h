@@ -21,51 +21,77 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __CONFIGLOADER_H__
-#define __CONFIGLOADER_H__
+#ifndef __STORAGE_H__
+#define __STORAGE_H__
 
 
-#include <stdint.h>
+#include <assert.h>
+#include <map>
 
-
-#include "rapidjson/fwd.h"
-
-
-struct option;
+#include "log/Log.h"
 
 
 namespace xmrig {
 
 
-class ConfigWatcher;
-class IConfigCreator;
-class IWatcherListener;
-class IConfig;
-
-
-class ConfigLoader
+template <class TYPE>
+class Storage
 {
 public:
-    static bool loadFromFile(IConfig *config, const char *fileName);
-    static bool loadFromJSON(IConfig *config, const char *json);
-    static bool loadFromJSON(IConfig *config, const rapidjson::Document &doc);
-    static bool reload(IConfig *oldConfig, const char *json);
-    static IConfig *load(int argc, char **argv, IConfigCreator *creator, IWatcherListener *listener);
-    static void release();
+    inline Storage() :
+        m_counter(0)
+    {
+    }
+
+
+    inline uintptr_t add(TYPE *ptr)
+    {
+        m_data[m_counter] = ptr;
+
+        return m_counter++;
+    }
+
+
+    inline static void *ptr(uintptr_t id) { return reinterpret_cast<void *>(id); }
+
+
+    inline TYPE *get(void *id) const { return get(reinterpret_cast<uintptr_t>(id)); }
+    inline TYPE *get(uintptr_t id) const
+    {
+        assert(m_data.count(id) == 0);
+
+        if (m_data.count(id) == 0) {
+            return nullptr;
+        }
+
+        return m_data.at(id);
+    }
+
+
+    inline void remove(void *id) { remove(reinterpret_cast<uintptr_t>(id)); }
+    inline void remove(uintptr_t id)
+    {
+        TYPE *obj = get(id);
+        if (obj == nullptr) {
+            return;
+        }
+
+        auto it = m_data.find(id);
+        if (it != m_data.end()) {
+            m_data.erase(it);
+        }
+
+        delete obj;
+    }
+
 
 private:
-    static bool getJSON(const char *fileName, rapidjson::Document &doc);
-    static bool parseArg(IConfig *config, int key, const char *arg);
-    static void parseJSON(IConfig *config, const struct option *option, const rapidjson::Value &object);
-    static void showUsage();
-    static void showVersion();
-
-    static ConfigWatcher *m_watcher;
-    static IConfigCreator *m_creator;
-    static IWatcherListener *m_listener;
+    std::map<uintptr_t, TYPE *> m_data;
+    uint64_t m_counter;
 };
 
 
 } /* namespace xmrig */
 
-#endif /* __CONFIGLOADER_H__ */
+
+#endif /* __STORAGE_H__ */

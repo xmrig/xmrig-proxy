@@ -123,8 +123,8 @@ void Proxy::connect()
 {
     m_splitter->connect();
 
-    const std::vector<Addr*> &addrs = m_controller->config()->addrs();
-    for (const Addr *addr : addrs) {
+    const std::vector<Addr> &addrs = m_controller->config()->addrs();
+    for (const Addr &addr : addrs) {
         bind(addr);
     }
 
@@ -190,11 +190,11 @@ void Proxy::onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig
 
 bool Proxy::isColors() const
 {
-    return m_controller->config()->colors();
+    return m_controller->config()->isColors();
 }
 
 
-void Proxy::bind(const Addr *addr)
+void Proxy::bind(const Addr &addr)
 {
     auto server = new Server(addr, m_controller->config()->mode() == xmrig::Config::NICEHASH_MODE);
 

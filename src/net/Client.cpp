@@ -32,7 +32,6 @@
 #include "interfaces/IClientListener.h"
 #include "log/Log.h"
 #include "net/Client.h"
-#include "net/Url.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
 #include "rapidjson/stringbuffer.h"
@@ -52,6 +51,7 @@
 
 
 int64_t Client::m_sequence = 1;
+xmrig::Storage<Client> Client::m_storage;
 
 
 Client::Client(int id, const char *agent, IClientListener *listener) :
@@ -67,13 +67,17 @@ Client::Client(int id, const char *agent, IClientListener *listener) :
     m_state(UnconnectedState),
     m_expire(0),
     m_jobs(0),
+    m_keepAlive(0),
+    m_key(0),
     m_stream(nullptr),
     m_socket(nullptr)
 {
+    m_key = m_storage.add(this);
+
     memset(m_ip, 0, sizeof(m_ip));
     memset(&m_hints, 0, sizeof(m_hints));
 
-    m_resolver.data = this;
+    m_resolver.data = m_storage.ptr(m_key);
 
     m_hints.ai_family   = AF_UNSPEC;
     m_hints.ai_socktype = SOCK_STREAM;
@@ -81,11 +85,6 @@ Client::Client(int id, const char *agent, IClientListener *listener) :
 
     m_recvBuf.base = m_buf;
     m_recvBuf.len  = sizeof(m_buf);
-
-#   ifndef XMRIG_PROXY_PROJECT
-    m_keepAliveTimer.data = this;
-    uv_timer_init(uv_default_loop(), &m_keepAliveTimer);
-#   endif
 }
 
 
@@ -97,7 +96,7 @@ Client::~Client()
 
 void Client::connect()
 {
-    resolve(m_url.host());
+    resolve(m_pool.host());
 }
 
 
@@ -106,10 +105,10 @@ void Client::connect()
  *
  * @param url
  */
-void Client::connect(const Url *url)
+void Client::connect(const Pool &url)
 {
-    setUrl(url);
-    resolve(m_url.host());
+    setPool(url);
+    connect();
 }
 
 
@@ -122,34 +121,34 @@ void Client::deleteLater()
     m_listener = nullptr;
 
     if (!disconnect()) {
-        delete this;
+        m_storage.remove(m_key);
     }
 }
 
 
-void Client::setUrl(const Url *url)
+void Client::setPool(const Pool &pool)
 {
-    if (!url || !url->isValid()) {
+    if (!pool.isValid()) {
         return;
     }
 
-    m_url = url;
+    m_pool = pool;
 }
 
 
 void Client::tick(uint64_t now)
 {
-    if (m_expire == 0 || now < m_expire) {
-        return;
-    }
-
     if (m_state == ConnectedState) {
-        LOG_DEBUG_ERR("[%s:%u] timeout", m_url.host(), m_url.port());
-        close();
+        if (m_expire && now > m_expire) {
+            LOG_DEBUG_ERR("[%s] timeout", m_pool.url());
+            close();
+        }
+        else if (m_keepAlive && now > m_keepAlive) {
+            ping();
+        }
     }
 
-
-    if (m_state == ConnectingState) {
+    if (m_expire && now > m_expire && m_state == ConnectingState) {
         connect();
     }
 }
@@ -157,12 +156,9 @@ void Client::tick(uint64_t now)
 
 bool Client::disconnect()
 {
-#   ifndef XMRIG_PROXY_PROJECT
-    uv_timer_stop(&m_keepAliveTimer);
-#   endif
-
-    m_expire   = 0;
-    m_failures = -1;
+    m_keepAlive = 0;
+    m_expire    = 0;
+    m_failures  = -1;
 
     return close();
 }
@@ -205,28 +201,7 @@ bool Client::close()
 
     setState(ClosingState);
 
-    uv_stream_t *stream = reinterpret_cast<uv_stream_t*>(m_socket);
-
-    if (uv_is_readable(stream) == 1) {
-        uv_read_stop(stream);
-    }
-
-    if (uv_is_writable(stream) == 1) {
-        const int rc = uv_shutdown(new uv_shutdown_t, stream, [](uv_shutdown_t* req, int status) {
-            if (uv_is_closing(reinterpret_cast<uv_handle_t*>(req->handle)) == 0) {
-                uv_close(reinterpret_cast<uv_handle_t*>(req->handle), Client::onClose);
-            }
-
-            delete req;
-        });
-
-        assert(rc == 0);
-
-        if (rc != 0) {
-            onClose();
-        }
-    }
-    else {
+    if (uv_is_closing(reinterpret_cast<uv_handle_t*>(m_socket)) == 0) {
         uv_close(reinterpret_cast<uv_handle_t*>(m_socket), Client::onClose);
     }
 
@@ -264,11 +239,10 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
     }
 
 #   ifdef XMRIG_PROXY_PROJECT
-    Job job(m_id, m_url.variant());
+    Job job(m_id, m_pool.variant());
     job.setClientId(m_rpcId);
-    job.setCoin(m_url.coin());
 #   else
-    Job job(m_id, m_nicehash, m_url.algo(), m_url.variant());
+    Job job(m_id, m_nicehash, m_pool.algo(), m_pool.variant());
 #   endif
 
     if (!job.setId(params["job_id"].GetString())) {
@@ -305,7 +279,7 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
     }
 
     if (!m_quiet) {
-        LOG_WARN("[%s:%u] duplicate job received, reconnect", m_url.host(), m_url.port());
+        LOG_WARN("[%s] duplicate job received, reconnect", m_pool.url());
     }
 
     close();
@@ -321,7 +295,7 @@ bool Client::parseLogin(const rapidjson::Value &result, int *code)
     }
 
 #   ifndef XMRIG_PROXY_PROJECT
-    m_nicehash = m_url.isNicehash();
+    m_nicehash = m_pool.isNicehash();
 #   endif
 
     if (result.HasMember("extensions")) {
@@ -349,7 +323,7 @@ int Client::resolve(const char *host)
     const int r = uv_getaddrinfo(uv_default_loop(), &m_resolver, Client::onResolved, host, nullptr, &m_hints);
     if (r) {
         if (!m_quiet) {
-            LOG_ERR("[%s:%u] getaddrinfo error: \"%s\"", host, m_url.port(), uv_strerror(r));
+            LOG_ERR("[%s:%u] getaddrinfo error: \"%s\"", host, m_pool.port(), uv_strerror(r));
         }
         return 1;
     }
@@ -360,9 +334,9 @@ int Client::resolve(const char *host)
 
 int64_t Client::send(size_t size)
 {
-    LOG_DEBUG("[%s:%u] send (%d bytes): \"%s\"", m_url.host(), m_url.port(), size, m_sendBuf);
+    LOG_DEBUG("[%s] send (%d bytes): \"%s\"", m_pool.url(), size, m_sendBuf);
     if (state() != ConnectedState || !uv_is_writable(m_stream)) {
-        LOG_DEBUG_ERR("[%s:%u] send failed, invalid state: %d", m_url.host(), m_url.port(), m_state);
+        LOG_DEBUG_ERR("[%s] send failed, invalid state: %d", m_pool.url(), m_state);
         return -1;
     }
 
@@ -400,14 +374,14 @@ void Client::connect(sockaddr *addr)
 {
     setState(ConnectingState);
 
-    reinterpret_cast<struct sockaddr_in*>(addr)->sin_port = htons(m_url.port());
+    reinterpret_cast<sockaddr_in*>(addr)->sin_port = htons(m_pool.port());
     delete m_socket;
 
     uv_connect_t *req = new uv_connect_t;
-    req->data = this;
+    req->data = m_storage.ptr(m_key);
 
     m_socket = new uv_tcp_t;
-    m_socket->data = this;
+    m_socket->data = m_storage.ptr(m_key);
 
     uv_tcp_init(uv_default_loop(), m_socket);
     uv_tcp_nodelay(m_socket, 1);
@@ -434,9 +408,9 @@ void Client::login()
     doc.AddMember("method",  "login", allocator);
 
     rapidjson::Value params(rapidjson::kObjectType);
-    params.AddMember("login", rapidjson::StringRef(m_url.user()),     allocator);
-    params.AddMember("pass",  rapidjson::StringRef(m_url.password()), allocator);
-    params.AddMember("agent", rapidjson::StringRef(m_agent),          allocator);
+    params.AddMember("login", rapidjson::StringRef(m_pool.user()),     allocator);
+    params.AddMember("pass",  rapidjson::StringRef(m_pool.password()), allocator);
+    params.AddMember("agent", rapidjson::StringRef(m_agent),           allocator);
 
     doc.AddMember("params", params, allocator);
 
@@ -475,11 +449,11 @@ void Client::parse(char *line, size_t len)
 
     line[len - 1] = '\0';
 
-    LOG_DEBUG("[%s:%u] received (%d bytes): \"%s\"", m_url.host(), m_url.port(), len, line);
+    LOG_DEBUG("[%s] received (%d bytes): \"%s\"", m_pool.url(), len, line);
 
     if (len < 32 || line[0] != '{') {
         if (!m_quiet) {
-            LOG_ERR("[%s:%u] JSON decode failed", m_url.host(), m_url.port());
+            LOG_ERR("[%s] JSON decode failed", m_pool.url());
         }
 
         return;
@@ -488,7 +462,7 @@ void Client::parse(char *line, size_t len)
     rapidjson::Document doc;
     if (doc.ParseInsitu(line).HasParseError()) {
         if (!m_quiet) {
-            LOG_ERR("[%s:%u] JSON decode failed: \"%s\"", m_url.host(), m_url.port(), rapidjson::GetParseError_En(doc.GetParseError()));
+            LOG_ERR("[%s] JSON decode failed: \"%s\"", m_pool.url(), rapidjson::GetParseError_En(doc.GetParseError()));
         }
 
         return;
@@ -530,7 +504,7 @@ void Client::parseNotification(const char *method, const rapidjson::Value &param
 {
     if (error.IsObject()) {
         if (!m_quiet) {
-            LOG_ERR("[%s:%u] error: \"%s\", code: %d", m_url.host(), m_url.port(), error["message"].GetString(), error["code"].GetInt());
+            LOG_ERR("[%s] error: \"%s\", code: %d", m_pool.url(), error["message"].GetString(), error["code"].GetInt());
         }
         return;
     }
@@ -548,7 +522,7 @@ void Client::parseNotification(const char *method, const rapidjson::Value &param
         return;
     }
 
-    LOG_WARN("[%s:%u] unsupported method: \"%s\"", m_url.host(), m_url.port(), method);
+    LOG_WARN("[%s] unsupported method: \"%s\"", m_pool.url(), method);
 }
 
 
@@ -564,10 +538,10 @@ void Client::parseResponse(int64_t id, const rapidjson::Value &result, const rap
             m_results.erase(it);
         }
         else if (!m_quiet) {
-            LOG_ERR("[%s:%u] error: \"%s\", code: %d", m_url.host(), m_url.port(), message, error["code"].GetInt());
+            LOG_ERR("[%s] error: \"%s\", code: %d", m_pool.url(), message, error["code"].GetInt());
         }
 
-        if (id == 1 || isCriticalError(message)) {
+        if (isCriticalError(message)) {
             close();
         }
 
@@ -582,7 +556,7 @@ void Client::parseResponse(int64_t id, const rapidjson::Value &result, const rap
         int code = -1;
         if (!parseLogin(result, &code)) {
             if (!m_quiet) {
-                LOG_ERR("[%s:%u] login error code: %d", m_url.host(), m_url.port(), code);
+                LOG_ERR("[%s] login error code: %d", m_pool.url(), code);
             }
 
             close();
@@ -613,18 +587,13 @@ void Client::ping()
 void Client::reconnect()
 {
     if (!m_listener) {
-        delete this;
+        m_storage.remove(m_key);
 
         return;
     }
 
     setState(ConnectingState);
-
-#   ifndef XMRIG_PROXY_PROJECT
-    if (m_url.isKeepAlive()) {
-        uv_timer_stop(&m_keepAliveTimer);
-    }
-#   endif
+    m_keepAlive = 0;
 
     if (m_failures == -1) {
         return m_listener->onClose(this, -1);
@@ -639,7 +608,7 @@ void Client::reconnect()
 
 void Client::setState(SocketState state)
 {
-    LOG_DEBUG("[%s:%u] state: %d", m_url.host(), m_url.port(), state);
+    LOG_DEBUG("[%s] state: %d", m_pool.url(), state);
 
     if (m_state == state) {
         return;
@@ -653,13 +622,9 @@ void Client::startTimeout()
 {
     m_expire = 0;
 
-#   ifndef XMRIG_PROXY_PROJECT
-    if (!m_url.isKeepAlive()) {
-        return;
+    if (m_pool.keepAlive()) {
+        m_keepAlive = uv_now(uv_default_loop()) + (m_pool.keepAlive() * 1000);
     }
-
-    uv_timer_start(&m_keepAliveTimer, [](uv_timer_t *handle) { getClient(handle->data)->ping(); }, kKeepAliveTimeout, 0);
-#   endif
 }
 
 
@@ -690,12 +655,13 @@ void Client::onConnect(uv_connect_t *req, int status)
 {
     auto client = getClient(req->data);
     if (!client) {
+        delete req;
         return;
     }
 
     if (status < 0) {
         if (!client->m_quiet) {
-            LOG_ERR("[%s:%u] connect error: \"%s\"", client->m_url.host(), client->m_url.port(), uv_strerror(status));
+            LOG_ERR("[%s] connect error: \"%s\"", client->m_pool.url(), uv_strerror(status));
         }
 
         delete req;
@@ -723,7 +689,7 @@ void Client::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
 
     if (nread < 0) {
         if (nread != UV_EOF && !client->m_quiet) {
-            LOG_ERR("[%s:%u] read error: \"%s\"", client->m_url.host(), client->m_url.port(), uv_strerror((int) nread));
+            LOG_ERR("[%s] read error: \"%s\"", client->m_pool.url(), uv_strerror((int) nread));
         }
 
         client->close();
@@ -733,6 +699,11 @@ void Client::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
     if ((size_t) nread > (sizeof(m_buf) - 8 - client->m_recvBufPos)) {
         client->close();
         return;
+    }
+
+    assert(client->m_listener != nullptr);
+    if (!client->m_listener) {
+        return client->reconnect();
     }
 
     client->m_recvBufPos += nread;
@@ -771,9 +742,14 @@ void Client::onResolved(uv_getaddrinfo_t *req, int status, struct addrinfo *res)
         return;
     }
 
+    assert(client->m_listener != nullptr);
+    if (!client->m_listener) {
+        return client->reconnect();
+    }
+
     if (status < 0) {
         if (!client->m_quiet) {
-            LOG_ERR("[%s:%u] DNS error: \"%s\"", client->m_url.host(), client->m_url.port(), uv_strerror(status));
+            LOG_ERR("[%s] DNS error: \"%s\"", client->m_pool.url(), uv_strerror(status));
         }
 
         return client->reconnect();
@@ -797,7 +773,7 @@ void Client::onResolved(uv_getaddrinfo_t *req, int status, struct addrinfo *res)
 
     if (ipv4.empty() && ipv6.empty()) {
         if (!client->m_quiet) {
-            LOG_ERR("[%s:%u] DNS error: \"No IPv4 (A) or IPv6 (AAAA) records found\"", client->m_url.host(), client->m_url.port());
+            LOG_ERR("[%s] DNS error: \"No IPv4 (A) or IPv6 (AAAA) records found\"", client->m_pool.url());
         }
 
         uv_freeaddrinfo(res);

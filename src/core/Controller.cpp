@@ -103,7 +103,7 @@ int xmrig::Controller::init(int argc, char **argv)
     Log::init();
     Platform::init(config()->userAgent());
 
-    if (!config()->background()) {
+    if (!config()->isBackground()) {
         Log::add(new ConsoleLog(this));
     }
 
@@ -112,7 +112,7 @@ int xmrig::Controller::init(int argc, char **argv)
     }
 
 #   ifdef HAVE_SYSLOG_H
-    if (config()->syslog()) {
+    if (config()->isSyslog()) {
         Log::add(new SysLog());
     }
 #   endif
@@ -134,13 +134,13 @@ void xmrig::Controller::addListener(IControllerListener *listener)
 }
 
 
-void xmrig::Controller::onNewConfig(Config *config)
+void xmrig::Controller::onNewConfig(IConfig *config)
 {
-    xmrig::Config *previousConfig = d_ptr->config;
-    d_ptr->config = config;
+    Config *previousConfig = d_ptr->config;
+    d_ptr->config = static_cast<Config*>(config);
 
     for (xmrig::IControllerListener *listener : d_ptr->listeners) {
-        listener->onConfigChanged(config, previousConfig);
+        listener->onConfigChanged(d_ptr->config, previousConfig);
     }
 
     delete previousConfig;

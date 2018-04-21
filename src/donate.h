@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -41,7 +41,8 @@
  * Choice next donation time, with overime compensation. In proxy no way to use precise donation time.
  * You can check actual donation via API.
  */
-constexpr const int kDonateLevel = 2;
+constexpr const int kDefaultDonateLevel = 2;
+constexpr const int kMinimumDonateLevel = 0;
 
 
 #endif /* __DONATE_H__ */

@@ -73,7 +73,7 @@ bool Server::bind()
 void Server::create(uv_stream_t *server, int status)
 {
     if (status < 0) {
-        LOG_ERR("[%s:%u] new connection error: \"%s\"", m_ip, m_port, uv_strerror(status));
+        LOG_ERR("[%s:%u] new connection error: \"%s\"", m_ip.data(), m_port, uv_strerror(status));
         return;
     }
 

@@ -82,14 +82,15 @@ Second, miner add fields `algo` and `variant` to submit request.
 
 Note about xmr-stak, this miner not send `variant` field and always use long algorithm names, also used 2 non standart algorithm names `cryptonight-monerov7` and `cryptonight-aeonv7`, pool side should support it as `cn` variant 1 and `cn-lite` variant 1.
 
-### Algorithm names
+### Algorithm names and variants
 Both miner and pool should support short algorithm name aliases:
 
-| Long name         | Short name |
-|-------------------|------------|
-| cryptonight       | cn         |
-| cryptonight-lite  | cn-lite    |
-| cryptonight-heavy | cn-heavy   |
+| Long name         | Short name | Variants   |
+|-------------------|------------|------------|
+| cryptonight       | cn         | `0` or `1` |
+| cryptonight-lite  | cn-lite    | `0` or `1` |
+| cryptonight-heavy | cn-heavy   | only `0`   |
+| cryptonight-ipbc  | cn-ipbc    | only `1`   |
 
 Note about **cryptonight** and **cryptonight variant 1**, also known as **cryptonight v7**, all these variants use same algorithm name `cryptonight` or `cn`, miner should able to switch between variants in runtime.
 

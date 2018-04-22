@@ -158,7 +158,11 @@ else()
         src/proxy/Uuid_unix.cpp
         )
 
-    set(EXTRA_LIBS pthread uuid)
+    if (CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
+        set(EXTRA_LIBS pthread)
+    else()
+        set(EXTRA_LIBS pthread uuid)
+    endif()
 endif()
 
 add_definitions(/DXMRIG_PROXY_PROJECT)

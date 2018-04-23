@@ -46,7 +46,7 @@ NonceStorage::~NonceStorage()
 
 bool NonceStorage::add(Miner *miner, const LoginRequest &request)
 {
-    const int index = nextIndex(request.clientType() == LoginRequest::XMRig20Client ? 1 : 0);
+    const int index = nextIndex(0);
     if (index == -1) {
         return false;
     }

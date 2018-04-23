@@ -168,7 +168,7 @@ bool Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value 
             setState(WaitReadyState);
             m_loginId = id;
 
-            LoginEvent::create(this, id, params["login"].GetString(), params["pass"].GetString(), params["agent"].GetString())->start();
+            LoginEvent::create(this, id, params["login"].GetString(), params["pass"].GetString(), params["agent"].GetString(), params["rigid"].GetString())->start();
             return true;
         }
 

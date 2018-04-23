@@ -1,8 +1,8 @@
 # Stratum protocol extensions
-## Mining algorithm negotiation
+## 1. Mining algorithm negotiation
 Subset of protocol extensions, used to negotiate algorithm between miner and pool/proxy. All extensions is backward compatible with standart stratum protocol.
 
-### Miner defined algorithms list
+### 1.1. Miner defined algorithms list
 Miner should send list of algorithms supported. Multiple algorithms in list meant miner can switch algorithms in runtime.
 ```json
 {
@@ -15,7 +15,7 @@ Miner should send list of algorithms supported. Multiple algorithms in list mean
 ```
 In case if miner not support dynamic algorithm change, miner should send list with one item, for example `"algo": ["cn-heavy"]`, pool/proxy should provide work for selected algorithm or send error.
 
-### Extended job object
+### 1.2. Extended job object
 To each `job` object pool/proxy should add 2 additional fields `algo` and `variant`.
 
 ```json
@@ -51,7 +51,7 @@ Note about `cn-heavy` this algorithm now support only one (original) variant, so
 
 If miner not support algorithm connection should be closed by miner to initiate switch to backup pool.
 
-### Algo extension
+### 1.3. Algo extension
 This extension is backward compatible with xmr-stak [extended mining statistics](#extended-mining-statistics).
 First, pool should add `algo` to extensions list:
 ```json

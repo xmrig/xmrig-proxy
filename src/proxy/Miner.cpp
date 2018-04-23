@@ -43,11 +43,13 @@
 
 
 static int64_t nextId = 0;
+xmrig::Storage<Miner> Miner::m_storage;
 
 
 Miner::Miner(bool nicehash, bool ipv6) :
     m_ipv6(ipv6),
     m_nicehash(nicehash),
+    m_ip(),
     m_id(++nextId),
     m_loginId(0),
     m_recvBufPos(0),
@@ -61,10 +63,11 @@ Miner::Miner(bool nicehash, bool ipv6) :
     m_tx(0),
     m_fixedByte(0)
 {
-    memset(m_ip, 0, sizeof(m_ip));
+    m_key = m_storage.add(this);
+
     Uuid::create(m_rpcId, sizeof(m_rpcId));
 
-    m_socket.data = this;
+    m_socket.data = m_storage.ptr(m_key);
     uv_tcp_init(uv_default_loop(), &m_socket);
 
     m_recvBuf.base = m_buf;
@@ -312,7 +315,7 @@ void Miner::shutdown(bool had_error)
                 }
 
                 CloseEvent::start(miner);
-                delete miner;
+                m_storage.remove(handle->data);
             });
         }
 

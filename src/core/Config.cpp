@@ -75,43 +75,46 @@ const char *xmrig::Config::modeName() const
 
 void xmrig::Config::getJSON(rapidjson::Document &doc) const
 {
+    using namespace rapidjson;
+
     doc.SetObject();
 
     auto &allocator = doc.GetAllocator();
 
-    doc.AddMember("access-log-file", accessLog() ? rapidjson::Value(rapidjson::StringRef(accessLog())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
-    doc.AddMember("algo",            rapidjson::StringRef(algoName()), allocator);
+    doc.AddMember("access-log-file", accessLog() ? Value(StringRef(accessLog())).Move() : Value(kNullType).Move(), allocator);
+    doc.AddMember("algo",            StringRef(algoName()), allocator);
 
-    rapidjson::Value api(rapidjson::kObjectType);
+    Value api(kObjectType);
     api.AddMember("port",         apiPort(), allocator);
-    api.AddMember("access-token", apiToken() ? rapidjson::Value(rapidjson::StringRef(apiToken())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
-    api.AddMember("worker-id",    apiWorkerId() ? rapidjson::Value(rapidjson::StringRef(apiWorkerId())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
+    api.AddMember("access-token", apiToken() ? Value(StringRef(apiToken())).Move() : Value(kNullType).Move(), allocator);
+    api.AddMember("worker-id",    apiWorkerId() ? Value(StringRef(apiWorkerId())).Move() : Value(kNullType).Move(), allocator);
     api.AddMember("ipv6",         isApiIPv6(), allocator);
     api.AddMember("restricted",   isApiRestricted(), allocator);
     doc.AddMember("api",          api, allocator);
 
     doc.AddMember("background",   isBackground(), allocator);
 
-    rapidjson::Value bind(rapidjson::kArrayType);
+    Value bind(kArrayType);
     for (const Addr &addr : m_addrs) {
-        bind.PushBack(rapidjson::StringRef(addr.addr()), allocator);
+        bind.PushBack(StringRef(addr.addr()), allocator);
     }
 
     doc.AddMember("bind",         bind, allocator);
     doc.AddMember("colors",       isColors(), allocator);
     doc.AddMember("custom-diff",  diff(), allocator);
     doc.AddMember("donate-level", donateLevel(), allocator);
-    doc.AddMember("log-file",     logFile() ? rapidjson::Value(rapidjson::StringRef(logFile())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
-    doc.AddMember("mode",         rapidjson::StringRef(modeName()), allocator);
+    doc.AddMember("log-file",     logFile() ? Value(StringRef(logFile())).Move() : Value(kNullType).Move(), allocator);
+    doc.AddMember("mode",         StringRef(modeName()), allocator);
 
-    rapidjson::Value pools(rapidjson::kArrayType);
+    Value pools(kArrayType);
 
     for (const Pool &pool : m_pools) {
-        rapidjson::Value obj(rapidjson::kObjectType);
+        Value obj(kObjectType);
 
-        obj.AddMember("url",     rapidjson::StringRef(pool.url()), allocator);
-        obj.AddMember("user",    rapidjson::StringRef(pool.user()), allocator);
-        obj.AddMember("pass",    rapidjson::StringRef(pool.password()), allocator);
+        obj.AddMember("url",     StringRef(pool.url()), allocator);
+        obj.AddMember("user",    StringRef(pool.user()), allocator);
+        obj.AddMember("pass",    StringRef(pool.password()), allocator);
+        obj.AddMember("rig-id",  pool.rigId() ? Value(StringRef(pool.rigId())).Move() : Value(kNullType).Move(), allocator);
 
         if (pool.keepAlive() == 0 || pool.keepAlive() == Pool::kKeepAliveTimeout) {
             obj.AddMember("keepalive", pool.keepAlive() > 0, allocator);
@@ -130,7 +133,7 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("retries",       retries(), allocator);
     doc.AddMember("retry-pause",   retryPause(), allocator);
     doc.AddMember("reuse-timeout", reuseTimeout(), allocator);
-    doc.AddMember("user-agent",    userAgent() ? rapidjson::Value(rapidjson::StringRef(userAgent())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
+    doc.AddMember("user-agent",    userAgent() ? Value(StringRef(userAgent())).Move() : Value(kNullType).Move(), allocator);
 
 #   ifdef HAVE_SYSLOG_H
     doc.AddMember("syslog", isSyslog(), allocator);

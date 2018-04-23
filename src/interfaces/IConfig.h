@@ -36,30 +36,31 @@ public:
     enum Keys {
         // common
         AlgorithmKey      = 'a',
-        ApiPort           = 4000,
         ApiAccessTokenKey = 4001,
-        ApiWorkerIdKey    = 4002,
         ApiIPv6Key        = 4003,
+        ApiPort           = 4000,
         ApiRestrictedKey  = 4004,
+        ApiWorkerIdKey    = 4002,
         BackgroundKey     = 'B',
+        ColorKey          = 1002,
         ConfigKey         = 'c',
         DonateLevelKey    = 1003,
         HelpKey           = 'h',
         KeepAliveKey      = 'k',
         LogFileKey        = 'l',
-        ColorKey          = 1002,
-        WatchKey          = 1105,
         PasswordKey       = 'p',
         RetriesKey        = 'r',
         RetryPauseKey     = 'R',
+        RigIdKey          = 1012,
         SyslogKey         = 'S',
         UrlKey            = 'o',
-        UserKey           = 'u',
         UserAgentKey      = 1008,
+        UserKey           = 'u',
         UserpassKey       = 'O',
+        VariantKey        = 1010,
         VerboseKey        = 1100,
         VersionKey        = 'V',
-        VariantKey        = 1010,
+        WatchKey          = 1105,
 
         // xmrig common
         CPUPriorityKey    = 1021,
@@ -74,15 +75,16 @@ public:
         MaxCPUUsageKey    = 1004,
         SafeKey           = 1005,
         ThreadsKey        = 't',
+        HardwareAESKey    = 1011,
 
         // xmrig-proxy
         AccessLogFileKey  = 'A',
         BindKey           = 'b',
-        CoinKey           = 1104, // unused since v2.6.
+        CoinKey           = 1104,
         CustomDiffKey     = 1102,
         DebugKey          = 1101,
         ModeKey           = 'm',
-        PoolCoinKey       = 'C',  // unused since v2.6.
+        PoolCoinKey       = 'C',
         ReuseTimeoutKey   = 1106,
         WorkersKey        = 1103,
     };

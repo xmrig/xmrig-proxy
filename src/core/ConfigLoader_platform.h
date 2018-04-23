@@ -50,7 +50,8 @@ Options:\n\
   -O, --userpass=U:P       username:password pair for mining server\n\
   -u, --user=USERNAME      username for mining server\n\
   -p, --pass=PASSWORD      password for mining server\n\
-  -k, --keepalive          prevent timeout (need pool support)\n\
+      --rig-id=ID          rig identifier for pool-side statistics (needs pool support)\n\
+  -k, --keepalive          prevent timeout (needs pool support)\n\
   -r, --retries=N          number of times to retry before switch to backup server (default: 1)\n\
   -R, --retry-pause=N      time to pause between retries (default: 1 second)\n\
       --custom-diff=N      override pool diff\n\

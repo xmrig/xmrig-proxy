@@ -82,7 +82,7 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     auto &allocator = doc.GetAllocator();
 
     doc.AddMember("access-log-file", accessLog() ? Value(StringRef(accessLog())).Move() : Value(kNullType).Move(), allocator);
-    doc.AddMember("algo",            StringRef(algoName()), allocator);
+    doc.AddMember("algo",            StringRef(algorithm().name()), allocator);
 
     Value api(kObjectType);
     api.AddMember("port",         apiPort(), allocator);
@@ -109,23 +109,7 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     Value pools(kArrayType);
 
     for (const Pool &pool : m_pools) {
-        Value obj(kObjectType);
-
-        obj.AddMember("url",     StringRef(pool.url()), allocator);
-        obj.AddMember("user",    StringRef(pool.user()), allocator);
-        obj.AddMember("pass",    StringRef(pool.password()), allocator);
-        obj.AddMember("rig-id",  pool.rigId() ? Value(StringRef(pool.rigId())).Move() : Value(kNullType).Move(), allocator);
-
-        if (pool.keepAlive() == 0 || pool.keepAlive() == Pool::kKeepAliveTimeout) {
-            obj.AddMember("keepalive", pool.keepAlive() > 0, allocator);
-        }
-        else {
-            obj.AddMember("keepalive", pool.keepAlive(), allocator);
-        }
-
-        obj.AddMember("variant", pool.variant(), allocator);
-
-        pools.PushBack(obj, allocator);
+        pools.PushBack(pool.toJSON(doc), allocator);
     }
 
     doc.AddMember("pools", pools, allocator);
@@ -274,14 +258,6 @@ void xmrig::Config::parseJSON(const rapidjson::Document &doc)
 
             parseString(BindKey, value.GetString());
         }
-    }
-}
-
-
-void xmrig::Config::setCoin(const char *coin)
-{
-    if (strncasecmp(coin, "aeon", 4) == 0) {
-        m_algorithm = CRYPTONIGHT_LITE;
     }
 }
 

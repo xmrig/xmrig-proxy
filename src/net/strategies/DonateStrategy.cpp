@@ -56,7 +56,7 @@ DonateStrategy::DonateStrategy(size_t id, xmrig::Controller *controller, IStrate
     Job::toHex(hash, 32, userId);
 
     uint16_t port = 4444;
-    switch (controller->config()->algorithm()) {
+    switch (controller->config()->algorithm().algo()) {
     case xmrig::CRYPTONIGHT_LITE:
         port = 7777;
         break;

@@ -120,6 +120,7 @@ static struct option const options[] = {
     { "variant",           1, nullptr, xmrig::IConfig::VariantKey        },
     { "reuse-timeout",     1, nullptr, xmrig::IConfig::ReuseTimeoutKey   },
     { "mode",              1, nullptr, xmrig::IConfig::ModeKey           },
+    { "rig-id",            1, nullptr, xmrig::IConfig::RigIdKey          },
     { 0, 0, 0, 0 }
 };
 
@@ -154,6 +155,7 @@ static struct option const pool_options[] = {
     { "userpass",      1, nullptr, xmrig::IConfig::UserpassKey   },
     { "keepalive",     2, nullptr, xmrig::IConfig::KeepAliveKey  },
     { "variant",       1, nullptr, xmrig::IConfig::VariantKey    },
+    { "rig-id",        1, nullptr, xmrig::IConfig::RigIdKey      },
     { 0, 0, 0, 0 }
 };
 

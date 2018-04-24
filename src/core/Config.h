@@ -96,7 +96,6 @@ protected:
     void parseJSON(const rapidjson::Document &doc) override;
 
 private:
-    void setCoin(const char *coin);
     void setMode(const char *mode);
 
     bool m_debug;

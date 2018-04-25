@@ -40,6 +40,8 @@
 #include "proxy/Uuid.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
 
 
 static int64_t nextId = 0;
@@ -118,6 +120,8 @@ void Miner::replyWithError(int64_t id, const char *message)
 
 void Miner::setJob(Job &job)
 {
+    using namespace rapidjson;
+
     if (m_nicehash) {
         snprintf(m_sendBuf, 4, "%02hhx", m_fixedByte);
         memcpy(job.rawBlob() + 84, m_sendBuf, 2);
@@ -126,28 +130,71 @@ void Miner::setJob(Job &job)
     m_diff = job.diff();
     bool customDiff = false;
 
-    char target[9];
     if (m_customDiff && m_customDiff < m_diff) {
         const uint64_t t = 0xFFFFFFFFFFFFFFFFULL / m_customDiff;
-        Job::toHex(reinterpret_cast<const unsigned char *>(&t) + 4, 4, target);
-        target[8] = '\0';
+        Job::toHex(reinterpret_cast<const unsigned char *>(&t) + 4, 4, m_sendBuf);
+        m_sendBuf[8] = '\0';
         customDiff = true;
     }
 
-    int size = 0;
-    if (m_state == WaitReadyState) {
-        setState(ReadyState);
-        size = snprintf(m_sendBuf, sizeof(m_sendBuf),
-                        "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"result\":{\"id\":\"%s\",\"job\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx0\",\"target\":\"%s\",\"coin\":\"%s\",\"variant\":%d}%s,\"status\":\"OK\"}}\n",
-                        m_loginId, m_rpcId, job.rawBlob(), job.id().data(), m_fixedByte, customDiff ? target : job.rawTarget(), "", job.variant(), m_nicehash ? ",\"extensions\":[\"nicehash\"]" : "");
-    }
-    else {
-        size = snprintf(m_sendBuf, sizeof(m_sendBuf),
-                        "{\"jsonrpc\":\"2.0\",\"method\":\"job\",\"params\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx0\",\"target\":\"%s\",\"coin\":\"%s\",\"variant\":%d}}\n",
-                        job.rawBlob(), job.id().data(), m_fixedByte, customDiff ? target : job.rawTarget(), "", job.variant());
+    sprintf(m_sendBuf + 16, "%s%02hhx0", job.id().data(), m_fixedByte);
+
+    Document doc(kObjectType);
+    auto &allocator = doc.GetAllocator();
+
+    Value params(kObjectType);
+    params.AddMember("blob",   StringRef(job.rawBlob()), allocator);
+    params.AddMember("job_id", StringRef(m_sendBuf + 16), allocator);
+    params.AddMember("target", StringRef(customDiff ? m_sendBuf : job.rawTarget()), allocator);
+    params.AddMember("algo",   StringRef(job.algorithm().shortName()), allocator);
+
+    if (job.algorithm().variant() == xmrig::VARIANT_0 || job.algorithm().variant() == xmrig::VARIANT_1) {
+        params.AddMember("variant", job.algorithm().variant(), allocator);
     }
 
-    send(size);
+    doc.AddMember("jsonrpc", "2.0", allocator);
+
+    if (m_state == WaitReadyState) {
+        setState(ReadyState);
+
+        doc.AddMember("id",    m_loginId, allocator);
+        doc.AddMember("error", kNullType, allocator);
+
+        Value result(kObjectType);
+        result.AddMember("id",  StringRef(m_rpcId), allocator);
+        result.AddMember("job", params, allocator);
+
+        doc.AddMember("result", result, allocator);
+
+        Value extensions(kArrayType);
+        extensions.PushBack("algo", allocator);
+
+        if (m_nicehash) {
+            extensions.PushBack("nicehash", allocator);
+        }
+
+        doc.AddMember("extensions", extensions, allocator);
+        doc.AddMember("status",     "OK", allocator);
+    }
+    else {
+        doc.AddMember("method", "job", allocator);
+        doc.AddMember("params", params, allocator);
+    }
+
+    StringBuffer buffer(0, 512);
+    Writer<StringBuffer> writer(buffer);
+    doc.Accept(writer);
+
+    const size_t size = buffer.GetSize();
+    if (size > (sizeof(m_sendBuf) - 2)) {
+        return;
+    }
+
+    memcpy(m_sendBuf, buffer.GetString(), size);
+    m_sendBuf[size]     = '\n';
+    m_sendBuf[size + 1] = '\0';
+
+    send(size + 1);
 }
 
 

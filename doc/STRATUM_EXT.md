@@ -3,7 +3,7 @@
 Subset of protocol extensions, used to negotiate algorithm between miner and pool/proxy. All extensions is backward compatible with standart stratum protocol.
 
 ### 1.1. Miner defined algorithms list
-Miner should send list of algorithms supported. Multiple algorithms in list meant miner can switch algorithms in runtime.
+Miner should send list of [algorithms](#14-algorithm-names-and-variants) supported. Multiple algorithms in list meant miner can switch algorithms in runtime.
 ```json
 {
   "id": 1, "jsonrpc": "2.0", "method": "login",

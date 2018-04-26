@@ -9,14 +9,14 @@ Miner should send list of algorithms supported. Multiple algorithms in list mean
   "id": 1, "jsonrpc": "2.0", "method": "login",
   "params": {
     "login": "...", "pass": "...", "agent": "...",
-    "algo": ["cn", "cn-lite", "cn-heavy"]
+    "algo": ["cn", "cn/0", "cn/1", "cn/xtl"]
   }
 }
 ```
 In case if miner not support dynamic algorithm change, miner should send list with one item, for example `"algo": ["cn-heavy"]`, pool/proxy should provide work for selected algorithm or send error.
 
 ### 1.2. Extended job object
-To each `job` object pool/proxy should add 2 additional fields `algo` and `variant`.
+To each `job` object pool/proxy should add additional field `algo` and optional `variant` field.
 
 ```json
 {
@@ -25,7 +25,7 @@ To each `job` object pool/proxy should add 2 additional fields `algo` and `varia
     "id": "...",
     "job": {
       "blob": "...", "job_id": "...", "target": "...", "id": "...",
-      "algo": "cn", "variant": 1
+      "algo": "cn/1", "variant": 1
     },
     "status": "OK"
   }
@@ -37,7 +37,7 @@ To each `job` object pool/proxy should add 2 additional fields `algo` and `varia
   "jsonrpc": "2.0", "method": "job",
   "params": {
     "blob": "...", "job_id": "...", "target": "b88d0600", "id": "...",
-    "algo": "cn", "variant": 1
+    "algo": "cn/1"
   }
 }
 ```
@@ -85,12 +85,17 @@ Note about xmr-stak, this miner not send `variant` field and always use long alg
 ### 1.4 Algorithm names and variants
 Both miner and pool should support short algorithm name aliases:
 
-| Long name         | Short name | Variants   |
-|-------------------|------------|------------|
-| cryptonight       | cn         | `0` or `1` |
-| cryptonight-lite  | cn-lite    | `0` or `1` |
-| cryptonight-heavy | cn-heavy   | only `0`   |
-| cryptonight-ipbc  | cn-ipbc    | only `1`   |
+| Long name             | Short name   | Base algorithm    | Variant     | Notes                                                |
+|-----------------------|--------------|-------------------|-------------|------------------------------------------------------|
+| cryptonight           | cn           | cryptonight       | `-1` (auto) | Autodetect works only for Monero.                    |
+| cryptonight/0         | cn/0         | cryptonight       | `0`         | Original/old CryptoNight.                            |
+| cryptonight/1         | cn/1         | cryptonight       | `1`         | Also known as `monero7` and `CryptoNightV7`.         |
+| cryptonight/xtl       | cn/xtl       | cryptonight       | `xtl`       | Stellite (XTL) variant.                              |
+| cryptonight-lite      | cn-lite      | cryptonight-lite  | `-1` (auto) | Autodetect works only for Aeon.                      |
+| cryptonight-lite/0    | cn-lite/0    | cryptonight-lite  | `0`         | Original/old CryptoNight-Lite.                       |
+| cryptonight-lite/1    | cn-lite/1    | cryptonight-lite  | `1`         | Also known as `aeon7`                                |
+| cryptonight-lite/ipbc | cn-lite/ipbc | cryptonight-lite  | `ipbc`      | IPBC variant                                         |
+| cryptonight-heavy     | cn-heavy     | cryptonight-heavy | `0`         | Sumokoin and Haven Protocol, no additional variants. |
 
 Note about **cryptonight** and **cryptonight variant 1**, also known as **cryptonight v7**, all these variants use same algorithm name `cryptonight` or `cn`, miner should able to switch between variants in runtime.
 

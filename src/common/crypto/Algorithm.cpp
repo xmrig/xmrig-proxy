@@ -62,7 +62,7 @@ static AlgoData const algorithms[] = {
     { "cryptonight-lite",      "cn-lite",      xmrig::CRYPTONIGHT_LITE,  xmrig::VARIANT_AUTO },
     { "cryptonight-lite/0",    "cn-lite/0",    xmrig::CRYPTONIGHT_LITE,  xmrig::VARIANT_0    },
     { "cryptonight-lite/1",    "cn-lite/1",    xmrig::CRYPTONIGHT_LITE,  xmrig::VARIANT_1    },
-    { "cryptonight-lite/ipbc", "cn-lite/ipbc", xmrig::CRYPTONIGHT_LITE,  xmrig::VARIANT_IBPC },
+    { "cryptonight-lite/ipbc", "cn-lite/ipbc", xmrig::CRYPTONIGHT_LITE,  xmrig::VARIANT_IPBC },
 #   endif
 
 #   ifndef XMRIG_NO_SUMO
@@ -77,6 +77,22 @@ static const char *variants[] = {
     "ipbc",
     "xtl"
 };
+
+
+bool xmrig::Algorithm::isValid() const
+{
+    if (m_algo == INVALID_ALGO) {
+        return false;
+    }
+
+    for (size_t i = 0; i < ARRAY_SIZE(algorithms); i++) {
+        if (algorithms[i].algo == m_algo && algorithms[i].variant == m_variant) {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 
 const char *xmrig::Algorithm::variantName() const
@@ -111,6 +127,7 @@ void xmrig::Algorithm::parseAlgorithm(const char *algo)
 void xmrig::Algorithm::parseVariant(const char *variant)
 {
     if (m_algo == CRYPTONIGHT_HEAVY) {
+        m_variant = VARIANT_0;
         return;
     }
 
@@ -132,6 +149,16 @@ void xmrig::Algorithm::parseVariant(int variant)
     }
     else {
         assert(false);
+    }
+}
+
+
+void xmrig::Algorithm::setAlgo(Algo algo)
+{
+    m_algo = algo;
+
+    if (m_algo == CRYPTONIGHT_HEAVY) {
+        m_variant = VARIANT_0;
     }
 }
 

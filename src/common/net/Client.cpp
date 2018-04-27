@@ -54,7 +54,9 @@ Client::Client(int id, const char *agent, IClientListener *listener) :
     m_quiet(false),
     m_agent(agent),
     m_listener(listener),
+    m_extensions(0),
     m_id(id),
+    m_retries(5),
     m_retryPause(5000),
     m_failures(0),
     m_recvBufPos(0),
@@ -160,12 +162,14 @@ bool Client::disconnect()
 
 int64_t Client::submit(const JobResult &result)
 {
+    using namespace rapidjson;
+
 #   ifdef XMRIG_PROXY_PROJECT
     const char *nonce = result.nonce;
     const char *data  = result.result;
 #   else
-    char nonce[9];
-    char data[65];
+    char *nonce = m_sendBuf;
+    char *data  = m_sendBuf + 16;
 
     Job::toHex(reinterpret_cast<const unsigned char*>(&result.nonce), 4, nonce);
     nonce[8] = '\0';
@@ -174,8 +178,26 @@ int64_t Client::submit(const JobResult &result)
     data[64] = '\0';
 #   endif
 
-    const size_t size = snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRIu64 ",\"jsonrpc\":\"2.0\",\"method\":\"submit\",\"params\":{\"id\":\"%s\",\"job_id\":\"%s\",\"nonce\":\"%s\",\"result\":\"%s\"}}\n",
-                                 m_sequence, m_rpcId.data(), result.jobId.data(), nonce, data);
+    Document doc(kObjectType);
+    auto &allocator = doc.GetAllocator();
+
+    doc.AddMember("id",      m_sequence, allocator);
+    doc.AddMember("jsonrpc", "2.0", allocator);
+    doc.AddMember("method",  "submit", allocator);
+
+    Value params(kObjectType);
+    params.AddMember("id",     StringRef(m_rpcId.data()), allocator);
+    params.AddMember("job_id", StringRef(result.jobId.data()), allocator);
+    params.AddMember("nonce",  StringRef(nonce), allocator);
+    params.AddMember("result", StringRef(data), allocator);
+
+#   ifndef XMRIG_PROXY_PROJECT // FIXME: support it in proxy.
+    if (m_extensions & AlgoExt) {
+        params.AddMember("algo", StringRef(result.algorithm.shortName()), allocator);
+    }
+#   endif
+
+    doc.AddMember("params", params, allocator);
 
 #   ifdef XMRIG_PROXY_PROJECT
     m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff(), result.id);
@@ -183,7 +205,7 @@ int64_t Client::submit(const JobResult &result)
     m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff());
 #   endif
 
-    return send(size);
+    return send(doc);
 }
 
 
@@ -249,8 +271,26 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
         return false;
     }
 
+    if (params.HasMember("algo")) {
+        job.algorithm().parseAlgorithm(params["algo"].GetString());
+    }
+
     if (params.HasMember("variant")) {
-        job.algorithm().parseVariant(params["variant"].GetInt());
+        const rapidjson::Value &variant = params["variant"];
+
+        if (variant.IsInt()) {
+            job.algorithm().parseVariant(variant.GetInt());
+        }
+        else if (variant.IsString()){
+            job.algorithm().parseVariant(variant.GetString());
+        }
+    }
+
+    if (!verifyAlgorithm(job.algorithm())) {
+        *code = 6;
+
+        close();
+        return false;
     }
 
     if (m_job != job) {
@@ -263,7 +303,7 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
         return false;
     }
 
-    if (!m_quiet) {
+    if (!isQuiet()) {
         LOG_WARN("[%s] duplicate job received, reconnect", m_pool.url());
     }
 
@@ -279,9 +319,7 @@ bool Client::parseLogin(const rapidjson::Value &result, int *code)
         return false;
     }
 
-#   ifndef XMRIG_PROXY_PROJECT
     m_nicehash = m_pool.isNicehash();
-#   endif
 
     if (result.HasMember("extensions")) {
         parseExtensions(result["extensions"]);
@@ -291,6 +329,27 @@ bool Client::parseLogin(const rapidjson::Value &result, int *code)
     m_jobs = 0;
 
     return rc;
+}
+
+
+bool Client::verifyAlgorithm(const xmrig::Algorithm &algorithm) const
+{
+    if (m_pool.isCompatible(algorithm)) {
+        return true;
+    }
+
+    if (isQuiet()) {
+        return false;
+    }
+
+    if (algorithm.isValid()) {
+        LOG_ERR("Incompatible algorithm \"%s\" detected, reconnect", algorithm.name());
+    }
+    else {
+        LOG_ERR("Unknown/unsupported algorithm detected, reconnect");
+    }
+
+    return false;
 }
 
 
@@ -307,13 +366,34 @@ int Client::resolve(const char *host)
 
     const int r = uv_getaddrinfo(uv_default_loop(), &m_resolver, Client::onResolved, host, nullptr, &m_hints);
     if (r) {
-        if (!m_quiet) {
+        if (!isQuiet()) {
             LOG_ERR("[%s:%u] getaddrinfo error: \"%s\"", host, m_pool.port(), uv_strerror(r));
         }
         return 1;
     }
 
     return 0;
+}
+
+
+int64_t Client::send(const rapidjson::Document &doc)
+{
+    using namespace rapidjson;
+
+    StringBuffer buffer(0, 512);
+    Writer<StringBuffer> writer(buffer);
+    doc.Accept(writer);
+
+    const size_t size = buffer.GetSize();
+    if (size > (sizeof(m_buf) - 2)) {
+        return -1;
+    }
+
+    memcpy(m_sendBuf, buffer.GetString(), size);
+    m_sendBuf[size]     = '\n';
+    m_sendBuf[size + 1] = '\0';
+
+    return send(size + 1);
 }
 
 
@@ -381,42 +461,35 @@ void Client::connect(sockaddr *addr)
 
 void Client::login()
 {
+    using namespace rapidjson;
     m_results.clear();
 
-    rapidjson::Document doc;
-    doc.SetObject();
-
+    Document doc(kObjectType);
     auto &allocator = doc.GetAllocator();
 
     doc.AddMember("id",      1,       allocator);
     doc.AddMember("jsonrpc", "2.0",   allocator);
     doc.AddMember("method",  "login", allocator);
 
-    rapidjson::Value params(rapidjson::kObjectType);
-    params.AddMember("login", rapidjson::StringRef(m_pool.user()),     allocator);
-    params.AddMember("pass",  rapidjson::StringRef(m_pool.password()), allocator);
-    params.AddMember("agent", rapidjson::StringRef(m_agent),           allocator);
+    Value params(kObjectType);
+    params.AddMember("login", StringRef(m_pool.user()),     allocator);
+    params.AddMember("pass",  StringRef(m_pool.password()), allocator);
+    params.AddMember("agent", StringRef(m_agent),           allocator);
 
     if (m_pool.rigId()) {
-        params.AddMember("rigid", rapidjson::StringRef(m_pool.rigId()), allocator);
+        params.AddMember("rigid", StringRef(m_pool.rigId()), allocator);
     }
 
+    Value algo(kArrayType);
+
+    for (const auto &a : m_pool.algorithms()) {
+        algo.PushBack(StringRef(a.shortName()), allocator);
+    }
+
+    params.AddMember("algo", algo, allocator);
     doc.AddMember("params", params, allocator);
 
-    rapidjson::StringBuffer buffer(0, 512);
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    doc.Accept(writer);
-
-    const size_t size = buffer.GetSize();
-    if (size > (sizeof(m_buf) - 2)) {
-        return;
-    }
-
-    memcpy(m_sendBuf, buffer.GetString(), size);
-    m_sendBuf[size]     = '\n';
-    m_sendBuf[size + 1] = '\0';
-
-    send(size + 1);
+    send(doc);
 }
 
 
@@ -441,7 +514,7 @@ void Client::parse(char *line, size_t len)
     LOG_DEBUG("[%s] received (%d bytes): \"%s\"", m_pool.url(), len, line);
 
     if (len < 32 || line[0] != '{') {
-        if (!m_quiet) {
+        if (!isQuiet()) {
             LOG_ERR("[%s] JSON decode failed", m_pool.url());
         }
 
@@ -450,7 +523,7 @@ void Client::parse(char *line, size_t len)
 
     rapidjson::Document doc;
     if (doc.ParseInsitu(line).HasParseError()) {
-        if (!m_quiet) {
+        if (!isQuiet()) {
             LOG_ERR("[%s] JSON decode failed: \"%s\"", m_pool.url(), rapidjson::GetParseError_En(doc.GetParseError()));
         }
 
@@ -473,6 +546,8 @@ void Client::parse(char *line, size_t len)
 
 void Client::parseExtensions(const rapidjson::Value &value)
 {
+    m_extensions = 0;
+
     if (!value.IsArray()) {
         return;
     }
@@ -482,8 +557,15 @@ void Client::parseExtensions(const rapidjson::Value &value)
             continue;
         }
 
+        if (strcmp(ext.GetString(), "algo") == 0) {
+            m_extensions |= AlgoExt;
+            continue;
+        }
+
         if (strcmp(ext.GetString(), "nicehash") == 0) {
+            m_extensions |= NicehashExt;
             m_nicehash = true;
+            continue;
         }
     }
 }
@@ -492,7 +574,7 @@ void Client::parseExtensions(const rapidjson::Value &value)
 void Client::parseNotification(const char *method, const rapidjson::Value &params, const rapidjson::Value &error)
 {
     if (error.IsObject()) {
-        if (!m_quiet) {
+        if (!isQuiet()) {
             LOG_ERR("[%s] error: \"%s\", code: %d", m_pool.url(), error["message"].GetString(), error["code"].GetInt());
         }
         return;
@@ -526,7 +608,7 @@ void Client::parseResponse(int64_t id, const rapidjson::Value &result, const rap
             m_listener->onResultAccepted(this, it->second, message);
             m_results.erase(it);
         }
-        else if (!m_quiet) {
+        else if (!isQuiet()) {
             LOG_ERR("[%s] error: \"%s\", code: %d", m_pool.url(), message, error["code"].GetInt());
         }
 
@@ -544,7 +626,7 @@ void Client::parseResponse(int64_t id, const rapidjson::Value &result, const rap
     if (id == 1) {
         int code = -1;
         if (!parseLogin(result, &code)) {
-            if (!m_quiet) {
+            if (!isQuiet()) {
                 LOG_ERR("[%s] login error code: %d", m_pool.url(), code);
             }
 
@@ -649,7 +731,7 @@ void Client::onConnect(uv_connect_t *req, int status)
     }
 
     if (status < 0) {
-        if (!client->m_quiet) {
+        if (!client->isQuiet()) {
             LOG_ERR("[%s] connect error: \"%s\"", client->m_pool.url(), uv_strerror(status));
         }
 
@@ -677,7 +759,7 @@ void Client::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
     }
 
     if (nread < 0) {
-        if (nread != UV_EOF && !client->m_quiet) {
+        if (nread != UV_EOF && !client->isQuiet()) {
             LOG_ERR("[%s] read error: \"%s\"", client->m_pool.url(), uv_strerror((int) nread));
         }
 
@@ -737,7 +819,7 @@ void Client::onResolved(uv_getaddrinfo_t *req, int status, struct addrinfo *res)
     }
 
     if (status < 0) {
-        if (!client->m_quiet) {
+        if (!client->isQuiet()) {
             LOG_ERR("[%s] DNS error: \"%s\"", client->m_pool.url(), uv_strerror(status));
         }
 
@@ -761,7 +843,7 @@ void Client::onResolved(uv_getaddrinfo_t *req, int status, struct addrinfo *res)
     }
 
     if (ipv4.empty() && ipv6.empty()) {
-        if (!client->m_quiet) {
+        if (!client->isQuiet()) {
             LOG_ERR("[%s] DNS error: \"No IPv4 (A) or IPv6 (AAAA) records found\"", client->m_pool.url());
         }
 

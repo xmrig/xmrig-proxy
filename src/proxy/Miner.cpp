@@ -164,8 +164,6 @@ void Miner::setJob(Job &job)
         result.AddMember("id",  StringRef(m_rpcId), allocator);
         result.AddMember("job", params, allocator);
 
-        doc.AddMember("result", result, allocator);
-
         Value extensions(kArrayType);
         extensions.PushBack("algo", allocator);
 
@@ -173,8 +171,10 @@ void Miner::setJob(Job &job)
             extensions.PushBack("nicehash", allocator);
         }
 
-        doc.AddMember("extensions", extensions, allocator);
-        doc.AddMember("status",     "OK", allocator);
+        result.AddMember("extensions", extensions, allocator);
+
+        doc.AddMember("result", result, allocator);
+        doc.AddMember("status", "OK", allocator);
     }
     else {
         doc.AddMember("method", "job", allocator);

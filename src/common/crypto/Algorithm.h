@@ -26,6 +26,9 @@
 #define __ALGORITHM_H__
 
 
+#include <vector>
+
+
 #include "common/xmrig.h"
 
 
@@ -41,30 +44,27 @@ public:
     {}
 
     inline Algorithm(Algo algo, Variant variant) :
-        m_algo(algo),
         m_variant(variant)
     {
-        if (m_algo == CRYPTONIGHT_HEAVY) {
-            m_variant = VARIANT_0;
-        }
+        setAlgo(algo);
     }
 
     bool isEqual(const Algorithm &other) const { return m_algo == other.m_algo && m_variant == other.m_variant; }
     inline Algo algo() const                   { return m_algo; }
-    inline bool isValid() const                { return m_algo != INVALID_ALGO; }
     inline const char *name() const            { return name(false); }
     inline const char *shortName() const       { return name(true); }
     inline Variant variant() const             { return m_variant; }
-    inline void setAlgo(Algo algo)             { m_algo = algo; }
     inline void setVariant(Variant variant)    { m_variant = variant; }
 
     inline bool operator!=(const Algorithm &other) const  { return !isEqual(other); }
     inline bool operator==(const Algorithm &other) const  { return isEqual(other); }
 
+    bool isValid() const;
     const char *variantName() const;
     void parseAlgorithm(const char *algo);
     void parseVariant(const char *variant);
     void parseVariant(int variant);
+    void setAlgo(Algo algo);
 
 private:
     const char *name(bool shortName) const;
@@ -72,6 +72,9 @@ private:
     Algo m_algo;
     Variant m_variant;
 };
+
+
+typedef std::vector<xmrig::Algorithm> Algorithms;
 
 
 } /* namespace xmrig */

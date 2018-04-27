@@ -241,11 +241,14 @@ bool NonceMapper::isColors() const
 
 IStrategy *NonceMapper::createStrategy(const std::vector<Pool> &pools)
 {
+    const int retryPause = m_controller->config()->retryPause();
+    const int retries    = m_controller->config()->retries();
+
     if (pools.size() > 1) {
-        return new FailoverStrategy(pools, m_controller->config()->retryPause(), m_controller->config()->retries(), this);
+        return new FailoverStrategy(pools, retryPause, retries, this);
     }
 
-    return new SinglePoolStrategy(pools.front(), m_controller->config()->retryPause(), this);
+    return new SinglePoolStrategy(pools.front(), retryPause, retries, this);
 }
 
 

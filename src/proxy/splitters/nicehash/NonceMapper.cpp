@@ -136,7 +136,7 @@ void NonceMapper::submit(SubmitEvent *event)
         return event->reject(Error::InvalidJobId);
     }
 
-    if (event->algorithm.isValid() && event->algorithm != m_storage->job().algorithm()) {
+    if (event->request.algorithm.isValid() && event->request.algorithm != m_storage->job().algorithm()) {
         return event->reject(Error::IncorrectAlgorithm);
     }
 

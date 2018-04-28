@@ -125,7 +125,7 @@ void SimpleMapper::submit(SubmitEvent *event)
         return event->reject(Error::InvalidJobId);
     }
 
-    if (event->algorithm.isValid() && event->algorithm != m_job.algorithm()) {
+    if (event->request.algorithm.isValid() && event->request.algorithm != m_job.algorithm()) {
         return event->reject(Error::IncorrectAlgorithm);
     }
 

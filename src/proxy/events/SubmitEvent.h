@@ -40,7 +40,6 @@ public:
     }
 
 
-    const xmrig::Algorithm &algorithm;
     JobResult request;
 
 
@@ -53,8 +52,7 @@ public:
 protected:
     inline SubmitEvent(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, const xmrig::Algorithm &algorithm)
         : MinerEvent(SubmitType, miner),
-          algorithm(algorithm),
-          request(id, jobId, nonce, result),
+          request(id, jobId, nonce, result, algorithm),
           m_error(Error::NoError)
     {}
 

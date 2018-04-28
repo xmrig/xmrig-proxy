@@ -191,11 +191,9 @@ int64_t Client::submit(const JobResult &result)
     params.AddMember("nonce",  StringRef(nonce), allocator);
     params.AddMember("result", StringRef(data), allocator);
 
-#   ifndef XMRIG_PROXY_PROJECT // FIXME: support it in proxy.
     if (m_extensions & AlgoExt) {
         params.AddMember("algo", StringRef(result.algorithm.shortName()), allocator);
     }
-#   endif
 
     doc.AddMember("params", params, allocator);
 

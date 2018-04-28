@@ -29,6 +29,7 @@
 #include <string.h>
 
 
+#include "common/crypto/Algorithm.h"
 #include "common/net/Id.h"
 
 
@@ -43,7 +44,7 @@ public:
     {
     }
 
-    JobResult(int64_t id, const char *jobId, const char *nonce, const char *result);
+    JobResult(int64_t id, const char *jobId, const char *nonce, const char *result, const xmrig::Algorithm &algorithm);
 
     bool isCompatible(uint8_t fixedByte) const;
     bool isValid() const;
@@ -53,6 +54,7 @@ public:
     const char *result;
     const int64_t id;
     uint32_t diff;
+    xmrig::Algorithm algorithm;
     xmrig::Id jobId;
 
 private:

@@ -29,11 +29,12 @@
 #include "net/JobResult.h"
 
 
-JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, const char *result) :
+JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, const char *result, const xmrig::Algorithm &algorithm) :
     nonce(nonce),
     result(result),
     id(id),
     diff(0),
+    algorithm(algorithm),
     jobId(jobId, 3),
     m_actualDiff(0)
 {

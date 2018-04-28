@@ -79,7 +79,7 @@ Second, miner add fields `algo` to submit request.
 }
 ```
 
-Note about xmr-stak, this miner use different algorithm names, comparsion table will be added later.
+Note about xmr-stak, this miner use [different algorithm names](#15-xmr-stak-algorithm-names).
 
 ### 1.4 Algorithm names and variants
 Both miner and pool should support short algorithm name aliases:

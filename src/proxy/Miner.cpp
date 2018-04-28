@@ -215,7 +215,18 @@ bool Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value 
             setState(WaitReadyState);
             m_loginId = id;
 
-            LoginEvent::create(this, id, params["login"].GetString(), params["pass"].GetString(), params["agent"].GetString(), params["rigid"].GetString())->start();
+            xmrig::Algorithms algorithms;
+            if (params.HasMember("algo")) {
+                const rapidjson::Value &value = params["algo"];
+
+                if (value.IsArray()) {
+                    for (const rapidjson::Value &algo : value.GetArray()) {
+                        algorithms.push_back(algo.GetString());
+                    }
+                }
+            }
+
+            LoginEvent::create(this, id, params["login"].GetString(), params["pass"].GetString(), params["agent"].GetString(), params["rigid"].GetString(), algorithms)->start();
             return true;
         }
 
@@ -311,7 +322,7 @@ void Miner::send(int size)
 {
     LOG_DEBUG("[%s] send (%d bytes): \"%s\"", m_ip, size, m_sendBuf);
 
-    if (size <= 0 || m_state != ReadyState || uv_is_writable(reinterpret_cast<uv_stream_t*>(&m_socket)) == 0) {
+    if (size <= 0 || (m_state != ReadyState && m_state != WaitReadyState) || uv_is_writable(reinterpret_cast<uv_stream_t*>(&m_socket)) == 0) {
         return;
     }
 

@@ -192,8 +192,9 @@ void NonceMapper::onActive(IStrategy *strategy, Client *client)
 void NonceMapper::onJob(IStrategy *strategy, Client *client, const Job &job)
 {
     if (m_controller->config()->isVerbose()) {
-        LOG_INFO(isColors() ? "#%03u \x1B[01;35mnew job\x1B[0m from \x1B[01;37m%s:%d\x1B[0m diff \x1B[01;37m%d" : "#%03u new job from %s:%d diff %d",
-                 m_id, client->host(), client->port(), job.diff());
+        LOG_INFO(isColors() ? "#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s")
+                            : "#%03u new job from %s:%d diff %d algo %s",
+                 m_id, client->host(), client->port(), job.diff(), job.algorithm().shortName());
     }
 
     if (m_donate && m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {

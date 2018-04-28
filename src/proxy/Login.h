@@ -21,34 +21,38 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __LOGINEVENT_H__
-#define __LOGINEVENT_H__
+#ifndef __LOGIN_H__
+#define __LOGIN_H__
 
 
-#include "common/crypto/Algorithm.h"
-#include "proxy/events/MinerEvent.h"
-#include "proxy/LoginRequest.h"
+#include "interfaces/IEventListener.h"
 
 
-class LoginEvent : public MinerEvent
+class LoginEvent;
+
+
+namespace xmrig {
+    class Controller;
+}
+
+
+class Login : public IEventListener
 {
 public:
-    static inline LoginEvent *create(Miner *miner, int64_t id, const char *login, const char *pass, const char *agent, const char *rigId, const xmrig::Algorithms &algorithms)
-    {
-        return new (m_buf) LoginEvent(miner, id, login, pass, agent, rigId, algorithms);
-    }
-
-
-    const xmrig::Algorithms &algorithms;
-    LoginRequest request;
-
+    Login(xmrig::Controller *controller);
+    ~Login();
 
 protected:
-    inline LoginEvent(Miner *miner, int64_t id, const char *login, const char *pass, const char *agent, const char *rigId, const xmrig::Algorithms &algorithms)
-        : MinerEvent(LoginType, miner),
-          algorithms(algorithms),
-          request(id, login, pass, agent, rigId)
-    {}
+    void onEvent(IEvent *event) override;
+    inline void onRejectedEvent(IEvent *event) override {}
+
+private:
+    bool verifyAlgorithms(LoginEvent *event);
+    void login(LoginEvent *event);
+    void reject(LoginEvent *event, const char *message);
+
+    xmrig::Controller *m_controller;
 };
 
-#endif /* __LOGINEVENT_H__ */
+
+#endif /* __LOGIN_H__ */

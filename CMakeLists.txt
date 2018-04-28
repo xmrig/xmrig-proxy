@@ -62,6 +62,7 @@ set(HEADERS
     src/proxy/events/LoginEvent.h
     src/proxy/events/MinerEvent.h
     src/proxy/events/SubmitEvent.h
+    src/proxy/Login.h
     src/proxy/Miner.h
     src/proxy/Miners.h
     src/proxy/Proxy.h
@@ -114,6 +115,7 @@ set(SOURCES
     src/proxy/events/ConnectionEvent.h
     src/proxy/events/Event.cpp
     src/proxy/events/MinerEvent.cpp
+    src/proxy/Login.cpp
     src/proxy/Miner.cpp
     src/proxy/Miners.cpp
     src/proxy/Proxy.cpp
@@ -130,7 +132,6 @@ set(SOURCES
     src/proxy/workers/Workers.cpp
     src/Summary.cpp
     src/xmrig.cpp
-
    )
 
 if (WIN32)

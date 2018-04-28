@@ -40,6 +40,7 @@
 #include "proxy/Addr.h"
 #include "proxy/Events.h"
 #include "proxy/events/ConnectionEvent.h"
+#include "proxy/Login.h"
 #include "proxy/Miner.h"
 #include "proxy/Miners.h"
 #include "proxy/Proxy.h"
@@ -59,13 +60,14 @@ Proxy::Proxy(xmrig::Controller *controller) :
     srand(time(0) ^ (uintptr_t) this);
 
     m_miners = new Miners();
+    m_login  = new Login(controller);
 
     Splitter *splitter = nullptr;
     if (controller->config()->mode() == xmrig::Config::NICEHASH_MODE) {
         splitter = new NonceSplitter(controller);
     }
     else {
-        splitter  = new SimpleSplitter(controller);
+        splitter = new SimpleSplitter(controller);
     }
 
     m_splitter = splitter;
@@ -86,6 +88,7 @@ Proxy::Proxy(xmrig::Controller *controller) :
     Events::subscribe(IEvent::CloseType, m_accessLog);
     Events::subscribe(IEvent::CloseType, m_workers);
 
+    Events::subscribe(IEvent::LoginType, m_login);
     Events::subscribe(IEvent::LoginType, &m_customDiff);
     Events::subscribe(IEvent::LoginType, splitter);
     Events::subscribe(IEvent::LoginType, &m_stats);
@@ -110,6 +113,7 @@ Proxy::~Proxy()
 {
     Events::stop();
 
+    delete m_login;
     delete m_miners;
     delete m_splitter;
     delete m_shareLog;

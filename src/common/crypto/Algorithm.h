@@ -49,6 +49,11 @@ public:
         setAlgo(algo);
     }
 
+    inline Algorithm(const char *algo)
+    {
+        parseAlgorithm(algo);
+    }
+
     bool isEqual(const Algorithm &other) const { return m_algo == other.m_algo && m_variant == other.m_variant; }
     inline Algo algo() const                   { return m_algo; }
     inline const char *name() const            { return name(false); }

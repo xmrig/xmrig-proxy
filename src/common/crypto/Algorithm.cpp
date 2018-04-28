@@ -71,6 +71,17 @@ static AlgoData const algorithms[] = {
 };
 
 
+static AlgoData const xmrStakAlgorithms[] = {
+    { "cryptonight-monerov7",    nullptr, xmrig::CRYPTONIGHT,      xmrig::VARIANT_1    },
+    { "cryptonight_v7",          nullptr, xmrig::CRYPTONIGHT,      xmrig::VARIANT_1    },
+    { "cryptonight_v7_stellite", nullptr, xmrig::CRYPTONIGHT,      xmrig::VARIANT_XTL  },
+    { "cryptonight_lite",        nullptr, xmrig::CRYPTONIGHT_LITE, xmrig::VARIANT_0    },
+    { "cryptonight-aeonv7",      nullptr, xmrig::CRYPTONIGHT_LITE, xmrig::VARIANT_1    },
+    { "cryptonight_lite_v7",     nullptr, xmrig::CRYPTONIGHT_LITE, xmrig::VARIANT_1    },
+    { "cryptonight_lite_v7_xor", nullptr, xmrig::CRYPTONIGHT_LITE, xmrig::VARIANT_IPBC },
+};
+
+
 static const char *variants[] = {
     "0",
     "1",
@@ -148,6 +159,25 @@ void xmrig::Algorithm::parseVariant(int variant)
        m_variant = static_cast<Variant>(variant);
     }
     else {
+        assert(false);
+    }
+}
+
+
+void xmrig::Algorithm::parseXmrStakAlgorithm(const char *algo)
+{
+    m_algo    = INVALID_ALGO;
+    m_variant = VARIANT_AUTO;
+
+    for (size_t i = 0; i < ARRAY_SIZE(xmrStakAlgorithms); i++) {
+        if (strcasecmp(algo, xmrStakAlgorithms[i].name) == 0) {
+            m_algo    = xmrStakAlgorithms[i].algo;
+            m_variant = xmrStakAlgorithms[i].variant;
+            break;
+        }
+    }
+
+    if (m_algo == INVALID_ALGO) {
         assert(false);
     }
 }

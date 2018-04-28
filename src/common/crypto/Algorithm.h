@@ -69,6 +69,7 @@ public:
     void parseAlgorithm(const char *algo);
     void parseVariant(const char *variant);
     void parseVariant(int variant);
+    void parseXmrStakAlgorithm(const char *algo);
     void setAlgo(Algo algo);
 
 private:

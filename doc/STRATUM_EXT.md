@@ -96,6 +96,20 @@ Both miner and pool should support short algorithm name aliases:
 | `cryptonight-lite/ipbc` | `cn-lite/ipbc` | `cryptonight-lite`  | `ipbc`      | IPBC variant                                         |
 | `cryptonight-heavy`     | `cn-heavy`     | `cryptonight-heavy` | `0`         | Sumokoin and Haven Protocol                          |
 
+### 1.5 XMR-Stak algorithm names
+Mapping between XMR-Stak algorithm names and XMRig names.
+
+| XMR-Stak name             | XMRig Short name | 
+|---------------------------|------------------|
+| `cryptonight`             | `cn/0`           |
+| `cryptonight-monerov7`    | `cn/1`           |
+| `cryptonight_v7`          | `cn/1`           |
+| `cryptonight_v7_stellite` | `cn/xtl`         |
+| `cryptonight_lite`        | `cn-lite/0`      |
+| `cryptonight-aeonv7`      | `cn-lite/1`      |
+| `cryptonight_lite_v7`     | `cn-lite/1`      |
+| `cryptonight_lite_v7_xor` | `cn-lite/ipbc`   |
+
 ## Rig identifier
 User defined rig identifier. Optional field `rigid` in `login` request. More details: https://github.com/fireice-uk/xmr-stak/issues/849
 

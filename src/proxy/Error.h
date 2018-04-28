@@ -36,7 +36,8 @@ public:
         InvalidNonce,
         LowDifficulty,
         Unauthenticated,
-        IncompatibleAlgorithm
+        IncompatibleAlgorithm,
+        IncorrectAlgorithm
     };
 
     static const char *toString(Code code);

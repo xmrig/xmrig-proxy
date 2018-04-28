@@ -246,7 +246,12 @@ bool Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value 
             return true;
         }
 
-        SubmitEvent *event = SubmitEvent::create(this, id, params["job_id"].GetString(), params["nonce"].GetString(), params["result"].GetString());
+        xmrig::Algorithm algorithm;
+        if (params.HasMember("algo")) {
+            algorithm.parseAlgorithm(params["algo"].GetString());
+        }
+
+        SubmitEvent *event = SubmitEvent::create(this, id, params["job_id"].GetString(), params["nonce"].GetString(), params["result"].GetString(), algorithm);
 
         if (!event->request.isValid() || event->request.actualDiff() < diff()) {
             event->reject(Error::LowDifficulty);

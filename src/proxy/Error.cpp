@@ -33,6 +33,7 @@ static const char *kLowDifficulty         = "Low difficulty share";
 static const char *kUnauthenticated       = "Unauthenticated";
 static const char *kUnknownError          = "Unknown error";
 static const char *kIncompatibleAlgorithm = "No compatible algorithm found, change algo option in your miner.";
+static const char *kIncorrectAlgorithm    = "Incorrect algorithm";
 
 
 const char *Error::toString(Code code)
@@ -59,6 +60,9 @@ const char *Error::toString(Code code)
 
     case IncompatibleAlgorithm:
         return kIncompatibleAlgorithm;
+
+    case IncorrectAlgorithm:
+        return kIncorrectAlgorithm;
 
     default:
         break;

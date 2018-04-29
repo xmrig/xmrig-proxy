@@ -69,8 +69,11 @@ public:
     void parseAlgorithm(const char *algo);
     void parseVariant(const char *variant);
     void parseVariant(int variant);
-    void parseXmrStakAlgorithm(const char *algo);
     void setAlgo(Algo algo);
+
+#   ifdef XMRIG_PROXY_PROJECT
+    void parseXmrStakAlgorithm(const char *algo);
+#   endif
 
 private:
     const char *name(bool shortName) const;

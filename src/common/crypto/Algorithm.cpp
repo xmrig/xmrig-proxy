@@ -71,6 +71,7 @@ static AlgoData const algorithms[] = {
 };
 
 
+#ifdef XMRIG_PROXY_PROJECT
 static AlgoData const xmrStakAlgorithms[] = {
     { "cryptonight-monerov7",    nullptr, xmrig::CRYPTONIGHT,      xmrig::VARIANT_1    },
     { "cryptonight_v7",          nullptr, xmrig::CRYPTONIGHT,      xmrig::VARIANT_1    },
@@ -80,6 +81,7 @@ static AlgoData const xmrStakAlgorithms[] = {
     { "cryptonight_lite_v7",     nullptr, xmrig::CRYPTONIGHT_LITE, xmrig::VARIANT_1    },
     { "cryptonight_lite_v7_xor", nullptr, xmrig::CRYPTONIGHT_LITE, xmrig::VARIANT_IPBC },
 };
+#endif
 
 
 static const char *variants[] = {
@@ -164,6 +166,17 @@ void xmrig::Algorithm::parseVariant(int variant)
 }
 
 
+void xmrig::Algorithm::setAlgo(Algo algo)
+{
+    m_algo = algo;
+
+    if (m_algo == CRYPTONIGHT_HEAVY) {
+        m_variant = VARIANT_0;
+    }
+}
+
+
+#ifdef XMRIG_PROXY_PROJECT
 void xmrig::Algorithm::parseXmrStakAlgorithm(const char *algo)
 {
     m_algo    = INVALID_ALGO;
@@ -181,16 +194,7 @@ void xmrig::Algorithm::parseXmrStakAlgorithm(const char *algo)
         assert(false);
     }
 }
-
-
-void xmrig::Algorithm::setAlgo(Algo algo)
-{
-    m_algo = algo;
-
-    if (m_algo == CRYPTONIGHT_HEAVY) {
-        m_variant = VARIANT_0;
-    }
-}
+#endif
 
 
 const char *xmrig::Algorithm::name(bool shortName) const

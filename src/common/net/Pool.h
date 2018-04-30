@@ -85,6 +85,7 @@ public:
 
 private:
     bool parseIPv6(const char *addr);
+    void addVariant(xmrig::Variant variant);
 
     bool m_nicehash;
     int m_keepAlive;

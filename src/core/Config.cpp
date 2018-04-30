@@ -268,7 +268,13 @@ void xmrig::Config::parseJSON(const rapidjson::Document &doc)
 
 void xmrig::Config::setMode(const char *mode)
 {
-    const size_t size = sizeof(modeNames) / sizeof((modeNames)[0]);
+    assert(mode != nullptr);
+    if (mode == nullptr) {
+        m_mode = NICEHASH_MODE;
+        return;
+    }
+
+    constexpr const size_t size = sizeof(modeNames) / sizeof((modeNames)[0]);
 
     for (size_t i = 0; i < size; i++) {
         if (modeNames[i] && !strcmp(mode, modeNames[i])) {

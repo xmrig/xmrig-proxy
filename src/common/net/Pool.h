@@ -98,4 +98,7 @@ private:
     xmrig::c_str m_user;
 };
 
+
+typedef std::vector<Pool> Pools;
+
 #endif /* __POOL_H__ */

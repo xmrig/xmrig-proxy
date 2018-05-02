@@ -26,28 +26,32 @@
 #include <string.h>
 
 
-#include "log/Log.h"
-#include "net/Job.h"
+#include "common/log/Log.h"
+#include "common/net/Job.h"
+#include "net/JobResult.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"
 #include "proxy/Events.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"
-#include "proxy/JobResult.h"
 #include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
 #include "proxy/Uuid.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
 
 
 static int64_t nextId = 0;
+xmrig::Storage<Miner> Miner::m_storage;
 
 
 Miner::Miner(bool nicehash, bool ipv6) :
     m_ipv6(ipv6),
     m_nicehash(nicehash),
+    m_ip(),
     m_id(++nextId),
     m_loginId(0),
     m_recvBufPos(0),
@@ -61,10 +65,11 @@ Miner::Miner(bool nicehash, bool ipv6) :
     m_tx(0),
     m_fixedByte(0)
 {
-    memset(m_ip, 0, sizeof(m_ip));
+    m_key = m_storage.add(this);
+
     Uuid::create(m_rpcId, sizeof(m_rpcId));
 
-    m_socket.data = this;
+    m_socket.data = m_storage.ptr(m_key);
     uv_tcp_init(uv_default_loop(), &m_socket);
 
     m_recvBuf.base = m_buf;
@@ -115,6 +120,8 @@ void Miner::replyWithError(int64_t id, const char *message)
 
 void Miner::setJob(Job &job)
 {
+    using namespace rapidjson;
+
     if (m_nicehash) {
         snprintf(m_sendBuf, 4, "%02hhx", m_fixedByte);
         memcpy(job.rawBlob() + 84, m_sendBuf, 2);
@@ -123,28 +130,71 @@ void Miner::setJob(Job &job)
     m_diff = job.diff();
     bool customDiff = false;
 
-    char target[9];
     if (m_customDiff && m_customDiff < m_diff) {
         const uint64_t t = 0xFFFFFFFFFFFFFFFFULL / m_customDiff;
-        Job::toHex(reinterpret_cast<const unsigned char *>(&t) + 4, 4, target);
-        target[8] = '\0';
+        Job::toHex(reinterpret_cast<const unsigned char *>(&t) + 4, 4, m_sendBuf);
+        m_sendBuf[8] = '\0';
         customDiff = true;
     }
 
-    int size = 0;
-    if (m_state == WaitReadyState) {
-        setState(ReadyState);
-        size = snprintf(m_sendBuf, sizeof(m_sendBuf),
-                        "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"result\":{\"id\":\"%s\",\"job\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx0\",\"target\":\"%s\",\"coin\":\"%s\",\"variant\":%d}%s,\"status\":\"OK\"}}\n",
-                        m_loginId, m_rpcId, job.rawBlob(), job.id().data(), m_fixedByte, customDiff ? target : job.rawTarget(), job.coin(), job.variant(), m_nicehash ? ",\"extensions\":[\"nicehash\"]" : "");
-    }
-    else {
-        size = snprintf(m_sendBuf, sizeof(m_sendBuf),
-                        "{\"jsonrpc\":\"2.0\",\"method\":\"job\",\"params\":{\"blob\":\"%s\",\"job_id\":\"%s%02hhx0\",\"target\":\"%s\",\"coin\":\"%s\",\"variant\":%d}}\n",
-                        job.rawBlob(), job.id().data(), m_fixedByte, customDiff ? target : job.rawTarget(), job.coin(), job.variant());
+    sprintf(m_sendBuf + 16, "%s%02hhx0", job.id().data(), m_fixedByte);
+
+    Document doc(kObjectType);
+    auto &allocator = doc.GetAllocator();
+
+    Value params(kObjectType);
+    params.AddMember("blob",   StringRef(job.rawBlob()), allocator);
+    params.AddMember("job_id", StringRef(m_sendBuf + 16), allocator);
+    params.AddMember("target", StringRef(customDiff ? m_sendBuf : job.rawTarget()), allocator);
+    params.AddMember("algo",   StringRef(job.algorithm().shortName()), allocator);
+
+    if (job.algorithm().variant() == xmrig::VARIANT_0 || job.algorithm().variant() == xmrig::VARIANT_1) {
+        params.AddMember("variant", job.algorithm().variant(), allocator);
     }
 
-    send(size);
+    doc.AddMember("jsonrpc", "2.0", allocator);
+
+    if (m_state == WaitReadyState) {
+        setState(ReadyState);
+
+        doc.AddMember("id",    m_loginId, allocator);
+        doc.AddMember("error", kNullType, allocator);
+
+        Value result(kObjectType);
+        result.AddMember("id",  StringRef(m_rpcId), allocator);
+        result.AddMember("job", params, allocator);
+
+        Value extensions(kArrayType);
+        extensions.PushBack("algo", allocator);
+
+        if (m_nicehash) {
+            extensions.PushBack("nicehash", allocator);
+        }
+
+        result.AddMember("extensions", extensions, allocator);
+
+        doc.AddMember("result", result, allocator);
+        doc.AddMember("status", "OK", allocator);
+    }
+    else {
+        doc.AddMember("method", "job", allocator);
+        doc.AddMember("params", params, allocator);
+    }
+
+    StringBuffer buffer(0, 512);
+    Writer<StringBuffer> writer(buffer);
+    doc.Accept(writer);
+
+    const size_t size = buffer.GetSize();
+    if (size > (sizeof(m_sendBuf) - 2)) {
+        return;
+    }
+
+    memcpy(m_sendBuf, buffer.GetString(), size);
+    m_sendBuf[size]     = '\n';
+    m_sendBuf[size + 1] = '\0';
+
+    send(size + 1);
 }
 
 
@@ -165,7 +215,18 @@ bool Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value 
             setState(WaitReadyState);
             m_loginId = id;
 
-            LoginEvent::create(this, id, params["login"].GetString(), params["pass"].GetString(), params["agent"].GetString())->start();
+            xmrig::Algorithms algorithms;
+            if (params.HasMember("algo")) {
+                const rapidjson::Value &value = params["algo"];
+
+                if (value.IsArray()) {
+                    for (const rapidjson::Value &algo : value.GetArray()) {
+                        algorithms.push_back(algo.GetString());
+                    }
+                }
+            }
+
+            LoginEvent::create(this, id, params["login"].GetString(), params["pass"].GetString(), params["agent"].GetString(), params["rigid"].GetString(), algorithms)->start();
             return true;
         }
 
@@ -185,7 +246,17 @@ bool Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value 
             return true;
         }
 
-        SubmitEvent *event = SubmitEvent::create(this, id, params["job_id"].GetString(), params["nonce"].GetString(), params["result"].GetString());
+        xmrig::Algorithm algorithm;
+        if (params.HasMember("algo")) {
+            const char *algo = params["algo"].GetString();
+
+            algorithm.parseAlgorithm(algo);
+            if (!algorithm.isValid()) {
+                algorithm.parseXmrStakAlgorithm(algo);
+            }
+        }
+
+        SubmitEvent *event = SubmitEvent::create(this, id, params["job_id"].GetString(), params["nonce"].GetString(), params["result"].GetString(), algorithm);
 
         if (!event->request.isValid() || event->request.actualDiff() < diff()) {
             event->reject(Error::LowDifficulty);
@@ -261,7 +332,7 @@ void Miner::send(int size)
 {
     LOG_DEBUG("[%s] send (%d bytes): \"%s\"", m_ip, size, m_sendBuf);
 
-    if (size <= 0 || m_state != ReadyState || uv_is_writable(reinterpret_cast<uv_stream_t*>(&m_socket)) == 0) {
+    if (size <= 0 || (m_state != ReadyState && m_state != WaitReadyState) || uv_is_writable(reinterpret_cast<uv_stream_t*>(&m_socket)) == 0) {
         return;
     }
 
@@ -312,7 +383,7 @@ void Miner::shutdown(bool had_error)
                 }
 
                 CloseEvent::start(miner);
-                delete miner;
+                m_storage.remove(handle->data);
             });
         }
 

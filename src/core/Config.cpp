@@ -26,16 +26,16 @@
 #include <uv.h>
 
 
+#include "common/config/ConfigLoader.h"
+#include "common/log/Log.h"
+#include "common/net/Pool.h"
+#include "common/xmrig.h"
 #include "core/Config.h"
 #include "core/ConfigCreator.h"
-#include "core/ConfigLoader.h"
 #include "donate.h"
-#include "log/Log.h"
-#include "net/Pool.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/prettywriter.h"
-#include "xmrig.h"
 
 
 static const char *modeNames[] = {
@@ -75,54 +75,41 @@ const char *xmrig::Config::modeName() const
 
 void xmrig::Config::getJSON(rapidjson::Document &doc) const
 {
+    using namespace rapidjson;
+
     doc.SetObject();
 
     auto &allocator = doc.GetAllocator();
 
-    doc.AddMember("access-log-file", accessLog() ? rapidjson::Value(rapidjson::StringRef(accessLog())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
-    doc.AddMember("algo",            rapidjson::StringRef(algoName()), allocator);
+    doc.AddMember("access-log-file", accessLog() ? Value(StringRef(accessLog())).Move() : Value(kNullType).Move(), allocator);
+    doc.AddMember("algo",            StringRef(algorithm().name()), allocator);
 
-    rapidjson::Value api(rapidjson::kObjectType);
+    Value api(kObjectType);
     api.AddMember("port",         apiPort(), allocator);
-    api.AddMember("access-token", apiToken() ? rapidjson::Value(rapidjson::StringRef(apiToken())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
-    api.AddMember("worker-id",    apiWorkerId() ? rapidjson::Value(rapidjson::StringRef(apiWorkerId())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
+    api.AddMember("access-token", apiToken() ? Value(StringRef(apiToken())).Move() : Value(kNullType).Move(), allocator);
+    api.AddMember("worker-id",    apiWorkerId() ? Value(StringRef(apiWorkerId())).Move() : Value(kNullType).Move(), allocator);
     api.AddMember("ipv6",         isApiIPv6(), allocator);
     api.AddMember("restricted",   isApiRestricted(), allocator);
     doc.AddMember("api",          api, allocator);
 
     doc.AddMember("background",   isBackground(), allocator);
 
-    rapidjson::Value bind(rapidjson::kArrayType);
+    Value bind(kArrayType);
     for (const Addr &addr : m_addrs) {
-        bind.PushBack(rapidjson::StringRef(addr.addr()), allocator);
+        bind.PushBack(StringRef(addr.addr()), allocator);
     }
 
     doc.AddMember("bind",         bind, allocator);
     doc.AddMember("colors",       isColors(), allocator);
     doc.AddMember("custom-diff",  diff(), allocator);
     doc.AddMember("donate-level", donateLevel(), allocator);
-    doc.AddMember("log-file",     logFile() ? rapidjson::Value(rapidjson::StringRef(logFile())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
-    doc.AddMember("mode",         rapidjson::StringRef(modeName()), allocator);
+    doc.AddMember("log-file",     logFile() ? Value(StringRef(logFile())).Move() : Value(kNullType).Move(), allocator);
+    doc.AddMember("mode",         StringRef(modeName()), allocator);
 
-    rapidjson::Value pools(rapidjson::kArrayType);
+    Value pools(kArrayType);
 
-    for (const Pool &pool : m_pools) {
-        rapidjson::Value obj(rapidjson::kObjectType);
-
-        obj.AddMember("url",     rapidjson::StringRef(pool.url()), allocator);
-        obj.AddMember("user",    rapidjson::StringRef(pool.user()), allocator);
-        obj.AddMember("pass",    rapidjson::StringRef(pool.password()), allocator);
-
-        if (pool.keepAlive() == 0 || pool.keepAlive() == Pool::kKeepAliveTimeout) {
-            obj.AddMember("keepalive", pool.keepAlive() > 0, allocator);
-        }
-        else {
-            obj.AddMember("keepalive", pool.keepAlive(), allocator);
-        }
-
-        obj.AddMember("variant", pool.variant(), allocator);
-
-        pools.PushBack(obj, allocator);
+    for (const Pool &pool : m_activePools) {
+        pools.PushBack(pool.toJSON(doc), allocator);
     }
 
     doc.AddMember("pools", pools, allocator);
@@ -130,7 +117,7 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("retries",       retries(), allocator);
     doc.AddMember("retry-pause",   retryPause(), allocator);
     doc.AddMember("reuse-timeout", reuseTimeout(), allocator);
-    doc.AddMember("user-agent",    userAgent() ? rapidjson::Value(rapidjson::StringRef(userAgent())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
+    doc.AddMember("user-agent",    userAgent() ? Value(StringRef(userAgent())).Move() : Value(kNullType).Move(), allocator);
 
 #   ifdef HAVE_SYSLOG_H
     doc.AddMember("syslog", isSyslog(), allocator);
@@ -148,9 +135,13 @@ xmrig::Config *xmrig::Config::load(int argc, char **argv, IWatcherListener *list
 }
 
 
-bool xmrig::Config::adjust()
+bool xmrig::Config::finalize()
 {
-    if (!CommonConfig::adjust()) {
+    if (m_state != NoneState) {
+        return CommonConfig::finalize();
+    }
+
+    if (!CommonConfig::finalize()) {
         return false;
     }
 
@@ -211,7 +202,6 @@ bool xmrig::Config::parseString(int key, const char *arg)
         break;
 
     case CoinKey: /* --coin */
-//        m_pools.back()->setCoin(arg);
         break;
 
     case AccessLogFileKey: /* --access-log-file **/
@@ -276,17 +266,15 @@ void xmrig::Config::parseJSON(const rapidjson::Document &doc)
 }
 
 
-void xmrig::Config::setCoin(const char *coin)
-{
-    if (strncasecmp(coin, "aeon", 4) == 0) {
-        m_algorithm = CRYPTONIGHT_LITE;
-    }
-}
-
-
 void xmrig::Config::setMode(const char *mode)
 {
-    const size_t size = sizeof(modeNames) / sizeof((modeNames)[0]);
+    assert(mode != nullptr);
+    if (mode == nullptr) {
+        m_mode = NICEHASH_MODE;
+        return;
+    }
+
+    constexpr const size_t size = sizeof(modeNames) / sizeof((modeNames)[0]);
 
     for (size_t i = 0; i < size; i++) {
         if (modeNames[i] && !strcmp(mode, modeNames[i])) {

@@ -7,7 +7,6 @@
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
- *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
@@ -30,17 +29,17 @@
 
 #include "api/Api.h"
 #include "App.h"
-#include "Console.h"
+#include "common/Console.h"
+#include "common/log/Log.h"
+#include "common/Platform.h"
 #include "core/Config.h"
 #include "core/Controller.h"
-#include "log/Log.h"
-#include "Platform.h"
 #include "proxy/Proxy.h"
 #include "Summary.h"
 #include "version.h"
 
 #ifndef XMRIG_NO_HTTPD
-#   include "api/Httpd.h"
+#   include "common/api/Httpd.h"
 #endif
 
 
@@ -113,8 +112,6 @@ int App::exec()
 
     const int r = uv_run(uv_default_loop(), UV_RUN_DEFAULT);
     uv_loop_close(uv_default_loop());
-
-    Platform::release();
 
     return r;
 }

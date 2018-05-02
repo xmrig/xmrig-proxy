@@ -27,18 +27,18 @@
 #include <string.h>
 
 
+#include "common/log/Log.h"
+#include "common/net/Client.h"
+#include "common/net/strategies/FailoverStrategy.h"
+#include "common/net/strategies/SinglePoolStrategy.h"
 #include "core/Config.h"
 #include "core/Controller.h"
-#include "log/Log.h"
-#include "net/Client.h"
+#include "net/JobResult.h"
 #include "net/strategies/DonateStrategy.h"
-#include "net/strategies/FailoverStrategy.h"
-#include "net/strategies/SinglePoolStrategy.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/events/SubmitEvent.h"
-#include "proxy/JobResult.h"
 #include "proxy/Miner.h"
 #include "proxy/splitters/simple/SimpleMapper.h"
 
@@ -125,6 +125,10 @@ void SimpleMapper::submit(SubmitEvent *event)
         return event->reject(Error::InvalidJobId);
     }
 
+    if (event->request.algorithm.isValid() && event->request.algorithm != m_job.algorithm()) {
+        return event->reject(Error::IncorrectAlgorithm);
+    }
+
     JobResult req = event->request;
     req.diff = m_job.diff();
 
@@ -175,8 +179,9 @@ void SimpleMapper::onActive(IStrategy *strategy, Client *client)
 void SimpleMapper::onJob(IStrategy *strategy, Client *client, const Job &job)
 {
     if (m_controller->config()->isVerbose()) {
-        LOG_INFO(isColors() ? "#%03u \x1B[01;35mnew job\x1B[0m from \x1B[01;37m%s:%d\x1B[0m diff \x1B[01;37m%d" : "#%03u new job from %s:%d diff %d",
-                 m_id, client->host(), client->port(), job.diff());
+        LOG_INFO(isColors() ? "#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s")
+                            : "#%03u new job from %s:%d diff %d algo %s",
+                 m_id, client->host(), client->port(), job.diff(), job.algorithm().shortName());
     }
 
     if (m_donate && m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {
@@ -235,11 +240,14 @@ bool SimpleMapper::isValidJobId(const xmrig::Id &id) const
 
 IStrategy *SimpleMapper::createStrategy(const std::vector<Pool> &pools)
 {
+    const int retryPause = m_controller->config()->retryPause();
+    const int retries    = m_controller->config()->retries();
+
     if (pools.size() > 1) {
-        return new FailoverStrategy(pools, m_controller->config()->retryPause(), m_controller->config()->retries(), this);
+        return new FailoverStrategy(pools, retryPause, retries, this);
     }
 
-    return new SinglePoolStrategy(pools.front(), m_controller->config()->retryPause(), this);
+    return new SinglePoolStrategy(pools.front(), retryPause, retries, this);
 }
 
 

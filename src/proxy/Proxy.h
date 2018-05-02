@@ -37,8 +37,9 @@
 
 class AccessLog;
 class Addr;
-class Miners;
 class ISplitter;
+class Login;
+class Miners;
 class Options;
 class ProxyDebug;
 class Server;
@@ -90,6 +91,7 @@ private:
     AccessLog *m_accessLog;
     CustomDiff m_customDiff;
     ISplitter *m_splitter;
+    Login *m_login;
     Miners *m_miners;
     ProxyDebug *m_debug;
     ShareLog *m_shareLog;

@@ -29,8 +29,8 @@
 #include <vector>
 
 
-#include "core/CommonConfig.h"
-#include "core/utils/c_str.h"
+#include "common/config/CommonConfig.h"
+#include "common/utils/c_str.h"
 #include "proxy/Addr.h"
 #include "rapidjson/fwd.h"
 
@@ -89,14 +89,13 @@ public:
     inline void toggleVerbose()                    { m_verbose = !m_verbose; }
 
 protected:
-    bool adjust() override;
+    bool finalize() override;
     bool parseBoolean(int key, bool enable) override;
     bool parseString(int key, const char *arg) override;
     bool parseUint64(int key, uint64_t arg) override;
     void parseJSON(const rapidjson::Document &doc) override;
 
 private:
-    void setCoin(const char *coin);
     void setMode(const char *mode);
 
     bool m_debug;

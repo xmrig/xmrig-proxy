@@ -25,11 +25,11 @@
 #include <inttypes.h>
 
 
+#include "common/log/Log.h"
+#include "common/net/SubmitResult.h"
 #include "core/Config.h"
 #include "core/Controller.h"
-#include "log/Log.h"
 #include "log/ShareLog.h"
-#include "net/SubmitResult.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/Miner.h"
 #include "proxy/Stats.h"

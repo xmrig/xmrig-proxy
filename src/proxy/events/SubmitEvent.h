@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,17 +25,18 @@
 #define __SUBMITEVENT_H__
 
 
+#include "common/crypto/Algorithm.h"
+#include "net/JobResult.h"
 #include "proxy/Error.h"
 #include "proxy/events/MinerEvent.h"
-#include "proxy/JobResult.h"
 
 
 class SubmitEvent : public MinerEvent
 {
 public:
-    static inline SubmitEvent *create(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result)
+    static inline SubmitEvent *create(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, const xmrig::Algorithm &algorithm)
     {
-        return new (m_buf) SubmitEvent(miner, id, jobId, nonce, result);
+        return new (m_buf) SubmitEvent(miner, id, jobId, nonce, result, algorithm);
     }
 
 
@@ -49,9 +50,9 @@ public:
 
 
 protected:
-    inline SubmitEvent(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result)
+    inline SubmitEvent(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, const xmrig::Algorithm &algorithm)
         : MinerEvent(SubmitType, miner),
-          request(id, jobId, nonce, result),
+          request(id, jobId, nonce, result, algorithm),
           m_error(Error::NoError)
     {}
 

@@ -58,6 +58,7 @@ DonateStrategy::DonateStrategy(size_t id, xmrig::Controller *controller, IStrate
     m_client = new Client(-1, Platform::userAgent(), this);
     m_client->setPool(Pool("proxy.fee.xmrig.com", 9999, userId, nullptr));
     m_client->setRetryPause(1000);
+    m_client->setQuiet(true);
 
     m_target = random(3000, 9000);
 }

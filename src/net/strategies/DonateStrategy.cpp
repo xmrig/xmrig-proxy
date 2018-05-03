@@ -39,11 +39,10 @@ static inline int random(int min, int max){
 }
 
 
-DonateStrategy::DonateStrategy(size_t id, xmrig::Controller *controller, IStrategyListener *listener) :
+DonateStrategy::DonateStrategy(xmrig::Controller *controller, IStrategyListener *listener) :
     m_active(false),
     m_suspended(false),
     m_listener(listener),
-    m_id(id),
     m_donateTicks(0),
     m_target(0),
     m_ticks(0),

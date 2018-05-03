@@ -30,6 +30,7 @@
 #include "core/Controller.h"
 #include "interfaces/IStrategyListener.h"
 #include "net/strategies/DonateStrategy.h"
+#include "proxy/Counters.h"
 #include "proxy/StatsData.h"
 
 
@@ -116,7 +117,7 @@ void DonateStrategy::tick(uint64_t now)
     m_ticks++;
 
     if (m_ticks == m_target) {
-        if (m_id == 0 && m_controller->statsData().upstreams.active == 1) {
+        if (Counters::miners() < 256) {
             m_target += 600;
             return;
         }

@@ -50,7 +50,8 @@ Options:\n\
   -O, --userpass=U:P       username:password pair for mining server\n\
   -u, --user=USERNAME      username for mining server\n\
   -p, --pass=PASSWORD      password for mining server\n\
-  -k, --keepalive          prevent timeout (need pool support)\n\
+      --rig-id=ID          rig identifier for pool-side statistics (needs pool support)\n\
+  -k, --keepalive          prevent timeout (needs pool support)\n\
   -r, --retries=N          number of times to retry before switch to backup server (default: 1)\n\
   -R, --retry-pause=N      time to pause between retries (default: 1 second)\n\
       --custom-diff=N      override pool diff\n\
@@ -119,6 +120,7 @@ static struct option const options[] = {
     { "variant",           1, nullptr, xmrig::IConfig::VariantKey        },
     { "reuse-timeout",     1, nullptr, xmrig::IConfig::ReuseTimeoutKey   },
     { "mode",              1, nullptr, xmrig::IConfig::ModeKey           },
+    { "rig-id",            1, nullptr, xmrig::IConfig::RigIdKey          },
     { 0, 0, 0, 0 }
 };
 
@@ -151,9 +153,9 @@ static struct option const pool_options[] = {
     { "pass",          1, nullptr, xmrig::IConfig::PasswordKey   },
     { "user",          1, nullptr, xmrig::IConfig::UserKey       },
     { "userpass",      1, nullptr, xmrig::IConfig::UserpassKey   },
-    { "coin",          1, nullptr, xmrig::IConfig::PoolCoinKey   },
     { "keepalive",     2, nullptr, xmrig::IConfig::KeepAliveKey  },
     { "variant",       1, nullptr, xmrig::IConfig::VariantKey    },
+    { "rig-id",        1, nullptr, xmrig::IConfig::RigIdKey      },
     { 0, 0, 0, 0 }
 };
 

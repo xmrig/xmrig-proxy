@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,13 +25,15 @@
 #include "proxy/Error.h"
 
 
-static const char *kBadGateway      = "Bad gateway";
-static const char *kInvalidJobId    = "Invalid job id";
-static const char *kInvalidMethod   = "Invalid method";
-static const char *kInvalidNonce    = "Invalid nonce; is miner not compatible with NiceHash?";
-static const char *kLowDifficulty   = "Low difficulty share";
-static const char *kUnauthenticated = "Unauthenticated";
-static const char *kUnknownError    = "Unknown error";
+static const char *kBadGateway            = "Bad gateway";
+static const char *kInvalidJobId          = "Invalid job id";
+static const char *kInvalidMethod         = "Invalid method";
+static const char *kInvalidNonce          = "Invalid nonce; is miner not compatible with NiceHash?";
+static const char *kLowDifficulty         = "Low difficulty share";
+static const char *kUnauthenticated       = "Unauthenticated";
+static const char *kUnknownError          = "Unknown error";
+static const char *kIncompatibleAlgorithm = "No compatible algorithm found, change algo option in your miner.";
+static const char *kIncorrectAlgorithm    = "Incorrect algorithm";
 
 
 const char *Error::toString(Code code)
@@ -55,6 +57,12 @@ const char *Error::toString(Code code)
 
     case Unauthenticated:
         return kUnauthenticated;
+
+    case IncompatibleAlgorithm:
+        return kIncompatibleAlgorithm;
+
+    case IncorrectAlgorithm:
+        return kIncorrectAlgorithm;
 
     default:
         break;

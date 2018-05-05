@@ -29,6 +29,7 @@
 #include <uv.h>
 
 
+#include "common/net/Storage.h"
 #include "rapidjson/fwd.h"
 
 
@@ -85,7 +86,7 @@ private:
     static void onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
     static void onTimeout(uv_timer_t *handle);
 
-    static inline Miner *getMiner(void *data) { return static_cast<Miner*>(data); }
+    static inline Miner *getMiner(void *data) { return m_storage.get(data); }
 
     bool m_ipv6;
     bool m_nicehash;
@@ -105,8 +106,11 @@ private:
     uint64_t m_timestamp;
     uint64_t m_tx;
     uint8_t m_fixedByte;
+    uintptr_t m_key;
     uv_buf_t m_recvBuf;
     uv_tcp_t m_socket;
+
+    static xmrig::Storage<Miner> m_storage;
 };
 
 #endif /* __MINER_H__ */

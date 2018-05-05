@@ -29,7 +29,7 @@
 #include <vector>
 
 
-#include "net/Job.h"
+#include "common/net/Job.h"
 
 
 class LoginRequest;

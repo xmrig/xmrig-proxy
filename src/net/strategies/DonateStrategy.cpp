@@ -22,20 +22,16 @@
  */
 
 
+#include "common/crypto/keccak.h"
+#include "common/net/Client.h"
+#include "common/Platform.h"
+#include "common/xmrig.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "interfaces/IStrategyListener.h"
-#include "net/Client.h"
 #include "net/strategies/DonateStrategy.h"
-#include "Platform.h"
+#include "proxy/Counters.h"
 #include "proxy/StatsData.h"
-#include "xmrig.h"
-
-
-extern "C"
-{
-#include "crypto/c_keccak.h"
-}
 
 
 static inline int random(int min, int max){
@@ -43,11 +39,10 @@ static inline int random(int min, int max){
 }
 
 
-DonateStrategy::DonateStrategy(size_t id, xmrig::Controller *controller, IStrategyListener *listener) :
+DonateStrategy::DonateStrategy(xmrig::Controller *controller, IStrategyListener *listener) :
     m_active(false),
     m_suspended(false),
     m_listener(listener),
-    m_id(id),
     m_donateTicks(0),
     m_target(0),
     m_ticks(0),
@@ -57,25 +52,13 @@ DonateStrategy::DonateStrategy(size_t id, xmrig::Controller *controller, IStrate
     char userId[65] = { 0 };
     const char *user = controller->config()->pools().front().user();
 
-    keccak(reinterpret_cast<const uint8_t *>(user), static_cast<int>(strlen(user)), hash, sizeof(hash));
+    xmrig::keccak(reinterpret_cast<const uint8_t *>(user), strlen(user), hash);
     Job::toHex(hash, 32, userId);
 
-    uint16_t port = 4444;
-    switch (controller->config()->algorithm()) {
-    case xmrig::CRYPTONIGHT_LITE:
-        port = 7777;
-        break;
-
-    case xmrig::CRYPTONIGHT_HEAVY:
-        port = 8887;
-
-    default:
-        break;
-    }
-
     m_client = new Client(-1, Platform::userAgent(), this);
-    m_client->setPool(Pool("proxy.fee.xmrig.com", port, userId, nullptr));
+    m_client->setPool(Pool("proxy.fee.xmrig.com", 9999, userId, nullptr));
     m_client->setRetryPause(1000);
+    m_client->setQuiet(true);
 
     m_target = random(3000, 9000);
 }
@@ -133,7 +116,7 @@ void DonateStrategy::tick(uint64_t now)
     m_ticks++;
 
     if (m_ticks == m_target) {
-        if (m_id == 0 && m_controller->statsData().upstreams.active == 1) {
+        if (Counters::miners() < 256) {
             m_target += 600;
             return;
         }

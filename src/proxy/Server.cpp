@@ -22,7 +22,7 @@
  */
 
 
-#include "log/Log.h"
+#include "common/log/Log.h"
 #include "proxy/Addr.h"
 #include "proxy/events/ConnectionEvent.h"
 #include "proxy/Miner.h"

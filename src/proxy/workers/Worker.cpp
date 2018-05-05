@@ -24,8 +24,8 @@
 #include <chrono>
 
 
+#include "common/net/SubmitResult.h"
 #include "proxy/workers/Worker.h"
-#include "net/SubmitResult.h"
 
 
 Worker::Worker() :

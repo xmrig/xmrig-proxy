@@ -20,10 +20,12 @@
     "mode": "nicehash",
     "pools": [
         {
-            "url": "failover.xmrig.com:443",
+            "url": "proxy.fee.xmrig.com:9999",
             "user": "YOUR_WALLET",
             "pass": "x",
-            "variant": -1
+            "rig-id": null,
+            "keepalive": false,
+            "variant": 1
         }
     ],
     "retries": 2,

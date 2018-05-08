@@ -28,20 +28,20 @@
 #include "common/xmrig.h"
 #include "core/Config.h"
 #include "core/Controller.h"
+#include "donate.h"
 #include "interfaces/IStrategyListener.h"
 #include "net/strategies/DonateStrategy.h"
 #include "proxy/Counters.h"
 #include "proxy/StatsData.h"
 
 
-static inline int random(int min, int max){
-   return min + rand() / (RAND_MAX / (max - min + 1) + 1);
+static inline float randomf(float min, float max) {
+    return (max - min) * ((((float) rand()) / (float) RAND_MAX)) + min;
 }
 
 
 DonateStrategy::DonateStrategy(xmrig::Controller *controller, IStrategyListener *listener) :
     m_active(false),
-    m_suspended(false),
     m_listener(listener),
     m_donateTicks(0),
     m_target(0),
@@ -58,9 +58,10 @@ DonateStrategy::DonateStrategy(xmrig::Controller *controller, IStrategyListener 
     m_client = new Client(-1, Platform::userAgent(), this);
     m_client->setPool(Pool("proxy.fee.xmrig.com", 9999, userId, nullptr));
     m_client->setRetryPause(1000);
+    m_client->setAlgo(controller->config()->algorithm());
     m_client->setQuiet(true);
 
-    m_target = random(3000, 9000);
+    m_target = (100 - controller->config()->donateLevel()) * 60 * randomf(0.5, 1.5);
 }
 
 
@@ -77,11 +78,25 @@ bool DonateStrategy::reschedule()
         return false;
     }
 
-    m_target = m_ticks + (6000 * ((double) m_donateTicks / level));
+    m_target = m_ticks + ((6000 - level) * ((double) m_donateTicks / level));
     m_active = false;
 
     stop();
     return true;
+}
+
+
+void DonateStrategy::save(const Client *client, const Job &job)
+{
+    m_pending.job  = job;
+    m_pending.host = client->host();
+    m_pending.port = client->port();
+}
+
+
+void DonateStrategy::setAlgo(const xmrig::Algorithm &algorithm)
+{
+    m_client->setAlgo(algorithm);
 }
 
 
@@ -93,13 +108,11 @@ int64_t DonateStrategy::submit(const JobResult &result)
 
 void DonateStrategy::connect()
 {
-    m_suspended = false;
 }
 
 
 void DonateStrategy::stop()
 {
-    m_suspended   = true;
     m_donateTicks = 0;
     m_client->disconnect();
 }
@@ -109,18 +122,15 @@ void DonateStrategy::tick(uint64_t now)
 {
     m_client->tick(now);
 
-    if (m_suspended) {
-        return;
-    }
-
     m_ticks++;
 
     if (m_ticks == m_target) {
-        if (Counters::miners() < 256) {
+        if (kFreeThreshold > 0 && Counters::miners() < kFreeThreshold) {
             m_target += 600;
             return;
         }
 
+        m_pending.job.reset();
         m_client->connect();
     }
 

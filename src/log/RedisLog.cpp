@@ -102,7 +102,7 @@ void RedisLog::close(const CloseEvent *event)
       return;
     }
 
-    eredis_w_cmd(m_redis, "APPEND w:%s @X%ld:%s",
+    eredis_w_cmd(m_redis, "APPEND e:%s @X:%ld:%s",
          worker->name(), time(nullptr), event->miner()->ip());
 }
 
@@ -114,7 +114,7 @@ void RedisLog::login(const LoginEvent *event)
       return;
     }
 
-    eredis_w_cmd(m_redis, "APPEND w:%s @L%ld:%s",
+    eredis_w_cmd(m_redis, "APPEND e:%s @L:%ld:%s",
          worker->name(), time(nullptr), event->miner()->ip());
 }
 
@@ -127,7 +127,7 @@ void RedisLog::accept(const AcceptEvent *event)
     }
 
 
-    eredis_w_cmd(m_redis, "APPEND w:%s @A%ld:%u,%.2f",
+    eredis_w_cmd(m_redis, "APPEND e:%s @A:%ld:%u,%.2f",
          worker->name(), time(nullptr), event->result.diff, worker->hashrate(60));
 
 }
@@ -142,6 +142,6 @@ void RedisLog::reject(const AcceptEvent *event)
     }
 
 
-    eredis_w_cmd(m_redis, "APPEND w:%s @R%ld:%u,%.2f",
+    eredis_w_cmd(m_redis, "APPEND e:%s @R:%ld:%u,%.2f",
        worker->name(), time(nullptr), event->result.diff, worker->hashrate(600));
 }

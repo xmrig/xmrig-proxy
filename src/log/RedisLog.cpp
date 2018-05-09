@@ -127,8 +127,8 @@ void RedisLog::accept(const AcceptEvent *event)
     }
 
 
-    eredis_w_cmd(m_redis, "APPEND e:%s @A:%ld:%u,%.2f",
-         worker->name(), time(nullptr), event->result.diff, worker->hashrate(60));
+    eredis_w_cmd(m_redis, "APPEND e:%s @A:%ld:%u,%.2f,%s",
+         worker->name(), time(nullptr), event->result.diff, worker->hashrate(60), event->miner()->ip());
 
 }
 
@@ -142,6 +142,6 @@ void RedisLog::reject(const AcceptEvent *event)
     }
 
 
-    eredis_w_cmd(m_redis, "APPEND e:%s @R:%ld:%u,%.2f",
-       worker->name(), time(nullptr), event->result.diff, worker->hashrate(600));
+    eredis_w_cmd(m_redis, "APPEND e:%s @R:%ld:%u,%.2f,%s",
+       worker->name(), time(nullptr), event->result.diff, worker->hashrate(600), event->miner()->ip());
 }

@@ -37,6 +37,9 @@
 #include "Counters.h"
 #include "log/AccessLog.h"
 #include "log/ShareLog.h"
+#ifndef XMRIG_NO_REDIS
+#include "log/RedisLog.h"
+#endif
 #include "proxy/Addr.h"
 #include "proxy/Events.h"
 #include "proxy/events/ConnectionEvent.h"
@@ -74,6 +77,11 @@ Proxy::Proxy(xmrig::Controller *controller) :
 
     m_shareLog  = new ShareLog(controller, m_stats);
     m_accessLog = new AccessLog(controller);
+
+#ifndef XMRIG_NO_REDIS
+    m_redisLog = new RedisLog(controller, m_stats);
+#endif
+
     m_workers   = new Workers(controller);
 
     m_timer.data = this;
@@ -120,6 +128,10 @@ Proxy::~Proxy()
     delete m_accessLog;
     delete m_debug;
     delete m_workers;
+#ifndef XMRIG_NO_REDIS
+    delete m_redisLog;
+#endif
+
 }
 
 

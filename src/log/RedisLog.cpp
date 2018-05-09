@@ -47,10 +47,7 @@ RedisLog::RedisLog(xmrig::Controller *controller, const Stats &stats,
 {
 
     m_redis = eredis_new();
-    // LOG_ERR("connecting to redis: %s:%d", redisHost, redisPort);
-
     eredis_host_file(m_redis, "redis-hosts.conf" );
-    for (int i = 0; i  += sizeof(host_t);)
     eredis_run_thr(m_redis);
 }
 
@@ -78,7 +75,7 @@ void RedisLog::onEvent(IEvent *event)
         close(static_cast<CloseEvent*>(event));
         break;
     default:
-        break;        
+        break;
     }
 }
 
@@ -105,7 +102,7 @@ void RedisLog::close(const CloseEvent *event)
       return;
     }
 
-    eredis_w_cmd(m_redis, "APPEND x:%s @%ld:%s",
+    eredis_w_cmd(m_redis, "APPEND w:%s @X%ld:%s",
          worker->name(), time(nullptr), event->miner()->ip());
 }
 
@@ -117,7 +114,7 @@ void RedisLog::login(const LoginEvent *event)
       return;
     }
 
-    eredis_w_cmd(m_redis, "APPEND l:%s @%ld:%s",
+    eredis_w_cmd(m_redis, "APPEND w:%s @L%ld:%s",
          worker->name(), time(nullptr), event->miner()->ip());
 }
 
@@ -130,11 +127,9 @@ void RedisLog::accept(const AcceptEvent *event)
     }
 
 
-    eredis_w_cmd(m_redis, "APPEND a:%s @%ld:%u,%.2f",
+    eredis_w_cmd(m_redis, "APPEND w:%s @A%ld:%u,%.2f",
          worker->name(), time(nullptr), event->result.diff, worker->hashrate(60));
 
-    LOG_INFO("APPEND a:%s @%ld:%u,%.2f",
-        worker->name(), time(nullptr), event->result.diff, worker->hashrate(60));
 }
 
 
@@ -147,9 +142,6 @@ void RedisLog::reject(const AcceptEvent *event)
     }
 
 
-    eredis_w_cmd(m_redis, "APPEND r:%s @%ld:%u,%.2f",
+    eredis_w_cmd(m_redis, "APPEND w:%s @R%ld:%u,%.2f",
        worker->name(), time(nullptr), event->result.diff, worker->hashrate(600));
-
-    LOG_INFO("APPEND r:%s @%ld:%u,%.2f",
-      worker->name(), time(nullptr), event->result.diff, worker->hashrate(600));
 }

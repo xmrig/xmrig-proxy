@@ -10,6 +10,10 @@
 
 
 class Stats;
+class AcceptEvent;
+class LoginEvent;
+class CloseEvent;
+class Workers;
 
 namespace xmrig {
     class Controller;
@@ -18,7 +22,8 @@ namespace xmrig {
 class RedisLog : public IEventListener
 {
 public:
-    RedisLog(xmrig::Controller *controller, const Stats &stats);
+    RedisLog(xmrig::Controller *controller, const Stats &stats,
+       Workers *workers);
     ~RedisLog();
 
 protected:
@@ -26,9 +31,15 @@ protected:
     void onRejectedEvent(IEvent *event) override;
 
 private:
+    void accept(const AcceptEvent *event);
+    void reject(const AcceptEvent *event);
+    void close(const CloseEvent *event);
+    void login(const LoginEvent *event);
+
     eredis_t *m_redis;
     const Stats &m_stats;
     xmrig::Controller *m_controller;
+    Workers *m_workers;
 };
 
 

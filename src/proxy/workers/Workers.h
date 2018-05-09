@@ -56,17 +56,18 @@ public:
     void tick(uint64_t ticks);
 
     inline const std::vector<Worker> &workers() const { return m_workers; }
+    const Worker *workerByMiner(const Miner *miner);
 
 protected:
     void onEvent(IEvent *event) override;
     void onRejectedEvent(IEvent *event) override;
 
 private:
-    bool indexByMiner(const Miner *miner, size_t *index) const;
     void accept(const AcceptEvent *event);
     void login(const LoginEvent *event);
     void reject(const SubmitEvent *event);
     void remove(const CloseEvent *event);
+    bool indexByMiner(const Miner *miner, size_t *index) const;
 
     bool m_enabled;
     std::map<int64_t, size_t> m_miners;

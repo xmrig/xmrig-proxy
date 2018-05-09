@@ -31,20 +31,26 @@
 #include "core/Controller.h"
 #include "log/RedisLog.h"
 #include "proxy/events/AcceptEvent.h"
+#include "proxy/events/LoginEvent.h"
+#include "proxy/events/CloseEvent.h"
 #include "proxy/Miner.h"
 #include "proxy/Stats.h"
+#include "proxy/workers/Workers.h"
 
 
 
-RedisLog::RedisLog(xmrig::Controller *controller, const Stats &stats) :
+RedisLog::RedisLog(xmrig::Controller *controller, const Stats &stats,
+                  Workers *workers) :
     m_stats(stats),
-    m_controller(controller)
+    m_controller(controller),
+    m_workers(workers)
 {
 
     m_redis = eredis_new();
     // LOG_ERR("connecting to redis: %s:%d", redisHost, redisPort);
 
     eredis_host_file(m_redis, "redis-hosts.conf" );
+    for (int i = 0; i  += sizeof(host_t);)
     eredis_run_thr(m_redis);
 }
 
@@ -58,51 +64,92 @@ RedisLog::~RedisLog()
 
 void RedisLog::onEvent(IEvent *event)
 {
-    // switch (event->type())
-    // {
-    // case IEvent::AcceptType:
-    //     accept(static_cast<AcceptEvent*>(event));
-    //     break;
-    //
-    // default:
-    //     break;
-    // }
+    switch (event->type())
+    {
+    case IEvent::AcceptType:
+        accept(static_cast<AcceptEvent*>(event));
+        break;
+
+    case IEvent::LoginType:
+        login(static_cast<LoginEvent*>(event));
+        break;
+
+    case IEvent::CloseType:
+        close(static_cast<CloseEvent*>(event));
+        break;
+    default:
+        break;        
+    }
 }
 
 
 void RedisLog::onRejectedEvent(IEvent *event)
 {
-    // switch (event->type())
-    // {
-    // case IEvent::AcceptType:
-    //     reject(static_cast<AcceptEvent*>(event));
-    //     break;
-    //
-    // default:
-    //     break;
-    // }
+    switch (event->type())
+    {
+    case IEvent::AcceptType:
+        reject(static_cast<AcceptEvent*>(event));
+        break;
+
+    default:
+        break;
+    }
 }
 
 
-// void RedisLog::accept(const AcceptEvent *event)
-// {
-//     if (!m_controller->config()->isVerbose()) {
-//         return;
-//     }
-//
-//     LOG_INFO(isColors() ? "#%03u \x1B[01;32maccepted\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m ip \x1B[01;37m%s \x1B[01;30m(%" PRIu64 " ms)"
-//                         : "#%03u accepted (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff %u ip %s (%" PRIu64 " ms)",
-//              event->mapperId(), m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, event->result.diff, event->ip(), event->result.elapsed);
-// }
-//
-//
-// void RedisLog::reject(const AcceptEvent *event)
-// {
-//     if (event->isDonate()) {
-//         return;
-//     }
-//
-//     LOG_INFO(isColors() ? "#%03u \x1B[01;31mrejected\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m ip \x1B[01;37m%s \x1B[31m\"%s\"\x1B[0m \x1B[01;30m(%" PRId64 " ms)"
-//                         : "#%03u rejected (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff %u ip %s \"%s\" (%" PRId64 " ms)",
-//              event->mapperId(), m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, event->result.diff, event->ip(), event->error(), event->result.elapsed);
-// }
+void RedisLog::close(const CloseEvent *event)
+{
+    const Worker *worker;
+
+    if((worker = m_workers->workerByMiner(event->miner())) == nullptr) {
+      return;
+    }
+
+    eredis_w_cmd(m_redis, "APPEND x:%s @%ld:%s",
+         worker->name(), time(nullptr), event->miner()->ip());
+}
+
+void RedisLog::login(const LoginEvent *event)
+{
+    const Worker *worker;
+
+    if((worker = m_workers->workerByMiner(event->miner())) == nullptr) {
+      return;
+    }
+
+    eredis_w_cmd(m_redis, "APPEND l:%s @%ld:%s",
+         worker->name(), time(nullptr), event->miner()->ip());
+}
+
+void RedisLog::accept(const AcceptEvent *event)
+{
+    const Worker *worker;
+
+    if((worker = m_workers->workerByMiner(event->miner())) == nullptr) {
+      return;
+    }
+
+
+    eredis_w_cmd(m_redis, "APPEND a:%s @%ld:%u,%.2f",
+         worker->name(), time(nullptr), event->result.diff, worker->hashrate(60));
+
+    LOG_INFO("APPEND a:%s @%ld:%u,%.2f",
+        worker->name(), time(nullptr), event->result.diff, worker->hashrate(60));
+}
+
+
+void RedisLog::reject(const AcceptEvent *event)
+{
+    const Worker *worker;
+
+    if((worker = m_workers->workerByMiner(event->miner())) == nullptr) {
+      return;
+    }
+
+
+    eredis_w_cmd(m_redis, "APPEND r:%s @%ld:%u,%.2f",
+       worker->name(), time(nullptr), event->result.diff, worker->hashrate(600));
+
+    LOG_INFO("APPEND r:%s @%ld:%u,%.2f",
+      worker->name(), time(nullptr), event->result.diff, worker->hashrate(600));
+}

@@ -78,11 +78,12 @@ Proxy::Proxy(xmrig::Controller *controller) :
     m_shareLog  = new ShareLog(controller, m_stats);
     m_accessLog = new AccessLog(controller);
 
-#ifndef XMRIG_NO_REDIS
-    m_redisLog = new RedisLog(controller, m_stats);
-#endif
 
     m_workers   = new Workers(controller);
+
+#ifndef XMRIG_NO_REDIS
+    m_redisLog = new RedisLog(controller, m_stats, m_workers);
+#endif
 
     m_timer.data = this;
     uv_timer_init(uv_default_loop(), &m_timer);
@@ -110,6 +111,12 @@ Proxy::Proxy(xmrig::Controller *controller) :
     Events::subscribe(IEvent::AcceptType, &m_stats);
     Events::subscribe(IEvent::AcceptType, m_shareLog);
     Events::subscribe(IEvent::AcceptType, m_workers);
+
+#ifndef XMRIG_NO_REDIS
+    Events::subscribe(IEvent::LoginType, m_redisLog);
+    Events::subscribe(IEvent::CloseType, m_redisLog);
+    Events::subscribe(IEvent::AcceptType, m_redisLog);
+#endif
 
     m_debug = new ProxyDebug(controller->config()->isDebug());
 

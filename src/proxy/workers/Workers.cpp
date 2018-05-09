@@ -142,6 +142,15 @@ void Workers::onRejectedEvent(IEvent *event)
     }
 }
 
+const Worker *Workers::workerByMiner(const Miner *miner)
+{
+    size_t index = 0;
+
+    if (!indexByMiner(miner, &index)) {
+        return nullptr;
+    }
+    return &m_workers[index];
+}
 
 bool Workers::indexByMiner(const Miner *miner, size_t *index) const
 {

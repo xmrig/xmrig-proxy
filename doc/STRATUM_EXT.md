@@ -89,11 +89,11 @@ Both miner and pool should support short algorithm name aliases:
 | `cryptonight`           | `cn`           | `cryptonight`       | `-1`        | Autodetect works only for Monero.                    |
 | `cryptonight/0`         | `cn/0`         | `cryptonight`       | `0`         | Original/old CryptoNight.                            |
 | `cryptonight/1`         | `cn/1`         | `cryptonight`       | `1`         | Also known as `monero7` and `CryptoNightV7`.         |
-| `cryptonight/xtl`       | `cn/xtl`       | `cryptonight        | `xtl`       | Stellite (XTL) variant.                              |
+| `cryptonight/xtl`       | `cn/xtl`       | `cryptonight`       | `"xtl"`     | Stellite (XTL) variant.                              |
 | `cryptonight-lite`      | `cn-lite`      | `cryptonight-lite`  | `-1`        | Autodetect works only for Aeon.                      |
 | `cryptonight-lite/0`    | `cn-lite/0`    | `cryptonight-lite`  | `0`         | Original/old CryptoNight-Lite.                       |
 | `cryptonight-lite/1`    | `cn-lite/1`    | `cryptonight-lite`  | `1`         | Also known as `aeon7`                                |
-| `cryptonight-lite/ipbc` | `cn-lite/ipbc` | `cryptonight-lite`  | `ipbc`      | IPBC variant                                         |
+| `cryptonight-lite/ipbc` | `cn-lite/ipbc` | `cryptonight-lite`  | `"ipbc"`    | IPBC variant                                         |
 | `cryptonight-heavy`     | `cn-heavy`     | `cryptonight-heavy` | `0`         | Sumokoin and Haven Protocol                          |
 
 ### 1.5 XMR-Stak algorithm names

@@ -1,4 +1,4 @@
-# v2.6.1
+# v2.6.2
  - [#197](https://github.com/xmrig/xmrig-proxy/issues/197) Fixed compatibility with xmr-stak `rig_id` option, xmr-stak sent empty rig id if user not specify it.
  - [#199](https://github.com/xmrig/xmrig-proxy/issues/199) Fixed various bugs in donation subsystem.
 

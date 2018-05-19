@@ -155,6 +155,11 @@ void NonceMapper::tick(uint64_t ticks, uint64_t now)
 
     if (m_donate) {
         m_donate->tick(now);
+
+        if (m_donate->isActive() && m_donate->hasPendingJob() && m_donate->reschedule()) {
+            const auto &pending = m_donate->pending();
+            setJob(pending.host.data(), pending.port, pending.job);
+        }
     }
 }
 
@@ -195,17 +200,16 @@ void NonceMapper::onActive(IStrategy *strategy, Client *client)
 
 void NonceMapper::onJob(IStrategy *strategy, Client *client, const Job &job)
 {
-    if (m_controller->config()->isVerbose()) {
-        LOG_INFO(isColors() ? "#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s")
-                            : "#%03u new job from %s:%d diff %d algo %s",
-                 m_id, client->host(), client->port(), job.diff(), job.algorithm().shortName());
+    if (m_donate) {
+        if (m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {
+            m_donate->save(client, job);
+            return;
+        }
+
+        m_donate->setAlgo(job.algorithm());
     }
 
-    if (m_donate && m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {
-        return;
-    }
-
-    m_storage->setJob(job);
+    setJob(client->host(), client->port(), job);
 }
 
 
@@ -283,6 +287,18 @@ void NonceMapper::connect()
     if (m_donate) {
         m_donate->connect();
     }
+}
+
+
+void NonceMapper::setJob(const char *host, int port, const Job &job)
+{
+    if (m_controller->config()->isVerbose()) {
+        LOG_INFO(isColors() ? "#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s")
+                            : "#%03u new job from %s:%d diff %d algo %s",
+                 m_id, host, port, job.diff(), job.algorithm().shortName());
+    }
+
+    m_storage->setJob(job);
 }
 
 

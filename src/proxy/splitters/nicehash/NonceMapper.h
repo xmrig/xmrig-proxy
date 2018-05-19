@@ -96,6 +96,7 @@ private:
     IStrategy *createStrategy(const std::vector<Pool> &pools);
     SubmitCtx submitCtx(int64_t seq);
     void connect();
+    void setJob(const char *host, int port, const Job &job);
     void suspend();
 
     DonateStrategy *m_donate;

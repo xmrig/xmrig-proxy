@@ -25,6 +25,7 @@
 #define __DONATESTRATEGY_H__
 
 
+#include "common/utils/c_str.h"
 #include "interfaces/IClientListener.h"
 #include "interfaces/IStrategy.h"
 
@@ -42,13 +43,26 @@ namespace xmrig {
 class DonateStrategy : public IStrategy, public IClientListener
 {
 public:
+    struct Pending
+    {
+        Job job;
+        xmrig::c_str host;
+        int port;
+    };
+
+
     DonateStrategy(xmrig::Controller *controller, IStrategyListener *listener);
     ~DonateStrategy();
 
     bool reschedule();
+    void save(const Client *client, const Job &job);
+    void setAlgo(const xmrig::Algorithm &algorithm);
 
-    inline bool isActive() const override  { return m_active; }
-    inline void resume() override          {}
+    inline bool hasPendingJob() const     { return m_pending.job.isValid(); }
+    inline const Pending &pending() const { return m_pending; }
+
+    inline bool isActive() const override { return m_active; }
+    inline void resume() override         {}
 
     int64_t submit(const JobResult &result) override;
     void connect() override;
@@ -63,9 +77,9 @@ protected:
 
 private:
     bool m_active;
-    bool m_suspended;
     Client *m_client;
     IStrategyListener *m_listener;
+    Pending m_pending;
     uint64_t m_donateTicks;
     uint64_t m_target;
     uint64_t m_ticks;

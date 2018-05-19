@@ -26,6 +26,7 @@
 
 
 #include <stdint.h>
+#include <string.h>
 
 
 class LoginRequest
@@ -49,7 +50,7 @@ public:
     inline const char *agent() const      { return m_agent; }
     inline const char *login() const      { return m_login; }
     inline const char *pass() const       { return m_pass; }
-    inline const char *rigId() const      { return m_rigId ? m_rigId : m_login; }
+    inline const char *rigId() const      { return m_rigId && strlen(m_rigId) > 0 ? m_rigId : m_login; }
     inline int64_t id() const             { return m_id; }
 
 private:

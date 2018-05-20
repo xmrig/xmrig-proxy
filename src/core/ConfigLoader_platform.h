@@ -75,7 +75,7 @@ Options:\n\
       --api-port=N         port for the miner API\n\
       --api-access-token=T use Bearer access token for API\n\
       --api-worker-id=ID   custom worker-id for API\n\
-      --api-no-ipv6        disable IPv6 support for API\n\
+      --api-ipv6           enable IPv6 support for API\n\
       --api-no-restricted  enable full remote access (only if API token set)\n\
   -h, --help               display this help and exit\n\
   -V, --version            output version information and exit\n\
@@ -89,7 +89,7 @@ static struct option const options[] = {
     { "access-log-file",   1, nullptr, xmrig::IConfig::AccessLogFileKey  },
     { "algo",              1, nullptr, xmrig::IConfig::AlgorithmKey      },
     { "api-access-token",  1, nullptr, xmrig::IConfig::ApiAccessTokenKey },
-    { "api-no-ipv6",       0, nullptr, xmrig::IConfig::ApiIPv6Key        },
+    { "api-ipv6",          0, nullptr, xmrig::IConfig::ApiIPv6Key        },
     { "api-no-restricted", 0, nullptr, xmrig::IConfig::ApiRestrictedKey  },
     { "api-port",          1, nullptr, xmrig::IConfig::ApiPort           },
     { "api-worker-id",     1, nullptr, xmrig::IConfig::ApiWorkerIdKey    },

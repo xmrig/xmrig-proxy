@@ -29,7 +29,7 @@
 #include <uv.h>
 
 
-#include "interfaces/IControllerListener.h"
+#include "common/interfaces/IControllerListener.h"
 #include "proxy/CustomDiff.h"
 #include "proxy/Stats.h"
 #include "proxy/workers/Worker.h"

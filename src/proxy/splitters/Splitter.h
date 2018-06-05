@@ -25,7 +25,7 @@
 #define __SPLITTER_H__
 
 
-#include "interfaces/IControllerListener.h"
+#include "common/interfaces/IControllerListener.h"
 #include "interfaces/IEventListener.h"
 #include "interfaces/ISplitter.h"
 

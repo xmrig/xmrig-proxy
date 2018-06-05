@@ -30,9 +30,9 @@
 #include <vector>
 
 
+#include "common/interfaces/IStrategyListener.h"
 #include "common/net/Job.h"
 #include "common/net/Pool.h"
-#include "interfaces/IStrategyListener.h"
 
 
 class DonateStrategy;

@@ -31,7 +31,6 @@
 
 #include "common/config/CommonConfig.h"
 #include "common/log/Log.h"
-#include "donate.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/prettywriter.h"
@@ -52,7 +51,6 @@ xmrig::CommonConfig::CommonConfig() :
 #   endif
 
     m_apiPort(0),
-    m_donateLevel(kDefaultDonateLevel),
     m_printTime(60),
     m_retries(5),
     m_retryPause(5),
@@ -231,15 +229,6 @@ bool xmrig::CommonConfig::parseString(int key, const char *arg)
     case ApiRestrictedKey: /* --api-no-restricted */
         return parseBoolean(key, false);
 
-    case DonateLevelKey: /* --donate-level */
-#       ifdef XMRIG_PROXY_PROJECT
-        if (strncmp(arg, "minemonero.pro", 14) == 0) {
-            m_donateLevel = 0;
-            return true;
-        }
-#       endif
-        return parseUint64(key, strtol(arg, nullptr, 10));
-
     default:
         break;
     }
@@ -315,12 +304,6 @@ bool xmrig::CommonConfig::parseInt(int key, int arg)
 
     case VariantKey: /* --variant */
         m_pools.back().algorithm().parseVariant(arg);
-        break;
-
-    case DonateLevelKey: /* --donate-level */
-        if (arg >= kMinimumDonateLevel && arg <= 99) {
-            m_donateLevel = arg;
-        }
         break;
 
     case ApiPort: /* --api-port */

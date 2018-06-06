@@ -55,7 +55,6 @@ public:
     inline const char *userAgent() const           { return m_userAgent.data(); }
     inline const std::vector<Pool> &pools() const  { return m_activePools; }
     inline int apiPort() const                     { return m_apiPort; }
-    inline int donateLevel() const                 { return m_donateLevel; }
     inline int printTime() const                   { return m_printTime; }
     inline int retries() const                     { return m_retries; }
     inline int retryPause() const                  { return m_retryPause; }
@@ -87,7 +86,6 @@ protected:
     bool m_syslog;
     bool m_watch;
     int m_apiPort;
-    int m_donateLevel;
     int m_printTime;
     int m_retries;
     int m_retryPause;

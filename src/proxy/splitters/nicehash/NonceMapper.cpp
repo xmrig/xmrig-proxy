@@ -184,15 +184,6 @@ void NonceMapper::onActive(IStrategy *strategy, Client *client)
 
 void NonceMapper::onJob(IStrategy *strategy, Client *client, const Job &job)
 {
-    if (m_donate) {
-        if (m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {
-            m_donate->save(client, job);
-            return;
-        }
-
-        m_donate->setAlgo(job.algorithm());
-    }
-
     setJob(client->host(), client->port(), job);
 }
 

@@ -101,10 +101,6 @@ void SimpleMapper::stop()
     if (m_pending) {
         m_pending->stop();
     }
-
-    if (m_donate) {
-        m_donate->stop();
-    }
 }
 
 

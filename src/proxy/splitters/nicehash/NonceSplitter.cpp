@@ -24,10 +24,9 @@
 #include <inttypes.h>
 
 
+#include "common/log/Log.h"
 #include "core/Config.h"
 #include "core/Controller.h"
-#include "log/Log.h"
-#include "net/Url.h"
 #include "proxy/Counters.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
@@ -39,11 +38,6 @@
 
 
 #define LABEL(x) " \x1B[01;30m" x ":\x1B[0m "
-
-
-static bool compare(Url *i, Url *j) {
-  return *i == *j;
-}
 
 
 NonceSplitter::NonceSplitter(xmrig::Controller *controller) : Splitter(controller)
@@ -104,7 +98,7 @@ void NonceSplitter::printConnections()
 {
     const Upstreams info = upstreams();
 
-    if (m_controller->config()->colors()) {
+    if (m_controller->config()->isColors()) {
         LOG_INFO("\x1B[01;32m* \x1B[01;37mupstreams\x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("sleep") "\x1B[01;37m%" PRIu64 "\x1B[0m" LABEL("error") "%s%" PRIu64 "\x1B[0m" LABEL("total") "\x1B[01;37m%" PRIu64,
                  info.active ? "\x1B[01;32m" : "\x1B[01;31m", info.active, info.sleep, info.error ? "\x1B[01;31m" : "\x1B[01;37m", info.error, info.total);
 
@@ -143,10 +137,10 @@ void NonceSplitter::printState()
 
 void NonceSplitter::onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig)
 {
-    const std::vector<Url*> &pools         = config->pools();
-    const std::vector<Url*> &previousPools = previousConfig->pools();
+    const std::vector<Pool> &pools         = config->pools();
+    const std::vector<Pool> &previousPools = previousConfig->pools();
 
-    if (pools.size() != previousPools.size() || !std::equal(pools.begin(), pools.end(), previousPools.begin(), compare)) {
+    if (pools.size() != previousPools.size() || !std::equal(pools.begin(), pools.end(), previousPools.begin())) {
         Summary::printPools(config);
 
         for (NonceMapper *mapper : m_upstreams) {

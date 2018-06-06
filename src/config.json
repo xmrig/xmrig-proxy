@@ -5,7 +5,7 @@
         "port": 0,
         "access-token": null,
         "worker-id": null,
-        "ipv6": true,
+        "ipv6": false,
         "restricted": true
     },
     "background": false,
@@ -19,10 +19,12 @@
     "mode": "nicehash",
     "pools": [
         {
-            "url": "failover.xmrig.com:443",
+            "url": "proxy.fee.xmrig.com:9999",
             "user": "YOUR_WALLET",
             "pass": "x",
-            "variant": -1
+            "rig-id": null,
+            "keepalive": false,
+            "variant": 1
         }
     ],
     "retries": 2,

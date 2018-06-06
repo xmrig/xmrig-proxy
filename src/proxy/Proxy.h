@@ -37,8 +37,9 @@
 
 class AccessLog;
 class Addr;
-class Miners;
 class ISplitter;
+class Login;
+class Miners;
 class Options;
 class ProxyDebug;
 class Server;
@@ -79,8 +80,7 @@ private:
     constexpr static int kGCInterval    = 60;
 
     bool isColors() const;
-    void bind(const Addr *addr);
-    void bind(const char *ip, uint16_t port, bool ipv6);
+    void bind(const Addr &addr);
     void gc();
     void print();
     void tick();
@@ -91,6 +91,7 @@ private:
     AccessLog *m_accessLog;
     CustomDiff m_customDiff;
     ISplitter *m_splitter;
+    Login *m_login;
     Miners *m_miners;
     ProxyDebug *m_debug;
     ShareLog *m_shareLog;

@@ -33,22 +33,17 @@
 
 
 #include "api/ApiRouter.h"
-#include "api/HttpReply.h"
-#include "api/HttpRequest.h"
+#include "common/api/HttpReply.h"
+#include "common/api/HttpRequest.h"
+#include "common/crypto/keccak.h"
+#include "common/net/Job.h"
+#include "common/Platform.h"
 #include "core/Config.h"
 #include "core/Controller.h"
-#include "net/Job.h"
-#include "Platform.h"
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/stringbuffer.h"
 #include "version.h"
-
-
-extern "C"
-{
-#include "crypto/c_keccak.h"
-}
 
 
 static inline double normalize(double d)
@@ -165,7 +160,7 @@ void ApiRouter::genId()
             memcpy(input, interfaces[i].phys_addr, addrSize);
             memcpy(input + addrSize, APP_KIND, strlen(APP_KIND));
 
-            keccak(input, static_cast<int>(inSize), hash, sizeof(hash));
+            xmrig::keccak(input, inSize, hash);
             Job::toHex(hash, 8, m_id);
 
             delete [] input;

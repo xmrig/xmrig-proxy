@@ -25,18 +25,18 @@
 #include <inttypes.h>
 
 
-#include "log/Log.h"
+#include "common/log/Log.h"
+#include "common/net/SubmitResult.h"
+#include "net/JobResult.h"
 #include "proxy/Events.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/ConnectionEvent.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"
-#include "proxy/JobResult.h"
 #include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
 #include "proxy/ProxyDebug.h"
-#include "net/SubmitResult.h"
 
 
 ProxyDebug::ProxyDebug(bool enabled) :

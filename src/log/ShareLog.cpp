@@ -25,11 +25,11 @@
 #include <inttypes.h>
 
 
+#include "common/log/Log.h"
+#include "common/net/SubmitResult.h"
 #include "core/Config.h"
 #include "core/Controller.h"
-#include "log/Log.h"
 #include "log/ShareLog.h"
-#include "net/SubmitResult.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/Miner.h"
 #include "proxy/Stats.h"
@@ -77,13 +77,13 @@ void ShareLog::onRejectedEvent(IEvent *event)
 
 bool ShareLog::isColors() const
 {
-    return m_controller->config()->colors();
+    return m_controller->config()->isColors();
 }
 
 
 void ShareLog::accept(const AcceptEvent *event)
 {
-    if (!m_controller->config()->verbose()) {
+    if (!m_controller->config()->isVerbose()) {
         return;
     }
 

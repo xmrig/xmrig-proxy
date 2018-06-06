@@ -12,13 +12,30 @@ include (CheckIncludeFile)
 set(HEADERS
     src/3rdparty/align.h
     src/App.h
-    src/Console.h
+    src/common/config/CommonConfig.h
+    src/common/config/ConfigLoader.h
+    src/common/config/ConfigWatcher.h
+    src/common/Console.h
+    src/common/crypto/Algorithm.h
+    src/common/crypto/keccak.h
+    src/common/log/ConsoleLog.h
+    src/common/log/FileLog.h
+    src/common/log/Log.h
+    src/common/net/Client.h
+    src/common/net/Id.h
+    src/common/net/Job.h
+    src/common/net/Pool.h
+    src/common/net/Storage.h
+    src/common/net/strategies/FailoverStrategy.h
+    src/common/net/strategies/SinglePoolStrategy.h
+    src/common/Platform.h
+    src/common/xmrig.h
     src/core/Config.h
-    src/core/ConfigLoader.h
-    src/core/ConfigLoader_static.h
-    src/core/ConfigWatcher.h
+    src/core/ConfigLoader_platform.h
     src/core/Controller.h
     src/interfaces/IClientListener.h
+    src/interfaces/IConfig.h
+    src/interfaces/IConfigCreator.h
     src/interfaces/IConsoleListener.h
     src/interfaces/IControllerListener.h
     src/interfaces/IEvent.h
@@ -29,17 +46,8 @@ set(HEADERS
     src/interfaces/IStrategyListener.h
     src/interfaces/IWatcherListener.h
     src/log/AccessLog.h
-    src/log/ConsoleLog.h
-    src/log/FileLog.h
-    src/log/Log.h
     src/log/ShareLog.h
-    src/net/Client.h
-    src/net/Id.h
-    src/net/Job.h
-    src/net/strategies/FailoverStrategy.h
-    src/net/strategies/SinglePoolStrategy.h
-    src/net/Url.h
-    src/Platform.h
+    src/net/JobResult.h
     src/proxy/Addr.h
     src/proxy/Counters.h
     src/proxy/CustomDiff.h
@@ -52,7 +60,7 @@ set(HEADERS
     src/proxy/events/LoginEvent.h
     src/proxy/events/MinerEvent.h
     src/proxy/events/SubmitEvent.h
-    src/proxy/JobResult.h
+    src/proxy/Login.h
     src/proxy/Miner.h
     src/proxy/Miners.h
     src/proxy/Proxy.h
@@ -72,30 +80,31 @@ set(HEADERS
     src/proxy/workers/Workers.h
     src/Summary.h
     src/version.h
-    src/xmrig.h
    )
 
 set(SOURCES
     src/App.cpp
-    src/Console.cpp
+    src/common/config/CommonConfig.cpp
+    src/common/config/ConfigLoader.cpp
+    src/common/config/ConfigWatcher.cpp
+    src/common/Console.cpp
+    src/common/crypto/Algorithm.cpp
+    src/common/crypto/keccak.cpp
+    src/common/log/ConsoleLog.cpp
+    src/common/log/FileLog.cpp
+    src/common/log/Log.cpp
+    src/common/net/Client.cpp
+    src/common/net/Job.cpp
+    src/common/net/Pool.cpp
+    src/common/net/strategies/FailoverStrategy.cpp
+    src/common/net/strategies/SinglePoolStrategy.cpp
+    src/common/net/SubmitResult.cpp
+    src/common/Platform.cpp
     src/core/Config.cpp
-    src/core/ConfigLoader.cpp
-    src/core/ConfigWatcher.cpp
     src/core/Controller.cpp
-    src/crypto/c_keccak.c
-    src/crypto/c_keccak.h
     src/log/AccessLog.cpp
-    src/log/ConsoleLog.cpp
-    src/log/FileLog.cpp
-    src/log/Log.cpp
     src/log/ShareLog.cpp
-    src/net/Client.cpp
-    src/net/Job.cpp
-    src/net/strategies/FailoverStrategy.cpp
-    src/net/strategies/SinglePoolStrategy.cpp
-    src/net/SubmitResult.cpp
-    src/net/Url.cpp
-    src/Platform.cpp
+    src/net/JobResult.cpp
     src/proxy/Counters.cpp
     src/proxy/CustomDiff.cpp
     src/proxy/Error.cpp
@@ -103,8 +112,7 @@ set(SOURCES
     src/proxy/events/ConnectionEvent.h
     src/proxy/events/Event.cpp
     src/proxy/events/MinerEvent.cpp
-    src/proxy/JobResult.cpp
-    src/proxy/LoginRequest.cpp
+    src/proxy/Login.cpp
     src/proxy/Miner.cpp
     src/proxy/Miners.cpp
     src/proxy/Proxy.cpp
@@ -127,7 +135,7 @@ if (WIN32)
     set(SOURCES_OS
         res/app.rc
         src/App_win.cpp
-        src/Platform_win.cpp
+        src/common/Platform_win.cpp
         src/proxy/Uuid_win.cpp
         )
 
@@ -136,7 +144,7 @@ if (WIN32)
 elseif (APPLE)
     set(SOURCES_OS
         src/App_unix.cpp
-        src/Platform_mac.cpp
+        src/common/Platform_mac.cpp
         src/proxy/Uuid_mac.cpp
         )
 
@@ -145,18 +153,21 @@ elseif (APPLE)
 else()
     set(SOURCES_OS
         src/App_unix.cpp
-        src/Platform_unix.cpp
+        src/common/Platform_unix.cpp
         src/proxy/Uuid_unix.cpp
         )
 
-    set(EXTRA_LIBS pthread uuid)
+    if (CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
+        set(EXTRA_LIBS pthread)
+    else()
+        set(EXTRA_LIBS pthread uuid)
+    endif()
 endif()
 
 add_definitions(/DXMRIG_PROXY_PROJECT)
 add_definitions(/DUNICODE)
 add_definitions(/D__STDC_FORMAT_MACROS)
 add_definitions(/DAPP_DEVEL)
-add_definitions(/DNDEBUG)
 #add_definitions(/DAPP_DEBUG)
 
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$" AND CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -214,7 +225,7 @@ endif()
 CHECK_INCLUDE_FILE (syslog.h HAVE_SYSLOG_H)
 if (HAVE_SYSLOG_H)
     add_definitions(/DHAVE_SYSLOG_H)
-    set(SOURCES_SYSLOG src/log/SysLog.h src/log/SysLog.cpp)
+    set(SOURCES_SYSLOG src/common/log/SysLog.h src/common/log/SysLog.cpp)
 endif()
 
 if (WITH_GOOGLE_BREAKPAD)
@@ -232,14 +243,14 @@ if (WITH_HTTPD)
         set(HTTPD_SOURCES
             src/api/Api.h
             src/api/ApiRouter.h
-            src/api/HttpBody.h
-            src/api/Httpd.h
-            src/api/HttpReply.h
-            src/api/HttpRequest.h
+            src/common/api/HttpBody.h
+            src/common/api/Httpd.h
+            src/common/api/HttpReply.h
+            src/common/api/HttpRequest.h
             src/api/Api.cpp
             src/api/ApiRouter.cpp
-            src/api/Httpd.cpp
-            src/api/HttpRequest.cpp
+            src/common/api/Httpd.cpp
+            src/common/api/HttpRequest.cpp
             )
     else()
         message(FATAL_ERROR "microhttpd NOT found: use `-DWITH_HTTPD=OFF` to build without http deamon support")

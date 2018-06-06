@@ -7,7 +7,6 @@
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
- *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
@@ -30,6 +29,9 @@
 #include <vector>
 
 
+#include "common/config/CommonConfig.h"
+#include "common/utils/c_str.h"
+#include "proxy/Addr.h"
 #include "rapidjson/fwd.h"
 
 
@@ -55,94 +57,57 @@ class IWatcherListener;
  *   api/worker-id
  *   pools/
  */
-class Config
+class Config : public CommonConfig
 {
     friend class ConfigLoader;
 
 public:
-    enum Algorithm {
-        CRYPTONIGHT,      /* CryptoNight (Monero) */
-        CRYPTONIGHT_LITE, /* CryptoNight-Lite (AEON) */
-    };
-
     enum Mode {
         NICEHASH_MODE,
         SIMPLE_MODE
     };
 
     Config();
-    ~Config();
 
-    bool isValid() const;
     bool reload(const char *json);
-    bool save();
-    const char *algoName() const;
+
     const char *modeName() const;
-    void getJSON(rapidjson::Document &doc);
+    void getJSON(rapidjson::Document &doc) const override;
 
     static Config *load(int argc, char **argv, IWatcherListener *listener);
 
-    inline bool apiIPv6() const                    { return m_apiIPv6; }
-    inline bool apiRestricted() const              { return m_apiRestricted; }
-    inline bool background() const                 { return m_background; }
-    inline bool colors() const                     { return m_colors; }
     inline bool isDebug() const                    { return m_debug; }
-    inline bool syslog() const                     { return m_syslog; }
-    inline bool verbose() const                    { return m_verbose; }
-    inline bool watch() const                      { return m_watch && m_fileName; }
-    inline bool workers() const                    { return m_workers; }
-    inline const char *accessLog() const           { return m_accessLog; }
-    inline const char *apiToken() const            { return m_apiToken; }
-    inline const char *apiWorkerId() const         { return m_apiWorkerId; }
-    inline const char *fileName() const            { return m_fileName; }
-    inline const char *logFile() const             { return m_logFile; }
-    inline const char *userAgent() const           { return m_userAgent; }
-    inline const std::vector<Addr*> &addrs() const { return m_addrs; }
-    inline const std::vector<Url*> &pools() const  { return m_pools; }
-    inline int algorithm() const                   { return m_algorithm; }
-    inline int apiPort() const                     { return m_apiPort; }
+    inline bool isVerbose() const                  { return m_verbose; }
+    inline bool isWorkers() const                  { return m_workers; }
+    inline const char *accessLog() const           { return m_accessLog.data(); }
+    inline const std::vector<Addr> &addrs() const  { return m_addrs; }
     inline int mode() const                        { return m_mode; }
-    inline int retries() const                     { return m_retries; }
-    inline int retryPause() const                  { return m_retryPause; }
     inline int reuseTimeout() const                { return m_reuseTimeout; }
     inline uint64_t diff() const                   { return m_diff; }
     inline void setColors(bool colors)             { m_colors = colors; }
     inline void setVerbose(bool verbose)           { m_verbose = verbose; }
     inline void toggleVerbose()                    { m_verbose = !m_verbose; }
 
+protected:
+    bool finalize() override;
+    bool parseBoolean(int key, bool enable) override;
+    bool parseString(int key, const char *arg) override;
+    bool parseUint64(int key, uint64_t arg) override;
+    void parseJSON(const rapidjson::Document &doc) override;
+
 private:
-    void adjust();
-    void setAlgo(const char *algo);
-    void setCoin(const char *coin);
-    void setFileName(const char *fileName);
     void setMode(const char *mode);
 
-    bool m_adjusted;
-    bool m_apiIPv6;
-    bool m_apiRestricted;
-    bool m_background;
-    bool m_colors;
     bool m_debug;
     bool m_ready;
-    bool m_syslog;
     bool m_verbose;
-    bool m_watch;
+
     bool m_workers;
-    char *m_accessLog;
-    char *m_apiToken;
-    char *m_apiWorkerId;
-    char *m_fileName;
-    char *m_logFile;
-    char *m_userAgent;
-    int m_algorithm;
-    int m_apiPort;
     int m_mode;
-    int m_retries;
-    int m_retryPause;
     int m_reuseTimeout;
-    std::vector<Addr*> m_addrs;
-    std::vector<Url*> m_pools;
+    std::vector<Addr> m_addrs;
     uint64_t m_diff;
+    xmrig::c_str m_accessLog;
 };
 
 

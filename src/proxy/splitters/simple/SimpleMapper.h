@@ -30,8 +30,9 @@
 #include <vector>
 
 
+#include "common/net/Job.h"
+#include "common/net/Pool.h"
 #include "interfaces/IStrategyListener.h"
-#include "net/Job.h"
 
 
 class IStrategy;
@@ -56,9 +57,10 @@ public:
     ~SimpleMapper();
 
     void add(Miner *miner, const LoginRequest &request);
-    void reload(const std::vector<Url*> &pools);
+    void reload(const std::vector<Pool> &pools);
     void remove(const Miner *miner);
     void reuse(Miner *miner, const LoginRequest &request);
+    void stop();
     void submit(SubmitEvent *event);
     void tick(uint64_t ticks, uint64_t now);
 
@@ -76,7 +78,7 @@ protected:
 private:
     bool isColors() const;
     bool isValidJobId(const xmrig::Id &id) const;
-    IStrategy *createStrategy(const std::vector<Url*> &pools);
+    IStrategy *createStrategy(const std::vector<Pool> &pools);
     void connect();
     void setJob(const Job &job);
 

@@ -1,3 +1,17 @@
+# v2.6.2
+ - [#197](https://github.com/xmrig/xmrig-proxy/issues/197) Fixed compatibility with xmr-stak `rig_id` option, xmr-stak sent empty rig id if user not specify it.
+ - [#199](https://github.com/xmrig/xmrig-proxy/issues/199) Fixed various bugs in donation subsystem.
+
+# v2.6.0
+ - [#168](https://github.com/xmrig/xmrig-proxy/issues/168) Added support for [mining algorithm negotiation](https://github.com/xmrig/xmrig-proxy/blob/dev/doc/STRATUM_EXT.md#1-mining-algorithm-negotiation).
+ - Added support for **rig-id** stratum protocol extensions, compatible with xmr-stak.
+ - A lot of small fixes and better unification with miner code.
+
+# v2.5.3
+- Fixed critical bug, in some cases proxy was can't recovery connection and switch to failover pool, version 2.5.2 affected.
+- Added configurable keepalive support, now possible override default timeout (60 seconds) via config file (only).
+- Fixed wrong miners count in 32 bit builds.
+
 # v2.5.2
 - [#448](https://github.com/xmrig/xmrig/issues/478) Fixed broken reconnect.
 

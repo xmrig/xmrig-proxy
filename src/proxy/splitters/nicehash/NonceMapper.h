@@ -30,8 +30,9 @@
 #include <vector>
 
 
+#include "common/net/Job.h"
+#include "common/net/Pool.h"
 #include "interfaces/IStrategyListener.h"
-#include "net/Job.h"
 
 
 class IStrategy;
@@ -70,7 +71,7 @@ public:
     bool add(Miner *miner, const LoginRequest &request);
     bool isActive() const;
     void gc();
-    void reload(const std::vector<Url*> &pools);
+    void reload(const std::vector<Pool> &pools);
     void remove(const Miner *miner);
     void start();
     void submit(SubmitEvent *event);
@@ -91,9 +92,10 @@ protected:
 
 private:
     bool isColors() const;
-    IStrategy *createStrategy(const std::vector<Url*> &pools);
+    IStrategy *createStrategy(const std::vector<Pool> &pools);
     SubmitCtx submitCtx(int64_t seq);
     void connect();
+    void setJob(const char *host, int port, const Job &job);
     void suspend();
 
     int m_suspended;

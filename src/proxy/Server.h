@@ -28,14 +28,16 @@
 #include <uv.h>
 
 
+#include "common/utils/c_str.h"
+
+
 class Addr;
 
 
 class Server
 {
 public:
-    Server(const Addr *addr, bool nicehash);
-    ~Server();
+    Server(const Addr &addr, bool nicehash);
     bool bind();
 
 private:
@@ -44,12 +46,12 @@ private:
     static void onConnection(uv_stream_t *server, int status);
 
     bool m_nicehash;
-    char *m_ip;
     int m_version;
     sockaddr_in m_addr;
     sockaddr_in6 m_addr6;
     uint16_t m_port;
     uv_tcp_t m_server;
+    xmrig::c_str m_ip;
 };
 
 #endif /* __SERVER_H__ */

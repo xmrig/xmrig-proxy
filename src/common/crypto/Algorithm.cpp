@@ -68,7 +68,7 @@ static AlgoData const algorithms[] = {
 #   endif
 
 #   ifndef XMRIG_NO_SUMO
-    { "cryptonight-heavy",     "cn-heavy",     xmrig::CRYPTONIGHT_HEAVY, xmrig::VARIANT_0    },
+    { "cryptonight-heavy",     "cn-heavy",     xmrig::CRYPTONIGHT_HEAVY, xmrig::VARIANT_AUTO },
     { "cryptonight-heavy/0",   "cn-heavy/0",   xmrig::CRYPTONIGHT_HEAVY, xmrig::VARIANT_0    },
     { "cryptonight-heavy/xhv", "cn-heavy/xhv", xmrig::CRYPTONIGHT_HEAVY, xmrig::VARIANT_XHV  },
 #   endif

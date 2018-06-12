@@ -49,7 +49,6 @@ static void print_versions(xmrig::Controller *controller)
     buf[0] = '\0';
 #   endif
 
-
     Log::i()->text(controller->config()->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-12s") CYAN_BOLD("%s/%s") WHITE_BOLD(" libuv/%s%s")
                                                     : " * %-12s%s/%s libuv/%s%s",
                    "VERSIONS", APP_NAME, APP_VERSION, uv_version_string(), buf);
@@ -112,7 +111,7 @@ static void print_commands(xmrig::Controller *controller)
                                                                     MAGENTA_BOLD("w") WHITE_BOLD("orkers"));
     }
     else {
-        Log::i()->text(" * COMMANDS:   'h' hashrate, 'c' connections, 'v' verbose, 'w' workers");
+        Log::i()->text(" * COMMANDS   'h' hashrate, 'c' connections, 'v' verbose, 'w' workers");
     }
 }
 

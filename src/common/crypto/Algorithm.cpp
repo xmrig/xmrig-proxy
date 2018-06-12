@@ -57,29 +57,35 @@ static AlgoData const algorithms[] = {
     { "cryptonight/0",         "cn/0",         xmrig::CRYPTONIGHT,       xmrig::VARIANT_0    },
     { "cryptonight/1",         "cn/1",         xmrig::CRYPTONIGHT,       xmrig::VARIANT_1    },
     { "cryptonight/xtl",       "cn/xtl",       xmrig::CRYPTONIGHT,       xmrig::VARIANT_XTL  },
+    { "cryptonight/msr",       "cn/msr",       xmrig::CRYPTONIGHT,       xmrig::VARIANT_MSR  },
 
 #   ifndef XMRIG_NO_AEON
     { "cryptonight-lite",      "cn-lite",      xmrig::CRYPTONIGHT_LITE,  xmrig::VARIANT_AUTO },
+    { "cryptonight-light",     "cn-light",     xmrig::CRYPTONIGHT_LITE,  xmrig::VARIANT_AUTO },
     { "cryptonight-lite/0",    "cn-lite/0",    xmrig::CRYPTONIGHT_LITE,  xmrig::VARIANT_0    },
     { "cryptonight-lite/1",    "cn-lite/1",    xmrig::CRYPTONIGHT_LITE,  xmrig::VARIANT_1    },
     { "cryptonight-lite/ipbc", "cn-lite/ipbc", xmrig::CRYPTONIGHT_LITE,  xmrig::VARIANT_IPBC },
 #   endif
 
 #   ifndef XMRIG_NO_SUMO
-    { "cryptonight-heavy",     "cn-heavy",     xmrig::CRYPTONIGHT_HEAVY, xmrig::VARIANT_0    },
+    { "cryptonight-heavy",     "cn-heavy",     xmrig::CRYPTONIGHT_HEAVY, xmrig::VARIANT_AUTO },
+    { "cryptonight-heavy/0",   "cn-heavy/0",   xmrig::CRYPTONIGHT_HEAVY, xmrig::VARIANT_0    },
+    { "cryptonight-heavy/xhv", "cn-heavy/xhv", xmrig::CRYPTONIGHT_HEAVY, xmrig::VARIANT_XHV  },
 #   endif
 };
 
 
 #ifdef XMRIG_PROXY_PROJECT
 static AlgoData const xmrStakAlgorithms[] = {
-    { "cryptonight-monerov7",    nullptr, xmrig::CRYPTONIGHT,      xmrig::VARIANT_1    },
-    { "cryptonight_v7",          nullptr, xmrig::CRYPTONIGHT,      xmrig::VARIANT_1    },
-    { "cryptonight_v7_stellite", nullptr, xmrig::CRYPTONIGHT,      xmrig::VARIANT_XTL  },
-    { "cryptonight_lite",        nullptr, xmrig::CRYPTONIGHT_LITE, xmrig::VARIANT_0    },
-    { "cryptonight-aeonv7",      nullptr, xmrig::CRYPTONIGHT_LITE, xmrig::VARIANT_1    },
-    { "cryptonight_lite_v7",     nullptr, xmrig::CRYPTONIGHT_LITE, xmrig::VARIANT_1    },
-    { "cryptonight_lite_v7_xor", nullptr, xmrig::CRYPTONIGHT_LITE, xmrig::VARIANT_IPBC },
+    { "cryptonight-monerov7",    nullptr, xmrig::CRYPTONIGHT,       xmrig::VARIANT_1    },
+    { "cryptonight_v7",          nullptr, xmrig::CRYPTONIGHT,       xmrig::VARIANT_1    },
+    { "cryptonight_v7_stellite", nullptr, xmrig::CRYPTONIGHT,       xmrig::VARIANT_XTL  },
+    { "cryptonight_lite",        nullptr, xmrig::CRYPTONIGHT_LITE,  xmrig::VARIANT_0    },
+    { "cryptonight-aeonv7",      nullptr, xmrig::CRYPTONIGHT_LITE,  xmrig::VARIANT_1    },
+    { "cryptonight_lite_v7",     nullptr, xmrig::CRYPTONIGHT_LITE,  xmrig::VARIANT_1    },
+    { "cryptonight_lite_v7_xor", nullptr, xmrig::CRYPTONIGHT_LITE,  xmrig::VARIANT_IPBC },
+    { "cryptonight_haven",       nullptr, xmrig::CRYPTONIGHT_HEAVY, xmrig::VARIANT_XHV  },
+    { "cryptonight_masari",      nullptr, xmrig::CRYPTONIGHT,       xmrig::VARIANT_MSR  },
 };
 #endif
 
@@ -88,7 +94,9 @@ static const char *variants[] = {
     "0",
     "1",
     "ipbc",
-    "xtl"
+    "xtl",
+    "msr",
+    "xhv"
 };
 
 
@@ -144,11 +152,6 @@ void xmrig::Algorithm::parseAlgorithm(const char *algo)
 
 void xmrig::Algorithm::parseVariant(const char *variant)
 {
-    if (m_algo == CRYPTONIGHT_HEAVY) {
-        m_variant = VARIANT_0;
-        return;
-    }
-
     m_variant = VARIANT_AUTO;
 
     for (size_t i = 0; i < ARRAY_SIZE(variants); i++) {
@@ -162,7 +165,7 @@ void xmrig::Algorithm::parseVariant(const char *variant)
 
 void xmrig::Algorithm::parseVariant(int variant)
 {
-    if (variant >= VARIANT_AUTO && variant <= VARIANT_XTL) {
+    if (variant >= VARIANT_AUTO && variant < VARIANT_MAX) {
        m_variant = static_cast<Variant>(variant);
     }
     else {
@@ -174,10 +177,6 @@ void xmrig::Algorithm::parseVariant(int variant)
 void xmrig::Algorithm::setAlgo(Algo algo)
 {
     m_algo = algo;
-
-    if (m_algo == CRYPTONIGHT_HEAVY) {
-        m_variant = VARIANT_0;
-    }
 }
 
 

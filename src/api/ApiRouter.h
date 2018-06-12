@@ -25,7 +25,7 @@
 #define __APIROUTER_H__
 
 
-#include "interfaces/IControllerListener.h"
+#include "common/interfaces/IControllerListener.h"
 #include "proxy/StatsData.h"
 #include "rapidjson/fwd.h"
 

@@ -29,9 +29,9 @@
 #include <utility>
 
 
+#include "common/interfaces/IClientListener.h"
 #include "common/log/Log.h"
 #include "common/net/Client.h"
-#include "interfaces/IClientListener.h"
 #include "net/JobResult.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
@@ -332,6 +332,12 @@ bool Client::parseLogin(const rapidjson::Value &result, int *code)
 
 bool Client::verifyAlgorithm(const xmrig::Algorithm &algorithm) const
 {
+#   ifdef XMRIG_PROXY_PROJECT
+    if (m_pool.algorithm().variant() == xmrig::VARIANT_AUTO) {
+        return true;
+    }
+#   endif
+
     if (m_pool.isCompatible(algorithm)) {
         return true;
     }
@@ -478,13 +484,19 @@ void Client::login()
         params.AddMember("rigid", StringRef(m_pool.rigId()), allocator);
     }
 
-    Value algo(kArrayType);
+#   ifdef XMRIG_PROXY_PROJECT
+    if (m_pool.algorithm().variant() != xmrig::VARIANT_AUTO)
+#   endif
+    {
+        Value algo(kArrayType);
 
-    for (const auto &a : m_pool.algorithms()) {
-        algo.PushBack(StringRef(a.shortName()), allocator);
+        for (const auto &a : m_pool.algorithms()) {
+            algo.PushBack(StringRef(a.shortName()), allocator);
+        }
+
+        params.AddMember("algo", algo, allocator);
     }
 
-    params.AddMember("algo", algo, allocator);
     doc.AddMember("params", params, allocator);
 
     send(doc);

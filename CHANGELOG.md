@@ -1,3 +1,11 @@
+# v2.6.3
+- **Added support for new cryptonight-heavy variant xhv** (`cn-heavy/xhv`) for upcoming Haven Protocol fork.
+- **Added support for new cryptonight variant msr** (`cn/msr`) also known as `cryptonight-fast` for upcoming Masari fork.
+- Changed behavior for automatic variant to allow pool override algorithm.
+- Fixed `--api-ipv6` option.
+- [#629](https://github.com/xmrig/xmrig/pull/629) Fixed file logging with non-seekable files.
+- [#672](https://github.com/xmrig/xmrig/pull/672) Reverted back `cryptonight-light` and exit if no valid algorithm specified.
+
 # v2.6.2
  - [#197](https://github.com/xmrig/xmrig-proxy/issues/197) Fixed compatibility with xmr-stak `rig_id` option, xmr-stak sent empty rig id if user not specify it.
  - [#199](https://github.com/xmrig/xmrig-proxy/issues/199) Fixed various bugs in donation subsystem.

@@ -90,11 +90,13 @@ Both miner and pool should support short algorithm name aliases:
 | `cryptonight/0`         | `cn/0`         | `cryptonight`       | `0`         | Original/old CryptoNight.                            |
 | `cryptonight/1`         | `cn/1`         | `cryptonight`       | `1`         | Also known as `monero7` and `CryptoNightV7`.         |
 | `cryptonight/xtl`       | `cn/xtl`       | `cryptonight`       | `"xtl"`     | Stellite (XTL) variant.                              |
+| `cryptonight/msr`       | `cn/msr`       | `cryptonight`       | `"msr"`     | Masari (MSR) variant.                                |
 | `cryptonight-lite`      | `cn-lite`      | `cryptonight-lite`  | `-1`        | Autodetect works only for Aeon.                      |
 | `cryptonight-lite/0`    | `cn-lite/0`    | `cryptonight-lite`  | `0`         | Original/old CryptoNight-Lite.                       |
 | `cryptonight-lite/1`    | `cn-lite/1`    | `cryptonight-lite`  | `1`         | Also known as `aeon7`                                |
 | `cryptonight-lite/ipbc` | `cn-lite/ipbc` | `cryptonight-lite`  | `"ipbc"`    | IPBC variant                                         |
-| `cryptonight-heavy`     | `cn-heavy`     | `cryptonight-heavy` | `0`         | Sumokoin and Haven Protocol                          |
+| `cryptonight-heavy`     | `cn-heavy`     | `cryptonight-heavy` | `0`         | Ryo and Loki                                         |
+| `cryptonight-heavy/xhv` | `cn-heavy/xhv` | `cryptonight-heavy` | `"xhv"`     | Haven Protocol                                       |
 
 ### 1.5 XMR-Stak algorithm names
 Mapping between XMR-Stak algorithm names and XMRig names.

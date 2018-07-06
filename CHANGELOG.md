@@ -1,3 +1,7 @@
+# v2.6.4
+- [#238](https://github.com/xmrig/xmrig-proxy/issues/238) `cryptonight-lite/ipbc` replaced to `cryptonight-heavy/tube`.
+- Added `cryptonight/xao` and `cryptonight/rto` for future use.
+
 # v2.6.3
 - **Added support for new cryptonight-heavy variant xhv** (`cn-heavy/xhv`) for upcoming Haven Protocol fork.
 - **Added support for new cryptonight variant msr** (`cn/msr`) also known as `cryptonight-fast` for upcoming Masari fork.

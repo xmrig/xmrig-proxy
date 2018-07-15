@@ -115,8 +115,8 @@ Mapping between XMR-Stak algorithm names and XMRig names.
 | `cryptonight-aeonv7`      | `cn-lite/1`      |
 | `cryptonight_lite_v7`     | `cn-lite/1`      |
 | `cryptonight_lite_v7_xor` | `cn-lite/ipbc`   |
-| `cryptonight_heavy`       | `ch-heavy`       |
-| `cryptonight_haven`       | `ch-heavy/xhv`   |
+| `cryptonight_heavy`       | `cn-heavy`       |
+| `cryptonight_haven`       | `cn-heavy/xhv`   |
 
 ## Rig identifier
 User defined rig identifier. Optional field `rigid` in `login` request. More details: https://github.com/fireice-uk/xmr-stak/issues/849

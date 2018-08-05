@@ -4,6 +4,7 @@
     "api": {
         "port": 0,
         "access-token": null,
+        "id": null,
         "worker-id": null,
         "ipv6": false,
         "restricted": true

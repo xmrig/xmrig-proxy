@@ -1,3 +1,7 @@
+# v2.6.5
+- [#245](https://github.com/xmrig/xmrig-proxy/issues/245) Fixed API ID collision when run multiple proxies on same machine.
+- Added `algo` field to API `GET /1/summary` endpoint.
+
 # v2.6.4
 - [#238](https://github.com/xmrig/xmrig-proxy/issues/238) `cryptonight-lite/ipbc` replaced to `cryptonight-heavy/tube`.
 - Added `cryptonight/xao` and `cryptonight/rto` for future use.

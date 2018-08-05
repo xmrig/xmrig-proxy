@@ -1,5 +1,6 @@
 # v2.6.5
 - [#245](https://github.com/xmrig/xmrig-proxy/issues/245) Fixed API ID collision when run multiple proxies on same machine.
+  - Added command line option `--api-id` and equivalent option for config file.
 - Added `algo` field to API `GET /1/summary` endpoint.
 
 # v2.6.4

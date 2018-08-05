@@ -54,7 +54,7 @@ protected:
 
 private:
     void finalize(xmrig::HttpReply &reply, rapidjson::Document &doc) const;
-    void genId();
+    void genId(const char *id);
     void getHashrate(rapidjson::Document &doc) const;
     void getIdentify(rapidjson::Document &doc) const;
     void getMiner(rapidjson::Document &doc) const;
@@ -65,7 +65,7 @@ private:
     void setWorkerId(const char *id);
     void updateWorkerId(const char *id, const char *previousId);
 
-    char m_id[17];
+    char m_id[32];
     char m_workerId[128];
     xmrig::Controller *m_controller;
 };

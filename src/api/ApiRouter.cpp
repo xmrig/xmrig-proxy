@@ -211,6 +211,7 @@ void ApiRouter::getMiner(rapidjson::Document &doc) const
 
     doc.AddMember("version",      APP_VERSION, allocator);
     doc.AddMember("kind",         APP_KIND, allocator);
+    doc.AddMember("algo",         rapidjson::StringRef(m_controller->config()->algorithm().name()), allocator);
     doc.AddMember("mode",         rapidjson::StringRef(m_controller->config()->modeName()), allocator);
     doc.AddMember("ua",           rapidjson::StringRef(Platform::userAgent()), allocator);
     doc.AddMember("uptime",       stats.uptime(), allocator);

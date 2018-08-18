@@ -236,7 +236,8 @@ void ApiRouter::getMinersSummary(rapidjson::Document &doc, bool advanced) const
     miners.AddMember("now", stats.miners, allocator);
     miners.AddMember("max", stats.maxMiners, allocator);
 
-    doc.AddMember("miners", miners, allocator);
+    doc.AddMember("miners",  miners, allocator);
+    doc.AddMember("workers", static_cast<uint64_t>(m_controller->workers().size()), allocator);
 
     if (advanced) {
         rapidjson::Value upstreams(rapidjson::kObjectType);

@@ -32,15 +32,32 @@
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"
-#include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
 #include "proxy/workers/Workers.h"
+#include "rapidjson/document.h"
+
+
+#ifdef _MSC_VER
+#   define strncasecmp _strnicmp
+#   define strcasecmp  _stricmp
+#endif
+
+
+static const char *modes[] = {
+    "none",
+    "rig_id",
+    "user",
+    "password",
+    "agent",
+    "ip"
+};
 
 
 Workers::Workers(xmrig::Controller *controller) :
-    m_enabled(controller->config()->isWorkers()),
+    m_mode(controller->config()->workersMode()),
     m_controller(controller)
 {
+    controller->addListener(this);
 }
 
 
@@ -51,13 +68,13 @@ Workers::~Workers()
 
 void Workers::printWorkers()
 {
-    if (!m_enabled) {
+    if (!isEnabled()) {
         LOG_ERR("Per worker statistics disabled");
 
         return;
     }
 
-    char workerName[24];
+    char workerName[24] = { 0 };
     size_t size = 0;
 
     Log::i()->text(m_controller->config()->isColors() ? "\x1B[01;37m%-23s | %-15s | %-5s | %-8s | %-3s | %11s | %11s |" : "%-23s | %-15s | %-5s | %-8s | %-3s | %11s | %11s |",
@@ -68,10 +85,15 @@ void Workers::printWorkers()
         size = strlen(name);
 
         if (size > sizeof(workerName) - 1) {
-            memcpy(workerName, name, 6);
-            memcpy(workerName + 6, "...", 3);
-            memcpy(workerName + 9, name + size - sizeof(workerName) + 10, sizeof(workerName) - 10);
-            workerName[sizeof(workerName) - 1] = '\0';
+            if (m_mode == Agent) {
+                memcpy(workerName, name, 20);
+                memcpy(workerName + 20, "...", 3);
+            }
+            else {
+                memcpy(workerName, name, 6);
+                memcpy(workerName + 6, "...", 3);
+                memcpy(workerName + 9, name + size - sizeof(workerName) + 10, sizeof(workerName) - 10);
+            }
         }
         else {
             strncpy(workerName, name, sizeof(workerName) - 1);
@@ -79,6 +101,24 @@ void Workers::printWorkers()
 
         Log::i()->text("%-23s | %-15s | %5" PRIu64 " | %8" PRIu64 " | %3" PRIu64 " | %6.2f kH/s | %6.2f kH/s |",
                        workerName, worker.ip(), worker.connections(), worker.accepted(), worker.rejected(), worker.hashrate(600), worker.hashrate(86400));
+    }
+}
+
+
+void Workers::reset()
+{
+    m_miners.clear();
+    m_map.clear();
+    m_workers.clear();
+
+    if (m_mode == None) {
+        return;
+    }
+
+    for (const Miner *miner : m_controller->miners()) {
+        if (miner->mapperId() != -1) {
+            add(miner);
+        }
     }
 }
 
@@ -95,9 +135,58 @@ void Workers::tick(uint64_t ticks)
 }
 
 
+const char *Workers::modeName(Mode mode)
+{
+    return modes[mode];
+}
+
+
+Workers::Mode Workers::parseMode(const char *mode)
+{
+    constexpr size_t SIZE = sizeof(modes) / sizeof((modes)[0]);
+
+    for (size_t i = 0; i < SIZE; i++) {
+        if (strcasecmp(mode, modes[i]) == 0) {
+            return static_cast<Mode>(i);
+        }
+    }
+
+    return RigID;
+}
+
+
+rapidjson::Value Workers::modeToJSON(Mode mode)
+{
+    using namespace rapidjson;
+
+    switch (mode) {
+    case None:
+        return Value(kFalseType);
+
+    case RigID:
+        return Value(kTrueType);
+
+    default:
+        return Value(StringRef(modes[mode]));
+    }
+
+}
+
+
+void Workers::onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig)
+{
+    if (m_mode == config->workersMode()) {
+        return;
+    }
+
+    m_mode = config->workersMode();
+    reset();
+}
+
+
 void Workers::onEvent(IEvent *event)
 {
-    if (!m_enabled) {
+    if (!isEnabled()) {
         return;
     }
 
@@ -123,7 +212,7 @@ void Workers::onEvent(IEvent *event)
 
 void Workers::onRejectedEvent(IEvent *event)
 {
-    if (!m_enabled) {
+    if (!isEnabled()) {
         return;
     }
 
@@ -149,13 +238,56 @@ bool Workers::indexByMiner(const Miner *miner, size_t *index) const
         return false;
     }
 
-    const size_t i = m_miners.at(miner->id());
-    if (i >= m_workers.size()) {
-        return false;
+    *index = m_miners.at(miner->id());
+    return *index < m_workers.size();
+}
+
+
+const char *Workers::nameByMiner(const Miner *miner) const
+{
+    switch (m_mode) {
+    case RigID:
+        return miner->rigId(true);
+
+    case User:
+        return miner->user();
+
+    case Password:
+        return miner->password();
+
+    case Agent:
+        return miner->agent();
+
+    case IP:
+        return miner->ip();
+
+    default:
+        break;
     }
 
-    *index = i;
-    return true;
+    return nullptr;
+}
+
+
+size_t Workers::add(const Miner *miner)
+{
+    size_t worker_id = 0;
+    const char *name = nameByMiner(miner);
+    const std::string key(name == nullptr ? "unknown" : name);
+
+    if (m_map.count(key) == 0) {
+        worker_id   = m_workers.size();
+        m_map[key] = worker_id;
+
+        m_workers.push_back(Worker(worker_id, key, miner->ip()));
+    }
+    else {
+        worker_id = m_map.at(key);
+        m_workers[worker_id].add(miner->ip());
+    }
+
+    m_miners[miner->id()] = worker_id;
+    return worker_id;
 }
 
 
@@ -178,22 +310,7 @@ void Workers::accept(const AcceptEvent *event)
 
 void Workers::login(const LoginEvent *event)
 {
-    const std::string name(event->request.rigId());
-
-    if (m_map.count(name) == 0) {
-        const size_t id = m_workers.size();
-        m_workers.push_back(Worker(id, name, event->miner()->ip()));
-
-        m_map[name] = id;
-        m_miners[event->miner()->id()] = id;
-
-        return;
-    }
-
-    Worker &worker = m_workers[m_map.at(name)];
-
-    worker.add(event->miner()->ip());
-    m_miners[event->miner()->id()] = worker.id();
+    add(event->miner());
 }
 
 

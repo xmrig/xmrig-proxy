@@ -69,9 +69,9 @@ NonceMapper::~NonceMapper()
 }
 
 
-bool NonceMapper::add(Miner *miner, const LoginRequest &request)
+bool NonceMapper::add(Miner *miner)
 {
-    if (!m_storage->add(miner, request)) {
+    if (!m_storage->add(miner)) {
         return false;
     }
 

@@ -58,6 +58,7 @@ private:
     void getHashrate(rapidjson::Document &doc) const;
     void getIdentify(rapidjson::Document &doc) const;
     void getMiner(rapidjson::Document &doc) const;
+    void getMiners(rapidjson::Document &doc) const;
     void getMinersSummary(rapidjson::Document &doc, bool advanced) const;
     void getResources(rapidjson::Document &doc) const;
     void getResults(rapidjson::Document &doc) const;

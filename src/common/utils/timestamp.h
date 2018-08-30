@@ -21,26 +21,27 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_ICONTROLLERLISTENER_H
-#define XMRIG_ICONTROLLERLISTENER_H
+#ifndef XMRIG_TIMESTAMP_H
+#define XMRIG_TIMESTAMP_H
+
+
+#include <chrono>
 
 
 namespace xmrig {
 
 
-class Config;
-
-
-class IControllerListener
+static inline int64_t currentMSecsSinceEpoch()
 {
-public:
-    virtual ~IControllerListener() {}
+    using namespace std::chrono;
+    if (high_resolution_clock::is_steady) {
+        return time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count();
+    }
 
-    virtual void onConfigChanged(Config *config, Config *previousConfig) = 0;
-};
+    return time_point_cast<milliseconds>(steady_clock::now()).time_since_epoch().count();
+}
 
 
 } /* namespace xmrig */
 
-
-#endif // XMRIG_ICONTROLLERLISTENER_H
+#endif /* XMRIG_TIMESTAMP_H */

@@ -34,7 +34,6 @@
 #include "proxy/events/ConnectionEvent.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"
-#include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
 #include "proxy/ProxyDebug.h"
 
@@ -71,7 +70,7 @@ void ProxyDebug::onEvent(IEvent *event)
 
     case IEvent::LoginType: {
             auto e = static_cast<LoginEvent*>(event);
-            LOG_INFO("[debug] login <Miner id=%" PRId64 ", ip=%s>, <Request login=%s, agent=%s>", e->miner()->id(), e->miner()->ip(), e->request.login(), e->request.agent());
+            LOG_INFO("[debug] login <Miner id=%" PRId64 ", ip=%s>, <Request login=%s, agent=%s>", e->miner()->id(), e->miner()->ip(), e->miner()->user(), e->miner()->agent());
         }
         break;
 
@@ -117,7 +116,7 @@ void ProxyDebug::onRejectedEvent(IEvent *event)
 
     case IEvent::LoginType: {
             auto e = static_cast<LoginEvent*>(event);
-            LOG_ERR("[error] login <Miner id=%" PRId64 ", ip=%s>, <Request login=%s, agent=%s>", e->miner()->id(), e->miner()->ip(), e->request.login(), e->request.agent());
+            LOG_ERR("[error] login <Miner id=%" PRId64 ", ip=%s>, <Request login=%s, agent=%s>", e->miner()->id(), e->miner()->ip(), e->miner()->user(), e->miner()->agent());
         }
         break;
 

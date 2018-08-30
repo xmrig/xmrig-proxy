@@ -128,6 +128,12 @@ Proxy *xmrig::Controller::proxy() const
 }
 
 
+std::vector<Miner*> xmrig::Controller::miners() const
+{
+    return proxy()->miners();
+}
+
+
 void xmrig::Controller::addListener(IControllerListener *listener)
 {
     d_ptr->listeners.push_back(listener);

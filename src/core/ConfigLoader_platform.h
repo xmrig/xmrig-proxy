@@ -108,6 +108,7 @@ static struct option const options[] = {
     { "no-color",          0, nullptr, xmrig::IConfig::ColorKey          },
     { "no-watch",          0, nullptr, xmrig::IConfig::WatchKey          },
     { "no-workers",        0, nullptr, xmrig::IConfig::WorkersKey        },
+    { "workers",           1, nullptr, xmrig::IConfig::WorkersAdvKey     },
     { "pass",              1, nullptr, xmrig::IConfig::PasswordKey       },
     { "pool-coin",         1, nullptr, xmrig::IConfig::PoolCoinKey       },
     { "retries",           1, nullptr, xmrig::IConfig::RetriesKey        },
@@ -143,7 +144,7 @@ static struct option const config_options[] = {
     { "user-agent",       1, nullptr, xmrig::IConfig::UserAgentKey      },
     { "verbose",          0, nullptr, xmrig::IConfig::VerboseKey        },
     { "watch",            0, nullptr, xmrig::IConfig::WatchKey          },
-    { "workers",          0, nullptr, xmrig::IConfig::WorkersKey        },
+    { "workers",          1, nullptr, xmrig::IConfig::WorkersAdvKey     },
     { "reuse-timeout",    1, nullptr, xmrig::IConfig::ReuseTimeoutKey   },
     { "mode",             1, nullptr, xmrig::IConfig::ModeKey           },
     { nullptr,            0, nullptr, 0 }

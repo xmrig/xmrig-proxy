@@ -177,7 +177,7 @@ void SimpleSplitter::login(LoginEvent *event)
         for (auto const &kv : m_idles) {
             if (kv.second->isReusable()) {
                 removeIdle(kv.first);
-                kv.second->reuse(event->miner(), event->request);
+                kv.second->reuse(event->miner());
 
                 return;
             }
@@ -187,7 +187,7 @@ void SimpleSplitter::login(LoginEvent *event)
     SimpleMapper *mapper = new SimpleMapper(m_sequence++, m_controller);
     m_upstreams[mapper->id()] = mapper;
 
-    mapper->add(event->miner(), event->request);
+    mapper->add(event->miner());
 }
 
 

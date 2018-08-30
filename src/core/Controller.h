@@ -21,14 +21,15 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __CONTROLLER_H__
-#define __CONTROLLER_H__
+#ifndef XMRIG_CONTROLLER_H
+#define XMRIG_CONTROLLER_H
 
 
 #include "common/interfaces/IWatcherListener.h"
 #include "proxy/workers/Worker.h"
 
 
+class Miner;
 class Proxy;
 class StatsData;
 
@@ -52,6 +53,7 @@ public:
     const std::vector<Worker> &workers() const;
     int init(int argc, char **argv);
     Proxy *proxy() const;
+    std::vector<Miner*> miners() const;
     void addListener(IControllerListener *listener);
 
 protected:
@@ -63,4 +65,4 @@ private:
 
 } /* namespace xmrig */
 
-#endif /* __CONTROLLER_H__ */
+#endif /* XMRIG_CONTROLLER_H */

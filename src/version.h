@@ -21,21 +21,21 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __VERSION_H__
-#define __VERSION_H__
+#ifndef XMRIG_VERSION_H
+#define XMRIG_VERSION_H
 
 #define APP_ID        "xmrig-proxy"
 #define APP_NAME      "xmrig-proxy"
 #define APP_DESC      "XMRig Stratum proxy"
-#define APP_VERSION   "2.6.6-dev"
+#define APP_VERSION   "2.7.0-dev"
 #define APP_DOMAIN    "xmrig.com"
 #define APP_SITE      "www.xmrig.com"
 #define APP_COPYRIGHT "Copyright (C) 2016-2018 xmrig.com"
 #define APP_KIND      "proxy"
 
 #define APP_VER_MAJOR  2
-#define APP_VER_MINOR  6
-#define APP_VER_PATCH  6
+#define APP_VER_MINOR  7
+#define APP_VER_PATCH  0
 
 #ifdef _MSC_VER
 #   if (_MSC_VER >= 1910)
@@ -53,4 +53,4 @@
 #   endif
 #endif
 
-#endif /* __VERSION_H__ */
+#endif /* XMRIG_VERSION_H */

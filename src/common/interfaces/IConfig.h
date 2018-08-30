@@ -98,6 +98,7 @@ public:
         PoolCoinKey       = 'C',
         ReuseTimeoutKey   = 1106,
         WorkersKey        = 1103,
+        WorkersAdvKey     = 1107,
 
         // xmrig nvidia
         CudaMaxThreadsKey = 1200,

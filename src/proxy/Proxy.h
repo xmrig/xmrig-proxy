@@ -39,6 +39,7 @@ class AccessLog;
 class Addr;
 class ISplitter;
 class Login;
+class Miner;
 class Miners;
 class Options;
 class ProxyDebug;
@@ -67,6 +68,7 @@ public:
 
     const StatsData &statsData() const;
     const std::vector<Worker> &workers() const;
+    std::vector<Miner*> miners() const;
 
 #   ifdef APP_DEVEL
     void printState();

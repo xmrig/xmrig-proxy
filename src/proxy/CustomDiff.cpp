@@ -31,7 +31,6 @@
 #include "core/Controller.h"
 #include "proxy/CustomDiff.h"
 #include "proxy/events/LoginEvent.h"
-#include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
 
 
@@ -65,11 +64,11 @@ void CustomDiff::login(LoginEvent *event)
 {
     event->miner()->setCustomDiff(m_controller->config()->diff());
 
-    if (!event->request.login()) {
+    if (!event->miner()->user()) {
         return;
     }
 
-    const char *str = strrchr(event->request.login(), '+');
+    const char *str = strrchr(event->miner()->user(), '+');
     if (!str) {
         return;
     }

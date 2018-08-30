@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __NONCESTORAGE_H__
-#define __NONCESTORAGE_H__
+#ifndef XMRIG_NONCESTORAGE_H
+#define XMRIG_NONCESTORAGE_H
 
 
 #include <map>
@@ -32,7 +32,6 @@
 #include "common/net/Job.h"
 
 
-class LoginRequest;
 class Miner;
 
 
@@ -42,7 +41,7 @@ public:
     NonceStorage();
     ~NonceStorage();
 
-    bool add(Miner *miner, const LoginRequest &request);
+    bool add(Miner *miner);
     bool isUsed() const;
     bool isValidJobId(const xmrig::Id &id) const;
     Miner *miner(int64_t id);
@@ -70,4 +69,4 @@ private:
 };
 
 
-#endif /* __NONCESTORAGE_H__ */
+#endif /* XMRIG_NONCESTORAGE_H */

@@ -21,44 +21,35 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __LOGINREQUEST_H__
-#define __LOGINREQUEST_H__
+#ifndef __BASICLOG_H__
+#define __BASICLOG_H__
 
 
-#include <stdint.h>
-#include <string.h>
+#include <uv.h>
 
 
-class LoginRequest
+#include "common/interfaces/ILogBackend.h"
+
+
+namespace xmrig {
+    class Controller;
+}
+
+
+class BasicLog : public ILogBackend
 {
 public:
-    inline LoginRequest() :
-        m_agent(nullptr),
-        m_login(nullptr),
-        m_pass(nullptr),
-        m_id(0)
-    {}
+    BasicLog();
 
-    inline LoginRequest(int64_t id, const char *login, const char *pass, const char *agent, const char *rigId) :
-        m_agent(agent),
-        m_login(login),
-        m_pass(pass),
-        m_rigId(rigId),
-        m_id(id)
-    {}
-
-    inline const char *agent() const      { return m_agent; }
-    inline const char *login() const      { return m_login; }
-    inline const char *pass() const       { return m_pass; }
-    inline const char *rigId() const      { return m_rigId && strlen(m_rigId) > 0 ? m_rigId : m_login; }
-    inline int64_t id() const             { return m_id; }
+    void message(Level level, const char *fmt, va_list args) override;
+    void text(const char *fmt, va_list args) override;
 
 private:
-    const char *m_agent;
-    const char *m_login;
-    const char *m_pass;
-    const char *m_rigId;
-    const int64_t m_id;
+    bool isWritable() const;
+    void print(va_list args);
+
+    char m_buf[kBufferSize];
+    char m_fmt[256];
 };
 
-#endif /* __LOGINREQUEST_H__ */
+#endif /* __BASICLOG_H__ */

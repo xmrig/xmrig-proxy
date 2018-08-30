@@ -68,7 +68,7 @@ SimpleMapper::~SimpleMapper()
 }
 
 
-void SimpleMapper::add(Miner *miner, const LoginRequest &request)
+void SimpleMapper::add(Miner *miner)
 {
     m_miner = miner;
     m_miner->setMapperId(m_id);
@@ -93,7 +93,7 @@ void SimpleMapper::remove(const Miner *miner)
 }
 
 
-void SimpleMapper::reuse(Miner *miner, const LoginRequest &request)
+void SimpleMapper::reuse(Miner *miner)
 {
     m_idleTime = 0;
     m_miner    = miner;

@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __NONCEMAPPER_H__
-#define __NONCEMAPPER_H__
+#ifndef XMRIG_NONCEMAPPER_H
+#define XMRIG_NONCEMAPPER_H
 
 
 #include <map>
@@ -38,7 +38,6 @@
 class DonateStrategy;
 class IStrategy;
 class JobResult;
-class LoginRequest;
 class Miner;
 class NonceStorage;
 class Options;
@@ -69,7 +68,7 @@ public:
     NonceMapper(size_t id, xmrig::Controller *controller);
     ~NonceMapper();
 
-    bool add(Miner *miner, const LoginRequest &request);
+    bool add(Miner *miner);
     bool isActive() const;
     void gc();
     void reload(const std::vector<Pool> &pools);
@@ -110,4 +109,4 @@ private:
 };
 
 
-#endif /* __NONCEMAPPER_H__ */
+#endif /* XMRIG_NONCEMAPPER_H */

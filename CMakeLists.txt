@@ -3,6 +3,7 @@ project(xmrig-proxy)
 
 
 option(WITH_GOOGLE_BREAKPAD "Use Google Breakpad" OFF)
+option(WITH_DEBUG_LOG       "Enable debug log output" OFF)
 option(WITH_HTTPD           "HTTP REST API"       ON)
 
 
@@ -173,7 +174,6 @@ add_definitions(/DXMRIG_PROXY_PROJECT)
 add_definitions(/DUNICODE)
 add_definitions(/D__STDC_FORMAT_MACROS)
 add_definitions(/DAPP_DEVEL)
-#add_definitions(/DAPP_DEBUG)
 
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$" AND CMAKE_SIZEOF_VOID_P EQUAL 8)
     add_definitions(/DRAPIDJSON_SSE2)
@@ -263,6 +263,10 @@ if (WITH_HTTPD)
 else()
     add_definitions(/DXMRIG_NO_HTTPD)
     add_definitions(/DXMRIG_NO_API)
+endif()
+
+if (WITH_DEBUG_LOG)
+    add_definitions(/DAPP_DEBUG)
 endif()
 
 include_directories(src)

@@ -89,6 +89,7 @@ Both miner and pool should support short algorithm name aliases:
 | `cryptonight`            | `cn`            | `cn`           | `-1`        | Autodetect works only for Monero.                    |
 | `cryptonight/0`          | `cn/0`          | `cn`           | `0`         | Original/old CryptoNight.                            |
 | `cryptonight/1`          | `cn/1`          | `cn`           | `1`         | Also known as `monero7` and `CryptoNightV7`.         |
+| `cryptonight/2`          | `cn/2`          | `cn`           | `2`         | CryptoNight variant 2.                               |
 | `cryptonight/xtl`        | `cn/xtl`        | `cn`           | `"xtl"`     | Stellite (XTL).                                      |
 | `cryptonight/msr`        | `cn/msr`        | `cn`           | `"msr"`     | Masari (MSR), also known as `cryptonight-fast`       |
 | `cryptonight/xao`        | `cn/xao`        | `cn`           | `"xao"`     | Alloy (XAO)                                          |

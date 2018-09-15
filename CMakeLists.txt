@@ -2,9 +2,10 @@ cmake_minimum_required(VERSION 2.8)
 project(xmrig-proxy)
 
 
-option(WITH_GOOGLE_BREAKPAD "Use Google Breakpad" OFF)
+option(WITH_GOOGLE_BREAKPAD "Use Google Breakpad"     OFF)
 option(WITH_DEBUG_LOG       "Enable debug log output" OFF)
-option(WITH_HTTPD           "HTTP REST API"       ON)
+option(WITH_HTTPD           "HTTP REST API"           ON)
+option(WITH_TLS             "Enable OpenSSL support"  OFF)
 
 
 include (CheckIncludeFile)
@@ -195,7 +196,7 @@ set(CMAKE_CXX_STANDARD 11)
 if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
 
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-class-memaccess")
 
     if (WIN32)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
@@ -226,6 +227,8 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES Clang)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-overloaded-virtual")
 
 endif()
+
+include(cmake/OpenSSL.cmake)
 
 CHECK_INCLUDE_FILE (syslog.h HAVE_SYSLOG_H)
 if (HAVE_SYSLOG_H)
@@ -261,6 +264,8 @@ if (WITH_HTTPD)
         message(FATAL_ERROR "microhttpd NOT found: use `-DWITH_HTTPD=OFF` to build without http deamon support")
     endif()
 else()
+    set(HTTPD_SOURCES "")
+    set(MHD_LIBRARY "")
     add_definitions(/DXMRIG_NO_HTTPD)
     add_definitions(/DXMRIG_NO_API)
 endif()
@@ -273,5 +278,5 @@ include_directories(src)
 include_directories(src/3rdparty)
 include_directories(${UV_INCLUDE_DIR})
 
-add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_SYSLOG} ${HTTPD_SOURCES})
-target_link_libraries(${CMAKE_PROJECT_NAME} ${UV_LIBRARIES} ${MHD_LIBRARY} ${EXTRA_LIBS} ${GOOGLE_BREAKPAD_LIBS})
+add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_SYSLOG} ${HTTPD_SOURCES} ${TLS_SOURCES})
+target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENSSL_LIBRARIES} ${UV_LIBRARIES} ${MHD_LIBRARY} ${EXTRA_LIBS} ${GOOGLE_BREAKPAD_LIBS})

@@ -137,12 +137,21 @@ void Summary::printPools(xmrig::Config *config)
     const std::vector<Pool> &pools = config->pools();
 
     for (size_t i = 0; i < pools.size(); ++i) {
-        Log::i()->text(config->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("POOL #%-6zu") CYAN_BOLD("%s") " variant " WHITE_BOLD("%s")
-                                          : " * POOL #%-6d%s variant %s",
-                       i + 1,
-                       pools[i].url(),
-                       pools[i].algorithm().variantName()
-                       );
+        if (!config->isColors()) {
+            Log::i()->text(" * POOL #%-6d%s variant %s",
+                           i + 1,
+                           pools[i].url(),
+                           pools[i].algorithm().variantName()
+                           );
+        }
+        else {
+            Log::i()->text(GREEN_BOLD(" * ") WHITE_BOLD("POOL #%-6zu") "\x1B[1;%dm%s\x1B[0m variant " WHITE_BOLD("%s"),
+                           i + 1,
+                           pools[i].isTLS() ? 32 : 36,
+                           pools[i].url(),
+                           pools[i].algorithm().variantName()
+                           );
+        }
     }
 
 #   ifdef APP_DEBUG

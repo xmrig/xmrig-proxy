@@ -35,7 +35,6 @@ class Summary
 {
 public:
     static void print(xmrig::Controller *controller);
-    static void printPools(xmrig::Config *config);
 };
 
 

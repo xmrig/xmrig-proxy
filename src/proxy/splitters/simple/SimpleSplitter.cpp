@@ -140,7 +140,7 @@ void SimpleSplitter::onConfigChanged(xmrig::Config *config, xmrig::Config *previ
     const std::vector<Pool> &previousPools = previousConfig->pools();
 
     if (pools.size() != previousPools.size() || !std::equal(pools.begin(), pools.end(), previousPools.begin())) {
-        Summary::printPools(config);
+        config->printPools();
 
         for (auto const &kv : m_upstreams) {
             kv.second->reload(pools);

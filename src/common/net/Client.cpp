@@ -186,9 +186,27 @@ bool Client::disconnect()
 }
 
 
-bool Client::isTLS() const
+const char *Client::tlsFingerprint() const
 {
-    return m_pool.isTLS() && m_tls;
+#   ifndef XMRIG_NO_TLS
+    if (isTLS() && m_pool.fingerprint() == nullptr) {
+        return m_tls->fingerprint();
+    }
+#   endif
+
+    return nullptr;
+}
+
+
+const char *Client::tlsVersion() const
+{
+#   ifndef XMRIG_NO_TLS
+    if (isTLS()) {
+        return m_tls->version();
+    }
+#   endif
+
+    return nullptr;
 }
 
 
@@ -274,6 +292,16 @@ bool Client::isCriticalError(const char *message)
     }
 
     return false;
+}
+
+
+bool Client::isTLS() const
+{
+#   ifndef XMRIG_NO_TLS
+    return m_pool.isTLS() && m_tls;
+#   else
+    return false;
+#   endif
 }
 
 
@@ -386,7 +414,7 @@ bool Client::send(BIO *bio)
         LOG_DEBUG_ERR("[%s] send failed, invalid state: %d", m_pool.url(), m_state);
     }
 
-    BIO_reset(bio);
+    (void) BIO_reset(bio);
 
     return result;
 #   else

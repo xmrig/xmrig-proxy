@@ -69,7 +69,8 @@ public:
     ~Client();
 
     bool disconnect();
-    bool isTLS() const;
+    const char *tlsFingerprint() const;
+    const char *tlsVersion() const;
     int64_t submit(const JobResult &result);
     void connect();
     void connect(const Pool &pool);
@@ -100,6 +101,7 @@ private:
 
     bool close();
     bool isCriticalError(const char *message);
+    bool isTLS() const;
     bool parseJob(const rapidjson::Value &params, int *code);
     bool parseLogin(const rapidjson::Value &result, int *code);
     bool send(BIO *bio);

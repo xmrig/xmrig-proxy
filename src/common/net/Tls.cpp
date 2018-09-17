@@ -32,8 +32,15 @@
 #include "common/log/Log.h"
 
 
+#ifdef _MSC_VER
+#   define strncasecmp(x,y,z) _strnicmp(x,y,z)
+#endif
+
+
 Client::Tls::Tls(Client *client) :
+    m_ready(false),
     m_buf(),
+    m_fingerprint(),
     m_client(client),
     m_ssl(nullptr)
 {
@@ -87,26 +94,39 @@ bool Client::Tls::send(const char *data, size_t size)
 }
 
 
+const char *Client::Tls::fingerprint() const
+{
+    return m_ready ? m_fingerprint : nullptr;
+}
+
+
+const char *Client::Tls::version() const
+{
+    return m_ready ? SSL_get_version(m_ssl) : nullptr;
+}
+
+
 void Client::Tls::read(const char *data, size_t size)
 {
     BIO_write(m_readBio, data, size);
 
     if (!SSL_is_init_finished(m_ssl)) {
-      const int rc = SSL_connect(m_ssl);
+        const int rc = SSL_connect(m_ssl);
 
-      if (rc < 0 && SSL_get_error(m_ssl, rc) == SSL_ERROR_WANT_READ) {
-          send();
-      }
+        if (rc < 0 && SSL_get_error(m_ssl, rc) == SSL_ERROR_WANT_READ) {
+            send();
+        } else if (rc == 1) {
+            X509 *cert = SSL_get_peer_certificate(m_ssl);
+            if (!verify(cert)) {
+                X509_free(cert);
+                m_client->close();
 
-      if (rc == 1) {
-          if (!verify()) {
-              LOG_ERR("[%s] TLS certificate verification failed", m_client->m_pool.url());
-              m_client->close();
+                return;
+            }
 
-              return;
-          }
-
-          m_client->login();
+            X509_free(cert);
+            m_ready = true;
+            m_client->login();
       }
 
       return;
@@ -125,12 +145,46 @@ bool Client::Tls::send()
 }
 
 
-bool Client::Tls::verify()
+bool Client::Tls::verify(X509 *cert)
 {
-    X509* cert = SSL_get_peer_certificate(m_ssl);
     if (cert == nullptr) {
+        LOG_ERR("[%s] Failed to get server certificate", m_client->m_pool.url());
+
+        return false;
+    }
+
+    if (!verifyFingerprint(cert)) {
+        LOG_ERR("[%s] Failed to verify server certificate fingerprint", m_client->m_pool.url());
+
+        const char *fingerprint = m_client->m_pool.fingerprint();
+        if (strlen(m_fingerprint) == 64 && fingerprint != nullptr) {
+            LOG_ERR("\"%s\" was given", m_fingerprint);
+            LOG_ERR("\"%s\" was configured", fingerprint);
+        }
+
         return false;
     }
 
     return true;
+}
+
+
+bool Client::Tls::verifyFingerprint(X509 *cert)
+{
+    const EVP_MD *digest = EVP_get_digestbyname("sha256");
+    if (digest == nullptr) {
+        return false;
+    }
+
+    unsigned char md[EVP_MAX_MD_SIZE];
+    unsigned int dlen;
+
+    if (X509_digest(cert, digest, md, &dlen) != 1) {
+        return false;
+    }
+
+    Job::toHex(md, 32, m_fingerprint);
+    const char *fingerprint = m_client->m_pool.fingerprint();
+
+    return fingerprint == nullptr || strncasecmp(m_fingerprint, fingerprint, 64) == 0;
 }

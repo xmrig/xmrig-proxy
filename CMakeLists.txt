@@ -5,7 +5,7 @@ project(xmrig-proxy)
 option(WITH_GOOGLE_BREAKPAD "Use Google Breakpad"     OFF)
 option(WITH_DEBUG_LOG       "Enable debug log output" OFF)
 option(WITH_HTTPD           "HTTP REST API"           ON)
-option(WITH_TLS             "Enable OpenSSL support"  OFF)
+option(WITH_TLS             "Enable OpenSSL support"  ON)
 
 
 include (CheckIncludeFile)
@@ -167,7 +167,7 @@ else()
     if (CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
         set(EXTRA_LIBS pthread)
     else()
-        set(EXTRA_LIBS pthread uuid)
+        set(EXTRA_LIBS pthread uuid rt dl)
     endif()
 endif()
 

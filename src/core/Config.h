@@ -60,8 +60,6 @@ class IWatcherListener;
  */
 class Config : public CommonConfig
 {
-    friend class ConfigLoader;
-
 public:
     enum Mode {
         NICEHASH_MODE,

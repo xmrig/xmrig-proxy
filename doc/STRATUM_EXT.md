@@ -102,6 +102,8 @@ Both miner and pool should support short algorithm name aliases:
 | `cryptonight-heavy/xhv`  | `cn-heavy/xhv`  | `cn-heavy`     | `"xhv"`     | Haven Protocol                                       |
 | `cryptonight-heavy/tube` | `cn-heavy/tube` | `cn-heavy`     | `"tube"`    | BitTube (TUBE)                                       |
 
+Proper pool/proxy implementation should avoid any automatic/autodetect variants, variant must explicitly specified.
+
 ### 1.5 XMR-Stak algorithm names
 Mapping between XMR-Stak algorithm names and XMRig names.
 

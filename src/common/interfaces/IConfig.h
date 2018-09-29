@@ -65,6 +65,7 @@ public:
         WatchKey          = 1105,
         TlsKey            = 1013,
         FingerprintKey    = 1014,
+        AutoSaveKey       = 1016,
 
         // xmrig common
         CPUPriorityKey    = 1021,
@@ -80,6 +81,7 @@ public:
         SafeKey           = 1005,
         ThreadsKey        = 't',
         HardwareAESKey    = 1011,
+        AssemblyKey       = 1015,
 
         // xmrig amd
         OclPlatformKey    = 1400,

@@ -426,7 +426,7 @@ bool Client::send(BIO *bio)
 bool Client::verifyAlgorithm(const xmrig::Algorithm &algorithm) const
 {
 #   ifdef XMRIG_PROXY_PROJECT
-    if (m_pool.algorithm().variant() == xmrig::VARIANT_AUTO) {
+    if (m_pool.algorithm().variant() == xmrig::VARIANT_AUTO || m_id == -1) {
         return true;
     }
 #   endif

@@ -21,26 +21,27 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_ICONTROLLERLISTENER_H
-#define XMRIG_ICONTROLLERLISTENER_H
+#include <string.h>
+#include <thread>
 
 
-namespace xmrig {
+#include "common/cpu/BasicCpuInfo.h"
 
 
-class Config;
-
-
-class IControllerListener
+xmrig::BasicCpuInfo::BasicCpuInfo() :
+    m_aes(false),
+    m_brand(),
+    m_threads(std::thread::hardware_concurrency())
 {
-public:
-    virtual ~IControllerListener() {}
+    memcpy(m_brand, "Unknown", 7);
 
-    virtual void onConfigChanged(Config *config, Config *previousConfig) = 0;
-};
-
-
-} /* namespace xmrig */
+#   if __ARM_FEATURE_CRYPTO
+    m_aes = true;
+#   endif
+}
 
 
-#endif // XMRIG_ICONTROLLERLISTENER_H
+size_t xmrig::BasicCpuInfo::optimalThreadsCount(size_t memSize, int maxCpuUsage) const
+{
+    return threads();
+}

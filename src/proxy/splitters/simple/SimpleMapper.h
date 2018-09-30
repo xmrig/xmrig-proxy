@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SIMPLEMAPPER_H__
-#define __SIMPLEMAPPER_H__
+#ifndef XMRIG_SIMPLEMAPPER_H
+#define XMRIG_SIMPLEMAPPER_H
 
 
 #include <map>
@@ -38,7 +38,6 @@
 class DonateStrategy;
 class IStrategy;
 class JobResult;
-class LoginRequest;
 class Miner;
 class NonceStorage;
 class Options;
@@ -57,10 +56,10 @@ public:
     SimpleMapper(uint64_t id, xmrig::Controller *controller);
     ~SimpleMapper();
 
-    void add(Miner *miner, const LoginRequest &request);
+    void add(Miner *miner);
     void reload(const std::vector<Pool> &pools);
     void remove(const Miner *miner);
-    void reuse(Miner *miner, const LoginRequest &request);
+    void reuse(Miner *miner);
     void stop();
     void submit(SubmitEvent *event);
     void tick(uint64_t ticks, uint64_t now);
@@ -97,4 +96,4 @@ private:
 };
 
 
-#endif /* __SIMPLEMAPPER_H__ */
+#endif /* XMRIG_SIMPLEMAPPER_H */

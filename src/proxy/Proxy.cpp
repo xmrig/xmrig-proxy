@@ -174,6 +174,12 @@ const std::vector<Worker> &Proxy::workers() const
 }
 
 
+std::vector<Miner*> Proxy::miners() const
+{
+    return m_miners->miners();
+}
+
+
 #ifdef APP_DEVEL
 void Proxy::printState()
 {

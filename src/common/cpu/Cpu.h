@@ -21,44 +21,26 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __LOGINREQUEST_H__
-#define __LOGINREQUEST_H__
+#ifndef XMRIG_CPU_H
+#define XMRIG_CPU_H
 
 
-#include <stdint.h>
-#include <string.h>
+#include "common/interfaces/ICpuInfo.h"
 
 
-class LoginRequest
+namespace xmrig {
+
+
+class Cpu
 {
 public:
-    inline LoginRequest() :
-        m_agent(nullptr),
-        m_login(nullptr),
-        m_pass(nullptr),
-        m_id(0)
-    {}
-
-    inline LoginRequest(int64_t id, const char *login, const char *pass, const char *agent, const char *rigId) :
-        m_agent(agent),
-        m_login(login),
-        m_pass(pass),
-        m_rigId(rigId),
-        m_id(id)
-    {}
-
-    inline const char *agent() const      { return m_agent; }
-    inline const char *login() const      { return m_login; }
-    inline const char *pass() const       { return m_pass; }
-    inline const char *rigId() const      { return m_rigId && strlen(m_rigId) > 0 ? m_rigId : m_login; }
-    inline int64_t id() const             { return m_id; }
-
-private:
-    const char *m_agent;
-    const char *m_login;
-    const char *m_pass;
-    const char *m_rigId;
-    const int64_t m_id;
+    static ICpuInfo *info();
+    static void init();
+    static void release();
 };
 
-#endif /* __LOGINREQUEST_H__ */
+
+} /* namespace xmrig */
+
+
+#endif /* XMRIG_CPU_H */

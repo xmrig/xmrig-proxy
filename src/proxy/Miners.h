@@ -21,12 +21,13 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __MINERS_H__
-#define __MINERS_H__
+#ifndef XMRIG_MINERS_H
+#define XMRIG_MINERS_H
 
 
 #include <map>
 #include <uv.h>
+#include <vector>
 
 
 #include "interfaces/IEventListener.h"
@@ -40,6 +41,8 @@ class Miners : public IEventListener
 public:
     Miners();
     ~Miners();
+
+    std::vector<Miner*> miners() const;
 
 protected:
     void onEvent(IEvent *event) override;
@@ -57,4 +60,4 @@ private:
 };
 
 
-#endif /* __PROXY_H__ */
+#endif /* XMRIG_MINERS_H */

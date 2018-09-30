@@ -35,38 +35,18 @@
 #include "version.h"
 
 
-static void print_versions(xmrig::Controller *controller)
-{
-    char buf[16] = { 0 };
-
-#   if defined(__clang__)
-    snprintf(buf, 16, " clang/%d.%d.%d", __clang_major__, __clang_minor__, __clang_patchlevel__);
-#   elif defined(__GNUC__)
-    snprintf(buf, 16, " gcc/%d.%d.%d", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
-#   elif defined(_MSC_VER)
-    snprintf(buf, 16, " MSVC/%d", MSVC_VERSION);
-#   else
-    buf[0] = '\0';
-#   endif
-
-    Log::i()->text(controller->config()->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-12s") CYAN_BOLD("%s/%s") WHITE_BOLD(" libuv/%s%s")
-                                                    : " * %-12s%s/%s libuv/%s%s",
-                   "VERSIONS", APP_NAME, APP_VERSION, uv_version_string(), buf);
-}
-
-
 static void print_mode(xmrig::Controller *controller)
 {
-    Log::i()->text(controller->config()->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-12s") MAGENTA_BOLD("%s")
-                                                    : " * %-12s%s",
+    Log::i()->text(controller->config()->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-13s") MAGENTA_BOLD("%s")
+                                                    : " * %-13s%s",
                    "MODE", controller->config()->modeName());
 }
 
 
 static void print_algo(xmrig::Controller *controller)
 {
-    Log::i()->text(controller->config()->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-12s") MAGENTA_BOLD("%s")
-                                                    : " * %-12s%s",
+    Log::i()->text(controller->config()->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-13s") MAGENTA_BOLD("%s")
+                                                    : " * %-13s%s",
                    "ALGO", controller->config()->algorithm().name());
 }
 
@@ -76,8 +56,8 @@ static void print_bind(xmrig::Controller *controller)
     const std::vector<Addr> &addrs = controller->config()->addrs();
 
     for (size_t i = 0; i < addrs.size(); ++i) {
-        Log::i()->text(controller->config()->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("BIND #%-6d") CYAN("%s%s%s:") CYAN_BOLD("%d")
-                                                        : " * BIND #%-6d%s%s%s:%d",
+        Log::i()->text(controller->config()->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("BIND #%-7zu") CYAN("%s%s%s:") CYAN_BOLD("%d")
+                                                        : " * BIND #%-7zu%s%s%s:%d",
                        i + 1,
                        addrs[i].isIPv6() ? "[" : "",
                        addrs[i].ip(),
@@ -87,70 +67,27 @@ static void print_bind(xmrig::Controller *controller)
 }
 
 
-#ifndef XMRIG_NO_API
-static void print_api(xmrig::Controller *controller)
-{
-    const int port = controller->config()->apiPort();
-    if (port == 0) {
-        return;
-    }
-
-    Log::i()->text(controller->config()->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-12s") CYAN("%s:") CYAN_BOLD("%d")
-                                                    : " * %-12s%s:%d",
-                   "API BIND", controller->config()->isApiIPv6() ? "[::]" : "0.0.0.0", port);
-}
-#endif
-
-
 static void print_commands(xmrig::Controller *controller)
 {
     if (controller->config()->isColors()) {
-        Log::i()->text(GREEN_BOLD(" * ") WHITE_BOLD("COMMANDS    ") MAGENTA_BOLD("h") WHITE_BOLD("ashrate, ")
-                                                                    MAGENTA_BOLD("c") WHITE_BOLD("onnections, ")
-                                                                    MAGENTA_BOLD("v") WHITE_BOLD("erbose, ")
-                                                                    MAGENTA_BOLD("w") WHITE_BOLD("orkers"));
+        Log::i()->text(GREEN_BOLD(" * ") WHITE_BOLD("COMMANDS     ") MAGENTA_BOLD("h") WHITE_BOLD("ashrate, ")
+                                                                     MAGENTA_BOLD("c") WHITE_BOLD("onnections, ")
+                                                                     MAGENTA_BOLD("v") WHITE_BOLD("erbose, ")
+                                                                     MAGENTA_BOLD("w") WHITE_BOLD("orkers"));
     }
     else {
-        Log::i()->text(" * COMMANDS   'h' hashrate, 'c' connections, 'v' verbose, 'w' workers");
+        Log::i()->text(" * COMMANDS    'h' hashrate, 'c' connections, 'v' verbose, 'w' workers");
     }
 }
 
 
 void Summary::print(xmrig::Controller *controller)
 {
-    print_versions(controller);
+    controller->config()->printVersions();
     print_mode(controller);
     print_algo(controller);
-    printPools(controller->config());
+    controller->config()->printPools();
     print_bind(controller);
-
-#   ifndef XMRIG_NO_API
-    print_api(controller);
-#   endif
-
+    controller->config()->printAPI();
     print_commands(controller);
 }
-
-
-void Summary::printPools(xmrig::Config *config)
-{
-    const std::vector<Pool> &pools = config->pools();
-
-    for (size_t i = 0; i < pools.size(); ++i) {
-        Log::i()->text(config->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("POOL #%-6zu") CYAN_BOLD("%s") " variant " WHITE_BOLD("%s")
-                                          : " * POOL #%-6d%s variant %s",
-                       i + 1,
-                       pools[i].url(),
-                       pools[i].algorithm().variantName()
-                       );
-    }
-
-#   ifdef APP_DEBUG
-    for (const Pool &pool : pools) {
-        pool.print();
-    }
-#   endif
-}
-
-
-

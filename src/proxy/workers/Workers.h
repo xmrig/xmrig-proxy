@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __WORKERS_H__
-#define __WORKERS_H__
+#ifndef XMRIG_WORKERS_H
+#define XMRIG_WORKERS_H
 
 
 #include <map>
@@ -30,8 +30,10 @@
 #include <vector>
 
 
+#include "common/interfaces/IControllerListener.h"
 #include "interfaces/IEventListener.h"
 #include "proxy/workers/Worker.h"
+#include "rapidjson/fwd.h"
 
 
 class AcceptEvent;
@@ -46,29 +48,49 @@ namespace xmrig {
 }
 
 
-class Workers : public IEventListener
+class Workers : public IEventListener, public xmrig::IControllerListener
 {
 public:
+    enum Mode {
+        None,     // workers support disabled.
+        RigID,    // rig_id with failback to user, default since 2.6.0
+        User,
+        Password,
+        Agent,
+        IP
+    };
+
     Workers(xmrig::Controller *controller);
     ~Workers();
 
     void printWorkers();
+    void reset();
     void tick(uint64_t ticks);
 
     inline const std::vector<Worker> &workers() const { return m_workers; }
+    inline Mode mode() const                          { return m_mode; }
+
+    static const char *modeName(Mode mode);
+    static Mode parseMode(const char *mode);
+    static rapidjson::Value modeToJSON(Mode mode);
 
 protected:
+    void onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig) override;
     void onEvent(IEvent *event) override;
     void onRejectedEvent(IEvent *event) override;
 
 private:
+    inline bool isEnabled() const { return m_mode != None; }
+
     bool indexByMiner(const Miner *miner, size_t *index) const;
+    const char *nameByMiner(const Miner *miner) const;
+    size_t add(const Miner *miner);
     void accept(const AcceptEvent *event);
     void login(const LoginEvent *event);
     void reject(const SubmitEvent *event);
     void remove(const CloseEvent *event);
 
-    bool m_enabled;
+    Mode m_mode;
     std::map<int64_t, size_t> m_miners;
     std::map<std::string, size_t> m_map;
     std::vector<Worker> m_workers;
@@ -76,4 +98,4 @@ private:
 };
 
 
-#endif /* __WORKERS_H__ */
+#endif /* XMRIG_WORKERS_H */

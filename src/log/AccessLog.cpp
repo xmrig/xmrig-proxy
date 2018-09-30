@@ -28,13 +28,13 @@
 #include <time.h>
 
 
+#include "common/utils/timestamp.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "log/AccessLog.h"
 #include "proxy/Counters.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
-#include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
 #include "proxy/Stats.h"
 
@@ -68,7 +68,7 @@ void AccessLog::onEvent(IEvent *event)
     {
     case IEvent::LoginType: {
             auto e = static_cast<LoginEvent*>(event);
-            write("#%" PRId64 " login: %s, \"%s\", ua: \"%s\", count: %" PRIu64, e->miner()->id(), e->miner()->ip(), e->request.login(), e->request.agent(), Counters::miners());
+            write("#%" PRId64 " login: %s, \"%s\", ua: \"%s\", count: %" PRIu64, e->miner()->id(), e->miner()->ip(), e->miner()->user(), e->miner()->agent(), Counters::miners());
         }
         break;
 
@@ -78,10 +78,10 @@ void AccessLog::onEvent(IEvent *event)
                 break;
             }
 
-            const double time = (double)(uv_now(uv_default_loop()) - e->miner()->timestamp()) / 1000;
+            const double time = (double)(xmrig::currentMSecsSinceEpoch() - e->miner()->timestamp()) / 1000;
 
-            write("#%" PRId64 " close: %s, time: %03.1fs, rx/tx: %" PRIu64 "/%" PRIu64 ", count: %" PRIu64,
-                  e->miner()->id(), e->miner()->ip(), time, e->miner()->rx(), e->miner()->tx(), Counters::miners());
+            write("#%" PRId64 " close: %s, \"%s\", time: %03.1fs, rx/tx: %" PRIu64 "/%" PRIu64 ", count: %" PRIu64,
+                  e->miner()->id(), e->miner()->ip(), e->miner()->user(), time, e->miner()->rx(), e->miner()->tx(), Counters::miners());
         }
         break;
 

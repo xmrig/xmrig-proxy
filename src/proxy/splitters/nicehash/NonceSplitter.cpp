@@ -141,7 +141,7 @@ void NonceSplitter::onConfigChanged(xmrig::Config *config, xmrig::Config *previo
     const std::vector<Pool> &previousPools = previousConfig->pools();
 
     if (pools.size() != previousPools.size() || !std::equal(pools.begin(), pools.end(), previousPools.begin())) {
-        Summary::printPools(config);
+        config->printPools();
 
         for (NonceMapper *mapper : m_upstreams) {
             mapper->reload(pools);
@@ -176,14 +176,14 @@ void NonceSplitter::login(LoginEvent *event)
 {
     // try reuse active upstreams.
     for (NonceMapper *mapper : m_upstreams) {
-        if (!mapper->isSuspended() && mapper->add(event->miner(), event->request)) {
+        if (!mapper->isSuspended() && mapper->add(event->miner())) {
             return;
         }
     }
 
     // try reuse suspended upstreams.
     for (NonceMapper *mapper : m_upstreams) {
-        if (mapper->isSuspended() && mapper->add(event->miner(), event->request)) {
+        if (mapper->isSuspended() && mapper->add(event->miner())) {
             return;
         }
     }

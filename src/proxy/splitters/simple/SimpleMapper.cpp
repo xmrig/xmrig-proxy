@@ -68,7 +68,7 @@ SimpleMapper::~SimpleMapper()
 }
 
 
-void SimpleMapper::add(Miner *miner, const LoginRequest &request)
+void SimpleMapper::add(Miner *miner)
 {
     m_miner = miner;
     m_miner->setMapperId(m_id);
@@ -93,7 +93,7 @@ void SimpleMapper::remove(const Miner *miner)
 }
 
 
-void SimpleMapper::reuse(Miner *miner, const LoginRequest &request)
+void SimpleMapper::reuse(Miner *miner)
 {
     m_idleTime = 0;
     m_miner    = miner;
@@ -170,8 +170,16 @@ void SimpleMapper::onActive(IStrategy *strategy, Client *client)
     }
 
     if (m_controller->config()->isVerbose()) {
-        LOG_INFO(isColors() ? "#%03u \x1B[01;37muse pool \x1B[01;36m%s:%d \x1B[01;30m%s" : "#%03u use pool %s:%d %s",
-                 m_id, client->host(), client->port(), client->ip());
+        const char *tlsVersion = client->tlsVersion();
+
+        LOG_INFO(isColors() ? "#%03u " WHITE_BOLD("use pool ") CYAN_BOLD("%s:%d ") GREEN_BOLD("%s") " \x1B[1;30m%s "
+                            : "#%03u use pool %s:%d %s %s",
+                 m_id, client->host(), client->port(), tlsVersion ? tlsVersion : "", client->ip());
+
+        const char *fingerprint = client->tlsFingerprint();
+        if (fingerprint != nullptr) {
+            LOG_INFO("\x1B[1;30mfingerprint (SHA-256): \"%s\"", fingerprint);
+        }
     }
 }
 

@@ -1,3 +1,10 @@
+# v2.8.0
+- **[#753](https://github.com/xmrig/xmrig/issues/753) Added new algorithm [CryptoNight variant 2](https://github.com/xmrig/xmrig/issues/753) for Monero fork, thanks [@SChernykh](https://github.com/SChernykh).**
+- **[#251](https://github.com/xmrig/xmrig-proxy/issues/251) Added extended workers support.**
+- **[#758](https://github.com/xmrig/xmrig/issues/758) Added SSL/TLS support for secure outgoing connections to pools.**
+  - Added per pool options `"tls"` and `"tls-fingerprint"` and command line equivalents.
+- [#757](https://github.com/xmrig/xmrig/issues/757) Fixed send buffer overflow.
+
 # v2.6.5
 - [#245](https://github.com/xmrig/xmrig-proxy/issues/245) Fixed API ID collision when run multiple proxies on same machine.
   - Added command line option `--api-id` and equivalent option for config file.

@@ -26,7 +26,6 @@
 
 #include "common/log/Log.h"
 #include "proxy/Counters.h"
-#include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
 #include "proxy/splitters/nicehash/NonceStorage.h"
 
@@ -44,7 +43,7 @@ NonceStorage::~NonceStorage()
 }
 
 
-bool NonceStorage::add(Miner *miner, const LoginRequest &request)
+bool NonceStorage::add(Miner *miner)
 {
     const int index = nextIndex(0);
     if (index == -1) {

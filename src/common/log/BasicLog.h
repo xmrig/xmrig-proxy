@@ -21,26 +21,35 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_ICONTROLLERLISTENER_H
-#define XMRIG_ICONTROLLERLISTENER_H
+#ifndef __BASICLOG_H__
+#define __BASICLOG_H__
+
+
+#include <uv.h>
+
+
+#include "common/interfaces/ILogBackend.h"
 
 
 namespace xmrig {
+    class Controller;
+}
 
 
-class Config;
-
-
-class IControllerListener
+class BasicLog : public ILogBackend
 {
 public:
-    virtual ~IControllerListener() {}
+    BasicLog();
 
-    virtual void onConfigChanged(Config *config, Config *previousConfig) = 0;
+    void message(Level level, const char *fmt, va_list args) override;
+    void text(const char *fmt, va_list args) override;
+
+private:
+    bool isWritable() const;
+    void print(va_list args);
+
+    char m_buf[kBufferSize];
+    char m_fmt[256];
 };
 
-
-} /* namespace xmrig */
-
-
-#endif // XMRIG_ICONTROLLERLISTENER_H
+#endif /* __BASICLOG_H__ */

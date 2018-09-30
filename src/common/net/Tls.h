@@ -21,26 +21,42 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_ICONTROLLERLISTENER_H
-#define XMRIG_ICONTROLLERLISTENER_H
+#ifndef XMRIG_TLS_H
+#define XMRIG_TLS_H
 
 
-namespace xmrig {
+#include <openssl/ssl.h>
 
 
-class Config;
+#include "common/net/Client.h"
 
 
-class IControllerListener
+class Client::Tls
 {
 public:
-    virtual ~IControllerListener() {}
+    Tls(Client *client);
+    ~Tls();
 
-    virtual void onConfigChanged(Config *config, Config *previousConfig) = 0;
+    bool handshake();
+    bool send(const char *data, size_t size);
+    const char *fingerprint() const;
+    const char *version() const;
+    void read(const char *data, size_t size);
+
+private:
+    bool send();
+    bool verify(X509 *cert);
+    bool verifyFingerprint(X509 *cert);
+
+    BIO *m_readBio;
+    BIO *m_writeBio;
+    bool m_ready;
+    char m_buf[1024 * 2];
+    char m_fingerprint[32 * 2 + 8];
+    Client *m_client;
+    SSL *m_ssl;
+    SSL_CTX *m_ctx;
 };
 
 
-} /* namespace xmrig */
-
-
-#endif // XMRIG_ICONTROLLERLISTENER_H
+#endif /* XMRIG_TLS_H */

@@ -26,7 +26,7 @@
             "pass": "x",
             "rig-id": null,
             "keepalive": false,
-            "variant": 1,
+            "variant": -1,
             "tls": false,
             "tls-fingerprint": null
         }

@@ -172,9 +172,9 @@ void Miner::setJob(Job &job)
         }
 
         result.AddMember("extensions", extensions, allocator);
+        result.AddMember("status", "OK", allocator);
 
         doc.AddMember("result", result, allocator);
-        doc.AddMember("status", "OK", allocator);
     }
     else {
         doc.AddMember("method", "job", allocator);

@@ -62,7 +62,7 @@ bool JobResult::isCompatible(uint8_t fixedByte) const
 
 bool JobResult::isValid() const
 {
-    if (!nonce || m_actualDiff < 100) {
+    if (!nonce || m_actualDiff == 0) {
         return false;
     }
 

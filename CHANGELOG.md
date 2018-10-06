@@ -1,3 +1,9 @@
+# v2.8.1
+- [#258](https://github.com/xmrig/xmrig/issues/258) Force NDEBUG for release builds.
+- Fixed error when handle malformed result from miner (divide to zero).
+- Fixed possible crash in simple mode when heavy load.
+- Fixed malformed login reply.
+
 # v2.8.0
 - **[#753](https://github.com/xmrig/xmrig/issues/753) Added new algorithm [CryptoNight variant 2](https://github.com/xmrig/xmrig/issues/753) for Monero fork, thanks [@SChernykh](https://github.com/SChernykh).**
 - **[#251](https://github.com/xmrig/xmrig-proxy/issues/251) Added extended workers support.**

@@ -1,7 +1,7 @@
 # v2.8.1
 - [#258](https://github.com/xmrig/xmrig/issues/258) Force NDEBUG for release builds.
+- [#108](https://github.com/xmrig/xmrig/issues/108) Fixed possible crash in simple mode when heavy load.
 - Fixed error when handle malformed result from miner (divide to zero).
-- Fixed possible crash in simple mode when heavy load.
 - Fixed malformed login reply.
 
 # v2.8.0

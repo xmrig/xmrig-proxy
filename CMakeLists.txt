@@ -175,6 +175,7 @@ add_definitions(/DXMRIG_PROXY_PROJECT)
 add_definitions(/DUNICODE)
 add_definitions(/D__STDC_FORMAT_MACROS)
 add_definitions(/DAPP_DEVEL)
+add_definitions(/DXMRIG_NO_ASM)
 
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$" AND CMAKE_SIZEOF_VOID_P EQUAL 8)
     add_definitions(/DRAPIDJSON_SSE2)
@@ -191,6 +192,10 @@ endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 11)
+
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_definitions(/DNDEBUG)
+endif()
 
 # https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_COMPILER_ID.html
 if (CMAKE_CXX_COMPILER_ID MATCHES GNU)

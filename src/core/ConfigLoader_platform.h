@@ -51,6 +51,8 @@ Options:\n\
   -u, --user=USERNAME      username for mining server\n\
   -p, --pass=PASSWORD      password for mining server\n\
       --rig-id=ID          rig identifier for pool-side statistics (needs pool support)\n\
+      --tls                enable SSL/TLS support (needs pool support)\n\
+      --tls-fingerprint=F  pool TLS certificate fingerprint, if set enable strict certificate pinning\n\
   -k, --keepalive          prevent timeout (needs pool support)\n\
   -r, --retries=N          number of times to retry before switch to backup server (default: 1)\n\
   -R, --retry-pause=N      time to pause between retries (default: 1 second)\n\

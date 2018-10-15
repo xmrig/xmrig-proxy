@@ -6,10 +6,9 @@ option(WITH_GOOGLE_BREAKPAD "Use Google Breakpad"     OFF)
 option(WITH_DEBUG_LOG       "Enable debug log output" OFF)
 option(WITH_HTTPD           "HTTP REST API"           ON)
 option(WITH_TLS             "Enable OpenSSL support"  ON)
-
+option(WITH_REDIS           "REDIS"               ON)
 
 include (CheckIncludeFile)
-
 
 set(HEADERS
     src/3rdparty/align.h
@@ -51,6 +50,7 @@ set(HEADERS
     src/interfaces/ISplitter.h
     src/log/AccessLog.h
     src/log/ShareLog.h
+    src/log/RedisLog.h
     src/net/JobResult.h
     src/net/strategies/DonateStrategy.h
     src/proxy/Addr.h
@@ -110,6 +110,7 @@ set(SOURCES
     src/core/Controller.cpp
     src/log/AccessLog.cpp
     src/log/ShareLog.cpp
+    src/log/RedisLog.cpp
     src/net/JobResult.cpp
     src/net/strategies/DonateStrategy.cpp
     src/proxy/Counters.cpp
@@ -275,6 +276,13 @@ else()
     add_definitions(/DXMRIG_NO_API)
 endif()
 
+if (WITH_REDIS)
+    find_package(EREDIS REQUIRED)
+
+    include_directories(${EREDIS_INCLUDE_DIR})
+else()
+    add_definitions(/DXMRIG_NO_REDIS)
+endif()
 if (WITH_DEBUG_LOG)
     add_definitions(/DAPP_DEBUG)
 endif()
@@ -284,4 +292,4 @@ include_directories(src/3rdparty)
 include_directories(${UV_INCLUDE_DIR})
 
 add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_SYSLOG} ${HTTPD_SOURCES} ${TLS_SOURCES})
-target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENSSL_LIBRARIES} ${UV_LIBRARIES} ${MHD_LIBRARY} ${EXTRA_LIBS} ${GOOGLE_BREAKPAD_LIBS})
+target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENSSL_LIBRARIES} ${UV_LIBRARIES} ${MHD_LIBRARY} ${EXTRA_LIBS} ${GOOGLE_BREAKPAD_LIBS} ${EREDIS_LIBRARIES})

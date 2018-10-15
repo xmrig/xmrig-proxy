@@ -68,6 +68,7 @@ public:
     void tick(uint64_t ticks);
 
     inline const std::vector<Worker> &workers() const { return m_workers; }
+    const Worker *workerByMiner(const Miner *miner);
     inline Mode mode() const                          { return m_mode; }
 
     static const char *modeName(Mode mode);
@@ -82,13 +83,13 @@ protected:
 private:
     inline bool isEnabled() const { return m_mode != None; }
 
-    bool indexByMiner(const Miner *miner, size_t *index) const;
     const char *nameByMiner(const Miner *miner) const;
     size_t add(const Miner *miner);
     void accept(const AcceptEvent *event);
     void login(const LoginEvent *event);
     void reject(const SubmitEvent *event);
     void remove(const CloseEvent *event);
+    bool indexByMiner(const Miner *miner, size_t *index) const;
 
     Mode m_mode;
     std::map<int64_t, size_t> m_miners;

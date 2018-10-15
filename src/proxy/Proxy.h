@@ -48,6 +48,9 @@ class ShareLog;
 class Url;
 class Workers;
 
+#ifndef XMRIG_NO_REDIS
+class RedisLog;
+#endif
 
 namespace xmrig {
     class Controller;
@@ -97,6 +100,9 @@ private:
     Miners *m_miners;
     ProxyDebug *m_debug;
     ShareLog *m_shareLog;
+#ifndef XMRIG_NO_REDIS
+    RedisLog *m_redisLog;
+#endif
     Stats m_stats;
     std::vector<Server*> m_servers;
     uint64_t m_ticks;

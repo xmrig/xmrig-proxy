@@ -96,8 +96,8 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("background",   isBackground(), allocator);
 
     Value bind(kArrayType);
-    for (const Addr &addr : m_addrs) {
-        bind.PushBack(StringRef(addr.addr()), allocator);
+    for (const xmrig::BindHost &host : m_bind) {
+        bind.PushBack(host.toJSON(doc), allocator);
     }
 
     doc.AddMember("bind",         bind, allocator);
@@ -146,9 +146,9 @@ bool xmrig::Config::finalize()
         return false;
     }
 
-    if (m_addrs.empty()) {
-        m_addrs.push_back(Addr("0.0.0.0:3333"));
-        m_addrs.push_back(Addr("[::]:3333"));
+    if (m_bind.empty()) {
+        m_bind.push_back(xmrig::BindHost("0.0.0.0", 3333, 4));
+        m_bind.push_back(xmrig::BindHost("::", 3333, 6));
     }
 
     return true;
@@ -196,9 +196,9 @@ bool xmrig::Config::parseString(int key, const char *arg)
 
     case BindKey: /* --bind */
         {
-            Addr addr(arg);
-            if (addr.isValid()) {
-                m_addrs.push_back(std::move(addr));
+            xmrig::BindHost host(arg);
+            if (host.isValid()) {
+                m_bind.push_back(std::move(host));
             }
         }
         break;
@@ -262,11 +262,15 @@ void xmrig::Config::parseJSON(const rapidjson::Document &doc)
     const rapidjson::Value &bind = doc["bind"];
     if (bind.IsArray()) {
         for (const rapidjson::Value &value : bind.GetArray()) {
-            if (!value.IsString()) {
-                continue;
+            if (value.IsObject()) {
+                xmrig::BindHost host(value);
+                if (host.isValid()) {
+                    m_bind.push_back(std::move(host));
+                }
             }
-
-            parseString(BindKey, value.GetString());
+            else if (value.IsString()) {
+                parseString(BindKey, value.GetString());
+            }
         }
     }
 }

@@ -53,7 +53,7 @@ set(HEADERS
     src/log/ShareLog.h
     src/net/JobResult.h
     src/net/strategies/DonateStrategy.h
-    src/proxy/Addr.h
+    src/proxy/BindHost.h
     src/proxy/Counters.h
     src/proxy/CustomDiff.h
     src/proxy/Error.h
@@ -112,6 +112,7 @@ set(SOURCES
     src/log/ShareLog.cpp
     src/net/JobResult.cpp
     src/net/strategies/DonateStrategy.cpp
+    src/proxy/BindHost.cpp
     src/proxy/Counters.cpp
     src/proxy/CustomDiff.cpp
     src/proxy/Error.cpp

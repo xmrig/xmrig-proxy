@@ -23,29 +23,29 @@
 
 
 #include "common/log/Log.h"
-#include "proxy/Addr.h"
+#include "proxy/BindHost.h"
 #include "proxy/events/ConnectionEvent.h"
 #include "proxy/Miner.h"
 #include "proxy/Server.h"
 
 
-Server::Server(const Addr &addr, bool nicehash) :
+Server::Server(const xmrig::BindHost &host, bool nicehash) :
     m_nicehash(nicehash),
     m_version(0),
-    m_port(addr.port()),
-    m_ip(addr.ip())
+    m_port(host.port()),
+    m_host(host.host())
 {
     uv_tcp_init(uv_default_loop(), &m_server);
     m_server.data = this;
 
     uv_tcp_nodelay(&m_server, 1);
 
-    if (addr.isIPv6() && uv_ip6_addr(m_ip.data(), m_port, &m_addr6) == 0) {
+    if (host.isIPv6() && uv_ip6_addr(m_host.data(), m_port, &m_addr6) == 0) {
         m_version = 6;
         return;
     }
 
-    if (uv_ip4_addr(m_ip.data(), m_port, &m_addr) == 0) {
+    if (uv_ip4_addr(m_host.data(), m_port, &m_addr) == 0) {
         m_version = 4;
     }
 }
@@ -62,7 +62,7 @@ bool Server::bind()
 
     const int r = uv_listen(reinterpret_cast<uv_stream_t*>(&m_server), 511, Server::onConnection);
     if (r) {
-        LOG_ERR("[%s:%u] listen error: \"%s\"", m_ip.data(), m_port, uv_strerror(r));
+        LOG_ERR("[%s:%u] listen error: \"%s\"", m_host.data(), m_port, uv_strerror(r));
         return false;
     }
 
@@ -73,7 +73,7 @@ bool Server::bind()
 void Server::create(uv_stream_t *server, int status)
 {
     if (status < 0) {
-        LOG_ERR("[%s:%u] new connection error: \"%s\"", m_ip.data(), m_port, uv_strerror(status));
+        LOG_ERR("[%s:%u] new connection error: \"%s\"", m_host.data(), m_port, uv_strerror(status));
         return;
     }
 

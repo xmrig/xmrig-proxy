@@ -31,7 +31,7 @@
 
 #include "common/config/CommonConfig.h"
 #include "common/utils/c_str.h"
-#include "proxy/Addr.h"
+#include "proxy/BindHost.h"
 #include "proxy/workers/Workers.h"
 #include "rapidjson/fwd.h"
 
@@ -78,7 +78,7 @@ public:
     inline bool isDebug() const                    { return m_debug; }
     inline bool isVerbose() const                  { return m_verbose; }
     inline const char *accessLog() const           { return m_accessLog.data(); }
-    inline const std::vector<Addr> &addrs() const  { return m_addrs; }
+    inline const xmrig::BindHosts &bind() const    { return m_bind; }
     inline int mode() const                        { return m_mode; }
     inline int reuseTimeout() const                { return m_reuseTimeout; }
     inline uint64_t diff() const                   { return m_diff; }
@@ -103,9 +103,9 @@ private:
 
     int m_mode;
     int m_reuseTimeout;
-    std::vector<Addr> m_addrs;
     uint64_t m_diff;
     Workers::Mode m_workersMode;
+    xmrig::BindHosts m_bind;
     xmrig::c_str m_accessLog;
 };
 

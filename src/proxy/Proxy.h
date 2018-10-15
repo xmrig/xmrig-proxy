@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __PROXY_H__
-#define __PROXY_H__
+#ifndef XMRIG_PROXY_H
+#define XMRIG_PROXY_H
 
 
 #include <vector>
@@ -51,6 +51,7 @@ class Workers;
 
 namespace xmrig {
     class Controller;
+    class BindHost;
 }
 
 
@@ -82,7 +83,7 @@ private:
     constexpr static int kGCInterval    = 60;
 
     bool isColors() const;
-    void bind(const Addr &addr);
+    void bind(const xmrig::BindHost &host);
     void gc();
     void print();
     void tick();
@@ -106,4 +107,4 @@ private:
 };
 
 
-#endif /* __PROXY_H__ */
+#endif /* XMRIG_PROXY_H */

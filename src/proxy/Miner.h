@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __MINER_H__
-#define __MINER_H__
+#ifndef XMRIG_MINER_H
+#define XMRIG_MINER_H
 
 
 #include <algorithm>
@@ -30,6 +30,7 @@
 
 
 #include "common/net/Storage.h"
+#include "common/utils/c_str.h"
 #include "rapidjson/fwd.h"
 
 
@@ -54,7 +55,11 @@ public:
     void setJob(Job &job);
     void success(int64_t id, const char *status);
 
+    inline const char *agent() const                  { return m_agent.data(); }
     inline const char *ip() const                     { return m_ip; }
+    inline const char *password() const               { return m_password.data(); }
+    inline const char *rigId(bool safe = false) const { return (safe ? (m_rigId.size() > 0 ? m_rigId.data() : m_user.data()) : m_rigId.data()); }
+    inline const char *user() const                   { return m_user.data(); }
     inline int64_t id() const                         { return m_id; }
     inline ssize_t mapperId() const                   { return m_mapperId; }
     inline State state() const                        { return m_state; }
@@ -77,7 +82,6 @@ private:
     bool parseRequest(int64_t id, const char *method, const rapidjson::Value &params);
     void heartbeat();
     void parse(char *line, size_t len);
-    void send(const char *data, int size);
     void send(int size);
     void setState(State state);
     void shutdown(bool had_error);
@@ -109,8 +113,12 @@ private:
     uintptr_t m_key;
     uv_buf_t m_recvBuf;
     uv_tcp_t m_socket;
+    xmrig::c_str m_agent;
+    xmrig::c_str m_password;
+    xmrig::c_str m_rigId;
+    xmrig::c_str m_user;
 
     static xmrig::Storage<Miner> m_storage;
 };
 
-#endif /* __MINER_H__ */
+#endif /* XMRIG_MINER_H */

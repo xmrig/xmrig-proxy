@@ -32,7 +32,6 @@
 #include "core/Controller.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/Login.h"
-#include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
 #include "proxy/Error.h"
 
@@ -94,7 +93,7 @@ void Login::login(LoginEvent *event)
 void Login::reject(LoginEvent *event, const char *message)
 {
     event->reject();
-    event->miner()->replyWithError(event->request.id(), message);
+    event->miner()->replyWithError(event->loginId, message);
     event->miner()->close();
 
     if (!m_controller->config()->isVerbose()) {
@@ -103,5 +102,5 @@ void Login::reject(LoginEvent *event, const char *message)
 
     LOG_INFO(m_controller->config()->isColors() ? RED_BOLD("deny") " " WHITE_BOLD("\"%s\"") " from " CYAN_BOLD("%s") WHITE_BOLD(" (%s)") " reason " RED("\"%s\"")
                                                 : "deny \"%s\" from %s (%s) reason \"%s\"",
-             event->request.rigId(), event->miner()->ip(), event->request.agent(), message);
+             event->miner()->rigId(true), event->miner()->ip(), event->miner()->agent(), message);
 }

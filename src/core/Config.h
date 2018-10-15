@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __CONFIG_H__
-#define __CONFIG_H__
+#ifndef XMRIG_CONFIG_H
+#define XMRIG_CONFIG_H
 
 
 #include <stdint.h>
@@ -32,6 +32,7 @@
 #include "common/config/CommonConfig.h"
 #include "common/utils/c_str.h"
 #include "proxy/Addr.h"
+#include "proxy/workers/Workers.h"
 #include "rapidjson/fwd.h"
 
 
@@ -59,8 +60,6 @@ class IWatcherListener;
  */
 class Config : public CommonConfig
 {
-    friend class ConfigLoader;
-
 public:
     enum Mode {
         NICEHASH_MODE,
@@ -78,7 +77,6 @@ public:
 
     inline bool isDebug() const                    { return m_debug; }
     inline bool isVerbose() const                  { return m_verbose; }
-    inline bool isWorkers() const                  { return m_workers; }
     inline const char *accessLog() const           { return m_accessLog.data(); }
     inline const std::vector<Addr> &addrs() const  { return m_addrs; }
     inline int mode() const                        { return m_mode; }
@@ -87,6 +85,7 @@ public:
     inline void setColors(bool colors)             { m_colors = colors; }
     inline void setVerbose(bool verbose)           { m_verbose = verbose; }
     inline void toggleVerbose()                    { m_verbose = !m_verbose; }
+    inline Workers::Mode workersMode() const       { return m_workersMode; }
 
 protected:
     bool finalize() override;
@@ -102,15 +101,15 @@ private:
     bool m_ready;
     bool m_verbose;
 
-    bool m_workers;
     int m_mode;
     int m_reuseTimeout;
     std::vector<Addr> m_addrs;
     uint64_t m_diff;
+    Workers::Mode m_workersMode;
     xmrig::c_str m_accessLog;
 };
 
 
 } /* namespace xmrig */
 
-#endif /* __CONFIG_H__ */
+#endif /* XMRIG_CONFIG_H */

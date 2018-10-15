@@ -22,8 +22,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __CONFIGLOADER_PLATFORM_H__
-#define __CONFIGLOADER_PLATFORM_H__
+#ifndef XMRIG_CONFIGLOADER_PLATFORM_H
+#define XMRIG_CONFIGLOADER_PLATFORM_H
 
 
 #ifdef _MSC_VER
@@ -33,8 +33,8 @@
 #endif
 
 
+#include "common/interfaces/IConfig.h"
 #include "version.h"
-#include "interfaces/IConfig.h"
 
 
 namespace xmrig {
@@ -51,6 +51,8 @@ Options:\n\
   -u, --user=USERNAME      username for mining server\n\
   -p, --pass=PASSWORD      password for mining server\n\
       --rig-id=ID          rig identifier for pool-side statistics (needs pool support)\n\
+      --tls                enable SSL/TLS support (needs pool support)\n\
+      --tls-fingerprint=F  pool TLS certificate fingerprint, if set enable strict certificate pinning\n\
   -k, --keepalive          prevent timeout (needs pool support)\n\
   -r, --retries=N          number of times to retry before switch to backup server (default: 1)\n\
   -R, --retry-pause=N      time to pause between retries (default: 1 second)\n\
@@ -74,8 +76,9 @@ Options:\n\
   -A  --access-log-file=N  log all workers access to a file\n\
       --api-port=N         port for the miner API\n\
       --api-access-token=T use Bearer access token for API\n\
-      --api-worker-id=ID   custom worker-id for API\n\
-      --api-no-ipv6        disable IPv6 support for API\n\
+      --api-worker-id=ID   custom worker-id (instance name) for API\n\
+      --api-id=ID          custom instance ID for API\n\
+      --api-ipv6           enable IPv6 support for API\n\
       --api-no-restricted  enable full remote access (only if API token set)\n\
   -h, --help               display this help and exit\n\
   -V, --version            output version information and exit\n\
@@ -89,10 +92,11 @@ static struct option const options[] = {
     { "access-log-file",   1, nullptr, xmrig::IConfig::AccessLogFileKey  },
     { "algo",              1, nullptr, xmrig::IConfig::AlgorithmKey      },
     { "api-access-token",  1, nullptr, xmrig::IConfig::ApiAccessTokenKey },
-    { "api-no-ipv6",       0, nullptr, xmrig::IConfig::ApiIPv6Key        },
+    { "api-ipv6",          0, nullptr, xmrig::IConfig::ApiIPv6Key        },
     { "api-no-restricted", 0, nullptr, xmrig::IConfig::ApiRestrictedKey  },
     { "api-port",          1, nullptr, xmrig::IConfig::ApiPort           },
     { "api-worker-id",     1, nullptr, xmrig::IConfig::ApiWorkerIdKey    },
+    { "api-id",            1, nullptr, xmrig::IConfig::ApiIdKey          },
     { "background",        0, nullptr, xmrig::IConfig::BackgroundKey     },
     { "bind",              1, nullptr, xmrig::IConfig::BindKey           },
     { "coin",              1, nullptr, xmrig::IConfig::CoinKey           },
@@ -106,6 +110,7 @@ static struct option const options[] = {
     { "no-color",          0, nullptr, xmrig::IConfig::ColorKey          },
     { "no-watch",          0, nullptr, xmrig::IConfig::WatchKey          },
     { "no-workers",        0, nullptr, xmrig::IConfig::WorkersKey        },
+    { "workers",           1, nullptr, xmrig::IConfig::WorkersAdvKey     },
     { "pass",              1, nullptr, xmrig::IConfig::PasswordKey       },
     { "pool-coin",         1, nullptr, xmrig::IConfig::PoolCoinKey       },
     { "retries",           1, nullptr, xmrig::IConfig::RetriesKey        },
@@ -121,7 +126,9 @@ static struct option const options[] = {
     { "reuse-timeout",     1, nullptr, xmrig::IConfig::ReuseTimeoutKey   },
     { "mode",              1, nullptr, xmrig::IConfig::ModeKey           },
     { "rig-id",            1, nullptr, xmrig::IConfig::RigIdKey          },
-    { 0, 0, 0, 0 }
+    { "tls",               0, nullptr, xmrig::IConfig::TlsKey            },
+    { "tls-fingerprint",   1, nullptr, xmrig::IConfig::FingerprintKey    },
+    { nullptr,             0, nullptr, 0 }
 };
 
 
@@ -141,22 +148,24 @@ static struct option const config_options[] = {
     { "user-agent",       1, nullptr, xmrig::IConfig::UserAgentKey      },
     { "verbose",          0, nullptr, xmrig::IConfig::VerboseKey        },
     { "watch",            0, nullptr, xmrig::IConfig::WatchKey          },
-    { "workers",          0, nullptr, xmrig::IConfig::WorkersKey        },
+    { "workers",          1, nullptr, xmrig::IConfig::WorkersAdvKey     },
     { "reuse-timeout",    1, nullptr, xmrig::IConfig::ReuseTimeoutKey   },
     { "mode",             1, nullptr, xmrig::IConfig::ModeKey           },
-    { 0, 0, 0, 0 }
+    { nullptr,            0, nullptr, 0 }
 };
 
 
 static struct option const pool_options[] = {
-    { "url",           1, nullptr, xmrig::IConfig::UrlKey        },
-    { "pass",          1, nullptr, xmrig::IConfig::PasswordKey   },
-    { "user",          1, nullptr, xmrig::IConfig::UserKey       },
-    { "userpass",      1, nullptr, xmrig::IConfig::UserpassKey   },
-    { "keepalive",     2, nullptr, xmrig::IConfig::KeepAliveKey  },
-    { "variant",       1, nullptr, xmrig::IConfig::VariantKey    },
-    { "rig-id",        1, nullptr, xmrig::IConfig::RigIdKey      },
-    { 0, 0, 0, 0 }
+    { "url",              1, nullptr, xmrig::IConfig::UrlKey         },
+    { "pass",             1, nullptr, xmrig::IConfig::PasswordKey    },
+    { "user",             1, nullptr, xmrig::IConfig::UserKey        },
+    { "userpass",         1, nullptr, xmrig::IConfig::UserpassKey    },
+    { "keepalive",        2, nullptr, xmrig::IConfig::KeepAliveKey   },
+    { "variant",          1, nullptr, xmrig::IConfig::VariantKey     },
+    { "rig-id",           1, nullptr, xmrig::IConfig::RigIdKey       },
+    { "tls",              0, nullptr, xmrig::IConfig::TlsKey         },
+    { "tls-fingerprint",  1, nullptr, xmrig::IConfig::FingerprintKey },
+    { nullptr,            0, nullptr, 0 }
 };
 
 
@@ -166,10 +175,11 @@ static struct option const api_options[] = {
     { "worker-id",     1, nullptr, xmrig::IConfig::ApiWorkerIdKey    },
     { "ipv6",          0, nullptr, xmrig::IConfig::ApiIPv6Key        },
     { "restricted",    0, nullptr, xmrig::IConfig::ApiRestrictedKey  },
-    { 0, 0, 0, 0 }
+    { "id",            1, nullptr, xmrig::IConfig::ApiIdKey          },
+    { nullptr,         0, nullptr, 0 }
 };
 
 
 } /* namespace xmrig */
 
-#endif /* __CONFIGLOADER_PLATFORM_H__ */
+#endif /* XMRIG_CONFIGLOADER_PLATFORM_H */

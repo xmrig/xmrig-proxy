@@ -2,10 +2,11 @@ cmake_minimum_required(VERSION 2.8)
 project(xmrig-proxy)
 
 
-option(WITH_GOOGLE_BREAKPAD "Use Google Breakpad" OFF)
-option(WITH_HTTPD           "HTTP REST API"       ON)
+option(WITH_GOOGLE_BREAKPAD "Use Google Breakpad"     OFF)
+option(WITH_DEBUG_LOG       "Enable debug log output" OFF)
+option(WITH_HTTPD           "HTTP REST API"           ON)
+option(WITH_TLS             "Enable OpenSSL support"  ON)
 option(WITH_REDIS           "REDIS"               ON)
-
 
 include (CheckIncludeFile)
 
@@ -18,6 +19,16 @@ set(HEADERS
     src/common/Console.h
     src/common/crypto/Algorithm.h
     src/common/crypto/keccak.h
+    src/common/interfaces/IClientListener.h
+    src/common/interfaces/IConfig.h
+    src/common/interfaces/IConfigCreator.h
+    src/common/interfaces/IConsoleListener.h
+    src/common/interfaces/IControllerListener.h
+    src/common/interfaces/ILogBackend.h
+    src/common/interfaces/IStrategy.h
+    src/common/interfaces/IStrategyListener.h
+    src/common/interfaces/IWatcherListener.h
+    src/common/log/BasicLog.h
     src/common/log/ConsoleLog.h
     src/common/log/FileLog.h
     src/common/log/Log.h
@@ -34,18 +45,9 @@ set(HEADERS
     src/core/ConfigLoader_platform.h
     src/core/Controller.h
     src/donate.h
-    src/interfaces/IClientListener.h
-    src/interfaces/IConfig.h
-    src/interfaces/IConfigCreator.h
-    src/interfaces/IConsoleListener.h
-    src/interfaces/IControllerListener.h
     src/interfaces/IEvent.h
     src/interfaces/IEventListener.h
-    src/interfaces/ILogBackend.h
     src/interfaces/ISplitter.h
-    src/interfaces/IStrategy.h
-    src/interfaces/IStrategyListener.h
-    src/interfaces/IWatcherListener.h
     src/log/AccessLog.h
     src/log/ShareLog.h
     src/log/RedisLog.h
@@ -93,6 +95,7 @@ set(SOURCES
     src/common/Console.cpp
     src/common/crypto/Algorithm.cpp
     src/common/crypto/keccak.cpp
+    src/common/log/BasicLog.cpp
     src/common/log/ConsoleLog.cpp
     src/common/log/FileLog.cpp
     src/common/log/Log.cpp
@@ -165,7 +168,7 @@ else()
     if (CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
         set(EXTRA_LIBS pthread)
     else()
-        set(EXTRA_LIBS pthread uuid)
+        set(EXTRA_LIBS pthread uuid rt dl)
     endif()
 endif()
 
@@ -173,7 +176,7 @@ add_definitions(/DXMRIG_PROXY_PROJECT)
 add_definitions(/DUNICODE)
 add_definitions(/D__STDC_FORMAT_MACROS)
 add_definitions(/DAPP_DEVEL)
-#add_definitions(/DAPP_DEBUG)
+add_definitions(/DXMRIG_NO_ASM)
 
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$" AND CMAKE_SIZEOF_VOID_P EQUAL 8)
     add_definitions(/DRAPIDJSON_SSE2)
@@ -191,11 +194,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 11)
 
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_definitions(/DNDEBUG)
+endif()
+
 # https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_COMPILER_ID.html
 if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
 
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-class-memaccess")
 
     if (WIN32)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
@@ -226,6 +233,8 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES Clang)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-overloaded-virtual")
 
 endif()
+
+include(cmake/OpenSSL.cmake)
 
 CHECK_INCLUDE_FILE (syslog.h HAVE_SYSLOG_H)
 if (HAVE_SYSLOG_H)
@@ -261,10 +270,11 @@ if (WITH_HTTPD)
         message(FATAL_ERROR "microhttpd NOT found: use `-DWITH_HTTPD=OFF` to build without http deamon support")
     endif()
 else()
+    set(HTTPD_SOURCES "")
+    set(MHD_LIBRARY "")
     add_definitions(/DXMRIG_NO_HTTPD)
     add_definitions(/DXMRIG_NO_API)
 endif()
-
 
 if (WITH_REDIS)
     find_package(EREDIS REQUIRED)
@@ -273,13 +283,13 @@ if (WITH_REDIS)
 else()
     add_definitions(/DXMRIG_NO_REDIS)
 endif()
-
-
-
+if (WITH_DEBUG_LOG)
+    add_definitions(/DAPP_DEBUG)
+endif()
 
 include_directories(src)
 include_directories(src/3rdparty)
 include_directories(${UV_INCLUDE_DIR})
 
-add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_SYSLOG} ${HTTPD_SOURCES})
-target_link_libraries(${CMAKE_PROJECT_NAME} ${UV_LIBRARIES} ${MHD_LIBRARY} ${EXTRA_LIBS} ${GOOGLE_BREAKPAD_LIBS} ${EREDIS_LIBRARIES})
+add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_SYSLOG} ${HTTPD_SOURCES} ${TLS_SOURCES})
+target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENSSL_LIBRARIES} ${UV_LIBRARIES} ${MHD_LIBRARY} ${EXTRA_LIBS} ${GOOGLE_BREAKPAD_LIBS} ${EREDIS_LIBRARIES})

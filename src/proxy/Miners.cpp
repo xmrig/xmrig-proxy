@@ -45,6 +45,19 @@ Miners::~Miners()
 }
 
 
+std::vector<Miner*> Miners::miners() const
+{
+    std::vector<Miner*> miners;
+    miners.reserve(m_miners.size());
+
+    for (const auto &s : m_miners) {
+       miners.push_back(s.second);
+    }
+
+    return miners;
+}
+
+
 void Miners::onEvent(IEvent *event)
 {
     switch (event->type())

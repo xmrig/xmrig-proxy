@@ -21,13 +21,12 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __LOGINEVENT_H__
-#define __LOGINEVENT_H__
+#ifndef XMRIG_LOGINEVENT_H
+#define XMRIG_LOGINEVENT_H
 
 
 #include "common/crypto/Algorithm.h"
 #include "proxy/events/MinerEvent.h"
-#include "proxy/LoginRequest.h"
 
 
 class LoginEvent : public MinerEvent
@@ -39,16 +38,16 @@ public:
     }
 
 
+    const int64_t loginId;
     const xmrig::Algorithms &algorithms;
-    LoginRequest request;
 
 
 protected:
     inline LoginEvent(Miner *miner, int64_t id, const char *login, const char *pass, const char *agent, const char *rigId, const xmrig::Algorithms &algorithms)
         : MinerEvent(LoginType, miner),
-          algorithms(algorithms),
-          request(id, login, pass, agent, rigId)
+          loginId(id),
+          algorithms(algorithms)
     {}
 };
 
-#endif /* __LOGINEVENT_H__ */
+#endif /* XMRIG_LOGINEVENT_H */

@@ -25,7 +25,7 @@
 #define __APIROUTER_H__
 
 
-#include "interfaces/IControllerListener.h"
+#include "common/interfaces/IControllerListener.h"
 #include "proxy/StatsData.h"
 #include "rapidjson/fwd.h"
 
@@ -54,10 +54,11 @@ protected:
 
 private:
     void finalize(xmrig::HttpReply &reply, rapidjson::Document &doc) const;
-    void genId();
+    void genId(const char *id);
     void getHashrate(rapidjson::Document &doc) const;
     void getIdentify(rapidjson::Document &doc) const;
     void getMiner(rapidjson::Document &doc) const;
+    void getMiners(rapidjson::Document &doc) const;
     void getMinersSummary(rapidjson::Document &doc, bool advanced) const;
     void getResources(rapidjson::Document &doc) const;
     void getResults(rapidjson::Document &doc) const;
@@ -65,7 +66,7 @@ private:
     void setWorkerId(const char *id);
     void updateWorkerId(const char *id, const char *previousId);
 
-    char m_id[17];
+    char m_id[32];
     char m_workerId[128];
     xmrig::Controller *m_controller;
 };

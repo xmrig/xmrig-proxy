@@ -28,6 +28,7 @@
 
 #include "common/log/Log.h"
 #include "common/net/Job.h"
+#include "common/utils/timestamp.h"
 #include "net/JobResult.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"
@@ -35,7 +36,6 @@
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"
-#include "proxy/LoginRequest.h"
 #include "proxy/Miner.h"
 #include "proxy/Uuid.h"
 #include "rapidjson/document.h"
@@ -61,7 +61,7 @@ Miner::Miner(bool nicehash, bool ipv6) :
     m_diff(0),
     m_expire(uv_now(uv_default_loop()) + kLoginTimeout),
     m_rx(0),
-    m_timestamp(uv_now(uv_default_loop())),
+    m_timestamp(xmrig::currentMSecsSinceEpoch()),
     m_tx(0),
     m_fixedByte(0)
 {
@@ -172,9 +172,9 @@ void Miner::setJob(Job &job)
         }
 
         result.AddMember("extensions", extensions, allocator);
+        result.AddMember("status", "OK", allocator);
 
         doc.AddMember("result", result, allocator);
-        doc.AddMember("status", "OK", allocator);
     }
     else {
         doc.AddMember("method", "job", allocator);
@@ -226,7 +226,12 @@ bool Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value 
                 }
             }
 
-            LoginEvent::create(this, id, params["login"].GetString(), params["pass"].GetString(), params["agent"].GetString(), params["rigid"].GetString(), algorithms)->start();
+            m_user     = params["login"].GetString();
+            m_password = params["pass"].GetString();
+            m_agent    = params["agent"].GetString();
+            m_rigId    = params["rigid"].GetString();
+
+            LoginEvent::create(this, id, m_user.data(), m_password.data(), m_agent.data(), m_rigId.data(), algorithms)->start();
             return true;
         }
 
@@ -342,6 +347,8 @@ void Miner::send(int size)
     if (rc < 0) {
         return shutdown(true);
     }
+
+    m_tx += size;
 }
 
 

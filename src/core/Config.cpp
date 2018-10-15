@@ -53,10 +53,10 @@ xmrig::Config::Config() : xmrig::CommonConfig(),
     m_debug(false),
     m_ready(false),
     m_verbose(false),
-    m_workers(true),
     m_mode(NICEHASH_MODE),
     m_reuseTimeout(0),
-    m_diff(0)
+    m_diff(0),
+    m_workersMode(Workers::RigID)
 {
 }
 
@@ -87,6 +87,7 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     Value api(kObjectType);
     api.AddMember("port",         apiPort(), allocator);
     api.AddMember("access-token", apiToken() ? Value(StringRef(apiToken())).Move() : Value(kNullType).Move(), allocator);
+    api.AddMember("id",           apiId() ? Value(StringRef(apiId())).Move() : Value(kNullType).Move(), allocator);
     api.AddMember("worker-id",    apiWorkerId() ? Value(StringRef(apiWorkerId())).Move() : Value(kNullType).Move(), allocator);
     api.AddMember("ipv6",         isApiIPv6(), allocator);
     api.AddMember("restricted",   isApiRestricted(), allocator);
@@ -125,7 +126,7 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
 
     doc.AddMember("verbose",      isVerbose(), allocator);
     doc.AddMember("watch",        m_watch,     allocator);
-    doc.AddMember("workers",      isWorkers(), allocator);
+    doc.AddMember("workers",      Workers::modeToJSON(workersMode()), allocator);
 }
 
 
@@ -170,7 +171,8 @@ bool xmrig::Config::parseBoolean(int key, bool enable)
         break;
 
     case WorkersKey: /* workers */
-        m_workers = enable;
+    case WorkersAdvKey:
+        m_workersMode = enable ? Workers::RigID : Workers::None;
         break;
 
     default:
@@ -214,6 +216,10 @@ bool xmrig::Config::parseString(int key, const char *arg)
 
     case WorkersKey: /* --no-workers */
         return parseBoolean(key, false);
+
+    case WorkersAdvKey:
+        m_workersMode = Workers::parseMode(arg);
+        break;
 
     case CustomDiffKey: /* --custom-diff */
         return parseUint64(key, strtol(arg, nullptr, 10));

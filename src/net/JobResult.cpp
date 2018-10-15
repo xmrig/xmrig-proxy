@@ -38,6 +38,14 @@ JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, const cha
     jobId(jobId, 3),
     m_actualDiff(0)
 {
+    if (result && strlen(result) == 64) {
+        uint64_t target = 0;
+        Job::fromHex(result + 48, 16, reinterpret_cast<unsigned char*>(&target));
+
+        if (target > 0) {
+            m_actualDiff = Job::toDiff(target);
+        }
+    }
 }
 
 
@@ -54,22 +62,9 @@ bool JobResult::isCompatible(uint8_t fixedByte) const
 
 bool JobResult::isValid() const
 {
-    if (!nonce || !result) {
+    if (!nonce || m_actualDiff == 0) {
         return false;
     }
 
-    return strlen(nonce) == 8 && jobId.isValid() && strlen(result) == 64;
-}
-
-
-uint64_t JobResult::actualDiff() const
-{
-    if (!m_actualDiff) {
-        uint8_t data[32];
-        Job::fromHex(result, sizeof(data) * 2, data);
-
-        m_actualDiff = Job::toDiff(reinterpret_cast<const uint64_t*>(data)[3]);
-    }
-
-    return m_actualDiff;
+    return strlen(nonce) == 8 && jobId.isValid();
 }

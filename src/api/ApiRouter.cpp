@@ -40,6 +40,7 @@
 #include "common/Platform.h"
 #include "core/Config.h"
 #include "core/Controller.h"
+#include "proxy/Miner.h"
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/stringbuffer.h"
@@ -60,7 +61,7 @@ ApiRouter::ApiRouter(xmrig::Controller *controller) :
     m_controller(controller)
 {
     setWorkerId(controller->config()->apiWorkerId());
-    genId();
+    genId(controller->config()->apiId());
 
     controller->addListener(this);
 }
@@ -79,6 +80,12 @@ void ApiRouter::get(const xmrig::HttpRequest &req, xmrig::HttpReply &reply) cons
     if (req.match("/1/workers") || req.match("/workers.json")) {
         getHashrate(doc);
         getWorkers(doc);
+
+        return finalize(reply, doc);
+    }
+
+    if (req.match("/1/miners")) {
+        getMiners(doc);
 
         return finalize(reply, doc);
     }
@@ -139,9 +146,14 @@ void ApiRouter::finalize(xmrig::HttpReply &reply, rapidjson::Document &doc) cons
 }
 
 
-void ApiRouter::genId()
+void ApiRouter::genId(const char *id)
 {
     memset(m_id, 0, sizeof(m_id));
+
+    if (id && strlen(id) > 0) {
+        strncpy(m_id, id, sizeof(m_id) - 1);
+        return;
+    }
 
     uv_interface_address_t *interfaces;
     int count = 0;
@@ -154,11 +166,13 @@ void ApiRouter::genId()
         if (!interfaces[i].is_internal && interfaces[i].address.address4.sin_family == AF_INET) {
             uint8_t hash[200];
             const size_t addrSize = sizeof(interfaces[i].phys_addr);
-            const size_t inSize   = strlen(APP_KIND) + addrSize;
+            const size_t inSize   = strlen(APP_KIND) + addrSize + sizeof(uint16_t);
+            const uint16_t port   = static_cast<uint16_t>(m_controller->config()->apiPort());
 
             uint8_t *input = new uint8_t[inSize]();
-            memcpy(input, interfaces[i].phys_addr, addrSize);
-            memcpy(input + addrSize, APP_KIND, strlen(APP_KIND));
+            memcpy(input, &port, sizeof(uint16_t));
+            memcpy(input + sizeof(uint16_t), interfaces[i].phys_addr, addrSize);
+            memcpy(input + sizeof(uint16_t) + addrSize, APP_KIND, strlen(APP_KIND));
 
             xmrig::keccak(input, inSize, hash);
             Job::toHex(hash, 8, m_id);
@@ -204,6 +218,7 @@ void ApiRouter::getMiner(rapidjson::Document &doc) const
 
     doc.AddMember("version",      APP_VERSION, allocator);
     doc.AddMember("kind",         APP_KIND, allocator);
+    doc.AddMember("algo",         rapidjson::StringRef(m_controller->config()->algorithm().name()), allocator);
     doc.AddMember("mode",         rapidjson::StringRef(m_controller->config()->modeName()), allocator);
     doc.AddMember("ua",           rapidjson::StringRef(Platform::userAgent()), allocator);
     doc.AddMember("uptime",       stats.uptime(), allocator);
@@ -218,6 +233,52 @@ void ApiRouter::getMiner(rapidjson::Document &doc) const
 }
 
 
+void ApiRouter::getMiners(rapidjson::Document &doc) const
+{
+    using namespace rapidjson;
+
+    auto &allocator = doc.GetAllocator();
+    auto list       = m_controller->miners();
+
+    Value miners(kArrayType);
+
+    for (const Miner *miner : list) {
+        if (miner->mapperId() == -1) {
+            continue;
+        }
+
+        Value value(kArrayType);
+        value.PushBack(miner->id(), allocator);
+        value.PushBack(StringRef(miner->ip()), allocator);
+        value.PushBack(miner->tx(), allocator);
+        value.PushBack(miner->rx(), allocator);
+        value.PushBack(miner->state(), allocator);
+        value.PushBack(miner->diff(), allocator);
+        value.PushBack(miner->user()     ? Value(StringRef(miner->user()))     : Value(kNullType), allocator);
+        value.PushBack(miner->password() ? Value(StringRef(miner->password())) : Value(kNullType), allocator);
+        value.PushBack(miner->rigId()    ? Value(StringRef(miner->rigId()))    : Value(kNullType), allocator);
+        value.PushBack(miner->agent()    ? Value(StringRef(miner->agent()))    : Value(kNullType), allocator);
+
+        miners.PushBack(value, allocator);
+    }
+
+    Value format(kArrayType);
+    format.PushBack("id", allocator);
+    format.PushBack("ip", allocator);
+    format.PushBack("tx", allocator);
+    format.PushBack("rx", allocator);
+    format.PushBack("state", allocator);
+    format.PushBack("diff", allocator);
+    format.PushBack("user", allocator);
+    format.PushBack("password", allocator);
+    format.PushBack("rig_id", allocator);
+    format.PushBack("agent", allocator);
+
+    doc.AddMember("format", format, allocator);
+    doc.AddMember("miners", miners, allocator);
+}
+
+
 void ApiRouter::getMinersSummary(rapidjson::Document &doc, bool advanced) const
 {
     auto &allocator = doc.GetAllocator();
@@ -228,7 +289,8 @@ void ApiRouter::getMinersSummary(rapidjson::Document &doc, bool advanced) const
     miners.AddMember("now", stats.miners, allocator);
     miners.AddMember("max", stats.maxMiners, allocator);
 
-    doc.AddMember("miners", miners, allocator);
+    doc.AddMember("miners",  miners, allocator);
+    doc.AddMember("workers", static_cast<uint64_t>(m_controller->workers().size()), allocator);
 
     if (advanced) {
         rapidjson::Value upstreams(rapidjson::kObjectType);
@@ -288,19 +350,17 @@ void ApiRouter::getResults(rapidjson::Document &doc) const
 
 void ApiRouter::getWorkers(rapidjson::Document &doc) const
 {
+    using namespace rapidjson;
+
     auto &allocator = doc.GetAllocator();
     auto &list      = m_controller->workers();
 
-    rapidjson::Value workers(rapidjson::kArrayType);
+    Value workers(kArrayType);
 
     for (const Worker &worker : list) {
-        if (worker.connections() == 0 && worker.lastHash() == 0) {
-            continue;
-        }
-
-         rapidjson::Value array(rapidjson::kArrayType);
-         array.PushBack(rapidjson::StringRef(worker.name()), allocator);
-         array.PushBack(rapidjson::StringRef(worker.ip()), allocator);
+         Value array(kArrayType);
+         array.PushBack(StringRef(worker.name()), allocator);
+         array.PushBack(StringRef(worker.ip()), allocator);
          array.PushBack(worker.connections(), allocator);
          array.PushBack(worker.accepted(), allocator);
          array.PushBack(worker.rejected(), allocator);
@@ -316,6 +376,7 @@ void ApiRouter::getWorkers(rapidjson::Document &doc) const
          workers.PushBack(array, allocator);
     }
 
+    doc.AddMember("mode", StringRef(Workers::modeName(m_controller->config()->workersMode())), allocator);
     doc.AddMember("workers", workers, allocator);
 }
 

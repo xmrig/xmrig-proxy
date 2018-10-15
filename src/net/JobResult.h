@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __JOBRESULT_H__
-#define __JOBRESULT_H__
+#ifndef XMRIG_JOBRESULT_H
+#define XMRIG_JOBRESULT_H
 
 
 #include <stdint.h>
@@ -48,7 +48,8 @@ public:
 
     bool isCompatible(uint8_t fixedByte) const;
     bool isValid() const;
-    uint64_t actualDiff() const;
+
+    inline uint64_t actualDiff() const { return m_actualDiff; }
 
     const char *nonce;
     const char *result;
@@ -58,7 +59,7 @@ public:
     xmrig::Id jobId;
 
 private:
-    mutable uint64_t m_actualDiff;
+    uint64_t m_actualDiff;
 };
 
-#endif /* __JOBRESULT_H__ */
+#endif /* XMRIG_JOBRESULT_H */

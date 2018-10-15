@@ -4,7 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
+ * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ *
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,31 +21,37 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __CONFIGCREATOR_H__
-#define __CONFIGCREATOR_H__
+
+#include <assert.h>
 
 
-#include "common/interfaces/IConfigCreator.h"
-#include "core/Config.h"
+#include "common/cpu/BasicCpuInfo.h"
+#include "common/cpu/Cpu.h"
 
 
-namespace xmrig {
+static xmrig::ICpuInfo *cpuInfo = nullptr;
 
 
-class IConfig;
-
-
-class ConfigCreator : public IConfigCreator
+xmrig::ICpuInfo *xmrig::Cpu::info()
 {
-public:
-    inline IConfig *create() const override
-    {
-        return new Config();
-    }
-};
+    assert(cpuInfo != nullptr);
+
+    return cpuInfo;
+}
 
 
-} /* namespace xmrig */
+void xmrig::Cpu::init()
+{
+    assert(cpuInfo == nullptr);
+
+    cpuInfo = new BasicCpuInfo();
+}
 
 
-#endif // __CONFIGCREATOR_H__
+void xmrig::Cpu::release()
+{
+    assert(cpuInfo != nullptr);
+
+    delete cpuInfo;
+    cpuInfo = nullptr;
+}

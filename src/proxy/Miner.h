@@ -48,7 +48,7 @@ public:
         ClosingState
     };
 
-    Miner(bool nicehash, bool ipv6);
+    Miner(bool ipv6, uint16_t port);
     ~Miner();
     bool accept(uv_stream_t *server);
     void replyWithError(int64_t id, const char *message);
@@ -63,6 +63,7 @@ public:
     inline int64_t id() const                         { return m_id; }
     inline ssize_t mapperId() const                   { return m_mapperId; }
     inline State state() const                        { return m_state; }
+    inline uint16_t localPort() const                 { return m_localPort; }
     inline uint64_t customDiff() const                { return m_customDiff; }
     inline uint64_t diff() const                      { return (m_customDiff ? std::min(m_customDiff, m_diff) : m_diff); }
     inline uint64_t expire() const                    { return m_expire; }
@@ -74,6 +75,7 @@ public:
     inline void setCustomDiff(uint64_t diff)          { m_customDiff = diff; }
     inline void setFixedByte(uint8_t fixedByte)       { m_fixedByte = fixedByte; }
     inline void setMapperId(ssize_t mapperId)         { m_mapperId = mapperId; }
+    inline void setNiceHash(bool nicehash)            { m_nicehash = nicehash; }
 
 private:
     constexpr static size_t kLoginTimeout  = 10 * 1000;
@@ -103,6 +105,7 @@ private:
     size_t m_recvBufPos;
     ssize_t m_mapperId;
     State m_state;
+    uint16_t m_localPort;
     uint64_t m_customDiff;
     uint64_t m_diff;
     uint64_t m_expire;

@@ -39,7 +39,7 @@ namespace xmrig {
 class Server
 {
 public:
-    Server(const xmrig::BindHost &host, bool nicehash);
+    Server(const xmrig::BindHost &host);
     bool bind();
 
 private:
@@ -47,7 +47,6 @@ private:
 
     static void onConnection(uv_stream_t *server, int status);
 
-    bool m_nicehash;
     int m_version;
     sockaddr_in m_addr;
     sockaddr_in6 m_addr6;

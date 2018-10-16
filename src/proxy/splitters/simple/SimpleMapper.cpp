@@ -71,6 +71,7 @@ SimpleMapper::~SimpleMapper()
 void SimpleMapper::add(Miner *miner)
 {
     m_miner = miner;
+    m_miner->setNiceHash(false);
     m_miner->setMapperId(m_id);
 
     connect();

@@ -29,8 +29,7 @@
 #include "proxy/Server.h"
 
 
-Server::Server(const xmrig::BindHost &host, bool nicehash) :
-    m_nicehash(nicehash),
+Server::Server(const xmrig::BindHost &host) :
     m_version(0),
     m_port(host.port()),
     m_host(host.host())
@@ -77,7 +76,7 @@ void Server::create(uv_stream_t *server, int status)
         return;
     }
 
-    Miner *miner = new Miner(m_nicehash, m_version == 6);
+    Miner *miner = new Miner(m_version == 6, m_port);
     if (!miner) {
         return;
     }

@@ -48,15 +48,16 @@ static int64_t nextId = 0;
 xmrig::Storage<Miner> Miner::m_storage;
 
 
-Miner::Miner(bool nicehash, bool ipv6) :
+Miner::Miner(bool ipv6, uint16_t port) :
     m_ipv6(ipv6),
-    m_nicehash(nicehash),
+    m_nicehash(true),
     m_ip(),
     m_id(++nextId),
     m_loginId(0),
     m_recvBufPos(0),
     m_mapperId(-1),
     m_state(WaitLoginState),
+    m_localPort(port),
     m_customDiff(0),
     m_diff(0),
     m_expire(uv_now(uv_default_loop()) + kLoginTimeout),

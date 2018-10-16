@@ -205,7 +205,7 @@ bool Proxy::isColors() const
 
 void Proxy::bind(const xmrig::BindHost &host)
 {
-    auto server = new Server(host, m_controller->config()->mode() == xmrig::Config::NICEHASH_MODE);
+    auto server = new Server(host);
 
     if (server->bind()) {
         m_servers.push_back(server);

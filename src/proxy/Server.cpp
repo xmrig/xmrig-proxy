@@ -29,10 +29,12 @@
 #include "proxy/Server.h"
 
 
-Server::Server(const xmrig::BindHost &host) :
-    m_version(0),
+Server::Server(const xmrig::BindHost &host, const xmrig::TlsContext *ctx) :
+    m_tls(host.isTLS()),
     m_port(host.port()),
-    m_host(host.host())
+    m_host(host.host()),
+    m_ctx(ctx),
+    m_version(0)
 {
     uv_tcp_init(uv_default_loop(), &m_server);
     m_server.data = this;
@@ -76,7 +78,7 @@ void Server::create(uv_stream_t *server, int status)
         return;
     }
 
-    Miner *miner = new Miner(m_version == 6, m_port);
+    Miner *miner = new Miner(m_tls ? m_ctx : nullptr, m_version == 6, m_port);
     if (!miner) {
         return;
     }

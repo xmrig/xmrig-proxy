@@ -68,10 +68,12 @@ public:
 
     Config();
 
+    bool isTLS() const;
     bool reload(const char *json);
-
     const char *modeName() const;
+
     void getJSON(rapidjson::Document &doc) const override;
+
 
     static Config *load(int argc, char **argv, IWatcherListener *listener);
 

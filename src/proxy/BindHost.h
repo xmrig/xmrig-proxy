@@ -43,6 +43,7 @@ public:
 
 
     inline BindHost() :
+        m_tls(false),
         m_version(0),
         m_port(0)
     {}
@@ -57,6 +58,7 @@ public:
     inline bool isIPv6() const      { return m_version == 6; }
     inline bool isValid() const     { return m_version && !m_host.isNull() && m_port > 0; }
     inline const char *host() const { return m_host.data(); }
+    inline isTLS() const            { return m_tls; }
     inline uint16_t port() const    { return m_port; }
 
 private:
@@ -64,6 +66,7 @@ private:
     void parseIPv4(const char *addr);
     void parseIPv6(const char *addr);
 
+    bool m_tls;
     int m_version;
     uint16_t m_port;
     xmrig::c_str m_host;

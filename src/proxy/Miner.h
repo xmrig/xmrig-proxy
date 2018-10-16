@@ -38,6 +38,14 @@ class Job;
 class RejectEvent;
 
 
+namespace xmrig {
+    class TlsContext;
+}
+
+
+typedef struct bio_st BIO;
+
+
 class Miner
 {
 public:
@@ -48,7 +56,13 @@ public:
         ClosingState
     };
 
-    Miner(bool ipv6, uint16_t port);
+#   ifndef XMRIG_NO_TLS
+    constexpr static int kInputBufferSize = 1024 * 16;
+#   else
+    constexpr static int kInputBufferSize = 1024 * 2;
+#   endif
+
+    Miner(const xmrig::TlsContext *ctx, bool ipv6, uint16_t port);
     ~Miner();
     bool accept(uv_stream_t *server);
     void replyWithError(int64_t id, const char *message);
@@ -78,12 +92,19 @@ public:
     inline void setNiceHash(bool nicehash)            { m_nicehash = nicehash; }
 
 private:
+    class Tls;
+
     constexpr static size_t kLoginTimeout  = 10 * 1000;
     constexpr static size_t kSocketTimeout = 60 * 10 * 1000;
 
+    bool isWritable() const;
     bool parseRequest(int64_t id, const char *method, const rapidjson::Value &params);
+    bool send(BIO *bio);
     void heartbeat();
     void parse(char *line, size_t len);
+    void read();
+    void readTLS(int nread);
+    void send(const rapidjson::Document &doc);
     void send(int size);
     void setState(State state);
     void shutdown(bool had_error);
@@ -92,19 +113,22 @@ private:
     static void onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
     static void onTimeout(uv_timer_t *handle);
 
+    inline bool isTLS() const { return m_tls != nullptr; }
+
     static inline Miner *getMiner(void *data) { return m_storage.get(data); }
 
     bool m_ipv6;
     bool m_nicehash;
-    char m_buf[2048];
+    char m_buf[kInputBufferSize];
     char m_ip[46];
     char m_rpcId[37];
-    char m_sendBuf[768];
+    char m_sendBuf[2048];
     int64_t m_id;
     int64_t m_loginId;
     size_t m_recvBufPos;
     ssize_t m_mapperId;
     State m_state;
+    Tls *m_tls;
     uint16_t m_localPort;
     uint64_t m_customDiff;
     uint64_t m_diff;

@@ -52,6 +52,7 @@ class Workers;
 namespace xmrig {
     class Controller;
     class BindHost;
+    class TlsContext;
 }
 
 
@@ -104,6 +105,7 @@ private:
     uv_timer_t m_timer;
     Workers *m_workers;
     xmrig::Controller *m_controller;
+    xmrig::TlsContext *m_tls;
 };
 
 

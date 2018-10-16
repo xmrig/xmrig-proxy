@@ -32,6 +32,7 @@
 
 
 xmrig::BindHost::BindHost(const char *addr) :
+    m_tls(false),
     m_version(0),
     m_port(0)
 {
@@ -49,6 +50,7 @@ xmrig::BindHost::BindHost(const char *addr) :
 
 
 xmrig::BindHost::BindHost(const char *host, uint16_t port, int version) :
+    m_tls(false),
     m_version(version),
     m_port(port),
     m_host(host)
@@ -57,6 +59,7 @@ xmrig::BindHost::BindHost(const char *host, uint16_t port, int version) :
 
 
 xmrig::BindHost::BindHost(const rapidjson::Value &object) :
+    m_tls(false),
     m_version(0),
     m_port(0)
 {
@@ -65,6 +68,7 @@ xmrig::BindHost::BindHost(const rapidjson::Value &object) :
     }
 
     m_port = object["port"].GetUint();
+    m_tls  = object["tls"].GetBool();
 }
 
 
@@ -78,6 +82,7 @@ rapidjson::Value xmrig::BindHost::toJSON(rapidjson::Document &doc) const
 
     obj.AddMember("host", StringRef(host()), allocator);
     obj.AddMember("port", port(), allocator);
+    obj.AddMember("tls",  isTLS(), allocator);
 
     return obj;
 }

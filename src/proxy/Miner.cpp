@@ -37,6 +37,7 @@
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"
 #include "proxy/Miner.h"
+#include "proxy/tls/TlsContext.h"
 #include "proxy/Uuid.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
@@ -44,11 +45,16 @@
 #include "rapidjson/writer.h"
 
 
+#ifndef XMRIG_NO_TLS
+#   include "proxy/tls/Tls.h"
+#endif
+
+
 static int64_t nextId = 0;
 xmrig::Storage<Miner> Miner::m_storage;
 
 
-Miner::Miner(bool ipv6, uint16_t port) :
+Miner::Miner(const xmrig::TlsContext *ctx, bool ipv6, uint16_t port) :
     m_ipv6(ipv6),
     m_nicehash(true),
     m_ip(),
@@ -57,6 +63,7 @@ Miner::Miner(bool ipv6, uint16_t port) :
     m_recvBufPos(0),
     m_mapperId(-1),
     m_state(WaitLoginState),
+    m_tls(nullptr),
     m_localPort(port),
     m_customDiff(0),
     m_diff(0),
@@ -76,6 +83,12 @@ Miner::Miner(bool ipv6, uint16_t port) :
     m_recvBuf.base = m_buf;
     m_recvBuf.len  = sizeof(m_buf);
 
+#   ifndef XMRIG_NO_TLS
+    if (ctx != nullptr) {
+        m_tls = new Tls(ctx->ctx(), this);
+    }
+#   endif
+
     Counters::connections++;
 }
 
@@ -83,6 +96,10 @@ Miner::Miner(bool ipv6, uint16_t port) :
 Miner::~Miner()
 {
     m_socket.data = nullptr;
+
+#   ifndef XMRIG_NO_TLS
+    delete m_tls;
+#   endif
 
     Counters::connections--;
 }
@@ -108,6 +125,12 @@ bool Miner::accept(uv_stream_t *server)
     }
 
     uv_read_start(reinterpret_cast<uv_stream_t*>(&m_socket), Miner::onAllocBuffer, Miner::onRead);
+
+#   ifndef XMRIG_NO_TLS
+    if (isTLS()) {
+        return m_tls->accept();
+    }
+#   endif
 
     return true;
 }
@@ -182,26 +205,19 @@ void Miner::setJob(Job &job)
         doc.AddMember("params", params, allocator);
     }
 
-    StringBuffer buffer(0, 512);
-    Writer<StringBuffer> writer(buffer);
-    doc.Accept(writer);
-
-    const size_t size = buffer.GetSize();
-    if (size > (sizeof(m_sendBuf) - 2)) {
-        return;
-    }
-
-    memcpy(m_sendBuf, buffer.GetString(), size);
-    m_sendBuf[size]     = '\n';
-    m_sendBuf[size + 1] = '\0';
-
-    send(size + 1);
+    send(doc);
 }
 
 
 void Miner::success(int64_t id, const char *status)
 {
     send(snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"error\":null,\"result\":{\"status\":\"%s\"}}\n", id, status));
+}
+
+
+bool Miner::isWritable() const
+{
+    return m_state != ClosingState && uv_is_writable(reinterpret_cast<const uv_stream_t*>(&m_socket)) == 1;
 }
 
 
@@ -294,6 +310,40 @@ bool Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value 
 }
 
 
+bool Miner::send(BIO *bio)
+{
+#   ifndef XMRIG_NO_TLS
+    uv_buf_t buf;
+    buf.len = BIO_get_mem_data(bio, &buf.base);
+
+    if (buf.len == 0) {
+        return true;
+    }
+
+    LOG_DEBUG("[%s] TLS send     (%d bytes)", m_ip, static_cast<int>(buf.len));
+
+    if (!isWritable()) {
+        return false;
+    }
+
+    const int rc = uv_try_write(reinterpret_cast<uv_stream_t*>(&m_socket), &buf, 1);
+    (void) BIO_reset(bio);
+
+    if (rc < 0) {
+        shutdown(true);
+
+        return false;
+    }
+
+    m_tx += buf.len;
+
+    return true;
+#   else
+    return false;
+#   endif
+}
+
+
 void Miner::heartbeat()
 {
     m_expire = uv_now(uv_default_loop()) + kSocketTimeout;
@@ -334,16 +384,97 @@ void Miner::parse(char *line, size_t len)
 }
 
 
+void Miner::read()
+{
+    char* end;
+    char* start = m_recvBuf.base;
+    size_t remaining = m_recvBufPos;
+
+    while ((end = static_cast<char*>(memchr(start, '\n', remaining))) != nullptr) {
+        end++;
+        size_t len = end - start;
+        parse(start, len);
+
+        remaining -= len;
+        start = end;
+    }
+
+    if (remaining == 0) {
+        m_recvBufPos = 0;
+        return;
+    }
+
+    if (start == m_recvBuf.base) {
+        return;
+    }
+
+    memcpy(m_recvBuf.base, start, remaining);
+    m_recvBufPos = remaining;
+}
+
+
+void Miner::readTLS(int nread)
+{
+#   ifndef XMRIG_NO_TLS
+    if (isTLS()) {
+        LOG_DEBUG("[%s] TLS received (%d bytes)", m_ip, nread);
+
+        m_tls->read(m_recvBuf.base, m_recvBufPos);
+        m_recvBufPos = 0;
+    }
+    else
+    {
+        read();
+    }
+#   else
+    read();
+#   endif
+}
+
+
+void Miner::send(const rapidjson::Document &doc)
+{
+    using namespace rapidjson;
+
+    StringBuffer buffer(0, 512);
+    Writer<StringBuffer> writer(buffer);
+    doc.Accept(writer);
+
+    const size_t size = buffer.GetSize();
+    if (size > (sizeof(m_sendBuf) - 2)) {
+        LOG_ERR("[%s] send failed: \"send buffer overflow: %zu > %zu\"", m_ip, size, (sizeof(m_sendBuf) - 2));
+        shutdown(true);
+
+        return;
+    }
+
+    memcpy(m_sendBuf, buffer.GetString(), size);
+    m_sendBuf[size]     = '\n';
+    m_sendBuf[size + 1] = '\0';
+
+    return send(size + 1);
+}
+
+
 void Miner::send(int size)
 {
     LOG_DEBUG("[%s] send (%d bytes): \"%s\"", m_ip, size, m_sendBuf);
 
-    if (size <= 0 || (m_state != ReadyState && m_state != WaitReadyState) || uv_is_writable(reinterpret_cast<uv_stream_t*>(&m_socket)) == 0) {
+    if (size <= 0 || !isWritable()) {
         return;
     }
 
-    uv_buf_t buf = uv_buf_init(m_sendBuf, (unsigned int) size);
-    const int rc = uv_try_write(reinterpret_cast<uv_stream_t*>(&m_socket), &buf, 1);
+    int rc = -1;
+#   ifndef XMRIG_NO_TLS
+    if (isTLS()) {
+        rc = m_tls->send(m_sendBuf, size) ? 0 : -1;
+    }
+    else
+#   endif
+    {
+        uv_buf_t buf = uv_buf_init(m_sendBuf, (unsigned int) size);
+        rc = uv_try_write(reinterpret_cast<uv_stream_t*>(&m_socket), &buf, 1);
+    }
 
     if (rc < 0) {
         return shutdown(true);
@@ -414,7 +545,7 @@ void Miner::onAllocBuffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *
 
 void Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
 {
-    auto miner = getMiner(stream->data);
+    Miner *miner = getMiner(stream->data);
     if (!miner) {
         return;
     }
@@ -426,30 +557,7 @@ void Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
     miner->m_rx += nread;
     miner->m_recvBufPos += nread;
 
-    char* end;
-    char* start = miner->m_recvBuf.base;
-    size_t remaining = miner->m_recvBufPos;
-
-    while ((end = static_cast<char*>(memchr(start, '\n', remaining))) != nullptr) {
-        end++;
-        size_t len = end - start;
-        miner->parse(start, len);
-
-        remaining -= len;
-        start = end;
-    }
-
-    if (remaining == 0) {
-        miner->m_recvBufPos = 0;
-        return;
-    }
-
-    if (start == miner->m_recvBuf.base) {
-        return;
-    }
-
-    memcpy(miner->m_recvBuf.base, start, remaining);
-    miner->m_recvBufPos = remaining;
+    miner->readTLS(static_cast<int>(nread));
 }
 
 

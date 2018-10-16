@@ -5,6 +5,7 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -21,42 +22,49 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_CLIENT_TLS_H
-#define XMRIG_CLIENT_TLS_H
-
 
 #include <openssl/ssl.h>
+#include <openssl/err.h>
 
 
-#include "common/net/Client.h"
+#include "common/log/Log.h"
+#include "proxy/tls/TlsContext.h"
 
 
-class Client::Tls
+xmrig::TlsContext::TlsContext() :
+    m_ctx(nullptr)
 {
-public:
-    Tls(Client *client);
-    ~Tls();
-
-    bool handshake();
-    bool send(const char *data, size_t size);
-    const char *fingerprint() const;
-    const char *version() const;
-    void read(const char *data, size_t size);
-
-private:
-    bool send();
-    bool verify(X509 *cert);
-    bool verifyFingerprint(X509 *cert);
-
-    BIO *m_readBio;
-    BIO *m_writeBio;
-    bool m_ready;
-    char m_buf[1024 * 2];
-    char m_fingerprint[32 * 2 + 8];
-    Client *m_client;
-    SSL *m_ssl;
-    SSL_CTX *m_ctx;
-};
+    m_ctx = SSL_CTX_new(SSLv23_server_method());
+}
 
 
-#endif /* XMRIG_CLIENT_TLS_H */
+xmrig::TlsContext::~TlsContext()
+{
+    SSL_CTX_free(m_ctx);
+}
+
+
+bool xmrig::TlsContext::load(const char *cert, const char *key)
+{
+    if (m_ctx == nullptr) {
+        LOG_ERR("Unable to create SSL context");
+
+        return false;
+    }
+
+    if (SSL_CTX_use_certificate_chain_file(m_ctx, cert) <= 0) {
+        LOG_ERR("Failed to load certificate chain file \"%s\"", cert);
+
+        return false;
+    }
+
+    if (SSL_CTX_use_PrivateKey_file(m_ctx, key, SSL_FILETYPE_PEM) <= 0) {
+        LOG_ERR("Failed to load private key file \"%s\"", key);
+
+        return false;
+    }
+
+    SSL_CTX_set_options(m_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+
+    return true;
+}

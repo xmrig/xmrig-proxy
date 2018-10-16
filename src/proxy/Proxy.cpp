@@ -51,6 +51,11 @@
 #include "proxy/workers/Workers.h"
 
 
+#ifndef XMRIG_NO_TLS
+#   include "proxy/tls/TlsContext.h"
+#endif
+
+
 Proxy::Proxy(xmrig::Controller *controller) :
     m_customDiff(controller),
     m_ticks(0),
@@ -119,11 +124,22 @@ Proxy::~Proxy()
     delete m_accessLog;
     delete m_debug;
     delete m_workers;
+
+#   ifndef XMRIG_NO_TLS
+    delete m_tls;
+#   endif
 }
 
 
 void Proxy::connect()
 {
+#   ifndef XMRIG_NO_TLS
+    if (m_controller->config()->isTLS()) {
+        m_tls = new xmrig::TlsContext();
+        m_tls->load("cert.pem", "key.pem");
+    }
+#   endif
+
     m_splitter->connect();
 
     const xmrig::BindHosts &bind = m_controller->config()->bind();
@@ -205,7 +221,7 @@ bool Proxy::isColors() const
 
 void Proxy::bind(const xmrig::BindHost &host)
 {
-    auto server = new Server(host);
+    auto server = new Server(host, m_tls);
 
     if (server->bind()) {
         m_servers.push_back(server);

@@ -61,6 +61,18 @@ xmrig::Config::Config() : xmrig::CommonConfig(),
 }
 
 
+bool xmrig::Config::isTLS() const
+{
+    for (const BindHost &host : m_bind) {
+        if (host.isTLS()) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 bool xmrig::Config::reload(const char *json)
 {
     return xmrig::ConfigLoader::reload(this, json);

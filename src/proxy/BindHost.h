@@ -56,9 +56,9 @@ public:
     rapidjson::Value toJSON(rapidjson::Document &doc) const;
 
     inline bool isIPv6() const      { return m_version == 6; }
+    inline bool isTLS() const       { return m_tls; }
     inline bool isValid() const     { return m_version && !m_host.isNull() && m_port > 0; }
     inline const char *host() const { return m_host.data(); }
-    inline isTLS() const            { return m_tls; }
     inline uint16_t port() const    { return m_port; }
 
 private:

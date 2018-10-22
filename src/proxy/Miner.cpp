@@ -51,6 +51,7 @@
 
 
 static int64_t nextId = 0;
+char Miner::m_sendBuf[2048] = { 0 };
 xmrig::Storage<Miner> Miner::m_storage;
 
 
@@ -58,6 +59,7 @@ Miner::Miner(const xmrig::TlsContext *ctx, bool ipv6, uint16_t port) :
     m_ipv6(ipv6),
     m_nicehash(true),
     m_ip(),
+    m_routeId(-1),
     m_id(++nextId),
     m_loginId(0),
     m_recvBufPos(0),

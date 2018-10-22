@@ -101,6 +101,9 @@ void Miner::Tls::read(const char *data, size_t size)
             send();
             read();
         }
+        else {
+            m_miner->close();
+        }
 
       return;
     }

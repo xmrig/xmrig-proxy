@@ -56,12 +56,6 @@ public:
         ClosingState
     };
 
-#   ifndef XMRIG_NO_TLS
-    constexpr static int kInputBufferSize = 1024 * 16;
-#   else
-    constexpr static int kInputBufferSize = 1024 * 2;
-#   endif
-
     Miner(const xmrig::TlsContext *ctx, bool ipv6, uint16_t port);
     ~Miner();
     bool accept(uv_stream_t *server);
@@ -74,6 +68,7 @@ public:
     inline const char *password() const               { return m_password.data(); }
     inline const char *rigId(bool safe = false) const { return (safe ? (m_rigId.size() > 0 ? m_rigId.data() : m_user.data()) : m_rigId.data()); }
     inline const char *user() const                   { return m_user.data(); }
+    inline int32_t routeId() const                    { return m_routeId; }
     inline int64_t id() const                         { return m_id; }
     inline ssize_t mapperId() const                   { return m_mapperId; }
     inline State state() const                        { return m_state; }
@@ -90,6 +85,7 @@ public:
     inline void setFixedByte(uint8_t fixedByte)       { m_fixedByte = fixedByte; }
     inline void setMapperId(ssize_t mapperId)         { m_mapperId = mapperId; }
     inline void setNiceHash(bool nicehash)            { m_nicehash = nicehash; }
+    inline void setRouteId(int32_t id)                { m_routeId = id; }
 
 private:
     class Tls;
@@ -119,10 +115,10 @@ private:
 
     bool m_ipv6;
     bool m_nicehash;
-    char m_buf[kInputBufferSize];
+    char m_buf[1024];
     char m_ip[46];
     char m_rpcId[37];
-    char m_sendBuf[2048];
+    int32_t m_routeId;
     int64_t m_id;
     int64_t m_loginId;
     size_t m_recvBufPos;
@@ -145,6 +141,7 @@ private:
     xmrig::c_str m_rigId;
     xmrig::c_str m_user;
 
+    static char m_sendBuf[2048];
     static xmrig::Storage<Miner> m_storage;
 };
 

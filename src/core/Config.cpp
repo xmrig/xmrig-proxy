@@ -63,11 +63,13 @@ xmrig::Config::Config() : xmrig::CommonConfig(),
 
 bool xmrig::Config::isTLS() const
 {
+#   ifndef XMRIG_NO_TLS
     for (const BindHost &host : m_bind) {
         if (host.isTLS()) {
             return true;
         }
     }
+#   endif
 
     return false;
 }

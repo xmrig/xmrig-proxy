@@ -52,7 +52,7 @@ rapidjson::Value xmrig::TlsConfig::toJSON(rapidjson::Document &doc) const
     Value obj(kObjectType);
 
     obj.AddMember("cert", cert() ? Value(StringRef(cert())).Move() : Value(kNullType).Move(), allocator);
-    obj.AddMember("key",  key() ? Value(StringRef(cert())).Move() : Value(kNullType).Move(), allocator);
+    obj.AddMember("key",  key() ? Value(StringRef(key())).Move() : Value(kNullType).Move(), allocator);
 
     return obj;
 }

@@ -136,7 +136,11 @@ void Proxy::connect()
 #   ifndef XMRIG_NO_TLS
     if (m_controller->config()->isTLS()) {
         m_tls = new xmrig::TlsContext();
-        m_tls->load("cert.pem", "key.pem");
+
+        if (!m_tls->load(m_controller->config()->tls())) {
+            delete m_tls;
+            m_tls = nullptr;
+        }
     }
 #   endif
 
@@ -221,6 +225,14 @@ bool Proxy::isColors() const
 
 void Proxy::bind(const xmrig::BindHost &host)
 {
+#   ifndef XMRIG_NO_TLS
+    if (host.isTLS() && !m_tls) {
+        LOG_ERR("Failed to bind \"%s:%d\" error: \"TLS not available\".", host.host(), host.port());
+
+        return;
+    }
+#   endif
+
     auto server = new Server(host, m_tls);
 
     if (server->bind()) {

@@ -5,6 +5,7 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -21,42 +22,38 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_MINER_TLS_H
-#define XMRIG_MINER_TLS_H
+#ifndef XMRIG_TLSCONFIG_H
+#define XMRIG_TLSCONFIG_H
 
 
-#include <openssl/ssl.h>
+#include "common/utils/c_str.h"
+#include "rapidjson/fwd.h"
 
 
-#include "proxy/Miner.h"
+namespace xmrig {
 
 
-class Miner::Tls
+class TlsConfig
 {
 public:
-    Tls(SSL_CTX *ctx, Miner *miner);
-    ~Tls();
+    TlsConfig();
+    TlsConfig(const rapidjson::Value &object);
+    ~TlsConfig();
 
-    bool accept();
-    bool send(const char *data, size_t size);
-    const char *fingerprint() const;
-    const char *version() const;
-    void read(const char *data, size_t size);
+    inline bool isValid() const           { return !m_cert.isNull() && !m_key.isNull(); }
+    inline const char *cert() const       { return m_cert.data(); }
+    inline const char *key() const        { return m_key.data(); }
+    inline void setCert(const char *cert) { m_cert = cert; }
+    inline void setKey(const char *key)   { m_key = key; }
+
+    rapidjson::Value toJSON(rapidjson::Document &doc) const;
 
 private:
-    bool send();
-    bool verify(X509 *cert);
-    void read();
-
-    BIO *m_readBio;
-    BIO *m_writeBio;
-    bool m_ready;
-    char m_buf[1024 * 1];
-    char m_fingerprint[32 * 2 + 8];
-    Miner *m_miner;
-    SSL *m_ssl;
-    SSL_CTX *m_ctx;
+    c_str m_cert;
+    c_str m_key;
 };
 
 
-#endif /* XMRIG_MINER_TLS_H */
+} /* namespace xmrig */
+
+#endif /* XMRIG_TLSCONFIG_H */

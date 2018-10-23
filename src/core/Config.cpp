@@ -132,6 +132,11 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("retries",       retries(), allocator);
     doc.AddMember("retry-pause",   retryPause(), allocator);
     doc.AddMember("reuse-timeout", reuseTimeout(), allocator);
+
+#   ifndef XMRIG_NO_TLS
+    doc.AddMember("tls", m_tls.toJSON(doc), allocator);
+#   endif
+
     doc.AddMember("user-agent",    userAgent() ? Value(StringRef(userAgent())).Move() : Value(kNullType).Move(), allocator);
 
 #   ifdef HAVE_SYSLOG_H
@@ -287,6 +292,13 @@ void xmrig::Config::parseJSON(const rapidjson::Document &doc)
             }
         }
     }
+
+#   ifndef XMRIG_NO_TLS
+    const rapidjson::Value &tls = doc["tls"];
+    if (tls.IsObject()) {
+        m_tls = std::move(TlsConfig(tls));
+    }
+#   endif
 }
 
 

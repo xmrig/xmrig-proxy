@@ -32,13 +32,16 @@ typedef struct ssl_ctx_st SSL_CTX;
 namespace xmrig {
 
 
+class TlsConfig;
+
+
 class TlsContext
 {
 public:
     TlsContext();
     ~TlsContext();
 
-    bool load(const char *cert, const char *key);
+    bool load(const TlsConfig &config);
 
     inline SSL_CTX *ctx() const { return m_ctx; }
 

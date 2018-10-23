@@ -28,6 +28,7 @@
 
 
 #include "common/log/Log.h"
+#include "proxy/tls/TlsConfig.h"
 #include "proxy/tls/TlsContext.h"
 
 
@@ -44,7 +45,7 @@ xmrig::TlsContext::~TlsContext()
 }
 
 
-bool xmrig::TlsContext::load(const char *cert, const char *key)
+bool xmrig::TlsContext::load(const TlsConfig &config)
 {
     if (m_ctx == nullptr) {
         LOG_ERR("Unable to create SSL context");
@@ -52,14 +53,20 @@ bool xmrig::TlsContext::load(const char *cert, const char *key)
         return false;
     }
 
-    if (SSL_CTX_use_certificate_chain_file(m_ctx, cert) <= 0) {
-        LOG_ERR("Failed to load certificate chain file \"%s\"", cert);
+    if (!config.isValid()) {
+        LOG_ERR("No valid TLS configuration provided");
 
         return false;
     }
 
-    if (SSL_CTX_use_PrivateKey_file(m_ctx, key, SSL_FILETYPE_PEM) <= 0) {
-        LOG_ERR("Failed to load private key file \"%s\"", key);
+    if (SSL_CTX_use_certificate_chain_file(m_ctx, config.cert()) <= 0) {
+        LOG_ERR("Failed to load certificate chain file \"%s\"", config.cert());
+
+        return false;
+    }
+
+    if (SSL_CTX_use_PrivateKey_file(m_ctx, config.key(), SSL_FILETYPE_PEM) <= 0) {
+        LOG_ERR("Failed to load private key file \"%s\"", config.key());
 
         return false;
     }

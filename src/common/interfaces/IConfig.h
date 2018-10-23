@@ -107,6 +107,10 @@ public:
         ReuseTimeoutKey   = 1106,
         WorkersKey        = 1103,
         WorkersAdvKey     = 1107,
+        TlsBindKey        = 1108,
+        TlsCertKey        = 1109,
+        TlsCertKeyKey     = 1110,
+        TlsDHparamKey     = 1111,
 
         // xmrig nvidia
         CudaMaxThreadsKey = 1200,

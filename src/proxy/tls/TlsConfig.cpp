@@ -5,6 +5,7 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -21,42 +22,37 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_MINER_TLS_H
-#define XMRIG_MINER_TLS_H
+
+#include "proxy/tls/TlsConfig.h"
+#include "rapidjson/document.h"
 
 
-#include <openssl/ssl.h>
-
-
-#include "proxy/Miner.h"
-
-
-class Miner::Tls
+xmrig::TlsConfig::TlsConfig()
 {
-public:
-    Tls(SSL_CTX *ctx, Miner *miner);
-    ~Tls();
-
-    bool accept();
-    bool send(const char *data, size_t size);
-    const char *fingerprint() const;
-    const char *version() const;
-    void read(const char *data, size_t size);
-
-private:
-    bool send();
-    bool verify(X509 *cert);
-    void read();
-
-    BIO *m_readBio;
-    BIO *m_writeBio;
-    bool m_ready;
-    char m_buf[1024 * 1];
-    char m_fingerprint[32 * 2 + 8];
-    Miner *m_miner;
-    SSL *m_ssl;
-    SSL_CTX *m_ctx;
-};
+}
 
 
-#endif /* XMRIG_MINER_TLS_H */
+xmrig::TlsConfig::TlsConfig(const rapidjson::Value &object)
+{
+    setCert(object["cert"].GetString());
+    setKey(object["key"].GetString());
+}
+
+
+xmrig::TlsConfig::~TlsConfig()
+{
+}
+
+
+rapidjson::Value xmrig::TlsConfig::toJSON(rapidjson::Document &doc) const
+{
+    using namespace rapidjson;
+
+    auto &allocator = doc.GetAllocator();
+    Value obj(kObjectType);
+
+    obj.AddMember("cert", cert() ? Value(StringRef(cert())).Move() : Value(kNullType).Move(), allocator);
+    obj.AddMember("key",  key() ? Value(StringRef(cert())).Move() : Value(kNullType).Move(), allocator);
+
+    return obj;
+}

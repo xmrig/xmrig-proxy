@@ -16,6 +16,8 @@ if (WITH_TLS)
             src/common/net/Tls.h
             src/proxy/tls/Tls.cpp
             src/proxy/tls/Tls.h
+            src/proxy/tls/TlsConfig.cpp
+            src/proxy/tls/TlsConfig.h
             src/proxy/tls/TlsContext.cpp
             src/proxy/tls/TlsContext.h
             )

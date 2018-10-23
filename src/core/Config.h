@@ -36,8 +36,9 @@
 #include "rapidjson/fwd.h"
 
 
-class Addr;
-class Url;
+#ifndef XMRIG_NO_TLS
+#   include "proxy/tls/TlsConfig.h"
+#endif
 
 
 namespace xmrig {
@@ -89,6 +90,10 @@ public:
     inline void toggleVerbose()                    { m_verbose = !m_verbose; }
     inline Workers::Mode workersMode() const       { return m_workersMode; }
 
+#   ifndef XMRIG_NO_TLS
+    inline const xmrig::TlsConfig &tls() const { return m_tls; }
+#   endif
+
 protected:
     bool finalize() override;
     bool parseBoolean(int key, bool enable) override;
@@ -109,6 +114,10 @@ private:
     Workers::Mode m_workersMode;
     xmrig::BindHosts m_bind;
     xmrig::c_str m_accessLog;
+
+#   ifndef XMRIG_NO_TLS
+    xmrig::TlsConfig m_tls;
+#   endif
 };
 
 

@@ -5,7 +5,6 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -23,36 +22,21 @@
  */
 
 
-#include "proxy/tls/TlsConfig.h"
+#include "base/tools/String.h"
 #include "rapidjson/document.h"
 
 
-xmrig::TlsConfig::TlsConfig()
-{
-}
-
-
-xmrig::TlsConfig::TlsConfig(const rapidjson::Value &object)
-{
-    setCert(object["cert"].GetString());
-    setKey(object["key"].GetString());
-}
-
-
-xmrig::TlsConfig::~TlsConfig()
-{
-}
-
-
-rapidjson::Value xmrig::TlsConfig::toJSON(rapidjson::Document &doc) const
+rapidjson::Value xmrig::String::toJSON() const
 {
     using namespace rapidjson;
 
-    auto &allocator = doc.GetAllocator();
-    Value obj(kObjectType);
+    return isNull() ? Value(kNullType) : Value(StringRef(m_data));
+}
 
-    obj.AddMember("cert", m_cert.toJSON(), allocator);
-    obj.AddMember("key",  m_key.toJSON(),  allocator);
 
-    return obj;
+rapidjson::Value xmrig::String::toJSON(rapidjson::Document &doc) const
+{
+    using namespace rapidjson;
+
+    return isNull() ? Value(kNullType) : Value(m_data, doc.GetAllocator());
 }

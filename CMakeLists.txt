@@ -14,6 +14,7 @@ include (CheckIncludeFile)
 set(HEADERS
     src/3rdparty/align.h
     src/App.h
+    src/base/tools/String.h
     src/common/config/CommonConfig.h
     src/common/config/ConfigLoader.h
     src/common/config/ConfigWatcher.h
@@ -89,6 +90,7 @@ set(HEADERS
 
 set(SOURCES
     src/App.cpp
+    src/base/tools/String.cpp
     src/common/config/CommonConfig.cpp
     src/common/config/ConfigLoader.cpp
     src/common/config/ConfigWatcher.cpp

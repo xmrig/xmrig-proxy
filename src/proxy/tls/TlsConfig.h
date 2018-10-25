@@ -26,7 +26,7 @@
 #define XMRIG_TLSCONFIG_H
 
 
-#include "common/utils/c_str.h"
+#include "base/tools/String.h"
 #include "rapidjson/fwd.h"
 
 
@@ -40,7 +40,7 @@ public:
     TlsConfig(const rapidjson::Value &object);
     ~TlsConfig();
 
-    inline bool isValid() const           { return !m_cert.isNull() && !m_key.isNull(); }
+    inline bool isValid() const           { return !m_cert.isEmpty() && !m_key.isEmpty(); }
     inline const char *cert() const       { return m_cert.data(); }
     inline const char *key() const        { return m_key.data(); }
     inline void setCert(const char *cert) { m_cert = cert; }
@@ -49,8 +49,8 @@ public:
     rapidjson::Value toJSON(rapidjson::Document &doc) const;
 
 private:
-    c_str m_cert;
-    c_str m_key;
+    String m_cert;
+    String m_key;
 };
 
 

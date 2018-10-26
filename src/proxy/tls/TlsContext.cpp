@@ -60,18 +60,125 @@ bool xmrig::TlsContext::load(const TlsConfig &config)
     }
 
     if (SSL_CTX_use_certificate_chain_file(m_ctx, config.cert()) <= 0) {
-        LOG_ERR("Failed to load certificate chain file \"%s\"", config.cert());
+        LOG_ERR("SSL_CTX_use_certificate_chain_file(\"%s\") failed.", config.cert());
 
         return false;
     }
 
     if (SSL_CTX_use_PrivateKey_file(m_ctx, config.key(), SSL_FILETYPE_PEM) <= 0) {
-        LOG_ERR("Failed to load private key file \"%s\"", config.key());
+        LOG_ERR("SSL_CTX_use_PrivateKey_file(\"%s\") failed.", config.key());
 
         return false;
     }
 
     SSL_CTX_set_options(m_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+    SSL_CTX_set_options(m_ctx, SSL_OP_CIPHER_SERVER_PREFERENCE);
+
+#   if OPENSSL_VERSION_NUMBER >= 0x1010100fL
+    SSL_CTX_set_max_early_data(m_ctx, 0);
+#   endif
+
+    setProtocols(config.protocols());
+
+    return setCiphers(config.ciphers()) && setCipherSuites(config.cipherSuites()) && setDH(config.dhparam());
+}
+
+
+bool xmrig::TlsContext::setCiphers(const char *ciphers)
+{
+    if (ciphers == nullptr || SSL_CTX_set_cipher_list(m_ctx, ciphers) == 1) {
+        return true;
+    }
+
+    LOG_ERR("SSL_CTX_set_cipher_list(\"%s\") failed.", ciphers);
 
     return true;
+}
+
+
+bool xmrig::TlsContext::setCipherSuites(const char *ciphersuites)
+{
+    if (ciphersuites == nullptr) {
+        return true;
+    }
+
+#   if OPENSSL_VERSION_NUMBER >= 0x1010100fL
+    if (SSL_CTX_set_ciphersuites(m_ctx, ciphersuites) == 1) {
+        return true;
+    }
+#   endif
+
+    LOG_ERR("SSL_CTX_set_ciphersuites(\"%s\") failed.", ciphersuites);
+
+    return false;
+}
+
+
+bool xmrig::TlsContext::setDH(const char *dhparam)
+{
+    if (dhparam == nullptr) {
+        return true;
+    }
+
+    BIO *bio = BIO_new_file(dhparam, "r");
+    if (bio == nullptr) {
+        LOG_ERR("BIO_new_file(\"%s\") failed.", dhparam);
+
+        return false;
+    }
+
+    DH *dh = PEM_read_bio_DHparams(bio, nullptr, nullptr, nullptr);
+    if (dh == nullptr) {
+        LOG_ERR("PEM_read_bio_DHparams(\"%s\") failed.", dhparam);
+
+        BIO_free(bio);
+
+        return false;
+    }
+
+    const int rc = SSL_CTX_set_tmp_dh(m_ctx, dh);
+
+    DH_free(dh);
+    BIO_free(bio);
+
+    if (rc == 0) {
+        LOG_ERR("SSL_CTX_set_tmp_dh(\"%s\") failed.", dhparam);
+
+        return false;
+    }
+
+    return true;
+}
+
+
+void xmrig::TlsContext::setProtocols(uint32_t protocols)
+{
+    if (protocols == 0) {
+        return;
+    }
+
+    if (!(protocols & TlsConfig::TLSv1)) {
+        SSL_CTX_set_options(m_ctx, SSL_OP_NO_TLSv1);
+    }
+
+#   ifdef SSL_OP_NO_TLSv1_1
+    SSL_CTX_clear_options(m_ctx, SSL_OP_NO_TLSv1_1);
+    if (!(protocols & TlsConfig::TLSv1_1)) {
+        SSL_CTX_set_options(m_ctx, SSL_OP_NO_TLSv1_1);
+    }
+#   endif
+
+#   ifdef SSL_OP_NO_TLSv1_2
+    SSL_CTX_clear_options(m_ctx, SSL_OP_NO_TLSv1_2);
+    if (!(protocols & TlsConfig::TLSv1_2)) {
+        SSL_CTX_set_options(m_ctx, SSL_OP_NO_TLSv1_2);
+    }
+#   endif
+
+#   ifdef SSL_OP_NO_TLSv1_3
+    SSL_CTX_clear_options(m_ctx, SSL_OP_NO_TLSv1_3);
+    if (!(protocols & TlsConfig::TLSv1_3)) {
+        SSL_CTX_set_options(m_ctx, SSL_OP_NO_TLSv1_3);
+    }
+#   endif
 }

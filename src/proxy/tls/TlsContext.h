@@ -26,6 +26,9 @@
 #define XMRIG_TLSCONTEXT_H
 
 
+#include <stdint.h>
+
+
 typedef struct ssl_ctx_st SSL_CTX;
 
 
@@ -46,6 +49,11 @@ public:
     inline SSL_CTX *ctx() const { return m_ctx; }
 
 private:
+    bool setCiphers(const char *ciphers);
+    bool setCipherSuites(const char *ciphersuites);
+    bool setDH(const char *dhparam);
+    void setProtocols(uint32_t protocols);
+
     SSL_CTX *m_ctx;
 };
 

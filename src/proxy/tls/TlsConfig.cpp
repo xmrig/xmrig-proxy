@@ -27,15 +27,28 @@
 #include "rapidjson/document.h"
 
 
-xmrig::TlsConfig::TlsConfig()
+xmrig::TlsConfig::TlsConfig() :
+    m_protocols(0)
 {
 }
 
 
-xmrig::TlsConfig::TlsConfig(const rapidjson::Value &object)
+/**
+ * "cert"         load TLS certificate chain from file.
+ * "cert_key"     load TLS private key from file.
+ * "ciphers"      set list of available ciphers (TLSv1.2 and below).
+ * "ciphersuites" set list of available TLSv1.3 ciphersuites.
+ * "dhparam"      load DH parameters for DHE ciphers from file.
+ */
+xmrig::TlsConfig::TlsConfig(const rapidjson::Value &object) :
+    m_protocols(0)
 {
+    setProtocols(object["protocols"]);
     setCert(object["cert"].GetString());
-    setKey(object["key"].GetString());
+    setKey(object["cert_key"].GetString());
+    setCiphers(object["ciphers"].GetString());
+    setCipherSuites(object["ciphersuites"].GetString());
+    setDH(object["dhparam"].GetString());
 }
 
 
@@ -51,8 +64,70 @@ rapidjson::Value xmrig::TlsConfig::toJSON(rapidjson::Document &doc) const
     auto &allocator = doc.GetAllocator();
     Value obj(kObjectType);
 
-    obj.AddMember("cert", m_cert.toJSON(), allocator);
-    obj.AddMember("key",  m_key.toJSON(),  allocator);
+    if (m_protocols > 0) {
+        Value protocols(kArrayType);
+
+        if (m_protocols & TLSv1) {
+            protocols.PushBack("TLSv1", allocator);
+        }
+
+        if (m_protocols & TLSv1_1) {
+            protocols.PushBack("TLSv1.1", allocator);
+        }
+
+        if (m_protocols & TLSv1_2) {
+            protocols.PushBack("TLSv1.2", allocator);
+        }
+
+        if (m_protocols & TLSv1_3) {
+            protocols.PushBack("TLSv1.3", allocator);
+        }
+
+        obj.AddMember("protocols", protocols, allocator);
+    }
+    else {
+        obj.AddMember("protocols", kNullType, allocator);
+    }
+
+    obj.AddMember("cert",         m_cert.toJSON(), allocator);
+    obj.AddMember("cert_key",     m_key.toJSON(), allocator);
+    obj.AddMember("ciphers",      m_ciphers.toJSON(), allocator);
+    obj.AddMember("ciphersuites", m_cipherSuites.toJSON(), allocator);
+    obj.AddMember("dhparam",      m_dhparam.toJSON(), allocator);
 
     return obj;
+}
+
+
+void xmrig::TlsConfig::setProtocols(const rapidjson::Value &protocols)
+{
+    m_protocols = 0;
+
+    if (protocols.IsUint()) {
+        return setProtocols(protocols.GetUint());
+    }
+
+    if (!protocols.IsArray()) {
+        return;
+    }
+
+    for (const rapidjson::Value &value : protocols.GetArray()) {
+        const char *protocol = value.GetString();
+        if (protocol == nullptr) {
+            continue;
+        }
+
+        if (strcmp(protocol, "TLSv1") == 0) {
+            m_protocols |= TLSv1;
+        }
+        else if (strcmp(protocol, "TLSv1.1") == 0) {
+            m_protocols |= TLSv1_1;
+        }
+        else if (strcmp(protocol, "TLSv1.2") == 0) {
+            m_protocols |= TLSv1_2;
+        }
+        else if (strcmp(protocol, "TLSv1.3") == 0) {
+            m_protocols |= TLSv1_3;
+        }
+    }
 }

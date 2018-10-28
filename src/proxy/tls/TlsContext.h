@@ -5,6 +5,7 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -21,42 +22,42 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_CLIENT_TLS_H
-#define XMRIG_CLIENT_TLS_H
+#ifndef XMRIG_TLSCONTEXT_H
+#define XMRIG_TLSCONTEXT_H
 
 
-#include <openssl/ssl.h>
+#include <stdint.h>
 
 
-#include "common/net/Client.h"
+typedef struct ssl_ctx_st SSL_CTX;
 
 
-class Client::Tls
+namespace xmrig {
+
+
+class TlsConfig;
+
+
+class TlsContext
 {
 public:
-    Tls(Client *client);
-    ~Tls();
+    TlsContext();
+    ~TlsContext();
 
-    bool handshake();
-    bool send(const char *data, size_t size);
-    const char *fingerprint() const;
-    const char *version() const;
-    void read(const char *data, size_t size);
+    bool load(const TlsConfig &config);
+
+    inline SSL_CTX *ctx() const { return m_ctx; }
 
 private:
-    bool send();
-    bool verify(X509 *cert);
-    bool verifyFingerprint(X509 *cert);
+    bool setCiphers(const char *ciphers);
+    bool setCipherSuites(const char *ciphersuites);
+    bool setDH(const char *dhparam);
+    void setProtocols(uint32_t protocols);
 
-    BIO *m_readBio;
-    BIO *m_writeBio;
-    bool m_ready;
-    char m_buf[1024 * 2];
-    char m_fingerprint[32 * 2 + 8];
-    Client *m_client;
-    SSL *m_ssl;
     SSL_CTX *m_ctx;
 };
 
 
-#endif /* XMRIG_CLIENT_TLS_H */
+} /* namespace xmrig */
+
+#endif /* XMRIG_TLSCONTEXT_H */

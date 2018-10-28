@@ -79,6 +79,7 @@ bool NonceMapper::add(Miner *miner)
         connect();
     }
 
+    miner->setNiceHash(true);
     miner->setMapperId(m_id);
     return true;
 }

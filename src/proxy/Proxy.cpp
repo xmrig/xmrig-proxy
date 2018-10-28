@@ -37,7 +37,6 @@
 #include "Counters.h"
 #include "log/AccessLog.h"
 #include "log/ShareLog.h"
-#include "proxy/Addr.h"
 #include "proxy/Events.h"
 #include "proxy/events/ConnectionEvent.h"
 #include "proxy/Login.h"
@@ -50,6 +49,11 @@
 #include "proxy/splitters/simple/SimpleSplitter.h"
 #include "proxy/Stats.h"
 #include "proxy/workers/Workers.h"
+
+
+#ifndef XMRIG_NO_TLS
+#   include "proxy/tls/TlsContext.h"
+#endif
 
 
 Proxy::Proxy(xmrig::Controller *controller) :
@@ -120,16 +124,31 @@ Proxy::~Proxy()
     delete m_accessLog;
     delete m_debug;
     delete m_workers;
+
+#   ifndef XMRIG_NO_TLS
+    delete m_tls;
+#   endif
 }
 
 
 void Proxy::connect()
 {
+#   ifndef XMRIG_NO_TLS
+    if (m_controller->config()->isTLS()) {
+        m_tls = new xmrig::TlsContext();
+
+        if (!m_tls->load(m_controller->config()->tls())) {
+            delete m_tls;
+            m_tls = nullptr;
+        }
+    }
+#   endif
+
     m_splitter->connect();
 
-    const std::vector<Addr> &addrs = m_controller->config()->addrs();
-    for (const Addr &addr : addrs) {
-        bind(addr);
+    const xmrig::BindHosts &bind = m_controller->config()->bind();
+    for (const xmrig::BindHost &host : bind) {
+        this->bind(host);
     }
 
     uv_timer_start(&m_timer, Proxy::onTick, 1000, 1000);
@@ -204,9 +223,17 @@ bool Proxy::isColors() const
 }
 
 
-void Proxy::bind(const Addr &addr)
+void Proxy::bind(const xmrig::BindHost &host)
 {
-    auto server = new Server(addr, m_controller->config()->mode() == xmrig::Config::NICEHASH_MODE);
+#   ifndef XMRIG_NO_TLS
+    if (host.isTLS() && !m_tls) {
+        LOG_ERR("Failed to bind \"%s:%d\" error: \"TLS not available\".", host.host(), host.port());
+
+        return;
+    }
+#   endif
+
+    auto server = new Server(host, m_tls);
 
     if (server->bind()) {
         m_servers.push_back(server);

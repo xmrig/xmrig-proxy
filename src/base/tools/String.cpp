@@ -21,42 +21,22 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_CLIENT_TLS_H
-#define XMRIG_CLIENT_TLS_H
+
+#include "base/tools/String.h"
+#include "rapidjson/document.h"
 
 
-#include <openssl/ssl.h>
-
-
-#include "common/net/Client.h"
-
-
-class Client::Tls
+rapidjson::Value xmrig::String::toJSON() const
 {
-public:
-    Tls(Client *client);
-    ~Tls();
+    using namespace rapidjson;
 
-    bool handshake();
-    bool send(const char *data, size_t size);
-    const char *fingerprint() const;
-    const char *version() const;
-    void read(const char *data, size_t size);
-
-private:
-    bool send();
-    bool verify(X509 *cert);
-    bool verifyFingerprint(X509 *cert);
-
-    BIO *m_readBio;
-    BIO *m_writeBio;
-    bool m_ready;
-    char m_buf[1024 * 2];
-    char m_fingerprint[32 * 2 + 8];
-    Client *m_client;
-    SSL *m_ssl;
-    SSL_CTX *m_ctx;
-};
+    return isNull() ? Value(kNullType) : Value(StringRef(m_data));
+}
 
 
-#endif /* XMRIG_CLIENT_TLS_H */
+rapidjson::Value xmrig::String::toJSON(rapidjson::Document &doc) const
+{
+    using namespace rapidjson;
+
+    return isNull() ? Value(kNullType) : Value(m_data, doc.GetAllocator());
+}

@@ -60,6 +60,7 @@ public:
     inline bool isValid() const     { return m_version && !m_host.isNull() && m_port > 0; }
     inline const char *host() const { return m_host.data(); }
     inline uint16_t port() const    { return m_port; }
+    inline void setTLS(bool enable) { m_tls = enable; }
 
 private:
     bool parseHost(const char *host);

@@ -213,9 +213,12 @@ bool xmrig::Config::parseString(int key, const char *arg)
         setMode(arg);
         break;
 
-    case BindKey: /* --bind */
+    case BindKey:    /* --bind */
+    case TlsBindKey: /* --tls-bind */
         {
             xmrig::BindHost host(arg);
+            host.setTLS(key == TlsBindKey);
+
             if (host.isValid()) {
                 m_bind.push_back(std::move(host));
             }
@@ -240,8 +243,31 @@ bool xmrig::Config::parseString(int key, const char *arg)
         m_workersMode = Workers::parseMode(arg);
         break;
 
-    case CustomDiffKey: /* --custom-diff */
+    case CustomDiffKey:   /* --custom-diff */
+    case TlsProtocolsKey: /* --tls-protocols */
         return parseUint64(key, strtol(arg, nullptr, 10));
+
+#   ifndef XMRIG_NO_TLS
+    case TlsCertKey: /* --tls-cert */
+        m_tls.setCert(arg);
+        break;
+
+    case TlsCertKeyKey: /* --tls-cert-key */
+        m_tls.setKey(arg);
+        break;
+
+    case TlsDHparamKey: /* --tls-dhparam */
+        m_tls.setDH(arg);
+        break;
+
+    case TlsCiphersKey: /* --tls-ciphers */
+        m_tls.setCiphers(arg);
+        break;
+
+    case TlsCipherSuitesKey: /* --tls-ciphersuites */
+        m_tls.setCipherSuites(arg);
+        break;
+#   endif
 
     default:
         break;
@@ -267,6 +293,12 @@ bool xmrig::Config::parseUint64(int key, uint64_t arg)
     case ReuseTimeoutKey: /* --reuse-timeout */
         m_reuseTimeout = static_cast<int>(arg);
         break;
+
+#   ifndef XMRIG_NO_TLS
+    case TlsProtocolsKey: /* --tls-protocols */
+        m_tls.setProtocols(static_cast<uint32_t>(arg));
+        break;
+#   endif
 
     default:
         break;

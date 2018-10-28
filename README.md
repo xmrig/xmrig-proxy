@@ -60,6 +60,14 @@ Use [config.xmrig.com](https://config.xmrig.com/proxy) to generate, edit or shar
       --api-worker-id=ID   custom worker-id for API
       --api-no-ipv6        disable IPv6 support for API
       --api-no-restricted  enable full remote access (only if API token set)
+      --tls                enable SSL/TLS support for pool connection (needs pool support)
+      --tls-bind=ADDR      bind to specified address with enabled TLS
+      --tls-cert=FILE      load TLS certificate chain from a file in the PEM format
+      --tls-cert-key=FILE  load TLS certificate private key from a file in the PEM format
+      --tls-dhparam=FILE   load DH parameters for DHE ciphers from a file in the PEM format
+      --tls-protocols=N    enable specified TLS protocols, value is bitmask: v1=1, v1.1=2, v1.2=4, v1.3=8
+      --tls-ciphers=S      set list of available ciphers (TLSv1.2 and below)
+      --tls-ciphersuites=S set list of available TLSv1.3 ciphersuites 
   -h, --help               display this help and exit
   -V, --version            output version information and exit
 ```

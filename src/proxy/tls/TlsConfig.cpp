@@ -32,14 +32,6 @@ xmrig::TlsConfig::TlsConfig() :
 {
 }
 
-
-/**
- * "cert"         load TLS certificate chain from file.
- * "cert_key"     load TLS private key from file.
- * "ciphers"      set list of available ciphers (TLSv1.2 and below).
- * "ciphersuites" set list of available TLSv1.3 ciphersuites.
- * "dhparam"      load DH parameters for DHE ciphers from file.
- */
 xmrig::TlsConfig::TlsConfig(const rapidjson::Value &object) :
     m_protocols(0)
 {

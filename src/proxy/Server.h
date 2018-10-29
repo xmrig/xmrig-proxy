@@ -48,14 +48,13 @@ private:
 
     static void onConnection(uv_stream_t *server, int status);
 
-    const bool m_tls;
-    const uint16_t m_port;
-    const xmrig::c_str m_host;
     const xmrig::TlsContext *m_ctx;
     int m_version;
     sockaddr_in m_addr;
     sockaddr_in6 m_addr6;
+    uint16_t m_port;
     uv_tcp_t m_server;
+    xmrig::c_str m_host;
 };
 
 #endif /* XMRIG_SERVER_H */

@@ -59,7 +59,8 @@
 Proxy::Proxy(xmrig::Controller *controller) :
     m_customDiff(controller),
     m_ticks(0),
-    m_controller(controller)
+    m_controller(controller),
+    m_tls(nullptr)
 {
     srand(time(0) ^ (uintptr_t) this);
 

@@ -86,7 +86,7 @@ Options:\n\
       --tls-cert=FILE      load TLS certificate chain from a file in the PEM format\n\
       --tls-cert-key=FILE  load TLS certificate private key from a file in the PEM format\n\
       --tls-dhparam=FILE   load DH parameters for DHE ciphers from a file in the PEM format\n\
-      --tls-protocols=N    enable specified TLS protocols, value is bitmask: v1=1, v1.1=2, v1.2=4, v1.3=8\n\
+      --tls-protocols=N    enable specified TLS protocols, example: \"TLSv1 TLSv1.1 TLSv1.2 TLSv1.3\"\n\
       --tls-ciphers=S      set list of available ciphers (TLSv1.2 and below)\n\
       --tls-ciphersuites=S set list of available TLSv1.3 ciphersuites\n"
 #endif

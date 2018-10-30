@@ -244,7 +244,6 @@ bool xmrig::Config::parseString(int key, const char *arg)
         break;
 
     case CustomDiffKey:   /* --custom-diff */
-    case TlsProtocolsKey: /* --tls-protocols */
         return parseUint64(key, strtol(arg, nullptr, 10));
 
 #   ifndef XMRIG_NO_TLS
@@ -266,6 +265,10 @@ bool xmrig::Config::parseString(int key, const char *arg)
 
     case TlsCipherSuitesKey: /* --tls-ciphersuites */
         m_tls.setCipherSuites(arg);
+        break;
+
+    case TlsProtocolsKey: /* --tls-protocols */
+        m_tls.setProtocols(arg);
         break;
 #   endif
 
@@ -293,12 +296,6 @@ bool xmrig::Config::parseUint64(int key, uint64_t arg)
     case ReuseTimeoutKey: /* --reuse-timeout */
         m_reuseTimeout = static_cast<int>(arg);
         break;
-
-#   ifndef XMRIG_NO_TLS
-    case TlsProtocolsKey: /* --tls-protocols */
-        m_tls.setProtocols(static_cast<uint32_t>(arg));
-        break;
-#   endif
 
     default:
         break;

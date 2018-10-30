@@ -32,6 +32,14 @@ xmrig::TlsConfig::TlsConfig() :
 {
 }
 
+
+/**
+ * "cert"         load TLS certificate chain from file.
+ * "cert_key"     load TLS private key from file.
+ * "ciphers"      set list of available ciphers (TLSv1.2 and below).
+ * "ciphersuites" set list of available TLSv1.3 ciphersuites.
+ * "dhparam"      load DH parameters for DHE ciphers from file.
+ */
 xmrig::TlsConfig::TlsConfig(const rapidjson::Value &object) :
     m_protocols(0)
 {
@@ -57,25 +65,25 @@ rapidjson::Value xmrig::TlsConfig::toJSON(rapidjson::Document &doc) const
     Value obj(kObjectType);
 
     if (m_protocols > 0) {
-        Value protocols(kArrayType);
+        std::vector<String> protocols;
 
         if (m_protocols & TLSv1) {
-            protocols.PushBack("TLSv1", allocator);
+            protocols.push_back("TLSv1");
         }
 
         if (m_protocols & TLSv1_1) {
-            protocols.PushBack("TLSv1.1", allocator);
+            protocols.push_back("TLSv1.1");
         }
 
         if (m_protocols & TLSv1_2) {
-            protocols.PushBack("TLSv1.2", allocator);
+            protocols.push_back("TLSv1.2");
         }
 
         if (m_protocols & TLSv1_3) {
-            protocols.PushBack("TLSv1.3", allocator);
+            protocols.push_back("TLSv1.3");
         }
 
-        obj.AddMember("protocols", protocols, allocator);
+        obj.AddMember("protocols", String::join(protocols, ' ').toJSON(doc), allocator);
     }
     else {
         obj.AddMember("protocols", kNullType, allocator);
@@ -91,6 +99,27 @@ rapidjson::Value xmrig::TlsConfig::toJSON(rapidjson::Document &doc) const
 }
 
 
+void xmrig::TlsConfig::setProtocols(const char *protocols)
+{
+    const std::vector<String> vec = String(protocols).split(' ');
+
+    for (const String &value : vec) {
+        if (value == "TLSv1") {
+            m_protocols |= TLSv1;
+        }
+        else if (value == "TLSv1.1") {
+            m_protocols |= TLSv1_1;
+        }
+        else if (value == "TLSv1.2") {
+            m_protocols |= TLSv1_2;
+        }
+        else if (value == "TLSv1.3") {
+            m_protocols |= TLSv1_3;
+        }
+    }
+}
+
+
 void xmrig::TlsConfig::setProtocols(const rapidjson::Value &protocols)
 {
     m_protocols = 0;
@@ -99,27 +128,7 @@ void xmrig::TlsConfig::setProtocols(const rapidjson::Value &protocols)
         return setProtocols(protocols.GetUint());
     }
 
-    if (!protocols.IsArray()) {
-        return;
-    }
-
-    for (const rapidjson::Value &value : protocols.GetArray()) {
-        const char *protocol = value.GetString();
-        if (protocol == nullptr) {
-            continue;
-        }
-
-        if (strcmp(protocol, "TLSv1") == 0) {
-            m_protocols |= TLSv1;
-        }
-        else if (strcmp(protocol, "TLSv1.1") == 0) {
-            m_protocols |= TLSv1_1;
-        }
-        else if (strcmp(protocol, "TLSv1.2") == 0) {
-            m_protocols |= TLSv1_2;
-        }
-        else if (strcmp(protocol, "TLSv1.3") == 0) {
-            m_protocols |= TLSv1_3;
-        }
+    if (protocols.IsString()) {
+        return setProtocols(protocols.GetString());
     }
 }

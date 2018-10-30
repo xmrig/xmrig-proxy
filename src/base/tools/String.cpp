@@ -26,6 +26,22 @@
 #include "rapidjson/document.h"
 
 
+bool xmrig::String::isEqual(const char *str) const
+{
+    return (m_data != nullptr && str != nullptr && strcmp(m_data, str) == 0) || (m_data == nullptr && str == nullptr);
+}
+
+
+bool xmrig::String::isEqual(const String &other) const
+{
+    if (m_size != other.m_size) {
+        return false;
+    }
+
+    return (m_data != nullptr && other.m_data != nullptr && memcmp(m_data, other.m_data, m_size) == 0) || (m_data == nullptr && other.m_data == nullptr);
+}
+
+
 rapidjson::Value xmrig::String::toJSON() const
 {
     using namespace rapidjson;
@@ -39,4 +55,145 @@ rapidjson::Value xmrig::String::toJSON(rapidjson::Document &doc) const
     using namespace rapidjson;
 
     return isNull() ? Value(kNullType) : Value(m_data, doc.GetAllocator());
+}
+
+
+std::vector<xmrig::String> xmrig::String::split(char sep) const
+{
+    std::vector<xmrig::String> out;
+    if (m_size == 0) {
+        return out;
+    }
+
+    size_t start = 0;
+    size_t pos   = 0;
+
+    for (pos = 0; pos < m_size; ++pos) {
+        if (m_data[pos] == sep) {
+            if ((pos - start) > 0) {
+                out.push_back(std::move(String(m_data + start, pos - start)));
+            }
+
+            start = pos + 1;
+        }
+    }
+
+    if ((pos - start) > 0) {
+        out.push_back(std::move(String(m_data + start, pos - start)));
+    }
+
+    return out;
+}
+
+
+xmrig::String xmrig::String::join(const std::vector<xmrig::String> &vec, char sep)
+{
+    if (vec.empty()) {
+        return String();
+    }
+
+    size_t size = vec.size();
+    for (const String &str : vec) {
+        size += str.size();
+    }
+
+    size_t offset = 0;
+    char *buf     = new char[size];
+
+    for (const String &str : vec) {
+        memcpy(buf + offset, str.data(), str.size());
+
+        offset += str.size() + 1;
+
+        if (offset < size) {
+            buf[offset - 1] = sep;
+        }
+    }
+
+    buf[size - 1] = '\0';
+
+    return String(buf);
+}
+
+
+void xmrig::String::copy(const char *str)
+{
+    delete [] m_data;
+
+    if (str == nullptr) {
+        m_size = 0;
+        m_data = nullptr;
+
+        return;
+    }
+
+    m_size = strlen(str);
+    m_data = new char[m_size + 1];
+
+    memcpy(m_data, str, m_size + 1);
+}
+
+
+void xmrig::String::copy(const String &other)
+{
+    if (m_size > 0) {
+        if (m_size == other.m_size) {
+            memcpy(m_data, other.m_data, m_size + 1);
+
+            return;
+        }
+
+        delete [] m_data;
+    }
+
+    if (other.m_data == nullptr) {
+        m_size = 0;
+        m_data = nullptr;
+
+        return;
+    }
+
+    m_size = other.m_size;
+    m_data = new char[m_size + 1];
+
+    memcpy(m_data, other.m_data, m_size + 1);
+}
+
+
+void xmrig::String::create(const char *str, size_t size)
+{
+    if (str == nullptr) {
+        m_size = 0;
+        m_data = nullptr;
+
+        return;
+    }
+
+    m_size = size;
+    m_data = new char[m_size + 1];
+
+    memcpy(m_data, str, m_size);
+
+    m_data[m_size] = '\0';
+}
+
+
+void xmrig::String::move(char *str)
+{
+    delete [] m_data;
+
+    m_size = str == nullptr ? 0 : strlen(str);
+    m_data = str;
+}
+
+
+void xmrig::String::move(String &&other)
+{
+    delete [] m_data;
+
+    m_data = other.m_data;
+    m_size = other.m_size;
+
+    other.m_data = nullptr;
+    other.m_size = 0;
 }

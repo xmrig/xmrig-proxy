@@ -62,6 +62,7 @@ public:
     inline void setProtocols(uint32_t protocols)     { m_protocols = protocols; }
 
     rapidjson::Value toJSON(rapidjson::Document &doc) const;
+    void setProtocols(const char *protocols);
     void setProtocols(const rapidjson::Value &protocols);
 
 private:

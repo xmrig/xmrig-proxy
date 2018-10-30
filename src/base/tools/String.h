@@ -25,8 +25,8 @@
 #define XMRIG_STRING_H
 
 
-#include <stdlib.h>
-#include <string.h>
+#include <utility>
+#include <vector>
 
 
 #include "rapidjson/fwd.h"
@@ -45,55 +45,54 @@ namespace xmrig {
 class String
 {
 public:
-    inline String() : m_data(nullptr)                       {}
-    inline String(char *str) : m_data(str)                  {}
-    inline String(const char *str) : m_data(nullptr)        { set(str); }
-    inline String(const String &other) : m_data(nullptr)    { set(other.data()); }
-    inline String(String &&other) : m_data(other.m_data)    { other.m_data = nullptr; }
-    inline ~String()                                        { free(m_data); }
+    inline String() : m_data(nullptr), m_size(0)                                     {}
+    inline String(char *str) : m_data(str), m_size(str == nullptr ? 0 : strlen(str)) {}
+    inline String(const char *str) : m_data(nullptr)                                 { copy(str); }
+    inline String(const char *str, size_t size) : m_data(nullptr)                    { create(str, size); }
+    inline String(const String &other) : m_data(nullptr)                             { copy(other); }
+    inline String(String &&other) : m_data(other.m_data), m_size(other.m_size)       { other.m_data = nullptr; other.m_size = 0; }
+    inline ~String()                                                                 { delete [] m_data; }
 
 
-    inline bool isEqual(const char *str) const  { return (m_data != nullptr && str != nullptr && strcmp(m_data, str) == 0) || (m_data == nullptr && m_data == nullptr); }
+    bool isEqual(const char *str) const;
+    bool isEqual(const String &other) const;
+
+
     inline bool contains(const char *str) const { return strstr(m_data, str) != nullptr; }
 
 
     inline bool isEmpty() const          { return size() == 0; }
     inline bool isNull() const           { return m_data == nullptr; }
+    inline char *data()                  { return m_data; }
     inline const char *data() const      { return m_data; }
-    inline size_t size() const           { return isNull() ? 0 : strlen(m_data); }
+    inline size_t size() const           { return m_size; }
 
 
     inline bool operator!=(const char *str) const      { return !isEqual(str); }
-    inline bool operator!=(const String &str) const    { return !isEqual(str.data()); }
+    inline bool operator!=(const String &other) const  { return !isEqual(other); }
     inline bool operator<(const String &str) const     { return strcmp(data(), str.data()) < 0; }
     inline bool operator==(const char *str) const      { return isEqual(str); }
-    inline bool operator==(const String &str) const    { return isEqual(str.data()); }
-    inline String &operator=(char *str)                { set(str); return *this; }
-    inline String &operator=(const char *str)          { set(str); return *this; }
-    inline String &operator=(const String &str)        { set(str.data()); return *this; }
-    inline String &operator=(String &&str)             { m_data = str.m_data; str.m_data = nullptr; return *this; }
+    inline bool operator==(const String &other) const  { return isEqual(other); }
+    inline String &operator=(char *str)                { move(str); return *this; }
+    inline String &operator=(const char *str)          { copy(str); return *this; }
+    inline String &operator=(const String &str)        { copy(str); return *this; }
+    inline String &operator=(String &&other)           { move(std::move(other)); return *this; }
 
     rapidjson::Value toJSON() const;
     rapidjson::Value toJSON(rapidjson::Document &doc) const;
+    std::vector<xmrig::String> split(char sep) const;
+
+    static String join(const std::vector<xmrig::String> &vec, char sep);
 
 private:
-    inline void set(const char *str)
-    {
-        free(m_data);
-
-        m_data = str != nullptr ? strdup(str) : nullptr;
-    }
-
-
-    inline void set(char *str)
-    {
-        free(m_data);
-
-        m_data = str;
-    }
-
+    void copy(const char *str);
+    void copy(const String &other);
+    void create(const char *str, size_t size);
+    void move(char *str);
+    void move(String &&other);
 
     char *m_data;
+    size_t m_size;
 };
 
 

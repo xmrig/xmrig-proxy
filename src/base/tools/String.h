@@ -47,11 +47,13 @@ class String
 public:
     inline String() : m_data(nullptr), m_size(0)                                     {}
     inline String(char *str) : m_data(str), m_size(str == nullptr ? 0 : strlen(str)) {}
-    inline String(const char *str) : m_data(nullptr)                                 { copy(str); }
-    inline String(const char *str, size_t size) : m_data(nullptr)                    { create(str, size); }
-    inline String(const String &other) : m_data(nullptr)                             { copy(other); }
     inline String(String &&other) : m_data(other.m_data), m_size(other.m_size)       { other.m_data = nullptr; other.m_size = 0; }
-    inline ~String()                                                                 { delete [] m_data; }
+
+    String(const char *str);
+    String(const char *str, size_t size);
+    String(const String &other);
+
+    inline ~String() { delete [] m_data; }
 
 
     bool isEqual(const char *str) const;
@@ -87,7 +89,6 @@ public:
 private:
     void copy(const char *str);
     void copy(const String &other);
-    void create(const char *str, size_t size);
     void move(char *str);
     void move(String &&other);
 

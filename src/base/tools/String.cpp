@@ -26,6 +26,48 @@
 #include "rapidjson/document.h"
 
 
+xmrig::String::String(const char *str) :
+    m_data(nullptr),
+    m_size(str == nullptr ? 0 : strlen(str))
+{
+    if (m_size == 0) {
+        return;
+    }
+
+    m_data = new char[m_size + 1];
+    memcpy(m_data, str, m_size + 1);
+}
+
+
+xmrig::String::String(const char *str, size_t size) :
+    m_data(nullptr),
+    m_size(size)
+{
+    if (str == nullptr) {
+        m_size = 0;
+
+        return;
+    }
+
+    m_data = new char[m_size + 1];
+    memcpy(m_data, str, m_size);
+    m_data[m_size] = '\0';
+}
+
+
+xmrig::String::String(const String &other) :
+    m_data(nullptr),
+    m_size(other.m_size)
+{
+    if (other.m_data == nullptr) {
+        return;
+    }
+
+    m_data = new char[m_size + 1];
+    memcpy(m_data, other.m_data, m_size + 1);
+}
+
+
 bool xmrig::String::isEqual(const char *str) const
 {
     return (m_data != nullptr && str != nullptr && strcmp(m_data, str) == 0) || (m_data == nullptr && str == nullptr);
@@ -146,6 +188,8 @@ void xmrig::String::copy(const String &other)
         delete [] m_data;
     }
 
+    delete [] m_data;
+
     if (other.m_data == nullptr) {
         m_size = 0;
         m_data = nullptr;
@@ -157,24 +201,6 @@ void xmrig::String::copy(const String &other)
     m_data = new char[m_size + 1];
 
     memcpy(m_data, other.m_data, m_size + 1);
-}
-
-
-void xmrig::String::create(const char *str, size_t size)
-{
-    if (str == nullptr) {
-        m_size = 0;
-        m_data = nullptr;
-
-        return;
-    }
-
-    m_size = size;
-    m_data = new char[m_size + 1];
-
-    memcpy(m_data, str, m_size);
-
-    m_data[m_size] = '\0';
 }
 
 

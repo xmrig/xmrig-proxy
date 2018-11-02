@@ -110,6 +110,7 @@ void ApiRouter::get(const xmrig::HttpRequest &req, xmrig::HttpReply &reply) cons
     getIdentify(doc);
     getMiner(doc);
     getHashrate(doc);
+    getMemory(doc);
     getMinersSummary(doc, req.match("/1/summary"));
     getResults(doc);
 
@@ -208,6 +209,21 @@ void ApiRouter::getIdentify(rapidjson::Document &doc) const
 {
     doc.AddMember("id",        rapidjson::StringRef(m_id),       doc.GetAllocator());
     doc.AddMember("worker_id", rapidjson::StringRef(m_workerId), doc.GetAllocator());
+}
+
+
+void ApiRouter::getMemory(rapidjson::Document &doc) const
+{
+    auto &allocator = doc.GetAllocator();
+
+    size_t rss = 0;
+    uv_resident_set_memory(&rss);
+
+    rapidjson::Value memory(rapidjson::kObjectType);
+    memory.AddMember("total", uv_get_total_memory(), allocator);
+    memory.AddMember("res",   static_cast<uint64_t>(rss), allocator);
+
+    doc.AddMember("memory", memory, allocator);
 }
 
 
@@ -317,7 +333,7 @@ void ApiRouter::getResources(rapidjson::Document &doc) const
     uv_resident_set_memory(&rss);
 
     doc.AddMember("total_memory",        uv_get_total_memory(), allocator);
-    doc.AddMember("resident_set_memory", (uint64_t) rss, allocator);
+    doc.AddMember("resident_set_memory", static_cast<uint64_t>(rss), allocator);
 }
 
 

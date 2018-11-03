@@ -57,10 +57,10 @@ private:
     void genId(const char *id);
     void getHashrate(rapidjson::Document &doc) const;
     void getIdentify(rapidjson::Document &doc) const;
-    void getMemory(rapidjson::Document &doc) const;
     void getMiner(rapidjson::Document &doc) const;
     void getMiners(rapidjson::Document &doc) const;
     void getMinersSummary(rapidjson::Document &doc, bool advanced) const;
+    void getResourcesSummary(rapidjson::Document &doc) const;
     void getResources(rapidjson::Document &doc) const;
     void getResults(rapidjson::Document &doc) const;
     void getWorkers(rapidjson::Document &doc) const;

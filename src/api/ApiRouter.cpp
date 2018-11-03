@@ -110,7 +110,7 @@ void ApiRouter::get(const xmrig::HttpRequest &req, xmrig::HttpReply &reply) cons
     getIdentify(doc);
     getMiner(doc);
     getHashrate(doc);
-    getMemory(doc);
+    getResourcesSummary(doc);
     getMinersSummary(doc, req.match("/1/summary"));
     getResults(doc);
 
@@ -212,21 +212,6 @@ void ApiRouter::getIdentify(rapidjson::Document &doc) const
 }
 
 
-void ApiRouter::getMemory(rapidjson::Document &doc) const
-{
-    auto &allocator = doc.GetAllocator();
-
-    size_t rss = 0;
-    uv_resident_set_memory(&rss);
-
-    rapidjson::Value memory(rapidjson::kObjectType);
-    memory.AddMember("total", uv_get_total_memory(), allocator);
-    memory.AddMember("res",   static_cast<uint64_t>(rss), allocator);
-
-    doc.AddMember("memory", memory, allocator);
-}
-
-
 void ApiRouter::getMiner(rapidjson::Document &doc) const
 {
     auto &allocator = doc.GetAllocator();
@@ -324,6 +309,33 @@ void ApiRouter::getMinersSummary(rapidjson::Document &doc, bool advanced) const
     }
 }
 
+
+
+void ApiRouter::getResourcesSummary(rapidjson::Document &doc) const
+{
+    using namespace rapidjson;
+    auto &allocator = doc.GetAllocator();
+
+    size_t rss = 0;
+    uv_resident_set_memory(&rss);
+
+    Value resources(kObjectType);
+    Value memory(kObjectType);
+    Value load_average(kArrayType);
+
+    memory.AddMember("total",               uv_get_total_memory(), allocator);
+    memory.AddMember("resident_set_memory", static_cast<uint64_t>(rss), allocator);
+
+    double loadavg[3] = { 1.0 };
+    uv_loadavg(loadavg);
+    load_average.PushBack(loadavg[0], allocator);
+    load_average.PushBack(loadavg[1], allocator);
+    load_average.PushBack(loadavg[2], allocator);
+
+    resources.AddMember("memory", memory, allocator);
+    resources.AddMember("load_average", load_average, allocator);
+    doc.AddMember("resources", resources, allocator);
+}
 
 
 void ApiRouter::getResources(rapidjson::Document &doc) const

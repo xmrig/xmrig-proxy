@@ -24,6 +24,7 @@
 #include <cmath>
 #include <string.h>
 #include <uv.h>
+#include <thread>
 
 #if _WIN32
 #   include "winsock2.h"
@@ -334,6 +335,8 @@ void ApiRouter::getResourcesSummary(rapidjson::Document &doc) const
 
     resources.AddMember("memory", memory, allocator);
     resources.AddMember("load_average", load_average, allocator);
+    resources.AddMember("hardware_concurrency", std::thread::hardware_concurrency(), allocator);
+
     doc.AddMember("resources", resources, allocator);
 }
 

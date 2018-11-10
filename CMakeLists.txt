@@ -170,7 +170,7 @@ else()
     if (CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
         set(EXTRA_LIBS pthread)
     else()
-        set(EXTRA_LIBS pthread uuid rt dl)
+        set(EXTRA_LIBS pthread uuid.a rt dl)
     endif()
 endif()
 

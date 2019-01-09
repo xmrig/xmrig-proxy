@@ -5,7 +5,7 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@
 namespace xmrig {
 
 
-static inline int64_t currentMSecsSinceEpoch()
+static inline int64_t steadyTimestamp()
 {
     using namespace std::chrono;
     if (high_resolution_clock::is_steady) {
@@ -39,6 +39,14 @@ static inline int64_t currentMSecsSinceEpoch()
     }
 
     return time_point_cast<milliseconds>(steady_clock::now()).time_since_epoch().count();
+}
+
+
+static inline int64_t currentMSecsSinceEpoch()
+{
+    using namespace std::chrono;
+
+    return time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
 }
 
 

@@ -39,7 +39,9 @@
 #endif
 
 
+#ifdef XMRIG_AMD_PROJECT
 static uint32_t timerResolution = 0;
+#endif
 
 
 static inline OSVERSIONINFOEX winOsVersion()

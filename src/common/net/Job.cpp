@@ -125,6 +125,15 @@ bool Job::setBlob(const char *blob)
         m_algorithm.setVariant(variant());
     }
 
+    if (!m_algorithm.isForced()) {
+        if (m_algorithm.variant() == xmrig::VARIANT_XTL && m_blob[0] >= 9) {
+            m_algorithm.setVariant(xmrig::VARIANT_HALF);
+        }
+        else if (m_algorithm.variant() == xmrig::VARIANT_MSR && m_blob[0] >= 8) {
+            m_algorithm.setVariant(xmrig::VARIANT_HALF);
+        }
+    }
+
 #   ifdef XMRIG_PROXY_PROJECT
     memset(m_rawBlob, 0, sizeof(m_rawBlob));
     memcpy(m_rawBlob, blob, m_size * 2);

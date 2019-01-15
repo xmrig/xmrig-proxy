@@ -51,7 +51,6 @@ Options:\n\
   -u, --user=USERNAME      username for mining server\n\
   -p, --pass=PASSWORD      password for mining server\n\
       --rig-id=ID          rig identifier for pool-side statistics (needs pool support)\n\
-      --tls                enable SSL/TLS support (needs pool support)\n\
       --tls-fingerprint=F  pool TLS certificate fingerprint, if set enable strict certificate pinning\n\
   -k, --keepalive          prevent timeout (needs pool support)\n\
   -r, --retries=N          number of times to retry before switch to backup server (default: 1)\n\
@@ -68,10 +67,10 @@ Options:\n\
   -c, --config=FILE        load a JSON-format configuration file\n\
       --no-watch           disable configuration file watching\n\
   -l, --log-file=FILE      log all output to a file\n"
-# ifdef HAVE_SYSLOG_H
+#ifdef HAVE_SYSLOG_H
 "\
   -S, --syslog             use system log for output messages\n"
-# endif
+#endif
 "\
   -A  --access-log-file=N  log all workers access to a file\n\
       --api-port=N         port for the miner API\n\
@@ -79,7 +78,19 @@ Options:\n\
       --api-worker-id=ID   custom worker-id (instance name) for API\n\
       --api-id=ID          custom instance ID for API\n\
       --api-ipv6           enable IPv6 support for API\n\
-      --api-no-restricted  enable full remote access (only if API token set)\n\
+      --api-no-restricted  enable full remote access (only if API token set)\n"
+#ifndef XMRIG_NO_TLS
+"\
+      --tls                enable SSL/TLS support for pool connection (needs pool support)\n\
+      --tls-bind=ADDR      bind to specified address with enabled TLS\n\
+      --tls-cert=FILE      load TLS certificate chain from a file in the PEM format\n\
+      --tls-cert-key=FILE  load TLS certificate private key from a file in the PEM format\n\
+      --tls-dhparam=FILE   load DH parameters for DHE ciphers from a file in the PEM format\n\
+      --tls-protocols=N    enable specified TLS protocols, example: \"TLSv1 TLSv1.1 TLSv1.2 TLSv1.3\"\n\
+      --tls-ciphers=S      set list of available ciphers (TLSv1.2 and below)\n\
+      --tls-ciphersuites=S set list of available TLSv1.3 ciphersuites\n"
+#endif
+"\
   -h, --help               display this help and exit\n\
   -V, --version            output version information and exit\n\
 ";
@@ -128,6 +139,13 @@ static struct option const options[] = {
     { "rig-id",            1, nullptr, xmrig::IConfig::RigIdKey          },
     { "tls",               0, nullptr, xmrig::IConfig::TlsKey            },
     { "tls-fingerprint",   1, nullptr, xmrig::IConfig::FingerprintKey    },
+    { "tls-bind",          1, nullptr, xmrig::IConfig::TlsBindKey        },
+    { "tls-cert",          1, nullptr, xmrig::IConfig::TlsCertKey        },
+    { "tls-cert-key",      1, nullptr, xmrig::IConfig::TlsCertKeyKey     },
+    { "tls-dhparam",       1, nullptr, xmrig::IConfig::TlsDHparamKey     },
+    { "tls-protocols",     1, nullptr, xmrig::IConfig::TlsProtocolsKey   },
+    { "tls-ciphers",       1, nullptr, xmrig::IConfig::TlsCiphersKey     },
+    { "tls-ciphersuites",  1, nullptr, xmrig::IConfig::TlsCipherSuitesKey},
     { nullptr,             0, nullptr, 0 }
 };
 

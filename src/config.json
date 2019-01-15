@@ -11,8 +11,16 @@
     },
     "background": false,
     "bind": [
-        "0.0.0.0:3333",
-        "[::]:3333"
+        {
+            "host": "0.0.0.0",
+            "port": 3333,
+            "tls": false
+        },
+        {
+            "host": "::",
+            "port": 3333,
+            "tls": false
+        }
     ],
     "colors": true,
     "custom-diff": 0,
@@ -34,6 +42,14 @@
     "retries": 2,
     "retry-pause": 1,
     "reuse-timeout": 0,
+    "tls": {
+        "protocols": null,
+        "cert": null,
+        "cert_key": null,
+        "ciphers": null,
+        "ciphersuites": null,
+        "dhparam": null
+    },
     "user-agent": null,
     "verbose": false,
     "watch": true,

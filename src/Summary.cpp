@@ -30,7 +30,7 @@
 #include "common/net/Pool.h"
 #include "core/Config.h"
 #include "core/Controller.h"
-#include "proxy/Addr.h"
+#include "proxy/BindHost.h"
 #include "Summary.h"
 #include "version.h"
 
@@ -53,16 +53,29 @@ static void print_algo(xmrig::Controller *controller)
 
 static void print_bind(xmrig::Controller *controller)
 {
-    const std::vector<Addr> &addrs = controller->config()->addrs();
+    const xmrig::BindHosts &bind = controller->config()->bind();
 
-    for (size_t i = 0; i < addrs.size(); ++i) {
-        Log::i()->text(controller->config()->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("BIND #%-7zu") CYAN("%s%s%s:") CYAN_BOLD("%d")
-                                                        : " * BIND #%-7zu%s%s%s:%d",
-                       i + 1,
-                       addrs[i].isIPv6() ? "[" : "",
-                       addrs[i].ip(),
-                       addrs[i].isIPv6() ? "]" : "",
-                       addrs[i].port());
+    if (controller->config()->isColors()) {
+        for (size_t i = 0; i < bind.size(); ++i) {
+            Log::i()->text(GREEN_BOLD(" * ") WHITE_BOLD("BIND #%-7zu") CYAN("%s%s%s:") "\x1B[1;%dm%d\x1B[0m",
+                           i + 1,
+                           bind[i].isIPv6() ? "[" : "",
+                           bind[i].host(),
+                           bind[i].isIPv6() ? "]" : "",
+                           bind[i].isTLS() ? 32 : 36,
+                           bind[i].port());
+        }
+    }
+    else {
+        for (size_t i = 0; i < bind.size(); ++i) {
+            Log::i()->text(" * BIND #%-7zu%s%s%s:%d TLS=%d",
+                           i + 1,
+                           bind[i].isIPv6() ? "[" : "",
+                           bind[i].host(),
+                           bind[i].isIPv6() ? "]" : "",
+                           bind[i].port(),
+                           static_cast<int>(bind[i].isTLS()));
+        }
     }
 }
 

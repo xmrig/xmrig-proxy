@@ -14,6 +14,7 @@ include (CheckIncludeFile)
 set(HEADERS
     src/3rdparty/align.h
     src/App.h
+    src/base/tools/String.h
     src/common/config/CommonConfig.h
     src/common/config/ConfigLoader.h
     src/common/config/ConfigWatcher.h
@@ -53,7 +54,7 @@ set(HEADERS
     src/log/ShareLog.h
     src/net/JobResult.h
     src/net/strategies/DonateStrategy.h
-    src/proxy/Addr.h
+    src/proxy/BindHost.h
     src/proxy/Counters.h
     src/proxy/CustomDiff.h
     src/proxy/Error.h
@@ -89,6 +90,7 @@ set(HEADERS
 
 set(SOURCES
     src/App.cpp
+    src/base/tools/String.cpp
     src/common/config/CommonConfig.cpp
     src/common/config/ConfigLoader.cpp
     src/common/config/ConfigWatcher.cpp
@@ -112,6 +114,7 @@ set(SOURCES
     src/log/ShareLog.cpp
     src/net/JobResult.cpp
     src/net/strategies/DonateStrategy.cpp
+    src/proxy/BindHost.cpp
     src/proxy/Counters.cpp
     src/proxy/CustomDiff.cpp
     src/proxy/Error.cpp
@@ -167,7 +170,7 @@ else()
     if (CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
         set(EXTRA_LIBS pthread)
     else()
-        set(EXTRA_LIBS pthread uuid rt dl)
+        set(EXTRA_LIBS pthread uuid.a rt dl)
     endif()
 endif()
 

@@ -21,23 +21,23 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_CLIENT_TLS_H
-#define XMRIG_CLIENT_TLS_H
+#ifndef XMRIG_MINER_TLS_H
+#define XMRIG_MINER_TLS_H
 
 
 #include <openssl/ssl.h>
 
 
-#include "common/net/Client.h"
+#include "proxy/Miner.h"
 
 
-class Client::Tls
+class Miner::Tls
 {
 public:
-    Tls(Client *client);
+    Tls(SSL_CTX *ctx, Miner *miner);
     ~Tls();
 
-    bool handshake();
+    bool accept();
     bool send(const char *data, size_t size);
     const char *fingerprint() const;
     const char *version() const;
@@ -46,17 +46,17 @@ public:
 private:
     bool send();
     bool verify(X509 *cert);
-    bool verifyFingerprint(X509 *cert);
+    void read();
 
     BIO *m_readBio;
     BIO *m_writeBio;
     bool m_ready;
-    char m_buf[1024 * 2];
+    char m_buf[1024 * 1];
     char m_fingerprint[32 * 2 + 8];
-    Client *m_client;
+    Miner *m_miner;
     SSL *m_ssl;
     SSL_CTX *m_ctx;
 };
 
 
-#endif /* XMRIG_CLIENT_TLS_H */
+#endif /* XMRIG_MINER_TLS_H */

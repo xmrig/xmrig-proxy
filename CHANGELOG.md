@@ -1,6 +1,12 @@
+# v2.9.0
+- [#275](https://github.com/xmrig/xmrig-proxy/issues/275) Added SSL/TLS support for incoming connections.
+- [#899](https://github.com/xmrig/xmrig/issues/899) Added support for new algoritm `cn/half` for Masari and Stellite forks.
+- [#271](https://github.com/xmrig/xmrig-proxy/issues/271) Fixed broken pool options cascading (mixed configuration).
+- Added memory and load_average information to API.
+
 # v2.8.1
-- [#258](https://github.com/xmrig/xmrig/issues/258) Force NDEBUG for release builds.
-- [#108](https://github.com/xmrig/xmrig/issues/108) Fixed possible crash in simple mode when heavy load.
+- [#258](https://github.com/xmrig/xmrig-proxy/issues/258) Force NDEBUG for release builds.
+- [#108](https://github.com/xmrig/xmrig-proxy/issues/108) Fixed possible crash in simple mode when heavy load.
 - [#777](https://github.com/xmrig/xmrig/issues/777) Better report about pool connection issues. 
 - Fixed error when handle malformed result from miner (divide to zero).
 - Fixed malformed login reply.

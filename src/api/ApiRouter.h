@@ -21,8 +21,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __APIROUTER_H__
-#define __APIROUTER_H__
+#ifndef XMRIG_APIROUTER_H
+#define XMRIG_APIROUTER_H
 
 
 #include "common/interfaces/IControllerListener.h"
@@ -60,6 +60,7 @@ private:
     void getMiner(rapidjson::Document &doc) const;
     void getMiners(rapidjson::Document &doc) const;
     void getMinersSummary(rapidjson::Document &doc, bool advanced) const;
+    void getResourcesSummary(rapidjson::Document &doc) const;
     void getResources(rapidjson::Document &doc) const;
     void getResults(rapidjson::Document &doc) const;
     void getWorkers(rapidjson::Document &doc) const;
@@ -71,4 +72,4 @@ private:
     xmrig::Controller *m_controller;
 };
 
-#endif /* __APIROUTER_H__ */
+#endif /* XMRIG_APIROUTER_H */

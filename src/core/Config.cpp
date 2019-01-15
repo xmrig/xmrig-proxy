@@ -61,6 +61,20 @@ xmrig::Config::Config() : xmrig::CommonConfig(),
 }
 
 
+bool xmrig::Config::isTLS() const
+{
+#   ifndef XMRIG_NO_TLS
+    for (const BindHost &host : m_bind) {
+        if (host.isTLS()) {
+            return true;
+        }
+    }
+#   endif
+
+    return false;
+}
+
+
 bool xmrig::Config::reload(const char *json)
 {
     return xmrig::ConfigLoader::reload(this, json);
@@ -96,8 +110,8 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("background",   isBackground(), allocator);
 
     Value bind(kArrayType);
-    for (const Addr &addr : m_addrs) {
-        bind.PushBack(StringRef(addr.addr()), allocator);
+    for (const xmrig::BindHost &host : m_bind) {
+        bind.PushBack(host.toJSON(doc), allocator);
     }
 
     doc.AddMember("bind",         bind, allocator);
@@ -118,6 +132,11 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("retries",       retries(), allocator);
     doc.AddMember("retry-pause",   retryPause(), allocator);
     doc.AddMember("reuse-timeout", reuseTimeout(), allocator);
+
+#   ifndef XMRIG_NO_TLS
+    doc.AddMember("tls", m_tls.toJSON(doc), allocator);
+#   endif
+
     doc.AddMember("user-agent",    userAgent() ? Value(StringRef(userAgent())).Move() : Value(kNullType).Move(), allocator);
 
 #   ifdef HAVE_SYSLOG_H
@@ -146,9 +165,9 @@ bool xmrig::Config::finalize()
         return false;
     }
 
-    if (m_addrs.empty()) {
-        m_addrs.push_back(Addr("0.0.0.0:3333"));
-        m_addrs.push_back(Addr("[::]:3333"));
+    if (m_bind.empty()) {
+        m_bind.push_back(xmrig::BindHost("0.0.0.0", 3333, 4));
+        m_bind.push_back(xmrig::BindHost("::", 3333, 6));
     }
 
     return true;
@@ -194,11 +213,14 @@ bool xmrig::Config::parseString(int key, const char *arg)
         setMode(arg);
         break;
 
-    case BindKey: /* --bind */
+    case BindKey:    /* --bind */
+    case TlsBindKey: /* --tls-bind */
         {
-            Addr addr(arg);
-            if (addr.isValid()) {
-                m_addrs.push_back(std::move(addr));
+            xmrig::BindHost host(arg);
+            host.setTLS(key == TlsBindKey);
+
+            if (host.isValid()) {
+                m_bind.push_back(std::move(host));
             }
         }
         break;
@@ -221,8 +243,34 @@ bool xmrig::Config::parseString(int key, const char *arg)
         m_workersMode = Workers::parseMode(arg);
         break;
 
-    case CustomDiffKey: /* --custom-diff */
+    case CustomDiffKey:   /* --custom-diff */
         return parseUint64(key, strtol(arg, nullptr, 10));
+
+#   ifndef XMRIG_NO_TLS
+    case TlsCertKey: /* --tls-cert */
+        m_tls.setCert(arg);
+        break;
+
+    case TlsCertKeyKey: /* --tls-cert-key */
+        m_tls.setKey(arg);
+        break;
+
+    case TlsDHparamKey: /* --tls-dhparam */
+        m_tls.setDH(arg);
+        break;
+
+    case TlsCiphersKey: /* --tls-ciphers */
+        m_tls.setCiphers(arg);
+        break;
+
+    case TlsCipherSuitesKey: /* --tls-ciphersuites */
+        m_tls.setCipherSuites(arg);
+        break;
+
+    case TlsProtocolsKey: /* --tls-protocols */
+        m_tls.setProtocols(arg);
+        break;
+#   endif
 
     default:
         break;
@@ -262,13 +310,24 @@ void xmrig::Config::parseJSON(const rapidjson::Document &doc)
     const rapidjson::Value &bind = doc["bind"];
     if (bind.IsArray()) {
         for (const rapidjson::Value &value : bind.GetArray()) {
-            if (!value.IsString()) {
-                continue;
+            if (value.IsObject()) {
+                xmrig::BindHost host(value);
+                if (host.isValid()) {
+                    m_bind.push_back(std::move(host));
+                }
             }
-
-            parseString(BindKey, value.GetString());
+            else if (value.IsString()) {
+                parseString(BindKey, value.GetString());
+            }
         }
     }
+
+#   ifndef XMRIG_NO_TLS
+    const rapidjson::Value &tls = doc["tls"];
+    if (tls.IsObject()) {
+        m_tls = std::move(TlsConfig(tls));
+    }
+#   endif
 }
 
 

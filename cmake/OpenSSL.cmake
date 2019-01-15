@@ -11,7 +11,16 @@ if (WITH_TLS)
     find_package(OpenSSL)
 
     if (OPENSSL_FOUND)
-        set(TLS_SOURCES src/common/net/Tls.h src/common/net/Tls.cpp)
+        set(TLS_SOURCES
+            src/common/net/Tls.cpp
+            src/common/net/Tls.h
+            src/proxy/tls/Tls.cpp
+            src/proxy/tls/Tls.h
+            src/proxy/tls/TlsConfig.cpp
+            src/proxy/tls/TlsConfig.h
+            src/proxy/tls/TlsContext.cpp
+            src/proxy/tls/TlsContext.h
+            )
         include_directories(${OPENSSL_INCLUDE_DIR})
     else()
         message(FATAL_ERROR "OpenSSL NOT found: use `-DWITH_TLS=OFF` to build without TLS support")
@@ -20,4 +29,6 @@ else()
     set(TLS_SOURCES "")
     set(OPENSSL_LIBRARIES "")
     add_definitions(/DXMRIG_NO_TLS)
+
+    set(CMAKE_PROJECT_NAME "${CMAKE_PROJECT_NAME}-notls")
 endif()

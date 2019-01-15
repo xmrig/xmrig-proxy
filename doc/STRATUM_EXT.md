@@ -84,23 +84,24 @@ Note about xmr-stak, this miner use [different algorithm names](#15-xmr-stak-alg
 ### 1.4 Algorithm names and variants
 Both miner and pool should support short algorithm name aliases:
 
-| Long name                | Short name      | Base algorithm | Variant     | Notes                                                |
-|--------------------------|-----------------|----------------|-------------|------------------------------------------------------|
-| `cryptonight`            | `cn`            | `cn`           | `-1`        | Autodetect works only for Monero.                    |
-| `cryptonight/0`          | `cn/0`          | `cn`           | `0`         | Original/old CryptoNight.                            |
-| `cryptonight/1`          | `cn/1`          | `cn`           | `1`         | Also known as `monero7` and `CryptoNightV7`.         |
-| `cryptonight/2`          | `cn/2`          | `cn`           | `2`         | CryptoNight variant 2.                               |
-| `cryptonight/xtl`        | `cn/xtl`        | `cn`           | `"xtl"`     | Stellite (XTL).                                      |
-| `cryptonight/msr`        | `cn/msr`        | `cn`           | `"msr"`     | Masari (MSR), also known as `cryptonight-fast`       |
-| `cryptonight/xao`        | `cn/xao`        | `cn`           | `"xao"`     | Alloy (XAO)                                          |
-| `cryptonight/rto`        | `cn/rto`        | `cn`           | `"rto"`     | Arto (RTO)                                           |
-| `cryptonight-lite`       | `cn-lite`       | `cn-lite`      | `-1`        | Autodetect works only for Aeon.                      |
-| `cryptonight-lite/0`     | `cn-lite/0`     | `cn-lite`      | `0`         | Original/old CryptoNight-Lite.                       |
-| `cryptonight-lite/1`     | `cn-lite/1`     | `cn-lite`      | `1`         | Also known as `aeon7`                                |
-| `cryptonight-lite/ipbc`  | `cn-lite/ipbc`  | `cn-lite`      | `"ipbc"`    | IPBC variant, **obsolete**                           |
-| `cryptonight-heavy`      | `cn-heavy`      | `cn-heavy`     | `0`         | Ryo and Loki                                         |
-| `cryptonight-heavy/xhv`  | `cn-heavy/xhv`  | `cn-heavy`     | `"xhv"`     | Haven Protocol                                       |
-| `cryptonight-heavy/tube` | `cn-heavy/tube` | `cn-heavy`     | `"tube"`    | BitTube (TUBE)                                       |
+| Long name                | Short name      | Variant     | Notes                                                |
+|--------------------------|-----------------|-------------|------------------------------------------------------|
+| `cryptonight`            | `cn`            | `-1`        | Autodetect works only for Monero.                    |
+| `cryptonight/0`          | `cn/0`          | `0`         | Original/old CryptoNight.                            |
+| `cryptonight/1`          | `cn/1`          | `1`         | Also known as `monero7` and `CryptoNightV7`.         |
+| `cryptonight/2`          | `cn/2`          | `2`         | CryptoNight variant 2.                               |
+| `cryptonight/xtl`        | `cn/xtl`        | `"xtl"`     | Stellite (XTL).                                      |
+| `cryptonight/msr`        | `cn/msr`        | `"msr"`     | Masari (MSR), also known as `cryptonight-fast`.      |
+| `cryptonight/xao`        | `cn/xao`        | `"xao"`     | Alloy (XAO)                                          |
+| `cryptonight/rto`        | `cn/rto`        | `"rto"`     | Arto (RTO)                                           |
+| `cryptonight/half`       | `cn/half`       | `"half"`    | CryptoNight variant 2 with half iterations.          |
+| `cryptonight-lite`       | `cn-lite`       | `-1`        | Autodetect works only for Aeon.                      |
+| `cryptonight-lite/0`     | `cn-lite/0`     | `0`         | Original/old CryptoNight-Lite.                       |
+| `cryptonight-lite/1`     | `cn-lite/1`     | `1`         | Also known as `aeon7`                                |
+| `cryptonight-lite/ipbc`  | `cn-lite/ipbc`  | `"ipbc"`    | IPBC variant, **obsolete**                           |
+| `cryptonight-heavy`      | `cn-heavy`      | `0`         | Ryo and Loki                                         |
+| `cryptonight-heavy/xhv`  | `cn-heavy/xhv`  | `"xhv"`     | Haven Protocol                                       |
+| `cryptonight-heavy/tube` | `cn-heavy/tube` | `"tube"`    | BitTube (TUBE)                                       |
 
 Proper pool/proxy implementation should avoid any automatic/autodetect variants, variant must explicitly specified.
 

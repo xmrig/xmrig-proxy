@@ -1,3 +1,6 @@
+# v2.9.1
+- Restored compatibility with https://stellite.hashvault.pro.
+
 # v2.9.0
 - [#275](https://github.com/xmrig/xmrig-proxy/issues/275) Added SSL/TLS support for incoming connections.
 - [#899](https://github.com/xmrig/xmrig/issues/899) Added support for new algorithm `cn/half` for Masari and Stellite forks.

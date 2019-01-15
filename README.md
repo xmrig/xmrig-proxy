@@ -1,6 +1,4 @@
 # XMRig Proxy
-:warning: **[Monero will change PoW algorithm on October 18](https://github.com/xmrig/xmrig/issues/753), all miners and proxy should be updated to [v2.8+](https://github.com/xmrig/xmrig-proxy/releases/tag/v2.8.1)** :warning:
-
 [![Github All Releases](https://img.shields.io/github/downloads/xmrig/xmrig-proxy/total.svg)](https://github.com/xmrig/xmrig-proxy/releases)
 [![GitHub release](https://img.shields.io/github/release/xmrig/xmrig-proxy/all.svg)](https://github.com/xmrig/xmrig-proxy/releases)
 [![GitHub Release Date](https://img.shields.io/github/release-date-pre/xmrig/xmrig-proxy.svg)](https://github.com/xmrig/xmrig-proxy/releases)
@@ -78,17 +76,6 @@ Default donation fee is 2% can be reduced to 1% or disabled via `donate-level` o
 
 * XMR: `48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzKt52XU5xvqgzYnDK9URnRoJMk1j8nLwEVsaSWJ4fhdUyZijBGUicoD`
 * BTC: `1P7ujsXeX7GxQwHNnJsRMgAdNkFZmNVqJT`
-
-## Release checksums
-### SHA-256
-```
-1b92b4fe901cdc03bc4ce7da962be8f22c24ad5919192ab3ae5b0dc202a6451a xmrig-proxy-2.8.1-xenial-amd64.tar.gz/xmrig-proxy-2.8.1/xmrig-proxy
-7adb4c0958e6463c6032d60d098cb7693fca3c1541c0d9bb8a7fbd1d7489b452 xmrig-proxy-2.8.1-xenial-amd64.tar.gz/xmrig-proxy-2.8.1/xmrig-proxy-notls
-08572c9ebbb9b0d6e1e1a6bcbeee1ba4e5bde2e660dbaca21e943024d98de73b xmrig-proxy-2.8.1-win32/xmrig-proxy.exe
-543a6719b9e77c5a3215d5ed1d7e0d093a5a5c9da1580e71fe5f8adea755e4c6 xmrig-proxy-2.8.1-win32/xmrig-proxy-notls.exe
-b4ded37e2873b8aa2841103477b7db6f5b3aed3692b6d27aa374cbdc38a46faa xmrig-proxy-2.8.1-win64/xmrig-proxy.exe
-2443bc327fd2cabc8a3f20a8a23bca062fbd2ee367b4888f40def1d6d6dbaeff xmrig-proxy-2.8.1-win64/xmrig-proxy-notls.exe
-```
 
 ## Contacts
 * support@xmrig.com

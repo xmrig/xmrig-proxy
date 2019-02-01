@@ -102,6 +102,7 @@ Both miner and pool should support short algorithm name aliases:
 | `cryptonight-heavy`      | `cn-heavy`      | `0`         | Ryo and Loki                                         |
 | `cryptonight-heavy/xhv`  | `cn-heavy/xhv`  | `"xhv"`     | Haven Protocol                                       |
 | `cryptonight-heavy/tube` | `cn-heavy/tube` | `"tube"`    | BitTube (TUBE)                                       |
+| `cryptonight-pico/trtl`  | `cn-pico/trtl`  | `"trtl"`    | TurtleCoin (TRTL)                                    |
 
 Proper pool/proxy implementation should avoid any automatic/autodetect variants, variant must explicitly specified.
 

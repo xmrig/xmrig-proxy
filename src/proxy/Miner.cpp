@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -173,6 +174,10 @@ void Miner::setJob(Job &job)
     params.AddMember("job_id", StringRef(m_sendBuf + 16), allocator);
     params.AddMember("target", StringRef(customDiff ? m_sendBuf : job.rawTarget()), allocator);
     params.AddMember("algo",   StringRef(job.algorithm().shortName()), allocator);
+
+    if (job.height()) {
+        params.AddMember("height", job.height(), allocator);
+    }
 
     if (job.algorithm().variant() == xmrig::VARIANT_0 || job.algorithm().variant() == xmrig::VARIANT_1) {
         params.AddMember("variant", job.algorithm().variant(), allocator);

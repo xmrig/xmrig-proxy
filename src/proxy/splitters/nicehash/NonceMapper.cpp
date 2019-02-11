@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -302,9 +303,16 @@ void NonceMapper::connect()
 void NonceMapper::setJob(const char *host, int port, const Job &job)
 {
     if (m_controller->config()->isVerbose()) {
-        LOG_INFO(isColors() ? "#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s")
-                            : "#%03u new job from %s:%d diff %d algo %s",
-                 m_id, host, port, job.diff(), job.algorithm().shortName());
+        if (job.height()) {
+            LOG_INFO(isColors() ? "#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s") " height " WHITE_BOLD("%" PRIu64)
+                                : "#%03u new job from %s:%d diff %d algo %s height %" PRIu64,
+                     m_id, host, port, job.diff(), job.algorithm().shortName(), job.height());
+        }
+        else {
+            LOG_INFO(isColors() ? "#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s")
+                                : "#%03u new job from %s:%d diff %d algo %s",
+                     m_id, host, port, job.diff(), job.algorithm().shortName());
+        }
     }
 
     m_storage->setJob(job);

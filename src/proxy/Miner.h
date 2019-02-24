@@ -34,16 +34,17 @@
 #include "rapidjson/fwd.h"
 
 
-class Job;
 class RejectEvent;
 
 
-namespace xmrig {
-    class TlsContext;
-}
-
-
 typedef struct bio_st BIO;
+
+
+namespace xmrig {
+
+
+class Job;
+class TlsContext;
 
 
 class Miner
@@ -60,7 +61,7 @@ public:
     ~Miner();
     bool accept(uv_stream_t *server);
     void replyWithError(int64_t id, const char *message);
-    void setJob(Job &job);
+    void setJob(xmrig::Job &job);
     void success(int64_t id, const char *status);
 
     inline const char *agent() const                  { return m_agent.data(); }
@@ -144,5 +145,8 @@ private:
     static char m_sendBuf[2048];
     static xmrig::Storage<Miner> m_storage;
 };
+
+
+} /* namespace xmrig */
 
 #endif /* XMRIG_MINER_H */

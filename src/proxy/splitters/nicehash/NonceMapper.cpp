@@ -45,15 +45,15 @@
 #include "proxy/splitters/nicehash/NonceStorage.h"
 
 
-NonceMapper::NonceMapper(size_t id, xmrig::Controller *controller) :
+xmrig::NonceMapper::NonceMapper(size_t id, Controller *controller) :
+    m_controller(controller),
     m_donate(nullptr),
     m_suspended(0),
     m_pending(nullptr),
-    m_id(id),
-    m_controller(controller)
+    m_id(id)
 {
     m_storage  = new NonceStorage();
-    m_strategy = createStrategy(controller->config()->pools());
+    m_strategy = createStrategy(controller->config()->pools().data());
 
     if (controller->config()->donateLevel() > 0) {
         m_donate = new DonateStrategy(controller, this);
@@ -61,7 +61,7 @@ NonceMapper::NonceMapper(size_t id, xmrig::Controller *controller) :
 }
 
 
-NonceMapper::~NonceMapper()
+xmrig::NonceMapper::~NonceMapper()
 {
     delete m_pending;
     delete m_strategy;
@@ -70,7 +70,7 @@ NonceMapper::~NonceMapper()
 }
 
 
-bool NonceMapper::add(Miner *miner)
+bool xmrig::NonceMapper::add(Miner *miner)
 {
     if (!m_storage->add(miner)) {
         return false;
@@ -86,13 +86,13 @@ bool NonceMapper::add(Miner *miner)
 }
 
 
-bool NonceMapper::isActive() const
+bool xmrig::NonceMapper::isActive() const
 {
     return m_storage->isActive() && !isSuspended();
 }
 
 
-void NonceMapper::gc()
+void xmrig::NonceMapper::gc()
 {
     if (isSuspended()) {
         m_suspended++;
@@ -107,7 +107,7 @@ void NonceMapper::gc()
 }
 
 
-void NonceMapper::reload(const std::vector<Pool> &pools)
+void xmrig::NonceMapper::reload(const std::vector<Pool> &pools)
 {
     delete m_pending;
 
@@ -116,19 +116,19 @@ void NonceMapper::reload(const std::vector<Pool> &pools)
 }
 
 
-void NonceMapper::remove(const Miner *miner)
+void xmrig::NonceMapper::remove(const Miner *miner)
 {
     m_storage->remove(miner);
 }
 
 
-void NonceMapper::start()
+void xmrig::NonceMapper::start()
 {
     connect();
 }
 
 
-void NonceMapper::submit(SubmitEvent *event)
+void xmrig::NonceMapper::submit(SubmitEvent *event)
 {
     if (!m_storage->isActive()) {
         return event->reject(Error::BadGateway);
@@ -151,7 +151,7 @@ void NonceMapper::submit(SubmitEvent *event)
 }
 
 
-void NonceMapper::tick(uint64_t ticks, uint64_t now)
+void xmrig::NonceMapper::tick(uint64_t ticks, uint64_t now)
 {
     m_strategy->tick(now);
 
@@ -167,7 +167,7 @@ void NonceMapper::tick(uint64_t ticks, uint64_t now)
 
 
 #ifdef APP_DEVEL
-void NonceMapper::printState()
+void xmrig::NonceMapper::printState()
 {
     if (isSuspended()) {
         return;
@@ -178,7 +178,7 @@ void NonceMapper::printState()
 #endif
 
 
-void NonceMapper::onActive(IStrategy *strategy, Client *client)
+void xmrig::NonceMapper::onActive(IStrategy *strategy, Client *client)
 {
     m_storage->setActive(true);
 
@@ -208,7 +208,7 @@ void NonceMapper::onActive(IStrategy *strategy, Client *client)
 }
 
 
-void NonceMapper::onJob(IStrategy *strategy, Client *client, const Job &job)
+void xmrig::NonceMapper::onJob(IStrategy *strategy, Client *client, const Job &job)
 {
     if (m_donate) {
         if (m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {
@@ -223,7 +223,7 @@ void NonceMapper::onJob(IStrategy *strategy, Client *client, const Job &job)
 }
 
 
-void NonceMapper::onPause(IStrategy *strategy)
+void xmrig::NonceMapper::onPause(IStrategy *strategy)
 {
     m_storage->setActive(false);
 
@@ -233,7 +233,7 @@ void NonceMapper::onPause(IStrategy *strategy)
 }
 
 
-void NonceMapper::onResultAccepted(IStrategy *strategy, Client *client, const SubmitResult &result, const char *error)
+void xmrig::NonceMapper::onResultAccepted(IStrategy *strategy, Client *client, const SubmitResult &result, const char *error)
 {
     const SubmitCtx ctx = submitCtx(result.seq);
 
@@ -252,16 +252,16 @@ void NonceMapper::onResultAccepted(IStrategy *strategy, Client *client, const Su
 }
 
 
-bool NonceMapper::isColors() const
+bool xmrig::NonceMapper::isColors() const
 {
     return m_controller->config()->isColors();
 }
 
 
-IStrategy *NonceMapper::createStrategy(const std::vector<Pool> &pools)
+xmrig::IStrategy *xmrig::NonceMapper::createStrategy(const std::vector<Pool> &pools)
 {
-    const int retryPause = m_controller->config()->retryPause();
-    const int retries    = m_controller->config()->retries();
+    const int retryPause = m_controller->config()->pools().retryPause();
+    const int retries    = m_controller->config()->pools().retries();
 
     if (pools.size() > 1) {
         return new FailoverStrategy(pools, retryPause, retries, this);
@@ -271,7 +271,7 @@ IStrategy *NonceMapper::createStrategy(const std::vector<Pool> &pools)
 }
 
 
-SubmitCtx NonceMapper::submitCtx(int64_t seq)
+xmrig::SubmitCtx xmrig::NonceMapper::submitCtx(int64_t seq)
 {
     if (!m_results.count(seq)) {
         return SubmitCtx();
@@ -289,7 +289,7 @@ SubmitCtx NonceMapper::submitCtx(int64_t seq)
 }
 
 
-void NonceMapper::connect()
+void xmrig::NonceMapper::connect()
 {
     m_suspended = 0;
     m_strategy->connect();
@@ -300,7 +300,7 @@ void NonceMapper::connect()
 }
 
 
-void NonceMapper::setJob(const char *host, int port, const Job &job)
+void xmrig::NonceMapper::setJob(const char *host, int port, const Job &job)
 {
     if (m_controller->config()->isVerbose()) {
         if (job.height()) {
@@ -319,7 +319,7 @@ void NonceMapper::setJob(const char *host, int port, const Job &job)
 }
 
 
-void NonceMapper::suspend()
+void xmrig::NonceMapper::suspend()
 {
     m_suspended = 1;
     m_storage->setActive(false);

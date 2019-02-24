@@ -177,7 +177,7 @@ void ApiRouter::genId(const char *id)
             memcpy(input + sizeof(uint16_t) + addrSize, APP_KIND, strlen(APP_KIND));
 
             xmrig::keccak(input, inSize, hash);
-            Job::toHex(hash, 8, m_id);
+            xmrig::Job::toHex(hash, 8, m_id);
 
             delete [] input;
             break;
@@ -244,7 +244,7 @@ void ApiRouter::getMiners(rapidjson::Document &doc) const
 
     Value miners(kArrayType);
 
-    for (const Miner *miner : list) {
+    for (const xmrig::Miner *miner : list) {
         if (miner->mapperId() == -1) {
             continue;
         }
@@ -388,7 +388,7 @@ void ApiRouter::getWorkers(rapidjson::Document &doc) const
 
     Value workers(kArrayType);
 
-    for (const Worker &worker : list) {
+    for (const xmrig::Worker &worker : list) {
          Value array(kArrayType);
          array.PushBack(StringRef(worker.name()), allocator);
          array.PushBack(StringRef(worker.ip()), allocator);
@@ -407,7 +407,7 @@ void ApiRouter::getWorkers(rapidjson::Document &doc) const
          workers.PushBack(array, allocator);
     }
 
-    doc.AddMember("mode", StringRef(Workers::modeName(m_controller->config()->workersMode())), allocator);
+    doc.AddMember("mode", StringRef(xmrig::Workers::modeName(m_controller->config()->workersMode())), allocator);
     doc.AddMember("workers", workers, allocator);
 }
 

@@ -26,20 +26,19 @@
 #define XMRIG_DONATESTRATEGY_H
 
 
+#include "base/tools/String.h"
 #include "common/interfaces/IClientListener.h"
 #include "common/interfaces/IStrategy.h"
 #include "common/net/Job.h"
-#include "common/utils/c_str.h"
+
+
+
+namespace xmrig {
 
 
 class Client;
 class IStrategyListener;
-class Url;
-
-
-namespace xmrig {
-    class Controller;
-}
+class Controller;
 
 
 class DonateStrategy : public IStrategy, public IClientListener
@@ -48,7 +47,7 @@ public:
     struct Pending
     {
         Job job;
-        xmrig::c_str host;
+        String host;
         int port;
     };
 
@@ -80,12 +79,16 @@ protected:
 private:
     bool m_active;
     Client *m_client;
+    Controller *m_controller;
     IStrategyListener *m_listener;
     Pending m_pending;
     uint64_t m_donateTicks;
     uint64_t m_target;
     uint64_t m_ticks;
-    xmrig::Controller *m_controller;
 };
+
+
+} /* namespace xmrig */
+
 
 #endif /* XMRIG_DONATESTRATEGY_H */

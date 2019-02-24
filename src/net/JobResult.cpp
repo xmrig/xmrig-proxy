@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +22,6 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <stdio.h>
 
 
@@ -29,7 +29,7 @@
 #include "net/JobResult.h"
 
 
-JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, const char *result, const xmrig::Algorithm &algorithm) :
+xmrig::JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, const char *result, const xmrig::Algorithm &algorithm) :
     nonce(nonce),
     result(result),
     id(id),
@@ -49,7 +49,7 @@ JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, const cha
 }
 
 
-bool JobResult::isCompatible(uint8_t fixedByte) const
+bool xmrig::JobResult::isCompatible(uint8_t fixedByte) const
 {
     uint8_t n[4];
     if (!Job::fromHex(nonce, 8, n)) {
@@ -60,7 +60,7 @@ bool JobResult::isCompatible(uint8_t fixedByte) const
 }
 
 
-bool JobResult::isValid() const
+bool xmrig::JobResult::isValid() const
 {
     if (!nonce || m_actualDiff == 0) {
         return false;

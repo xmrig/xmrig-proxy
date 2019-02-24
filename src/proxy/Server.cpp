@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -29,7 +30,7 @@
 #include "proxy/Server.h"
 
 
-Server::Server(const xmrig::BindHost &host, const xmrig::TlsContext *ctx) :
+xmrig::Server::Server(const BindHost &host, const TlsContext *ctx) :
     m_ctx(host.isTLS() ? ctx : nullptr),
     m_version(0),
     m_port(host.port()),
@@ -51,7 +52,7 @@ Server::Server(const xmrig::BindHost &host, const xmrig::TlsContext *ctx) :
 }
 
 
-bool Server::bind()
+bool xmrig::Server::bind()
 {
     if (!m_version) {
         return false;
@@ -70,7 +71,7 @@ bool Server::bind()
 }
 
 
-void Server::create(uv_stream_t *server, int status)
+void xmrig::Server::create(uv_stream_t *server, int status)
 {
     if (status < 0) {
         LOG_ERR("[%s:%u] new connection error: \"%s\"", m_host.data(), m_port, uv_strerror(status));
@@ -91,7 +92,7 @@ void Server::create(uv_stream_t *server, int status)
 }
 
 
-void Server::onConnection(uv_stream_t *server, int status)
+void xmrig::Server::onConnection(uv_stream_t *server, int status)
 {
     static_cast<Server*>(server->data)->create(server, status);
 }

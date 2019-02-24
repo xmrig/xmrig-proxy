@@ -25,29 +25,39 @@
 #define XMRIG_LOGINEVENT_H
 
 
+#include <stdint.h>
+
+
 #include "common/crypto/Algorithm.h"
 #include "proxy/events/MinerEvent.h"
+
+
+namespace xmrig {
 
 
 class LoginEvent : public MinerEvent
 {
 public:
-    static inline LoginEvent *create(Miner *miner, int64_t id, const char *login, const char *pass, const char *agent, const char *rigId, const xmrig::Algorithms &algorithms)
+    static inline LoginEvent *create(Miner *miner, int64_t id, const char *login, const char *pass, const char *agent, const char *rigId, const Algorithms &algorithms)
     {
         return new (m_buf) LoginEvent(miner, id, login, pass, agent, rigId, algorithms);
     }
 
 
     const int64_t loginId;
-    const xmrig::Algorithms &algorithms;
+    const Algorithms &algorithms;
 
 
 protected:
-    inline LoginEvent(Miner *miner, int64_t id, const char *login, const char *pass, const char *agent, const char *rigId, const xmrig::Algorithms &algorithms)
+    inline LoginEvent(Miner *miner, int64_t id, const char *login, const char *pass, const char *agent, const char *rigId, const Algorithms &algorithms)
         : MinerEvent(LoginType, miner),
           loginId(id),
           algorithms(algorithms)
     {}
 };
+
+
+} /* namespace xmrig */
+
 
 #endif /* XMRIG_LOGINEVENT_H */

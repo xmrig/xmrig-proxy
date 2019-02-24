@@ -30,13 +30,8 @@
 #include <vector>
 
 
-#include "base/net/Pool.h"
 #include "common/interfaces/IStrategyListener.h"
 #include "common/net/Job.h"
-
-
-class Miner;
-class SubmitEvent;
 
 
 namespace xmrig {
@@ -46,7 +41,10 @@ class Controller;
 class DonateStrategy;
 class IStrategy;
 class JobResult;
+class Miner;
 class NonceStorage;
+class Pools;
+class SubmitEvent;
 
 
 class SubmitCtx
@@ -70,7 +68,7 @@ public:
     bool add(Miner *miner);
     bool isActive() const;
     void gc();
-    void reload(const std::vector<Pool> &pools);
+    void reload(const Pools &pools);
     void remove(const Miner *miner);
     void start();
     void submit(SubmitEvent *event);
@@ -91,7 +89,6 @@ protected:
 
 private:
     bool isColors() const;
-    IStrategy *createStrategy(const std::vector<Pool> &pools);
     SubmitCtx submitCtx(int64_t seq);
     void connect();
     void setJob(const char *host, int port, const Job &job);

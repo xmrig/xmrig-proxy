@@ -27,10 +27,9 @@
 #include <string.h>
 
 
+#include "base/net/Pools.h"
 #include "common/log/Log.h"
 #include "common/net/Client.h"
-#include "common/net/strategies/FailoverStrategy.h"
-#include "common/net/strategies/SinglePoolStrategy.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "net/JobResult.h"
@@ -52,7 +51,7 @@ xmrig::SimpleMapper::SimpleMapper(uint64_t id, xmrig::Controller *controller) :
     m_id(id),
     m_idleTime(0)
 {
-    m_strategy = createStrategy(controller->config()->pools().data());
+    m_strategy = controller->config()->pools().createStrategy(this);
 
 //    if (controller->config()->donateLevel() > 0) {
 //        m_donate = new DonateStrategy(id, controller, this);
@@ -78,11 +77,11 @@ void xmrig::SimpleMapper::add(Miner *miner)
 }
 
 
-void xmrig::SimpleMapper::reload(const std::vector<Pool> &pools)
+void xmrig::SimpleMapper::reload(const Pools &pools)
 {
     delete m_pending;
 
-    m_pending = createStrategy(pools);
+    m_pending = pools.createStrategy(this);
     m_pending->connect();
 }
 
@@ -251,19 +250,6 @@ bool xmrig::SimpleMapper::isValidJobId(const xmrig::Id &id) const
     }
 
     return false;
-}
-
-
-xmrig::IStrategy *xmrig::SimpleMapper::createStrategy(const std::vector<Pool> &pools)
-{
-    const int retryPause = m_controller->config()->pools().retryPause();
-    const int retries    = m_controller->config()->pools().retries();
-
-    if (pools.size() > 1) {
-        return new FailoverStrategy(pools, retryPause, retries, this);
-    }
-
-    return new SinglePoolStrategy(pools.front(), retryPause, retries, this);
 }
 
 

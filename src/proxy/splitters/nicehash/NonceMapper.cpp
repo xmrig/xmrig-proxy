@@ -28,10 +28,9 @@
 #include <string.h>
 
 
+#include "base/net/Pools.h"
 #include "common/log/Log.h"
 #include "common/net/Client.h"
-#include "common/net/strategies/FailoverStrategy.h"
-#include "common/net/strategies/SinglePoolStrategy.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "net/JobResult.h"
@@ -53,7 +52,7 @@ xmrig::NonceMapper::NonceMapper(size_t id, Controller *controller) :
     m_id(id)
 {
     m_storage  = new NonceStorage();
-    m_strategy = createStrategy(controller->config()->pools().data());
+    m_strategy = controller->config()->pools().createStrategy(this);
 
     if (controller->config()->donateLevel() > 0) {
         m_donate = new DonateStrategy(controller, this);
@@ -107,11 +106,11 @@ void xmrig::NonceMapper::gc()
 }
 
 
-void xmrig::NonceMapper::reload(const std::vector<Pool> &pools)
+void xmrig::NonceMapper::reload(const Pools &pools)
 {
     delete m_pending;
 
-    m_pending = createStrategy(pools);
+    m_pending = pools.createStrategy(this);
     m_pending->connect();
 }
 
@@ -255,19 +254,6 @@ void xmrig::NonceMapper::onResultAccepted(IStrategy *strategy, Client *client, c
 bool xmrig::NonceMapper::isColors() const
 {
     return m_controller->config()->isColors();
-}
-
-
-xmrig::IStrategy *xmrig::NonceMapper::createStrategy(const std::vector<Pool> &pools)
-{
-    const int retryPause = m_controller->config()->pools().retryPause();
-    const int retries    = m_controller->config()->pools().retries();
-
-    if (pools.size() > 1) {
-        return new FailoverStrategy(pools, retryPause, retries, this);
-    }
-
-    return new SinglePoolStrategy(pools.front(), retryPause, retries, this);
 }
 
 

@@ -141,7 +141,7 @@ void xmrig::SimpleSplitter::onConfigChanged(Config *config, Config *previousConf
         config->printPools();
 
         for (auto const &kv : m_upstreams) {
-            kv.second->reload(config->pools().data());
+            kv.second->reload(config->pools());
         }
     }
 }

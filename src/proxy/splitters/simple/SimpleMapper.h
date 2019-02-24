@@ -31,7 +31,6 @@
 #include <vector>
 
 
-#include "base/net/Pool.h"
 #include "common/interfaces/IStrategyListener.h"
 #include "common/net/Job.h"
 
@@ -45,6 +44,7 @@ class IStrategy;
 class JobResult;
 class Miner;
 class NonceStorage;
+class Pools;
 class SubmitEvent;
 
 
@@ -55,7 +55,7 @@ public:
     ~SimpleMapper() override;
 
     void add(Miner *miner);
-    void reload(const std::vector<Pool> &pools);
+    void reload(const Pools &pools);
     void remove(const Miner *miner);
     void reuse(Miner *miner);
     void stop();
@@ -76,7 +76,6 @@ protected:
 private:
     bool isColors() const;
     bool isValidJobId(const Id &id) const;
-    IStrategy *createStrategy(const std::vector<Pool> &pools);
     void connect();
     void setJob(const Job &job);
 

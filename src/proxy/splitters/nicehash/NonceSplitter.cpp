@@ -142,7 +142,7 @@ void xmrig::NonceSplitter::onConfigChanged(Config *config, Config *previousConfi
         config->printPools();
 
         for (NonceMapper *mapper : m_upstreams) {
-            mapper->reload(config->pools().data());
+            mapper->reload(config->pools());
         }
     }
 }

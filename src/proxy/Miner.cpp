@@ -257,7 +257,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
             m_agent    = params["agent"].GetString();
             m_rigId    = params["rigid"].GetString();
 
-            LoginEvent::create(this, id, m_user.data(), m_password.data(), m_agent.data(), m_rigId.data(), algorithms)->start();
+            LoginEvent::create(this, id, algorithms)->start();
             return true;
         }
 

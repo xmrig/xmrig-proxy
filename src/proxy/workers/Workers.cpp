@@ -55,8 +55,8 @@ static const char *modes[] = {
 
 
 xmrig::Workers::Workers(Controller *controller) :
-    m_mode(controller->config()->workersMode()),
-    m_controller(controller)
+    m_controller(controller),
+    m_mode(controller->config()->workersMode())
 {
     controller->addListener(this);
 }
@@ -174,7 +174,7 @@ rapidjson::Value xmrig::Workers::modeToJSON(Mode mode)
 }
 
 
-void xmrig::Workers::onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig)
+void xmrig::Workers::onConfigChanged(xmrig::Config *config, xmrig::Config *)
 {
     if (m_mode == config->workersMode()) {
         return;

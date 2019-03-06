@@ -22,16 +22,14 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <inttypes.h>
 #include <memory>
 #include <string.h>
 
 
+#include "base/net/Pools.h"
 #include "common/log/Log.h"
 #include "common/net/Client.h"
-#include "common/net/strategies/FailoverStrategy.h"
-#include "common/net/strategies/SinglePoolStrategy.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "net/JobResult.h"
@@ -44,16 +42,16 @@
 #include "proxy/splitters/simple/SimpleMapper.h"
 
 
-SimpleMapper::SimpleMapper(uint64_t id, xmrig::Controller *controller) :
+xmrig::SimpleMapper::SimpleMapper(uint64_t id, xmrig::Controller *controller) :
     m_active(false),
+    m_controller(controller),
     m_donate(nullptr),
     m_pending(nullptr),
     m_miner(nullptr),
     m_id(id),
-    m_idleTime(0),
-    m_controller(controller)
+    m_idleTime(0)
 {
-    m_strategy = createStrategy(controller->config()->pools());
+    m_strategy = controller->config()->pools().createStrategy(this);
 
 //    if (controller->config()->donateLevel() > 0) {
 //        m_donate = new DonateStrategy(id, controller, this);
@@ -61,7 +59,7 @@ SimpleMapper::SimpleMapper(uint64_t id, xmrig::Controller *controller) :
 }
 
 
-SimpleMapper::~SimpleMapper()
+xmrig::SimpleMapper::~SimpleMapper()
 {
     delete m_pending;
     delete m_strategy;
@@ -69,7 +67,7 @@ SimpleMapper::~SimpleMapper()
 }
 
 
-void SimpleMapper::add(Miner *miner)
+void xmrig::SimpleMapper::add(Miner *miner)
 {
     m_miner = miner;
     m_miner->setNiceHash(false);
@@ -79,23 +77,23 @@ void SimpleMapper::add(Miner *miner)
 }
 
 
-void SimpleMapper::reload(const std::vector<Pool> &pools)
+void xmrig::SimpleMapper::reload(const Pools &pools)
 {
     delete m_pending;
 
-    m_pending = createStrategy(pools);
+    m_pending = pools.createStrategy(this);
     m_pending->connect();
 }
 
 
-void SimpleMapper::remove(const Miner *miner)
+void xmrig::SimpleMapper::remove(const Miner *miner)
 {
     m_miner = nullptr;
     m_dirty = true;
 }
 
 
-void SimpleMapper::reuse(Miner *miner)
+void xmrig::SimpleMapper::reuse(Miner *miner)
 {
     m_idleTime = 0;
     m_miner    = miner;
@@ -103,7 +101,7 @@ void SimpleMapper::reuse(Miner *miner)
 }
 
 
-void SimpleMapper::stop()
+void xmrig::SimpleMapper::stop()
 {
     m_strategy->stop();
 
@@ -117,7 +115,7 @@ void SimpleMapper::stop()
 }
 
 
-void SimpleMapper::submit(SubmitEvent *event)
+void xmrig::SimpleMapper::submit(SubmitEvent *event)
 {
     if (!isActive()) {
         return event->reject(Error::BadGateway);
@@ -142,7 +140,7 @@ void SimpleMapper::submit(SubmitEvent *event)
 }
 
 
-void SimpleMapper::tick(uint64_t ticks, uint64_t now)
+void xmrig::SimpleMapper::tick(uint64_t ticks, uint64_t now)
 {
     m_strategy->tick(now);
 
@@ -156,7 +154,7 @@ void SimpleMapper::tick(uint64_t ticks, uint64_t now)
 }
 
 
-void SimpleMapper::onActive(IStrategy *strategy, Client *client)
+void xmrig::SimpleMapper::onActive(IStrategy *strategy, Client *client)
 {
     m_active = true;
 
@@ -186,7 +184,7 @@ void SimpleMapper::onActive(IStrategy *strategy, Client *client)
 }
 
 
-void SimpleMapper::onJob(IStrategy *strategy, Client *client, const Job &job)
+void xmrig::SimpleMapper::onJob(IStrategy *strategy, Client *client, const Job &job)
 {
     if (m_controller->config()->isVerbose()) {
         if (job.height()) {
@@ -209,7 +207,7 @@ void SimpleMapper::onJob(IStrategy *strategy, Client *client, const Job &job)
 }
 
 
-void SimpleMapper::onPause(IStrategy *strategy)
+void xmrig::SimpleMapper::onPause(IStrategy *strategy)
 {
     if (m_strategy == strategy) {
         m_active = false;
@@ -217,7 +215,7 @@ void SimpleMapper::onPause(IStrategy *strategy)
 }
 
 
-void SimpleMapper::onResultAccepted(IStrategy *strategy, Client *client, const SubmitResult &result, const char *error)
+void xmrig::SimpleMapper::onResultAccepted(IStrategy *strategy, Client *client, const SubmitResult &result, const char *error)
 {
     AcceptEvent::start(m_id, m_miner, result, client->id() == -1, error);
 
@@ -234,13 +232,13 @@ void SimpleMapper::onResultAccepted(IStrategy *strategy, Client *client, const S
 }
 
 
-bool SimpleMapper::isColors() const
+bool xmrig::SimpleMapper::isColors() const
 {
     return m_controller->config()->isColors();
 }
 
 
-bool SimpleMapper::isValidJobId(const xmrig::Id &id) const
+bool xmrig::SimpleMapper::isValidJobId(const xmrig::Id &id) const
 {
     if (m_job.id() == id) {
         return true;
@@ -255,20 +253,7 @@ bool SimpleMapper::isValidJobId(const xmrig::Id &id) const
 }
 
 
-IStrategy *SimpleMapper::createStrategy(const std::vector<Pool> &pools)
-{
-    const int retryPause = m_controller->config()->retryPause();
-    const int retries    = m_controller->config()->retries();
-
-    if (pools.size() > 1) {
-        return new FailoverStrategy(pools, retryPause, retries, this);
-    }
-
-    return new SinglePoolStrategy(pools.front(), retryPause, retries, this);
-}
-
-
-void SimpleMapper::connect()
+void xmrig::SimpleMapper::connect()
 {
     m_strategy->connect();
 
@@ -278,7 +263,7 @@ void SimpleMapper::connect()
 }
 
 
-void SimpleMapper::setJob(const Job &job)
+void xmrig::SimpleMapper::setJob(const Job &job)
 {
     if (m_job.clientId() == job.clientId()) {
         m_prevJob = m_job;

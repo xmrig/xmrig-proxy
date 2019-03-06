@@ -41,17 +41,17 @@ static inline float randomf(float min, float max) {
 }
 
 
-DonateStrategy::DonateStrategy(xmrig::Controller *controller, IStrategyListener *listener) :
+xmrig::DonateStrategy::DonateStrategy(Controller *controller, IStrategyListener *listener) :
     m_active(false),
+    m_controller(controller),
     m_listener(listener),
     m_donateTicks(0),
     m_target(0),
-    m_ticks(0),
-    m_controller(controller)
+    m_ticks(0)
 {
     uint8_t hash[200];
     char userId[65] = { 0 };
-    const char *user = controller->config()->pools().front().user();
+    const char *user = controller->config()->pools().data().front().user();
 
     xmrig::keccak(reinterpret_cast<const uint8_t *>(user), strlen(user), hash);
     Job::toHex(hash, 32, userId);
@@ -72,13 +72,13 @@ DonateStrategy::DonateStrategy(xmrig::Controller *controller, IStrategyListener 
 }
 
 
-DonateStrategy::~DonateStrategy()
+xmrig::DonateStrategy::~DonateStrategy()
 {
     m_client->deleteLater();
 }
 
 
-bool DonateStrategy::reschedule()
+bool xmrig::DonateStrategy::reschedule()
 {
     const uint64_t level = m_controller->config()->donateLevel() * 60;
     if (m_donateTicks < level) {
@@ -93,7 +93,7 @@ bool DonateStrategy::reschedule()
 }
 
 
-void DonateStrategy::save(const Client *client, const Job &job)
+void xmrig::DonateStrategy::save(const Client *client, const Job &job)
 {
     m_pending.job  = job;
     m_pending.host = client->host();
@@ -101,31 +101,31 @@ void DonateStrategy::save(const Client *client, const Job &job)
 }
 
 
-void DonateStrategy::setAlgo(const xmrig::Algorithm &algorithm)
+void xmrig::DonateStrategy::setAlgo(const xmrig::Algorithm &algorithm)
 {
     m_client->setAlgo(algorithm);
 }
 
 
-int64_t DonateStrategy::submit(const JobResult &result)
+int64_t xmrig::DonateStrategy::submit(const JobResult &result)
 {
     return m_client->submit(result);
 }
 
 
-void DonateStrategy::connect()
+void xmrig::DonateStrategy::connect()
 {
 }
 
 
-void DonateStrategy::stop()
+void xmrig::DonateStrategy::stop()
 {
     m_donateTicks = 0;
     m_client->disconnect();
 }
 
 
-void DonateStrategy::tick(uint64_t now)
+void xmrig::DonateStrategy::tick(uint64_t now)
 {
     m_client->tick(now);
 
@@ -147,7 +147,7 @@ void DonateStrategy::tick(uint64_t now)
 }
 
 
-void DonateStrategy::onClose(Client *client, int failures)
+void xmrig::DonateStrategy::onClose(Client *, int)
 {
     if (!isActive()) {
         return;
@@ -158,7 +158,7 @@ void DonateStrategy::onClose(Client *client, int failures)
 }
 
 
-void DonateStrategy::onJobReceived(Client *client, const Job &job)
+void xmrig::DonateStrategy::onJobReceived(Client *client, const Job &job)
 {
     if (!isActive()) {
         m_active = true;
@@ -169,12 +169,12 @@ void DonateStrategy::onJobReceived(Client *client, const Job &job)
 }
 
 
-void DonateStrategy::onLoginSuccess(Client *client)
+void xmrig::DonateStrategy::onLoginSuccess(Client *)
 {
 }
 
 
-void DonateStrategy::onResultAccepted(Client *client, const SubmitResult &result, const char *error)
+void xmrig::DonateStrategy::onResultAccepted(Client *client, const SubmitResult &result, const char *error)
 {
     m_listener->onResultAccepted(this, client, result, error);
 }

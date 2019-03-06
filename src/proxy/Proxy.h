@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -35,32 +36,28 @@
 #include "proxy/workers/Worker.h"
 
 
+namespace xmrig {
+
+
 class AccessLog;
-class Addr;
+class BindHost;
+class Controller;
 class ISplitter;
 class Login;
 class Miner;
 class Miners;
-class Options;
 class ProxyDebug;
 class Server;
 class ShareLog;
-class Url;
+class TlsContext;
 class Workers;
 
 
-namespace xmrig {
-    class Controller;
-    class BindHost;
-    class TlsContext;
-}
-
-
-class Proxy : public xmrig::IControllerListener
+class Proxy : public IControllerListener
 {
 public:
-    Proxy(xmrig::Controller *controller);
-    ~Proxy();
+    Proxy(Controller *controller);
+    ~Proxy() override;
 
     void connect();
     void printConnections();
@@ -77,14 +74,14 @@ public:
 #   endif
 
 protected:
-    void onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig) override;
+    void onConfigChanged(Config *config, Config *previousConfig) override;
 
 private:
     constexpr static int kPrintInterval = 60;
     constexpr static int kGCInterval    = 60;
 
     bool isColors() const;
-    void bind(const xmrig::BindHost &host);
+    void bind(const BindHost &host);
     void gc();
     void print();
     void tick();
@@ -93,6 +90,7 @@ private:
     static void onTimer(uv_timer_t *handle);
 
     AccessLog *m_accessLog;
+    Controller *m_controller;
     CustomDiff m_customDiff;
     ISplitter *m_splitter;
     Login *m_login;
@@ -101,12 +99,14 @@ private:
     ShareLog *m_shareLog;
     Stats m_stats;
     std::vector<Server*> m_servers;
+    TlsContext *m_tls;
     uint64_t m_ticks;
     uv_timer_t m_timer;
     Workers *m_workers;
-    xmrig::Controller *m_controller;
-    xmrig::TlsContext *m_tls;
 };
+
+
+} /* namespace xmrig */
 
 
 #endif /* XMRIG_PROXY_H */

@@ -40,62 +40,6 @@
 namespace xmrig {
 
 
-static char const usage[] = "\
-Usage: " APP_ID " [OPTIONS]\n\
-Options:\n\
-  -b, --bind=ADDR          bind to specified address, example \"0.0.0.0:3333\"\n\
-  -a, --algo=ALGO          cryptonight (default) or cryptonight-lite\n\
-  -m, --mode=MODE          proxy mode, nicehash (default) or simple\n\
-  -o, --url=URL            URL of mining server\n\
-  -O, --userpass=U:P       username:password pair for mining server\n\
-  -u, --user=USERNAME      username for mining server\n\
-  -p, --pass=PASSWORD      password for mining server\n\
-      --rig-id=ID          rig identifier for pool-side statistics (needs pool support)\n\
-      --tls-fingerprint=F  pool TLS certificate fingerprint, if set enable strict certificate pinning\n\
-  -k, --keepalive          prevent timeout (needs pool support)\n\
-  -r, --retries=N          number of times to retry before switch to backup server (default: 1)\n\
-  -R, --retry-pause=N      time to pause between retries (default: 1 second)\n\
-      --custom-diff=N      override pool diff\n\
-      --reuse-timeout=N    timeout in seconds for reuse pool connections in simple mode\n\
-      --verbose            verbose output\n\
-      --user-agent=AGENT   set custom user-agent string for pool\n\
-      --no-color           disable colored output\n\
-      --no-workers         disable per worker statistics\n\
-      --variant            algorithm PoW variant\n\
-      --donate-level=N     donate level, default 2%%\n\
-  -B, --background         run the miner in the background\n\
-  -c, --config=FILE        load a JSON-format configuration file\n\
-      --no-watch           disable configuration file watching\n\
-  -l, --log-file=FILE      log all output to a file\n"
-#ifdef HAVE_SYSLOG_H
-"\
-  -S, --syslog             use system log for output messages\n"
-#endif
-"\
-  -A  --access-log-file=N  log all workers access to a file\n\
-      --api-port=N         port for the miner API\n\
-      --api-access-token=T use Bearer access token for API\n\
-      --api-worker-id=ID   custom worker-id (instance name) for API\n\
-      --api-id=ID          custom instance ID for API\n\
-      --api-ipv6           enable IPv6 support for API\n\
-      --api-no-restricted  enable full remote access (only if API token set)\n"
-#ifndef XMRIG_NO_TLS
-"\
-      --tls                enable SSL/TLS support for pool connection (needs pool support)\n\
-      --tls-bind=ADDR      bind to specified address with enabled TLS\n\
-      --tls-cert=FILE      load TLS certificate chain from a file in the PEM format\n\
-      --tls-cert-key=FILE  load TLS certificate private key from a file in the PEM format\n\
-      --tls-dhparam=FILE   load DH parameters for DHE ciphers from a file in the PEM format\n\
-      --tls-protocols=N    enable specified TLS protocols, example: \"TLSv1 TLSv1.1 TLSv1.2 TLSv1.3\"\n\
-      --tls-ciphers=S      set list of available ciphers (TLSv1.2 and below)\n\
-      --tls-ciphersuites=S set list of available TLSv1.3 ciphersuites\n"
-#endif
-"\
-  -h, --help               display this help and exit\n\
-  -V, --version            output version information and exit\n\
-";
-
-
 static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:A:a:C:m:";
 
 
@@ -115,7 +59,6 @@ static struct option const options[] = {
     { "custom-diff",       1, nullptr, xmrig::IConfig::CustomDiffKey     },
     { "debug",             0, nullptr, xmrig::IConfig::DebugKey          },
     { "donate-level",      1, nullptr, xmrig::IConfig::DonateLevelKey    },
-    { "help",              0, nullptr, xmrig::IConfig::HelpKey           },
     { "keepalive",         2, nullptr, xmrig::IConfig::KeepAliveKey      },
     { "log-file",          1, nullptr, xmrig::IConfig::LogFileKey        },
     { "no-color",          0, nullptr, xmrig::IConfig::ColorKey          },
@@ -132,7 +75,6 @@ static struct option const options[] = {
     { "user-agent",        1, nullptr, xmrig::IConfig::UserAgentKey      },
     { "userpass",          1, nullptr, xmrig::IConfig::UserpassKey       },
     { "verbose",           0, nullptr, xmrig::IConfig::VerboseKey        },
-    { "version",           0, nullptr, xmrig::IConfig::VersionKey        },
     { "variant",           1, nullptr, xmrig::IConfig::VariantKey        },
     { "reuse-timeout",     1, nullptr, xmrig::IConfig::ReuseTimeoutKey   },
     { "mode",              1, nullptr, xmrig::IConfig::ModeKey           },

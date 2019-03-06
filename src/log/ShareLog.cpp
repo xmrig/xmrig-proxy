@@ -35,19 +35,19 @@
 #include "proxy/Stats.h"
 
 
-ShareLog::ShareLog(xmrig::Controller *controller, const Stats &stats) :
+xmrig::ShareLog::ShareLog(Controller *controller, const Stats &stats) :
     m_stats(stats),
     m_controller(controller)
 {
 }
 
 
-ShareLog::~ShareLog()
+xmrig::ShareLog::~ShareLog()
 {
 }
 
 
-void ShareLog::onEvent(IEvent *event)
+void xmrig::ShareLog::onEvent(IEvent *event)
 {
     switch (event->type())
     {
@@ -61,7 +61,7 @@ void ShareLog::onEvent(IEvent *event)
 }
 
 
-void ShareLog::onRejectedEvent(IEvent *event)
+void xmrig::ShareLog::onRejectedEvent(IEvent *event)
 {
     switch (event->type())
     {
@@ -75,13 +75,13 @@ void ShareLog::onRejectedEvent(IEvent *event)
 }
 
 
-bool ShareLog::isColors() const
+bool xmrig::ShareLog::isColors() const
 {
     return m_controller->config()->isColors();
 }
 
 
-void ShareLog::accept(const AcceptEvent *event)
+void xmrig::ShareLog::accept(const AcceptEvent *event)
 {
     if (!m_controller->config()->isVerbose()) {
         return;
@@ -93,7 +93,7 @@ void ShareLog::accept(const AcceptEvent *event)
 }
 
 
-void ShareLog::reject(const AcceptEvent *event)
+void xmrig::ShareLog::reject(const AcceptEvent *event)
 {
     if (event->isDonate()) {
         return;

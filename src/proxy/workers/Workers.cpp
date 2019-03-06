@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -53,20 +54,20 @@ static const char *modes[] = {
 };
 
 
-Workers::Workers(xmrig::Controller *controller) :
-    m_mode(controller->config()->workersMode()),
-    m_controller(controller)
+xmrig::Workers::Workers(Controller *controller) :
+    m_controller(controller),
+    m_mode(controller->config()->workersMode())
 {
     controller->addListener(this);
 }
 
 
-Workers::~Workers()
+xmrig::Workers::~Workers()
 {
 }
 
 
-void Workers::printWorkers()
+void xmrig::Workers::printWorkers()
 {
     if (!isEnabled()) {
         LOG_ERR("Per worker statistics disabled");
@@ -105,7 +106,7 @@ void Workers::printWorkers()
 }
 
 
-void Workers::reset()
+void xmrig::Workers::reset()
 {
     m_miners.clear();
     m_map.clear();
@@ -123,7 +124,7 @@ void Workers::reset()
 }
 
 
-void Workers::tick(uint64_t ticks)
+void xmrig::Workers::tick(uint64_t ticks)
 {
     if ((ticks % 4) != 0) {
         return;
@@ -135,13 +136,13 @@ void Workers::tick(uint64_t ticks)
 }
 
 
-const char *Workers::modeName(Mode mode)
+const char *xmrig::Workers::modeName(Mode mode)
 {
     return modes[mode];
 }
 
 
-Workers::Mode Workers::parseMode(const char *mode)
+xmrig::Workers::Mode xmrig::Workers::parseMode(const char *mode)
 {
     constexpr size_t SIZE = sizeof(modes) / sizeof((modes)[0]);
 
@@ -155,7 +156,7 @@ Workers::Mode Workers::parseMode(const char *mode)
 }
 
 
-rapidjson::Value Workers::modeToJSON(Mode mode)
+rapidjson::Value xmrig::Workers::modeToJSON(Mode mode)
 {
     using namespace rapidjson;
 
@@ -173,7 +174,7 @@ rapidjson::Value Workers::modeToJSON(Mode mode)
 }
 
 
-void Workers::onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig)
+void xmrig::Workers::onConfigChanged(xmrig::Config *config, xmrig::Config *)
 {
     if (m_mode == config->workersMode()) {
         return;
@@ -184,7 +185,7 @@ void Workers::onConfigChanged(xmrig::Config *config, xmrig::Config *previousConf
 }
 
 
-void Workers::onEvent(IEvent *event)
+void xmrig::Workers::onEvent(IEvent *event)
 {
     if (!isEnabled()) {
         return;
@@ -210,7 +211,7 @@ void Workers::onEvent(IEvent *event)
 }
 
 
-void Workers::onRejectedEvent(IEvent *event)
+void xmrig::Workers::onRejectedEvent(IEvent *event)
 {
     if (!isEnabled()) {
         return;
@@ -232,7 +233,7 @@ void Workers::onRejectedEvent(IEvent *event)
 }
 
 
-bool Workers::indexByMiner(const Miner *miner, size_t *index) const
+bool xmrig::Workers::indexByMiner(const Miner *miner, size_t *index) const
 {
     if (!miner || miner->mapperId() == -1 || m_miners.count(miner->id()) == 0) {
         return false;
@@ -243,7 +244,7 @@ bool Workers::indexByMiner(const Miner *miner, size_t *index) const
 }
 
 
-const char *Workers::nameByMiner(const Miner *miner) const
+const char *xmrig::Workers::nameByMiner(const Miner *miner) const
 {
     switch (m_mode) {
     case RigID:
@@ -269,7 +270,7 @@ const char *Workers::nameByMiner(const Miner *miner) const
 }
 
 
-size_t Workers::add(const Miner *miner)
+size_t xmrig::Workers::add(const Miner *miner)
 {
     size_t worker_id = 0;
     const char *name = nameByMiner(miner);
@@ -291,7 +292,7 @@ size_t Workers::add(const Miner *miner)
 }
 
 
-void Workers::accept(const AcceptEvent *event)
+void xmrig::Workers::accept(const AcceptEvent *event)
 {
     size_t index = 0;
     if (!indexByMiner(event->miner(), &index)) {
@@ -308,13 +309,13 @@ void Workers::accept(const AcceptEvent *event)
 }
 
 
-void Workers::login(const LoginEvent *event)
+void xmrig::Workers::login(const LoginEvent *event)
 {
     add(event->miner());
 }
 
 
-void Workers::reject(const SubmitEvent *event)
+void xmrig::Workers::reject(const SubmitEvent *event)
 {
     size_t index = 0;
     if (!indexByMiner(event->miner(), &index)) {
@@ -325,7 +326,7 @@ void Workers::reject(const SubmitEvent *event)
 }
 
 
-void Workers::remove(const CloseEvent *event)
+void xmrig::Workers::remove(const CloseEvent *event)
 {
     size_t index = 0;
     if (!indexByMiner(event->miner(), &index)) {

@@ -51,12 +51,14 @@
 #endif
 
 
-static int64_t nextId = 0;
-char Miner::m_sendBuf[2048] = { 0 };
-xmrig::Storage<Miner> Miner::m_storage;
+namespace xmrig {
+    static int64_t nextId = 0;
+    char Miner::m_sendBuf[2048] = { 0 };
+    Storage<Miner> Miner::m_storage;
+}
 
 
-Miner::Miner(const xmrig::TlsContext *ctx, bool ipv6, uint16_t port) :
+xmrig::Miner::Miner(const TlsContext *ctx, bool ipv6, uint16_t port) :
     m_ipv6(ipv6),
     m_nicehash(true),
     m_ip(),
@@ -72,7 +74,7 @@ Miner::Miner(const xmrig::TlsContext *ctx, bool ipv6, uint16_t port) :
     m_diff(0),
     m_expire(uv_now(uv_default_loop()) + kLoginTimeout),
     m_rx(0),
-    m_timestamp(xmrig::currentMSecsSinceEpoch()),
+    m_timestamp(currentMSecsSinceEpoch()),
     m_tx(0),
     m_fixedByte(0)
 {
@@ -96,7 +98,7 @@ Miner::Miner(const xmrig::TlsContext *ctx, bool ipv6, uint16_t port) :
 }
 
 
-Miner::~Miner()
+xmrig::Miner::~Miner()
 {
     m_socket.data = nullptr;
 
@@ -108,7 +110,7 @@ Miner::~Miner()
 }
 
 
-bool Miner::accept(uv_stream_t *server)
+bool xmrig::Miner::accept(uv_stream_t *server)
 {
     const int rt = uv_accept(server, reinterpret_cast<uv_stream_t*>(&m_socket));
     if (rt < 0) {
@@ -139,13 +141,13 @@ bool Miner::accept(uv_stream_t *server)
 }
 
 
-void Miner::replyWithError(int64_t id, const char *message)
+void xmrig::Miner::replyWithError(int64_t id, const char *message)
 {
     send(snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"error\":{\"code\":-1,\"message\":\"%s\"}}\n", id, message));
 }
 
 
-void Miner::setJob(Job &job)
+void xmrig::Miner::setJob(Job &job)
 {
     using namespace rapidjson;
 
@@ -179,7 +181,7 @@ void Miner::setJob(Job &job)
         params.AddMember("height", job.height(), allocator);
     }
 
-    if (job.algorithm().variant() == xmrig::VARIANT_0 || job.algorithm().variant() == xmrig::VARIANT_1) {
+    if (job.algorithm().variant() == VARIANT_0 || job.algorithm().variant() == VARIANT_1) {
         params.AddMember("variant", job.algorithm().variant(), allocator);
     }
 
@@ -216,19 +218,19 @@ void Miner::setJob(Job &job)
 }
 
 
-void Miner::success(int64_t id, const char *status)
+void xmrig::Miner::success(int64_t id, const char *status)
 {
     send(snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"error\":null,\"result\":{\"status\":\"%s\"}}\n", id, status));
 }
 
 
-bool Miner::isWritable() const
+bool xmrig::Miner::isWritable() const
 {
     return m_state != ClosingState && uv_is_writable(reinterpret_cast<const uv_stream_t*>(&m_socket)) == 1;
 }
 
 
-bool Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value &params)
+bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value &params)
 {
     if (!method || !params.IsObject()) {
         return false;
@@ -239,7 +241,7 @@ bool Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value 
             setState(WaitReadyState);
             m_loginId = id;
 
-            xmrig::Algorithms algorithms;
+            Algorithms algorithms;
             if (params.HasMember("algo")) {
                 const rapidjson::Value &value = params["algo"];
 
@@ -255,7 +257,7 @@ bool Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value 
             m_agent    = params["agent"].GetString();
             m_rigId    = params["rigid"].GetString();
 
-            LoginEvent::create(this, id, m_user.data(), m_password.data(), m_agent.data(), m_rigId.data(), algorithms)->start();
+            LoginEvent::create(this, id, algorithms)->start();
             return true;
         }
 
@@ -275,7 +277,7 @@ bool Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value 
             return true;
         }
 
-        xmrig::Algorithm algorithm;
+        Algorithm algorithm;
         if (params.HasMember("algo")) {
             const char *algo = params["algo"].GetString();
 
@@ -317,7 +319,7 @@ bool Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value 
 }
 
 
-bool Miner::send(BIO *bio)
+bool xmrig::Miner::send(BIO *bio)
 {
 #   ifndef XMRIG_NO_TLS
     uv_buf_t buf;
@@ -351,13 +353,13 @@ bool Miner::send(BIO *bio)
 }
 
 
-void Miner::heartbeat()
+void xmrig::Miner::heartbeat()
 {
     m_expire = uv_now(uv_default_loop()) + kSocketTimeout;
 }
 
 
-void Miner::parse(char *line, size_t len)
+void xmrig::Miner::parse(char *line, size_t len)
 {
     if (m_state == ClosingState) {
         return;
@@ -391,7 +393,7 @@ void Miner::parse(char *line, size_t len)
 }
 
 
-void Miner::read()
+void xmrig::Miner::read()
 {
     char* end;
     char* start = m_recvBuf.base;
@@ -420,7 +422,7 @@ void Miner::read()
 }
 
 
-void Miner::readTLS(int nread)
+void xmrig::Miner::readTLS(int nread)
 {
 #   ifndef XMRIG_NO_TLS
     if (isTLS()) {
@@ -439,7 +441,7 @@ void Miner::readTLS(int nread)
 }
 
 
-void Miner::send(const rapidjson::Document &doc)
+void xmrig::Miner::send(const rapidjson::Document &doc)
 {
     using namespace rapidjson;
 
@@ -463,7 +465,7 @@ void Miner::send(const rapidjson::Document &doc)
 }
 
 
-void Miner::send(int size)
+void xmrig::Miner::send(int size)
 {
     LOG_DEBUG("[%s] send (%d bytes): \"%s\"", m_ip, size, m_sendBuf);
 
@@ -491,7 +493,7 @@ void Miner::send(int size)
 }
 
 
-void Miner::setState(State state)
+void xmrig::Miner::setState(State state)
 {
     if (m_state == state) {
         return;
@@ -510,7 +512,7 @@ void Miner::setState(State state)
 }
 
 
-void Miner::shutdown(bool had_error)
+void xmrig::Miner::shutdown(bool had_error)
 {
     if (m_state == ClosingState) {
         return;
@@ -538,7 +540,7 @@ void Miner::shutdown(bool had_error)
 }
 
 
-void Miner::onAllocBuffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
+void xmrig::Miner::onAllocBuffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 {
     auto miner = getMiner(handle->data);
     if (!miner) {
@@ -550,7 +552,7 @@ void Miner::onAllocBuffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *
 }
 
 
-void Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
+void xmrig::Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
 {
     Miner *miner = getMiner(stream->data);
     if (!miner) {
@@ -568,7 +570,7 @@ void Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
 }
 
 
-void Miner::onTimeout(uv_timer_t *handle)
+void xmrig::Miner::onTimeout(uv_timer_t *handle)
 {
     auto miner = getMiner(handle->data);
     if (!miner) {

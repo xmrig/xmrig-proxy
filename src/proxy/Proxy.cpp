@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -56,19 +57,17 @@
 #endif
 
 
-Proxy::Proxy(xmrig::Controller *controller) :
-    m_customDiff(controller),
-    m_ticks(0),
+xmrig::Proxy::Proxy(xmrig::Controller *controller) :
     m_controller(controller),
-    m_tls(nullptr)
+    m_customDiff(controller),
+    m_tls(nullptr),
+    m_ticks(0)
 {
-    srand(time(0) ^ (uintptr_t) this);
-
     m_miners = new Miners();
     m_login  = new Login(controller);
 
     Splitter *splitter = nullptr;
-    if (controller->config()->mode() == xmrig::Config::NICEHASH_MODE) {
+    if (controller->config()->mode() == Config::NICEHASH_MODE) {
         splitter = new NonceSplitter(controller);
     }
     else {
@@ -114,7 +113,7 @@ Proxy::Proxy(xmrig::Controller *controller) :
 }
 
 
-Proxy::~Proxy()
+xmrig::Proxy::~Proxy()
 {
     Events::stop();
 
@@ -132,7 +131,7 @@ Proxy::~Proxy()
 }
 
 
-void Proxy::connect()
+void xmrig::Proxy::connect()
 {
 #   ifndef XMRIG_NO_TLS
     if (m_controller->config()->isTLS()) {
@@ -156,13 +155,13 @@ void Proxy::connect()
 }
 
 
-void Proxy::printConnections()
+void xmrig::Proxy::printConnections()
 {
     m_splitter->printConnections();
 }
 
 
-void Proxy::printHashrate()
+void xmrig::Proxy::printHashrate()
 {
     LOG_INFO(isColors() ? "\x1B[01;32m* \x1B[01;37mspeed\x1B[0m \x1B[01;30m(1m) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(10m) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(1h) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(12h) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(24h) \x1B[01;36m%03.2f kH/s"
                         : "* speed (1m) %03.2f, (10m) %03.2f, (1h) %03.2f, (12h) %03.2f, (24h) %03.2f kH/s",
@@ -170,38 +169,38 @@ void Proxy::printHashrate()
 }
 
 
-void Proxy::printWorkers()
+void xmrig::Proxy::printWorkers()
 {
     m_workers->printWorkers();
 }
 
 
-void Proxy::toggleDebug()
+void xmrig::Proxy::toggleDebug()
 {
     m_debug->toggle();
 }
 
 
-const StatsData &Proxy::statsData() const
+const xmrig::StatsData &xmrig::Proxy::statsData() const
 {
     return m_stats.data();
 }
 
 
-const std::vector<Worker> &Proxy::workers() const
+const std::vector<xmrig::Worker> &xmrig::Proxy::workers() const
 {
     return m_workers->workers();
 }
 
 
-std::vector<Miner*> Proxy::miners() const
+std::vector<xmrig::Miner*> xmrig::Proxy::miners() const
 {
     return m_miners->miners();
 }
 
 
 #ifdef APP_DEVEL
-void Proxy::printState()
+void xmrig::Proxy::printState()
 {
     LOG_NOTICE("---------------------------------");
     m_splitter->printState();
@@ -212,19 +211,19 @@ void Proxy::printState()
 #endif
 
 
-void Proxy::onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig)
+void xmrig::Proxy::onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig)
 {
     m_debug->setEnabled(config->isDebug());
 }
 
 
-bool Proxy::isColors() const
+bool xmrig::Proxy::isColors() const
 {
     return m_controller->config()->isColors();
 }
 
 
-void Proxy::bind(const xmrig::BindHost &host)
+void xmrig::Proxy::bind(const xmrig::BindHost &host)
 {
 #   ifndef XMRIG_NO_TLS
     if (host.isTLS() && !m_tls) {
@@ -245,13 +244,13 @@ void Proxy::bind(const xmrig::BindHost &host)
 }
 
 
-void Proxy::gc()
+void xmrig::Proxy::gc()
 {
     m_splitter->gc();
 }
 
 
-void Proxy::print()
+void xmrig::Proxy::print()
 {
     LOG_INFO(isColors() ? "\x1B[01;36m%03.2f kH/s\x1B[0m, shares: \x1B[01;37m%" PRIu64 "\x1B[0m/%s%" PRIu64 "\x1B[0m +%" PRIu64 ", upstreams: \x1B[01;37m%" PRIu64 "\x1B[0m, miners: \x1B[01;37m%" PRIu64 "\x1B[0m (max \x1B[01;37m%" PRIu64 "\x1B[0m) +%u/-%u"
                         : "%03.2f kH/s, shares: %" PRIu64 "/%s%" PRIu64 " +%" PRIu64 ", upstreams: %" PRIu64 ", miners: %" PRIu64 " (max %" PRIu64 " +%u/-%u",
@@ -262,7 +261,7 @@ void Proxy::print()
 }
 
 
-void Proxy::tick()
+void xmrig::Proxy::tick()
 {
     m_stats.tick(m_ticks, m_splitter);
 
@@ -281,7 +280,7 @@ void Proxy::tick()
 }
 
 
-void Proxy::onTick(uv_timer_t *handle)
+void xmrig::Proxy::onTick(uv_timer_t *handle)
 {
     static_cast<Proxy*>(handle->data)->tick();
 }

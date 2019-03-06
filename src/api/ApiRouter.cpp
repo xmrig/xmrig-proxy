@@ -137,7 +137,7 @@ void ApiRouter::onConfigChanged(xmrig::Config *config, xmrig::Config *previousCo
 
 void ApiRouter::finalize(xmrig::HttpReply &reply, rapidjson::Document &doc) const
 {
-    rapidjson::StringBuffer buffer(0, 4096);
+    rapidjson::StringBuffer buffer(nullptr, 4096);
     rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
     writer.SetMaxDecimalPlaces(10);
     doc.Accept(writer);
@@ -177,7 +177,7 @@ void ApiRouter::genId(const char *id)
             memcpy(input + sizeof(uint16_t) + addrSize, APP_KIND, strlen(APP_KIND));
 
             xmrig::keccak(input, inSize, hash);
-            Job::toHex(hash, 8, m_id);
+            xmrig::Job::toHex(hash, 8, m_id);
 
             delete [] input;
             break;
@@ -244,37 +244,37 @@ void ApiRouter::getMiners(rapidjson::Document &doc) const
 
     Value miners(kArrayType);
 
-    for (const Miner *miner : list) {
+    for (const xmrig::Miner *miner : list) {
         if (miner->mapperId() == -1) {
             continue;
         }
 
         Value value(kArrayType);
-        value.PushBack(miner->id(), allocator);
-        value.PushBack(StringRef(miner->ip()), allocator);
-        value.PushBack(miner->tx(), allocator);
-        value.PushBack(miner->rx(), allocator);
-        value.PushBack(miner->state(), allocator);
-        value.PushBack(miner->diff(), allocator);
-        value.PushBack(miner->user()     ? Value(StringRef(miner->user()))     : Value(kNullType), allocator);
-        value.PushBack(miner->password() ? Value(StringRef(miner->password())) : Value(kNullType), allocator);
-        value.PushBack(miner->rigId()    ? Value(StringRef(miner->rigId()))    : Value(kNullType), allocator);
-        value.PushBack(miner->agent()    ? Value(StringRef(miner->agent()))    : Value(kNullType), allocator);
+        value.PushBack(miner->id(),                allocator);
+        value.PushBack(StringRef(miner->ip()),     allocator);
+        value.PushBack(miner->tx(),                allocator);
+        value.PushBack(miner->rx(),                allocator);
+        value.PushBack(miner->state(),             allocator);
+        value.PushBack(miner->diff(),              allocator);
+        value.PushBack(miner->user().toJSON(),     allocator);
+        value.PushBack(miner->password().toJSON(), allocator);
+        value.PushBack(miner->rigId().toJSON(),    allocator);
+        value.PushBack(miner->agent().toJSON(),    allocator);
 
         miners.PushBack(value, allocator);
     }
 
     Value format(kArrayType);
-    format.PushBack("id", allocator);
-    format.PushBack("ip", allocator);
-    format.PushBack("tx", allocator);
-    format.PushBack("rx", allocator);
-    format.PushBack("state", allocator);
-    format.PushBack("diff", allocator);
-    format.PushBack("user", allocator);
+    format.PushBack("id",       allocator);
+    format.PushBack("ip",       allocator);
+    format.PushBack("tx",       allocator);
+    format.PushBack("rx",       allocator);
+    format.PushBack("state",    allocator);
+    format.PushBack("diff",     allocator);
+    format.PushBack("user",     allocator);
     format.PushBack("password", allocator);
-    format.PushBack("rig_id", allocator);
-    format.PushBack("agent", allocator);
+    format.PushBack("rig_id",   allocator);
+    format.PushBack("agent",    allocator);
 
     doc.AddMember("format", format, allocator);
     doc.AddMember("miners", miners, allocator);
@@ -388,7 +388,7 @@ void ApiRouter::getWorkers(rapidjson::Document &doc) const
 
     Value workers(kArrayType);
 
-    for (const Worker &worker : list) {
+    for (const xmrig::Worker &worker : list) {
          Value array(kArrayType);
          array.PushBack(StringRef(worker.name()), allocator);
          array.PushBack(StringRef(worker.ip()), allocator);
@@ -407,7 +407,7 @@ void ApiRouter::getWorkers(rapidjson::Document &doc) const
          workers.PushBack(array, allocator);
     }
 
-    doc.AddMember("mode", StringRef(Workers::modeName(m_controller->config()->workersMode())), allocator);
+    doc.AddMember("mode", StringRef(xmrig::Workers::modeName(m_controller->config()->workersMode())), allocator);
     doc.AddMember("workers", workers, allocator);
 }
 

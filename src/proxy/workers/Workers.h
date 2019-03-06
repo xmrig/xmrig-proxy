@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -36,19 +37,18 @@
 #include "rapidjson/fwd.h"
 
 
+namespace xmrig {
+
+
 class AcceptEvent;
 class CloseEvent;
+class Controller;
 class LoginEvent;
 class Miner;
 class SubmitEvent;
 
 
-namespace xmrig {
-    class Controller;
-}
-
-
-class Workers : public IEventListener, public xmrig::IControllerListener
+class Workers : public IEventListener, public IControllerListener
 {
 public:
     enum Mode {
@@ -60,8 +60,8 @@ public:
         IP
     };
 
-    Workers(xmrig::Controller *controller);
-    ~Workers();
+    Workers(Controller *controller);
+    ~Workers() override;
 
     void printWorkers();
     void reset();
@@ -75,7 +75,7 @@ public:
     static rapidjson::Value modeToJSON(Mode mode);
 
 protected:
-    void onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig) override;
+    void onConfigChanged(Config *config, Config *previousConfig) override;
     void onEvent(IEvent *event) override;
     void onRejectedEvent(IEvent *event) override;
 
@@ -90,12 +90,15 @@ private:
     void reject(const SubmitEvent *event);
     void remove(const CloseEvent *event);
 
+    Controller *m_controller;
     Mode m_mode;
     std::map<int64_t, size_t> m_miners;
     std::map<std::string, size_t> m_map;
     std::vector<Worker> m_workers;
-    xmrig::Controller *m_controller;
 };
+
+
+} /* namespace xmrig */
 
 
 #endif /* XMRIG_WORKERS_H */

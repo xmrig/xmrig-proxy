@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -30,19 +31,19 @@
 #include "proxy/Stats.h"
 
 
-Stats::Stats() :
+xmrig::Stats::Stats() :
     m_hashrate(4)
 {
     m_data.startTime = uv_now(uv_default_loop());
 }
 
 
-Stats::~Stats()
+xmrig::Stats::~Stats()
 {
 }
 
 
-void Stats::tick(uint64_t ticks, const ISplitter *splitter)
+void xmrig::Stats::tick(uint64_t ticks, const ISplitter *splitter)
 {
     ticks++;
 
@@ -66,7 +67,7 @@ void Stats::tick(uint64_t ticks, const ISplitter *splitter)
 }
 
 
-void Stats::onEvent(IEvent *event)
+void xmrig::Stats::onEvent(IEvent *event)
 {
     switch (event->type())
     {
@@ -88,7 +89,7 @@ void Stats::onEvent(IEvent *event)
 }
 
 
-void Stats::onRejectedEvent(IEvent *event)
+void xmrig::Stats::onRejectedEvent(IEvent *event)
 {
     switch (event->type())
     {
@@ -106,7 +107,7 @@ void Stats::onRejectedEvent(IEvent *event)
 }
 
 
-void Stats::accept(const AcceptEvent *event)
+void xmrig::Stats::accept(const AcceptEvent *event)
 {
     m_hashrate.add(event->result.diff);
 
@@ -129,7 +130,7 @@ void Stats::accept(const AcceptEvent *event)
 }
 
 
-void Stats::reject(const AcceptEvent *event)
+void xmrig::Stats::reject(const AcceptEvent *event)
 {
     if (event->isDonate()) {
         return;

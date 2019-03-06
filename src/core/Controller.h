@@ -55,6 +55,7 @@ public:
     Proxy *proxy() const;
     std::vector<Miner*> miners() const;
     void addListener(IControllerListener *listener);
+    void watch();
 
 protected:
     void onNewConfig(IConfig *config) override;

@@ -103,6 +103,7 @@ int xmrig::App::exec()
     m_httpd->start();
 #   endif
 
+    m_controller->watch();
     m_controller->proxy()->connect();
 
     const int r = uv_run(uv_default_loop(), UV_RUN_DEFAULT);

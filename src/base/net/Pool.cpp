@@ -132,6 +132,7 @@ xmrig::Pool::Pool(const rapidjson::Value &object) :
 
 
 xmrig::Pool::Pool(const char *host, uint16_t port, const char *user, const char *password, int keepAlive, bool nicehash, bool tls) :
+    m_enabled(true),
     m_nicehash(nicehash),
     m_tls(tls),
     m_keepAlive(keepAlive),
@@ -164,7 +165,7 @@ bool xmrig::Pool::isCompatible(const Algorithm &algorithm) const
 
 #   ifdef XMRIG_PROXY_PROJECT
     if (m_algorithm.algo() == xmrig::CRYPTONIGHT && algorithm.algo() == xmrig::CRYPTONIGHT) {
-        return m_algorithm.variant() == xmrig::VARIANT_XTL || m_algorithm.variant() == xmrig::VARIANT_MSR;
+        return m_algorithm.variant() == xmrig::VARIANT_RWZ || m_algorithm.variant() == xmrig::VARIANT_ZLS;
     }
 #   endif
 
@@ -496,6 +497,9 @@ void xmrig::Pool::rebuild()
     addVariant(VARIANT_XAO);
     addVariant(VARIANT_RTO);
     addVariant(VARIANT_GPU);
+    addVariant(VARIANT_RWZ);
+    addVariant(VARIANT_ZLS);
+    addVariant(VARIANT_DOUBLE);
     addVariant(VARIANT_AUTO);
 #   endif
 }

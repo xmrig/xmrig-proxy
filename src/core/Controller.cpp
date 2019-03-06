@@ -141,6 +141,16 @@ void xmrig::Controller::addListener(IControllerListener *listener)
 }
 
 
+void xmrig::Controller::watch()
+{
+    if (!config()) {
+        return;
+    }
+
+    ConfigLoader::watch(d_ptr->config);
+}
+
+
 void xmrig::Controller::onNewConfig(IConfig *config)
 {
     Config *previousConfig = d_ptr->config;

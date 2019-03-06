@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -40,19 +41,19 @@
 #define LABEL(x) " \x1B[01;30m" x ":\x1B[0m "
 
 
-SimpleSplitter::SimpleSplitter(xmrig::Controller *controller) : Splitter(controller),
+xmrig::SimpleSplitter::SimpleSplitter(xmrig::Controller *controller) : Splitter(controller),
     m_reuseTimeout(controller->config()->reuseTimeout()),
     m_sequence(0)
 {
 }
 
 
-SimpleSplitter::~SimpleSplitter()
+xmrig::SimpleSplitter::~SimpleSplitter()
 {
 }
 
 
-Upstreams SimpleSplitter::upstreams() const
+xmrig::Upstreams xmrig::SimpleSplitter::upstreams() const
 {
     uint64_t active = 0;
 
@@ -66,17 +67,17 @@ Upstreams SimpleSplitter::upstreams() const
 }
 
 
-void SimpleSplitter::connect()
+void xmrig::SimpleSplitter::connect()
 {
 }
 
 
-void SimpleSplitter::gc()
+void xmrig::SimpleSplitter::gc()
 {
 }
 
 
-void SimpleSplitter::printConnections()
+void xmrig::SimpleSplitter::printConnections()
 {
     const Upstreams info = upstreams();
 
@@ -97,7 +98,7 @@ void SimpleSplitter::printConnections()
 }
 
 
-void SimpleSplitter::tick(uint64_t ticks)
+void xmrig::SimpleSplitter::tick(uint64_t ticks)
 {
     const uint64_t now = uv_now(uv_default_loop());
 
@@ -126,30 +127,27 @@ void SimpleSplitter::tick(uint64_t ticks)
 
 
 #ifdef APP_DEVEL
-void SimpleSplitter::printState()
+void xmrig::SimpleSplitter::printState()
 {
 }
 #endif
 
 
-void SimpleSplitter::onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig)
+void xmrig::SimpleSplitter::onConfigChanged(Config *config, Config *previousConfig)
 {
     m_reuseTimeout = config->reuseTimeout();
 
-    const std::vector<Pool> &pools         = config->pools();
-    const std::vector<Pool> &previousPools = previousConfig->pools();
-
-    if (pools.size() != previousPools.size() || !std::equal(pools.begin(), pools.end(), previousPools.begin())) {
+    if (config->pools() != previousConfig->pools()) {
         config->printPools();
 
         for (auto const &kv : m_upstreams) {
-            kv.second->reload(pools);
+            kv.second->reload(config->pools());
         }
     }
 }
 
 
-void SimpleSplitter::onEvent(IEvent *event)
+void xmrig::SimpleSplitter::onEvent(IEvent *event)
 {
     switch (event->type())
     {
@@ -171,7 +169,7 @@ void SimpleSplitter::onEvent(IEvent *event)
 }
 
 
-void SimpleSplitter::login(LoginEvent *event)
+void xmrig::SimpleSplitter::login(LoginEvent *event)
 {
     if (!m_idles.empty()) {
         for (auto const &kv : m_idles) {
@@ -191,7 +189,7 @@ void SimpleSplitter::login(LoginEvent *event)
 }
 
 
-void SimpleSplitter::stop(SimpleMapper *mapper)
+void xmrig::SimpleSplitter::stop(SimpleMapper *mapper)
 {
     removeIdle(mapper->id());
     removeUpstream(mapper->id());
@@ -200,7 +198,7 @@ void SimpleSplitter::stop(SimpleMapper *mapper)
 }
 
 
-void SimpleSplitter::remove(Miner *miner)
+void xmrig::SimpleSplitter::remove(Miner *miner)
 {
     const ssize_t id = miner->mapperId();
 
@@ -222,7 +220,7 @@ void SimpleSplitter::remove(Miner *miner)
 }
 
 
-void SimpleSplitter::removeIdle(uint64_t id)
+void xmrig::SimpleSplitter::removeIdle(uint64_t id)
 {
     auto it = m_idles.find(id);
     if (it != m_idles.end()) {
@@ -231,7 +229,7 @@ void SimpleSplitter::removeIdle(uint64_t id)
 }
 
 
-void SimpleSplitter::removeUpstream(uint64_t id)
+void xmrig::SimpleSplitter::removeUpstream(uint64_t id)
 {
     auto it = m_upstreams.find(id);
     if (it != m_upstreams.end()) {
@@ -240,7 +238,7 @@ void SimpleSplitter::removeUpstream(uint64_t id)
 }
 
 
-void SimpleSplitter::submit(SubmitEvent *event)
+void xmrig::SimpleSplitter::submit(SubmitEvent *event)
 {
     SimpleMapper *mapper = m_upstreams[event->miner()->mapperId()];
     if (mapper) {

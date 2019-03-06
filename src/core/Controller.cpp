@@ -41,7 +41,8 @@
 class xmrig::ControllerPrivate
 {
 public:
-    inline ControllerPrivate() :
+    inline ControllerPrivate(Process *process) :
+        process(process),
         proxy(nullptr),
         config(nullptr)
     {}
@@ -54,16 +55,16 @@ public:
     }
 
 
+    Process *process;
     Proxy *proxy;
+    std::vector<IControllerListener *> listeners;
     xmrig::Config *config;
-    std::vector<xmrig::IControllerListener *> listeners;
 };
 
 
-xmrig::Controller::Controller()
-    : d_ptr(new ControllerPrivate())
+xmrig::Controller::Controller(Process *process)
+    : d_ptr(new ControllerPrivate(process))
 {
-
 }
 
 
@@ -81,21 +82,21 @@ xmrig::Config *xmrig::Controller::config() const
 }
 
 
-const StatsData &xmrig::Controller::statsData() const
+const xmrig::StatsData &xmrig::Controller::statsData() const
 {
     return proxy()->statsData();
 }
 
 
-const std::vector<Worker> &xmrig::Controller::workers() const
+const std::vector<xmrig::Worker> &xmrig::Controller::workers() const
 {
     return proxy()->workers();
 }
 
 
-int xmrig::Controller::init(int argc, char **argv)
+int xmrig::Controller::init()
 {
-    d_ptr->config = xmrig::Config::load(argc, argv, this);
+    d_ptr->config = Config::load(d_ptr->process, this);
     if (!d_ptr->config) {
         return 1;
     }
@@ -122,13 +123,13 @@ int xmrig::Controller::init(int argc, char **argv)
 }
 
 
-Proxy *xmrig::Controller::proxy() const
+xmrig::Proxy *xmrig::Controller::proxy() const
 {
     return d_ptr->proxy;
 }
 
 
-std::vector<Miner*> xmrig::Controller::miners() const
+std::vector<xmrig::Miner*> xmrig::Controller::miners() const
 {
     return proxy()->miners();
 }
@@ -137,6 +138,16 @@ std::vector<Miner*> xmrig::Controller::miners() const
 void xmrig::Controller::addListener(IControllerListener *listener)
 {
     d_ptr->listeners.push_back(listener);
+}
+
+
+void xmrig::Controller::watch()
+{
+    if (!config()) {
+        return;
+    }
+
+    ConfigLoader::watch(d_ptr->config);
 }
 
 

@@ -32,22 +32,19 @@
 
 #include "common/interfaces/IStrategyListener.h"
 #include "common/net/Job.h"
-#include "common/net/Pool.h"
 
 
+namespace xmrig {
+
+
+class Controller;
 class DonateStrategy;
 class IStrategy;
 class JobResult;
 class Miner;
 class NonceStorage;
-class Options;
+class Pools;
 class SubmitEvent;
-class Url;
-
-
-namespace xmrig {
-    class Controller;
-}
 
 
 class SubmitCtx
@@ -65,13 +62,13 @@ public:
 class NonceMapper : public IStrategyListener
 {
 public:
-    NonceMapper(size_t id, xmrig::Controller *controller);
-    ~NonceMapper();
+    NonceMapper(size_t id, Controller *controller);
+    ~NonceMapper() override;
 
     bool add(Miner *miner);
     bool isActive() const;
     void gc();
-    void reload(const std::vector<Pool> &pools);
+    void reload(const Pools &pools);
     void remove(const Miner *miner);
     void start();
     void submit(SubmitEvent *event);
@@ -92,12 +89,12 @@ protected:
 
 private:
     bool isColors() const;
-    IStrategy *createStrategy(const std::vector<Pool> &pools);
     SubmitCtx submitCtx(int64_t seq);
     void connect();
     void setJob(const char *host, int port, const Job &job);
     void suspend();
 
+    Controller *m_controller;
     DonateStrategy *m_donate;
     int m_suspended;
     IStrategy *m_pending;
@@ -105,8 +102,10 @@ private:
     NonceStorage *m_storage;
     size_t m_id;
     std::map<int64_t, SubmitCtx> m_results;
-    xmrig::Controller *m_controller;
 };
+
+
+} /* namespace xmrig */
 
 
 #endif /* XMRIG_NONCEMAPPER_H */

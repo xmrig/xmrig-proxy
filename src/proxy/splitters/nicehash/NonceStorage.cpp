@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -30,7 +31,7 @@
 #include "proxy/splitters/nicehash/NonceStorage.h"
 
 
-NonceStorage::NonceStorage() :
+xmrig::NonceStorage::NonceStorage() :
     m_active(false),
     m_used(256, 0),
     m_index(rand() % 256)
@@ -38,12 +39,12 @@ NonceStorage::NonceStorage() :
 }
 
 
-NonceStorage::~NonceStorage()
+xmrig::NonceStorage::~NonceStorage()
 {
 }
 
 
-bool NonceStorage::add(Miner *miner)
+bool xmrig::NonceStorage::add(Miner *miner)
 {
     const int index = nextIndex(0);
     if (index == -1) {
@@ -64,7 +65,7 @@ bool NonceStorage::add(Miner *miner)
 }
 
 
-bool NonceStorage::isUsed() const
+bool xmrig::NonceStorage::isUsed() const
 {
     for (size_t i = 0; i < 256; ++i) {
      if (m_used[i] > 0) {
@@ -76,7 +77,7 @@ bool NonceStorage::isUsed() const
 }
 
 
-bool NonceStorage::isValidJobId(const xmrig::Id &id) const
+bool xmrig::NonceStorage::isValidJobId(const xmrig::Id &id) const
 {
     if (m_job.id() == id) {
         return true;
@@ -91,7 +92,7 @@ bool NonceStorage::isValidJobId(const xmrig::Id &id) const
 }
 
 
-Miner *NonceStorage::miner(int64_t id)
+xmrig::Miner *xmrig::NonceStorage::miner(int64_t id)
 {
     if (m_miners.count(id) == 0) {
         return nullptr;
@@ -101,7 +102,7 @@ Miner *NonceStorage::miner(int64_t id)
 }
 
 
-void NonceStorage::remove(const Miner *miner)
+void xmrig::NonceStorage::remove(const Miner *miner)
 {
     m_used[miner->fixedByte()] = -miner->id();
 
@@ -112,13 +113,13 @@ void NonceStorage::remove(const Miner *miner)
 }
 
 
-void NonceStorage::reset()
+void xmrig::NonceStorage::reset()
 {
     std::fill(m_used.begin(), m_used.end(), 0);
 }
 
 
-void NonceStorage::setJob(const Job &job)
+void xmrig::NonceStorage::setJob(const Job &job)
 {
     for (size_t i = 0; i < 256; ++i) {
         if (m_used[i] < 0) {
@@ -150,7 +151,7 @@ void NonceStorage::setJob(const Job &job)
 
 
 #ifdef APP_DEVEL
-void NonceStorage::printState(size_t id)
+void xmrig::NonceStorage::printState(size_t id)
 {    int available = 0;
      int dead      = 0;
 
@@ -172,7 +173,7 @@ void NonceStorage::printState(size_t id)
 #endif
 
 
-int NonceStorage::nextIndex(int start) const
+int xmrig::NonceStorage::nextIndex(int start) const
 {
     for (size_t i = m_index; i < m_used.size(); ++i) {
         if (m_used[i] == 0) {

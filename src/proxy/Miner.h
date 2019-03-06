@@ -29,21 +29,19 @@
 #include <uv.h>
 
 
+#include "base/tools/String.h"
 #include "common/net/Storage.h"
-#include "common/utils/c_str.h"
 #include "rapidjson/fwd.h"
 
 
-class Job;
-class RejectEvent;
+typedef struct bio_st BIO;
 
 
 namespace xmrig {
-    class TlsContext;
-}
 
 
-typedef struct bio_st BIO;
+class Job;
+class TlsContext;
 
 
 class Miner
@@ -56,36 +54,36 @@ public:
         ClosingState
     };
 
-    Miner(const xmrig::TlsContext *ctx, bool ipv6, uint16_t port);
+    Miner(const TlsContext *ctx, bool ipv6, uint16_t port);
     ~Miner();
     bool accept(uv_stream_t *server);
     void replyWithError(int64_t id, const char *message);
     void setJob(Job &job);
     void success(int64_t id, const char *status);
 
-    inline const char *agent() const                  { return m_agent.data(); }
-    inline const char *ip() const                     { return m_ip; }
-    inline const char *password() const               { return m_password.data(); }
-    inline const char *rigId(bool safe = false) const { return (safe ? (m_rigId.size() > 0 ? m_rigId.data() : m_user.data()) : m_rigId.data()); }
-    inline const char *user() const                   { return m_user.data(); }
-    inline int32_t routeId() const                    { return m_routeId; }
-    inline int64_t id() const                         { return m_id; }
-    inline ssize_t mapperId() const                   { return m_mapperId; }
-    inline State state() const                        { return m_state; }
-    inline uint16_t localPort() const                 { return m_localPort; }
-    inline uint64_t customDiff() const                { return m_customDiff; }
-    inline uint64_t diff() const                      { return (m_customDiff ? std::min(m_customDiff, m_diff) : m_diff); }
-    inline uint64_t expire() const                    { return m_expire; }
-    inline uint64_t rx() const                        { return m_rx; }
-    inline uint64_t timestamp() const                 { return m_timestamp; }
-    inline uint64_t tx() const                        { return m_tx; }
-    inline uint8_t fixedByte() const                  { return m_fixedByte; }
-    inline void close()                               { shutdown(true); }
-    inline void setCustomDiff(uint64_t diff)          { m_customDiff = diff; }
-    inline void setFixedByte(uint8_t fixedByte)       { m_fixedByte = fixedByte; }
-    inline void setMapperId(ssize_t mapperId)         { m_mapperId = mapperId; }
-    inline void setNiceHash(bool nicehash)            { m_nicehash = nicehash; }
-    inline void setRouteId(int32_t id)                { m_routeId = id; }
+    inline const char *ip() const                       { return m_ip; }
+    inline const String &agent() const                  { return m_agent; }
+    inline const String &password() const               { return m_password; }
+    inline const String &rigId(bool safe = false) const { return (safe ? (m_rigId.size() > 0 ? m_rigId : m_user) : m_rigId); }
+    inline const String &user() const                   { return m_user; }
+    inline int32_t routeId() const                      { return m_routeId; }
+    inline int64_t id() const                           { return m_id; }
+    inline ssize_t mapperId() const                     { return m_mapperId; }
+    inline State state() const                          { return m_state; }
+    inline uint16_t localPort() const                   { return m_localPort; }
+    inline uint64_t customDiff() const                  { return m_customDiff; }
+    inline uint64_t diff() const                        { return (m_customDiff ? std::min(m_customDiff, m_diff) : m_diff); }
+    inline uint64_t expire() const                      { return m_expire; }
+    inline uint64_t rx() const                          { return m_rx; }
+    inline uint64_t timestamp() const                   { return m_timestamp; }
+    inline uint64_t tx() const                          { return m_tx; }
+    inline uint8_t fixedByte() const                    { return m_fixedByte; }
+    inline void close()                                 { shutdown(true); }
+    inline void setCustomDiff(uint64_t diff)            { m_customDiff = diff; }
+    inline void setFixedByte(uint8_t fixedByte)         { m_fixedByte = fixedByte; }
+    inline void setMapperId(ssize_t mapperId)           { m_mapperId = mapperId; }
+    inline void setNiceHash(bool nicehash)              { m_nicehash = nicehash; }
+    inline void setRouteId(int32_t id)                  { m_routeId = id; }
 
 private:
     class Tls;
@@ -124,6 +122,10 @@ private:
     size_t m_recvBufPos;
     ssize_t m_mapperId;
     State m_state;
+    String m_agent;
+    String m_password;
+    String m_rigId;
+    String m_user;
     Tls *m_tls;
     uint16_t m_localPort;
     uint64_t m_customDiff;
@@ -136,13 +138,12 @@ private:
     uintptr_t m_key;
     uv_buf_t m_recvBuf;
     uv_tcp_t m_socket;
-    xmrig::c_str m_agent;
-    xmrig::c_str m_password;
-    xmrig::c_str m_rigId;
-    xmrig::c_str m_user;
 
     static char m_sendBuf[2048];
     static xmrig::Storage<Miner> m_storage;
 };
+
+
+} /* namespace xmrig */
 
 #endif /* XMRIG_MINER_H */

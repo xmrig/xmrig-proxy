@@ -26,11 +26,15 @@
 #include "proxy/Events.h"
 
 
+namespace xmrig {
+
 bool Events::m_ready = true;
 std::map<IEvent::Type, std::vector<IEventListener*> > Events::m_listeners;
 
+}
 
-bool Events::exec(IEvent *event)
+
+bool xmrig::Events::exec(IEvent *event)
 {
     if (!m_ready) {
         LOG_ERR("failed start event %d", (int) event->type());
@@ -52,13 +56,13 @@ bool Events::exec(IEvent *event)
 }
 
 
-void Events::stop()
+void xmrig::Events::stop()
 {
     m_listeners.clear();
 }
 
 
-void Events::subscribe(IEvent::Type type, IEventListener *listener)
+void xmrig::Events::subscribe(IEvent::Type type, IEventListener *listener)
 {
     m_listeners[type].push_back(listener);
 }

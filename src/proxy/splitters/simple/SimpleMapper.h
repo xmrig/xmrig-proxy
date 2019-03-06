@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -32,32 +33,29 @@
 
 #include "common/interfaces/IStrategyListener.h"
 #include "common/net/Job.h"
-#include "common/net/Pool.h"
 
 
+namespace xmrig {
+
+
+class Controller;
 class DonateStrategy;
 class IStrategy;
 class JobResult;
 class Miner;
 class NonceStorage;
-class Options;
+class Pools;
 class SubmitEvent;
-class Url;
-
-
-namespace xmrig {
-    class Controller;
-}
 
 
 class SimpleMapper : public IStrategyListener
 {
 public:
-    SimpleMapper(uint64_t id, xmrig::Controller *controller);
-    ~SimpleMapper();
+    SimpleMapper(uint64_t id, Controller *controller);
+    ~SimpleMapper() override;
 
     void add(Miner *miner);
-    void reload(const std::vector<Pool> &pools);
+    void reload(const Pools &pools);
     void remove(const Miner *miner);
     void reuse(Miner *miner);
     void stop();
@@ -77,13 +75,13 @@ protected:
 
 private:
     bool isColors() const;
-    bool isValidJobId(const xmrig::Id &id) const;
-    IStrategy *createStrategy(const std::vector<Pool> &pools);
+    bool isValidJobId(const Id &id) const;
     void connect();
     void setJob(const Job &job);
 
     bool m_active;
     bool m_dirty;
+    Controller *m_controller;
     DonateStrategy *m_donate;
     IStrategy *m_pending;
     IStrategy *m_strategy;
@@ -92,8 +90,10 @@ private:
     Miner *m_miner;
     uint64_t m_id;
     uint64_t m_idleTime;
-    xmrig::Controller *m_controller;
 };
+
+
+} /* namespace xmrig */
 
 
 #endif /* XMRIG_SIMPLEMAPPER_H */

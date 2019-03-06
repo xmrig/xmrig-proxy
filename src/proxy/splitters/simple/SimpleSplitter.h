@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,8 +22,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SIMPLESPLITTER_H__
-#define __SIMPLESPLITTER_H__
+#ifndef XMRIG_SIMPLESPLITTER_H
+#define XMRIG_SIMPLESPLITTER_H
 
 
 #include <map>
@@ -33,24 +34,21 @@
 #include "proxy/splitters/Splitter.h"
 
 
+namespace xmrig {
+
+class Controller;
 class LoginEvent;
 class Miner;
-class Options;
 class SimpleMapper;
 class Stats;
 class SubmitEvent;
 
 
-namespace xmrig {
-    class Controller;
-}
-
-
 class SimpleSplitter : public Splitter
 {
 public:
-    SimpleSplitter(xmrig::Controller *controller);
-    ~SimpleSplitter();
+    SimpleSplitter(Controller *controller);
+    ~SimpleSplitter() override;
 
 protected:
     Upstreams upstreams() const override;
@@ -64,7 +62,7 @@ protected:
 #   endif
 
     inline void onRejectedEvent(IEvent *event) override {}
-    void onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig) override;
+    void onConfigChanged(Config *config, Config *previousConfig) override;
     void onEvent(IEvent *event) override;
 
 private:
@@ -83,4 +81,7 @@ private:
 };
 
 
-#endif /* __SIMPLESPLITTER_H__ */
+} /* namespace xmrig */
+
+
+#endif /* XMRIG_SIMPLESPLITTER_H */

@@ -4,8 +4,9 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -28,7 +29,7 @@
 #include "proxy/workers/Worker.h"
 
 
-Worker::Worker() :
+xmrig::Worker::Worker() :
     m_id(0),
     m_hashrate(4),
     m_accepted(0),
@@ -41,7 +42,7 @@ Worker::Worker() :
 }
 
 
-Worker::Worker(size_t id, const std::string &name, const std::string &ip) :
+xmrig::Worker::Worker(size_t id, const std::string &name, const std::string &ip) :
     m_id(id),
     m_ip(ip),
     m_name(name),
@@ -56,7 +57,7 @@ Worker::Worker(size_t id, const std::string &name, const std::string &ip) :
 }
 
 
-void Worker::add(const SubmitResult &result)
+void xmrig::Worker::add(const SubmitResult &result)
 {
     m_accepted++;
     m_hashes += result.diff;
@@ -68,7 +69,7 @@ void Worker::add(const SubmitResult &result)
 }
 
 
-void Worker::tick(uint64_t ticks)
+void xmrig::Worker::tick(uint64_t ticks)
 {
     m_hashrate.tick();
 }

@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -40,17 +41,17 @@
 #define LABEL(x) " \x1B[01;30m" x ":\x1B[0m "
 
 
-NonceSplitter::NonceSplitter(xmrig::Controller *controller) : Splitter(controller)
+xmrig::NonceSplitter::NonceSplitter(Controller *controller) : Splitter(controller)
 {
 }
 
 
-NonceSplitter::~NonceSplitter()
+xmrig::NonceSplitter::~NonceSplitter()
 {
 }
 
 
-Upstreams NonceSplitter::upstreams() const
+xmrig::Upstreams xmrig::NonceSplitter::upstreams() const
 {
     uint64_t active = 0;
     uint64_t sleep  = 0;
@@ -71,7 +72,7 @@ Upstreams NonceSplitter::upstreams() const
 }
 
 
-void NonceSplitter::connect()
+void xmrig::NonceSplitter::connect()
 {
     auto upstream = new NonceMapper(m_upstreams.size(), m_controller);
     m_upstreams.push_back(upstream);
@@ -80,7 +81,7 @@ void NonceSplitter::connect()
 }
 
 
-void NonceSplitter::gc()
+void xmrig::NonceSplitter::gc()
 {
     for (NonceMapper *mapper : m_upstreams) {
         mapper->gc();
@@ -94,7 +95,7 @@ void NonceSplitter::gc()
 }
 
 
-void NonceSplitter::printConnections()
+void xmrig::NonceSplitter::printConnections()
 {
     const Upstreams info = upstreams();
 
@@ -115,7 +116,7 @@ void NonceSplitter::printConnections()
 }
 
 
-void NonceSplitter::tick(uint64_t ticks)
+void xmrig::NonceSplitter::tick(uint64_t ticks)
 {
     const uint64_t now = uv_now(uv_default_loop());
 
@@ -126,7 +127,7 @@ void NonceSplitter::tick(uint64_t ticks)
 
 
 #ifdef APP_DEVEL
-void NonceSplitter::printState()
+void xmrig::NonceSplitter::printState()
 {
     for (NonceMapper *mapper : m_upstreams) {
         mapper->printState();
@@ -135,22 +136,19 @@ void NonceSplitter::printState()
 #endif
 
 
-void NonceSplitter::onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig)
+void xmrig::NonceSplitter::onConfigChanged(Config *config, Config *previousConfig)
 {
-    const std::vector<Pool> &pools         = config->pools();
-    const std::vector<Pool> &previousPools = previousConfig->pools();
-
-    if (pools.size() != previousPools.size() || !std::equal(pools.begin(), pools.end(), previousPools.begin())) {
+    if (config->pools() != previousConfig->pools()) {
         config->printPools();
 
         for (NonceMapper *mapper : m_upstreams) {
-            mapper->reload(pools);
+            mapper->reload(config->pools());
         }
     }
 }
 
 
-void NonceSplitter::onEvent(IEvent *event)
+void xmrig::NonceSplitter::onEvent(IEvent *event)
 {
     switch (event->type())
     {
@@ -172,7 +170,7 @@ void NonceSplitter::onEvent(IEvent *event)
 }
 
 
-void NonceSplitter::login(LoginEvent *event)
+void xmrig::NonceSplitter::login(LoginEvent *event)
 {
     // try reuse active upstreams.
     for (NonceMapper *mapper : m_upstreams) {
@@ -193,7 +191,7 @@ void NonceSplitter::login(LoginEvent *event)
 }
 
 
-void NonceSplitter::remove(Miner *miner)
+void xmrig::NonceSplitter::remove(Miner *miner)
 {
     if (miner->mapperId() < 0) {
         return;
@@ -203,7 +201,7 @@ void NonceSplitter::remove(Miner *miner)
 }
 
 
-void NonceSplitter::submit(SubmitEvent *event)
+void xmrig::NonceSplitter::submit(SubmitEvent *event)
 {
     m_upstreams[event->miner()->mapperId()]->submit(event);
 }

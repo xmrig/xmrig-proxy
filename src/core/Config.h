@@ -45,7 +45,8 @@ namespace xmrig {
 
 
 class ConfigLoader;
-class IWatcherListener;
+class IConfigListener;
+class Process;
 
 
 /**
@@ -76,7 +77,7 @@ public:
     void getJSON(rapidjson::Document &doc) const override;
 
 
-    static Config *load(int argc, char **argv, IWatcherListener *listener);
+    static Config *load(Process *process, IConfigListener *listener);
 
     inline bool isDebug() const                    { return m_debug; }
     inline bool isVerbose() const                  { return m_verbose; }
@@ -85,7 +86,6 @@ public:
     inline int mode() const                        { return m_mode; }
     inline int reuseTimeout() const                { return m_reuseTimeout; }
     inline uint64_t diff() const                   { return m_diff; }
-    inline void setColors(bool colors)             { m_colors = colors; }
     inline void setVerbose(bool verbose)           { m_verbose = verbose; }
     inline void toggleVerbose()                    { m_verbose = !m_verbose; }
     inline Workers::Mode workersMode() const       { return m_workersMode; }

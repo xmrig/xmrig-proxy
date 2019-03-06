@@ -28,7 +28,6 @@
 
 #include "common/config/ConfigLoader.h"
 #include "common/log/Log.h"
-#include "common/net/Pool.h"
 #include "common/xmrig.h"
 #include "core/Config.h"
 #include "core/ConfigCreator.h"
@@ -114,23 +113,15 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
         bind.PushBack(host.toJSON(doc), allocator);
     }
 
-    doc.AddMember("bind",         bind, allocator);
-    doc.AddMember("colors",       isColors(), allocator);
-    doc.AddMember("custom-diff",  diff(), allocator);
-    doc.AddMember("donate-level", donateLevel(), allocator);
-    doc.AddMember("log-file",     logFile() ? Value(StringRef(logFile())).Move() : Value(kNullType).Move(), allocator);
-    doc.AddMember("mode",         StringRef(modeName()), allocator);
-
-    Value pools(kArrayType);
-
-    for (const Pool &pool : m_activePools) {
-        pools.PushBack(pool.toJSON(doc), allocator);
-    }
-
-    doc.AddMember("pools", pools, allocator);
-
-    doc.AddMember("retries",       retries(), allocator);
-    doc.AddMember("retry-pause",   retryPause(), allocator);
+    doc.AddMember("bind",          bind, allocator);
+    doc.AddMember("colors",        isColors(), allocator);
+    doc.AddMember("custom-diff",   diff(), allocator);
+    doc.AddMember("donate-level",  donateLevel(), allocator);
+    doc.AddMember("log-file",      logFile() ? Value(StringRef(logFile())).Move() : Value(kNullType).Move(), allocator);
+    doc.AddMember("mode",          StringRef(modeName()), allocator);
+    doc.AddMember("pools",         m_pools.toJSON(doc), allocator);
+    doc.AddMember("retries",       m_pools.retries(), allocator);
+    doc.AddMember("retry-pause",   m_pools.retryPause(), allocator);
     doc.AddMember("reuse-timeout", reuseTimeout(), allocator);
 
 #   ifndef XMRIG_NO_TLS
@@ -149,9 +140,9 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
 }
 
 
-xmrig::Config *xmrig::Config::load(int argc, char **argv, IWatcherListener *listener)
+xmrig::Config *xmrig::Config::load(Process *process, IConfigListener *listener)
 {
-    return static_cast<Config*>(ConfigLoader::load(argc, argv, new ConfigCreator(), listener));
+    return static_cast<Config*>(ConfigLoader::load(process, new ConfigCreator(), listener));
 }
 
 
@@ -307,6 +298,8 @@ bool xmrig::Config::parseUint64(int key, uint64_t arg)
 
 void xmrig::Config::parseJSON(const rapidjson::Document &doc)
 {
+    CommonConfig::parseJSON(doc);
+
     const rapidjson::Value &bind = doc["bind"];
     if (bind.IsArray()) {
         for (const rapidjson::Value &value : bind.GetArray()) {

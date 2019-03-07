@@ -69,7 +69,7 @@ void xmrig::AccessLog::onEvent(IEvent *event)
     {
     case IEvent::LoginType: {
             auto e = static_cast<LoginEvent*>(event);
-            write("#%" PRId64 " login: %s, \"%s\", ua: \"%s\", count: %" PRIu64, e->miner()->id(), e->miner()->ip(), e->miner()->user(), e->miner()->agent(), Counters::miners());
+            write("#%" PRId64 " login: %s, \"%s\", ua: \"%s\", count: %" PRIu64, e->miner()->id(), e->miner()->ip(), e->miner()->user().data(), e->miner()->agent().data(), Counters::miners());
         }
         break;
 
@@ -82,7 +82,7 @@ void xmrig::AccessLog::onEvent(IEvent *event)
             const double time = (double)(xmrig::currentMSecsSinceEpoch() - e->miner()->timestamp()) / 1000;
 
             write("#%" PRId64 " close: %s, \"%s\", time: %03.1fs, rx/tx: %" PRIu64 "/%" PRIu64 ", count: %" PRIu64,
-                  e->miner()->id(), e->miner()->ip(), e->miner()->user(), time, e->miner()->rx(), e->miner()->tx(), Counters::miners());
+                  e->miner()->id(), e->miner()->ip(), e->miner()->user().data(), time, e->miner()->rx(), e->miner()->tx(), Counters::miners());
         }
         break;
 

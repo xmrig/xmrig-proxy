@@ -52,10 +52,6 @@ xmrig::SimpleMapper::SimpleMapper(uint64_t id, xmrig::Controller *controller) :
     m_idleTime(0)
 {
     m_strategy = controller->config()->pools().createStrategy(this);
-
-//    if (controller->config()->donateLevel() > 0) {
-//        m_donate = new DonateStrategy(id, controller, this);
-//    }
 }
 
 
@@ -70,8 +66,11 @@ xmrig::SimpleMapper::~SimpleMapper()
 void xmrig::SimpleMapper::add(Miner *miner)
 {
     m_miner = miner;
-    m_miner->setNiceHash(false);
-    m_miner->setMapperId(m_id);
+
+    m_miner->setExtension(Miner::EXT_ALGO,     true);
+    m_miner->setExtension(Miner::EXT_NICEHASH, false);
+    m_miner->setExtension(Miner::EXT_CONNECT,  m_controller->config()->isDonateOverProxy());
+    m_miner->setMapperId(static_cast<ssize_t>(m_id));
 
     connect();
 }
@@ -86,7 +85,7 @@ void xmrig::SimpleMapper::reload(const Pools &pools)
 }
 
 
-void xmrig::SimpleMapper::remove(const Miner *miner)
+void xmrig::SimpleMapper::remove(const Miner *)
 {
     m_miner = nullptr;
     m_dirty = true;
@@ -97,7 +96,7 @@ void xmrig::SimpleMapper::reuse(Miner *miner)
 {
     m_idleTime = 0;
     m_miner    = miner;
-    m_miner->setMapperId(m_id);
+    m_miner->setMapperId(static_cast<ssize_t>(m_id));
 }
 
 
@@ -140,7 +139,7 @@ void xmrig::SimpleMapper::submit(SubmitEvent *event)
 }
 
 
-void xmrig::SimpleMapper::tick(uint64_t ticks, uint64_t now)
+void xmrig::SimpleMapper::tick(uint64_t, uint64_t now)
 {
     m_strategy->tick(now);
 
@@ -184,7 +183,7 @@ void xmrig::SimpleMapper::onActive(IStrategy *strategy, Client *client)
 }
 
 
-void xmrig::SimpleMapper::onJob(IStrategy *strategy, Client *client, const Job &job)
+void xmrig::SimpleMapper::onJob(IStrategy *, Client *client, const Job &job)
 {
     if (m_controller->config()->isVerbose()) {
         if (job.height()) {
@@ -215,7 +214,7 @@ void xmrig::SimpleMapper::onPause(IStrategy *strategy)
 }
 
 
-void xmrig::SimpleMapper::onResultAccepted(IStrategy *strategy, Client *client, const SubmitResult &result, const char *error)
+void xmrig::SimpleMapper::onResultAccepted(IStrategy *, Client *client, const SubmitResult &result, const char *error)
 {
     AcceptEvent::start(m_id, m_miner, result, client->id() == -1, error);
 

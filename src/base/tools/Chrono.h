@@ -22,33 +22,39 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_DONATE_H
-#define XMRIG_DONATE_H
+#ifndef XMRIG_CHRONO_H
+#define XMRIG_CHRONO_H
 
 
-#include <stdint.h>
+#include <chrono>
 
 
-/*
- * Dev donation.
- *
- * Percentage of your hashing power that you want to donate to the developer, can be 0 if you don't want to do that.
- *
- * If you plan on changing this setting to 0 please consider making a one off donation to my wallet:
- * XMR: 48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzKt52XU5xvqgzYnDK9URnRoJMk1j8nLwEVsaSWJ4fhdUyZijBGUicoD
- * BTC: 1P7ujsXeX7GxQwHNnJsRMgAdNkFZmNVqJT
- *
- * How it works:
- * Upstreams randomly switch to dev pool in range from 50 to 150 minutes, to reduce dev pool peak load.
- * Stays on dev pool at least kDonateLevel minutes.
- * Choice next donation time, with overime compensation. In proxy no way to use precise donation time.
- * You can check actual donation via API.
- *
- * Since 2.15.0
- * If you set level to 0 it will enable donate over proxy feature.
- */
-constexpr const int kDefaultDonateLevel = 0;
-constexpr const int kMinimumDonateLevel = 0;
+namespace xmrig {
 
 
-#endif /* XMRIG_DONATE_H */
+class Chrono
+{
+public:
+    static inline uint64_t steadyMSecs()
+    {
+        using namespace std::chrono;
+        if (high_resolution_clock::is_steady) {
+            return static_cast<uint64_t>(time_point_cast<milliseconds>(high_resolution_clock::now()).time_since_epoch().count());
+        }
+
+        return static_cast<uint64_t>(time_point_cast<milliseconds>(steady_clock::now()).time_since_epoch().count());
+    }
+
+
+    static inline uint64_t currentMSecsSinceEpoch()
+    {
+        using namespace std::chrono;
+
+        return static_cast<uint64_t>(time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count());
+    }
+};
+
+
+} /* namespace xmrig */
+
+#endif /* XMRIG_CHRONO_H */

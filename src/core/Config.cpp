@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -94,14 +95,14 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
 
     auto &allocator = doc.GetAllocator();
 
-    doc.AddMember("access-log-file", accessLog() ? Value(StringRef(accessLog())).Move() : Value(kNullType).Move(), allocator);
+    doc.AddMember("access-log-file", m_accessLog.toJSON(), allocator);
     doc.AddMember("algo",            StringRef(algorithm().name()), allocator);
 
     Value api(kObjectType);
     api.AddMember("port",         apiPort(), allocator);
-    api.AddMember("access-token", apiToken() ? Value(StringRef(apiToken())).Move() : Value(kNullType).Move(), allocator);
-    api.AddMember("id",           apiId() ? Value(StringRef(apiId())).Move() : Value(kNullType).Move(), allocator);
-    api.AddMember("worker-id",    apiWorkerId() ? Value(StringRef(apiWorkerId())).Move() : Value(kNullType).Move(), allocator);
+    api.AddMember("access-token", m_apiToken.toJSON(), allocator);
+    api.AddMember("id",           m_apiId.toJSON(), allocator);
+    api.AddMember("worker-id",    m_apiWorkerId.toJSON(), allocator);
     api.AddMember("ipv6",         isApiIPv6(), allocator);
     api.AddMember("restricted",   isApiRestricted(), allocator);
     doc.AddMember("api",          api, allocator);
@@ -117,7 +118,7 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("colors",        isColors(), allocator);
     doc.AddMember("custom-diff",   diff(), allocator);
     doc.AddMember("donate-level",  donateLevel(), allocator);
-    doc.AddMember("log-file",      logFile() ? Value(StringRef(logFile())).Move() : Value(kNullType).Move(), allocator);
+    doc.AddMember("log-file",      m_logFile.toJSON(), allocator);
     doc.AddMember("mode",          StringRef(modeName()), allocator);
     doc.AddMember("pools",         m_pools.toJSON(doc), allocator);
     doc.AddMember("retries",       m_pools.retries(), allocator);
@@ -128,7 +129,7 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("tls", m_tls.toJSON(doc), allocator);
 #   endif
 
-    doc.AddMember("user-agent",    userAgent() ? Value(StringRef(userAgent())).Move() : Value(kNullType).Move(), allocator);
+    doc.AddMember("user-agent",    m_userAgent.toJSON(), allocator);
 
 #   ifdef HAVE_SYSLOG_H
     doc.AddMember("syslog", isSyslog(), allocator);
@@ -157,8 +158,8 @@ bool xmrig::Config::finalize()
     }
 
     if (m_bind.empty()) {
-        m_bind.push_back(xmrig::BindHost("0.0.0.0", 3333, 4));
-        m_bind.push_back(xmrig::BindHost("::", 3333, 6));
+        m_bind.push_back(BindHost("0.0.0.0", 3333, 4));
+        m_bind.push_back(BindHost("::", 3333, 6));
     }
 
     return true;
@@ -235,7 +236,7 @@ bool xmrig::Config::parseString(int key, const char *arg)
         break;
 
     case CustomDiffKey:   /* --custom-diff */
-        return parseUint64(key, strtol(arg, nullptr, 10));
+        return parseUint64(key, static_cast<uint64_t>(strtol(arg, nullptr, 10)));
 
 #   ifndef XMRIG_NO_TLS
     case TlsCertKey: /* --tls-cert */
@@ -336,7 +337,7 @@ void xmrig::Config::setMode(const char *mode)
 
     for (size_t i = 0; i < size; i++) {
         if (modeNames[i] && !strcmp(mode, modeNames[i])) {
-            m_mode = (int) i;
+            m_mode = static_cast<int>(i);
             break;
         }
     }

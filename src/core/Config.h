@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -29,8 +30,8 @@
 #include <vector>
 
 
+#include "base/tools/String.h"
 #include "common/config/CommonConfig.h"
-#include "common/utils/c_str.h"
 #include "proxy/BindHost.h"
 #include "proxy/workers/Workers.h"
 #include "rapidjson/fwd.h"
@@ -80,6 +81,7 @@ public:
     static Config *load(Process *process, IConfigListener *listener);
 
     inline bool isDebug() const                    { return m_debug; }
+    inline bool isDonateOverProxy() const          { return m_donateLevel == 0 || m_mode == SIMPLE_MODE; }
     inline bool isVerbose() const                  { return m_verbose; }
     inline const char *accessLog() const           { return m_accessLog.data(); }
     inline const xmrig::BindHosts &bind() const    { return m_bind; }
@@ -104,19 +106,18 @@ protected:
 private:
     void setMode(const char *mode);
 
+    BindHosts m_bind;
     bool m_debug;
     bool m_ready;
     bool m_verbose;
-
     int m_mode;
     int m_reuseTimeout;
+    String m_accessLog;
     uint64_t m_diff;
     Workers::Mode m_workersMode;
-    xmrig::BindHosts m_bind;
-    xmrig::c_str m_accessLog;
 
 #   ifndef XMRIG_NO_TLS
-    xmrig::TlsConfig m_tls;
+    TlsConfig m_tls;
 #   endif
 };
 

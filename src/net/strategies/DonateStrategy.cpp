@@ -132,11 +132,6 @@ void xmrig::DonateStrategy::tick(uint64_t now)
     m_ticks++;
 
     if (m_ticks == m_target) {
-        if (kFreeThreshold > 0 && Counters::miners() < kFreeThreshold) {
-            m_target += 600;
-            return;
-        }
-
         m_pending.job.reset();
         m_client->connect();
     }

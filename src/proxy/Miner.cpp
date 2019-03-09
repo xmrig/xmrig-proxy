@@ -27,9 +27,10 @@
 #include <string.h>
 
 
+#include "base/io/Json.h"
+#include "base/tools/Chrono.h"
 #include "common/log/Log.h"
 #include "common/net/Job.h"
-#include "common/utils/timestamp.h"
 #include "net/JobResult.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"
@@ -60,7 +61,6 @@ namespace xmrig {
 
 xmrig::Miner::Miner(const TlsContext *ctx, bool ipv6, uint16_t port) :
     m_ipv6(ipv6),
-    m_nicehash(true),
     m_ip(),
     m_routeId(-1),
     m_id(++nextId),
@@ -72,9 +72,9 @@ xmrig::Miner::Miner(const TlsContext *ctx, bool ipv6, uint16_t port) :
     m_localPort(port),
     m_customDiff(0),
     m_diff(0),
-    m_expire(uv_now(uv_default_loop()) + kLoginTimeout),
+    m_expire(Chrono::steadyMSecs() + kLoginTimeout),
     m_rx(0),
-    m_timestamp(currentMSecsSinceEpoch()),
+    m_timestamp(Chrono::currentMSecsSinceEpoch()),
     m_tx(0),
     m_fixedByte(0)
 {
@@ -118,7 +118,7 @@ bool xmrig::Miner::accept(uv_stream_t *server)
         return false;
     }
 
-    sockaddr_storage addr = { 0 };
+    sockaddr_storage addr = {};
     int size = sizeof(addr);
 
     uv_tcp_getpeername(&m_socket, reinterpret_cast<sockaddr*>(&addr), &size);
@@ -151,7 +151,7 @@ void xmrig::Miner::setJob(Job &job)
 {
     using namespace rapidjson;
 
-    if (m_nicehash) {
+    if (hasExtension(EXT_NICEHASH)) {
         snprintf(m_sendBuf, 4, "%02hhx", m_fixedByte);
         memcpy(job.rawBlob() + 84, m_sendBuf, 2);
     }
@@ -198,11 +198,24 @@ void xmrig::Miner::setJob(Job &job)
         result.AddMember("job", params, allocator);
 
         Value extensions(kArrayType);
-        extensions.PushBack("algo", allocator);
 
-        if (m_nicehash) {
+        if (hasExtension(EXT_ALGO)) {
+            extensions.PushBack("algo", allocator);
+        }
+
+        if (hasExtension(EXT_NICEHASH)) {
             extensions.PushBack("nicehash", allocator);
         }
+
+        if (hasExtension(EXT_CONNECT)) {
+            extensions.PushBack("connect", allocator);
+
+#           ifdef XMRIG_FEATURE_TLS
+            extensions.PushBack("tls", allocator);
+#           endif
+        }
+
+        extensions.PushBack("keepalive", allocator);
 
         result.AddMember("extensions", extensions, allocator);
         result.AddMember("status", "OK", allocator);
@@ -252,10 +265,10 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
                 }
             }
 
-            m_user     = params["login"].GetString();
-            m_password = params["pass"].GetString();
-            m_agent    = params["agent"].GetString();
-            m_rigId    = params["rigid"].GetString();
+            m_user     = Json::getString(params, "login");
+            m_password = Json::getString(params, "pass");
+            m_agent    = Json::getString(params, "agent");
+            m_rigId    = Json::getString(params, "rigid");
 
             LoginEvent::create(this, id, algorithms)->start();
             return true;
@@ -271,7 +284,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
     if (strcmp(method, "submit") == 0) {
         heartbeat();
 
-        const char *rpcId = params["id"].GetString();
+        const char *rpcId = Json::getString(params, "id");
         if (!rpcId || strncmp(m_rpcId, rpcId, sizeof(m_rpcId)) != 0) {
             replyWithError(id, Error::toString(Error::Unauthenticated));
             return true;
@@ -279,7 +292,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
 
         Algorithm algorithm;
         if (params.HasMember("algo")) {
-            const char *algo = params["algo"].GetString();
+            const char *algo = Json::getString(params, "algo");
 
             algorithm.parseAlgorithm(algo);
             if (!algorithm.isValid()) {
@@ -287,12 +300,12 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
             }
         }
 
-        SubmitEvent *event = SubmitEvent::create(this, id, params["job_id"].GetString(), params["nonce"].GetString(), params["result"].GetString(), algorithm);
+        SubmitEvent *event = SubmitEvent::create(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm);
 
         if (!event->request.isValid() || event->request.actualDiff() < diff()) {
             event->reject(Error::LowDifficulty);
         }
-        else if (m_nicehash && !event->request.isCompatible(m_fixedByte)) {
+        else if (hasExtension(EXT_NICEHASH) && !event->request.isCompatible(m_fixedByte)) {
             event->reject(Error::InvalidNonce);
         }
 
@@ -355,7 +368,7 @@ bool xmrig::Miner::send(BIO *bio)
 
 void xmrig::Miner::heartbeat()
 {
-    m_expire = uv_now(uv_default_loop()) + kSocketTimeout;
+    m_expire = Chrono::steadyMSecs() + kSocketTimeout;
 }
 
 
@@ -445,7 +458,7 @@ void xmrig::Miner::send(const rapidjson::Document &doc)
 {
     using namespace rapidjson;
 
-    StringBuffer buffer(0, 512);
+    StringBuffer buffer(nullptr, 512);
     Writer<StringBuffer> writer(buffer);
     doc.Accept(writer);
 

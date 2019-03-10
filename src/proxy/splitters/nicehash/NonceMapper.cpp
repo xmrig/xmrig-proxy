@@ -72,7 +72,7 @@ xmrig::NonceMapper::~NonceMapper()
 bool xmrig::NonceMapper::add(Miner *miner)
 {
     if (!miner->hasExtension(Miner::EXT_NICEHASH)) {
-        miner->setExtension(Miner::EXT_ALGO,     true);
+        miner->setExtension(Miner::EXT_ALGO,     m_controller->config()->hasAlgoExt());
         miner->setExtension(Miner::EXT_NICEHASH, true);
         miner->setExtension(Miner::EXT_CONNECT,  m_controller->config()->isDonateOverProxy());
         miner->setMapperId(static_cast<ssize_t>(m_id));

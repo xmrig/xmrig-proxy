@@ -65,6 +65,8 @@ Options:\n\
 #endif
 "\
   -A  --access-log-file=N  log all workers access to a file\n\
+      --access-password=P  set password to restrict connections to the proxy\n\
+      --no-algo-ext        disable \"algo\" protocol extension\n\
       --api-port=N         port for the miner API\n\
       --api-access-token=T use Bearer access token for API\n\
       --api-worker-id=ID   custom worker-id (instance name) for API\n\

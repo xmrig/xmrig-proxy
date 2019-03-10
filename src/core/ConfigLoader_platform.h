@@ -88,6 +88,8 @@ static struct option const options[] = {
     { "tls-protocols",     1, nullptr, IConfig::TlsProtocolsKey   },
     { "tls-ciphers",       1, nullptr, IConfig::TlsCiphersKey     },
     { "tls-ciphersuites",  1, nullptr, IConfig::TlsCipherSuitesKey},
+    { "no-algo-ext",       0, nullptr, IConfig::AlgoExtKey        },
+    { "password",          1, nullptr, IConfig::ProxyPasswordKey  },
     { nullptr,             0, nullptr, 0 }
 };
 
@@ -111,20 +113,8 @@ static struct option const config_options[] = {
     { "workers",          1, nullptr, IConfig::WorkersAdvKey     },
     { "reuse-timeout",    1, nullptr, IConfig::ReuseTimeoutKey   },
     { "mode",             1, nullptr, IConfig::ModeKey           },
-    { nullptr,            0, nullptr, 0 }
-};
-
-
-static struct option const pool_options[] = {
-    { "url",              1, nullptr, IConfig::UrlKey         },
-    { "pass",             1, nullptr, IConfig::PasswordKey    },
-    { "user",             1, nullptr, IConfig::UserKey        },
-    { "userpass",         1, nullptr, IConfig::UserpassKey    },
-    { "keepalive",        2, nullptr, IConfig::KeepAliveKey   },
-    { "variant",          1, nullptr, IConfig::VariantKey     },
-    { "rig-id",           1, nullptr, IConfig::RigIdKey       },
-    { "tls",              0, nullptr, IConfig::TlsKey         },
-    { "tls-fingerprint",  1, nullptr, IConfig::FingerprintKey },
+    { "algo-ext",         0, nullptr, IConfig::AlgoExtKey        },
+    { "access-password",  1, nullptr, IConfig::ProxyPasswordKey  },
     { nullptr,            0, nullptr, 0 }
 };
 
@@ -141,5 +131,6 @@ static struct option const api_options[] = {
 
 
 } /* namespace xmrig */
+
 
 #endif /* XMRIG_CONFIGLOADER_PLATFORM_H */

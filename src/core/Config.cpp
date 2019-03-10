@@ -50,6 +50,7 @@ static const char *modeNames[] = {
 
 
 xmrig::Config::Config() : xmrig::CommonConfig(),
+    m_algoExt(true),
     m_debug(false),
     m_ready(false),
     m_verbose(false),
@@ -96,7 +97,9 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     auto &allocator = doc.GetAllocator();
 
     doc.AddMember("access-log-file", m_accessLog.toJSON(), allocator);
+    doc.AddMember("access-password", m_password.toJSON(), allocator);
     doc.AddMember("algo",            StringRef(algorithm().name()), allocator);
+    doc.AddMember("algo-ext",        m_algoExt, allocator);
 
     Value api(kObjectType);
     api.AddMember("port",         apiPort(), allocator);
@@ -186,6 +189,10 @@ bool xmrig::Config::parseBoolean(int key, bool enable)
         m_workersMode = enable ? Workers::RigID : Workers::None;
         break;
 
+    case AlgoExtKey:
+        m_algoExt = enable;
+        break;
+
     default:
         break;
     }
@@ -224,11 +231,16 @@ bool xmrig::Config::parseString(int key, const char *arg)
         m_accessLog = arg;
         break;
 
+    case ProxyPasswordKey: /* --access-passowrd */
+        m_password = arg;
+        break;
+
     case VerboseKey: /* --verbose */
     case DebugKey:   /* --debug */
         return parseBoolean(key, true);
 
     case WorkersKey: /* --no-workers */
+    case AlgoExtKey: /* --no-algo-ext */
         return parseBoolean(key, false);
 
     case WorkersAdvKey:
@@ -238,7 +250,7 @@ bool xmrig::Config::parseString(int key, const char *arg)
     case CustomDiffKey:   /* --custom-diff */
         return parseUint64(key, static_cast<uint64_t>(strtol(arg, nullptr, 10)));
 
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     case TlsCertKey: /* --tls-cert */
         m_tls.setCert(arg);
         break;

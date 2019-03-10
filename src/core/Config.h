@@ -77,13 +77,14 @@ public:
 
     void getJSON(rapidjson::Document &doc) const override;
 
-
     static Config *load(Process *process, IConfigListener *listener);
 
+    inline bool hasAlgoExt() const                 { return isDonateOverProxy() ? m_algoExt : true; }
     inline bool isDebug() const                    { return m_debug; }
     inline bool isDonateOverProxy() const          { return m_donateLevel == 0 || m_mode == SIMPLE_MODE; }
     inline bool isVerbose() const                  { return m_verbose; }
-    inline const char *accessLog() const           { return m_accessLog.data(); }
+    inline const String &accessLog() const         { return m_accessLog; }
+    inline const String &password() const          { return m_password; }
     inline const xmrig::BindHosts &bind() const    { return m_bind; }
     inline int mode() const                        { return m_mode; }
     inline int reuseTimeout() const                { return m_reuseTimeout; }
@@ -92,7 +93,7 @@ public:
     inline void toggleVerbose()                    { m_verbose = !m_verbose; }
     inline Workers::Mode workersMode() const       { return m_workersMode; }
 
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     inline const xmrig::TlsConfig &tls() const { return m_tls; }
 #   endif
 
@@ -107,16 +108,18 @@ private:
     void setMode(const char *mode);
 
     BindHosts m_bind;
+    bool m_algoExt;
     bool m_debug;
     bool m_ready;
     bool m_verbose;
     int m_mode;
     int m_reuseTimeout;
     String m_accessLog;
+    String m_password;
     uint64_t m_diff;
     Workers::Mode m_workersMode;
 
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     TlsConfig m_tls;
 #   endif
 };

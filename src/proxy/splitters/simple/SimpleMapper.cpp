@@ -67,7 +67,7 @@ void xmrig::SimpleMapper::add(Miner *miner)
 {
     m_miner = miner;
 
-    m_miner->setExtension(Miner::EXT_ALGO,     true);
+    m_miner->setExtension(Miner::EXT_ALGO,     m_controller->config()->hasAlgoExt());
     m_miner->setExtension(Miner::EXT_NICEHASH, false);
     m_miner->setExtension(Miner::EXT_CONNECT,  m_controller->config()->isDonateOverProxy());
     m_miner->setMapperId(static_cast<ssize_t>(m_id));

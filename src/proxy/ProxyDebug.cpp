@@ -71,7 +71,7 @@ void xmrig::ProxyDebug::onEvent(IEvent *event)
 
     case IEvent::LoginType: {
             auto e = static_cast<LoginEvent*>(event);
-            LOG_INFO("[debug] login <Miner id=%" PRId64 ", ip=%s>, <Request login=%s, agent=%s>", e->miner()->id(), e->miner()->ip(), e->miner()->user(), e->miner()->agent());
+            LOG_INFO("[debug] login <Miner id=%" PRId64 ", ip=%s>, <Request login=%s, agent=%s>", e->miner()->id(), e->miner()->ip(), e->miner()->user().data(), e->miner()->agent().data());
         }
         break;
 
@@ -117,7 +117,7 @@ void xmrig::ProxyDebug::onRejectedEvent(IEvent *event)
 
     case IEvent::LoginType: {
             auto e = static_cast<LoginEvent*>(event);
-            LOG_ERR("[error] login <Miner id=%" PRId64 ", ip=%s>, <Request login=%s, agent=%s>", e->miner()->id(), e->miner()->ip(), e->miner()->user(), e->miner()->agent());
+            LOG_ERR("[error] login <Miner id=%" PRId64 ", ip=%s>, <Request login=%s, agent=%s>", e->miner()->id(), e->miner()->ip(), e->miner()->user().data(), e->miner()->agent().data());
         }
         break;
 

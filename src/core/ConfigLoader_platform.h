@@ -89,7 +89,7 @@ static struct option const options[] = {
     { "tls-ciphers",       1, nullptr, IConfig::TlsCiphersKey     },
     { "tls-ciphersuites",  1, nullptr, IConfig::TlsCipherSuitesKey},
     { "no-algo-ext",       0, nullptr, IConfig::AlgoExtKey        },
-    { "password",          1, nullptr, IConfig::ProxyPasswordKey  },
+    { "access-password",   1, nullptr, IConfig::ProxyPasswordKey  },
     { nullptr,             0, nullptr, 0 }
 };
 

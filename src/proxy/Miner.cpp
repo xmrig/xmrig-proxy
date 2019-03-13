@@ -141,6 +141,15 @@ bool xmrig::Miner::accept(uv_stream_t *server)
 }
 
 
+void xmrig::Miner::forwardJob(const Job &job, const char *algo)
+{
+    m_diff = job.diff();
+    setFixedByte(job.fixedByte());
+
+    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().shortName(), job.height());
+}
+
+
 void xmrig::Miner::replyWithError(int64_t id, const char *message)
 {
     send(snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"error\":{\"code\":-1,\"message\":\"%s\"}}\n", id, message));
@@ -166,68 +175,7 @@ void xmrig::Miner::setJob(Job &job)
         customDiff = true;
     }
 
-    sprintf(m_sendBuf + 16, "%s%02hhx0", job.id().data(), m_fixedByte);
-
-    Document doc(kObjectType);
-    auto &allocator = doc.GetAllocator();
-
-    Value params(kObjectType);
-    params.AddMember("blob",   StringRef(job.rawBlob()), allocator);
-    params.AddMember("job_id", StringRef(m_sendBuf + 16), allocator);
-    params.AddMember("target", StringRef(customDiff ? m_sendBuf : job.rawTarget()), allocator);
-    params.AddMember("algo",   StringRef(job.algorithm().shortName()), allocator);
-
-    if (job.height()) {
-        params.AddMember("height", job.height(), allocator);
-    }
-
-    if (job.algorithm().variant() == VARIANT_0 || job.algorithm().variant() == VARIANT_1) {
-        params.AddMember("variant", job.algorithm().variant(), allocator);
-    }
-
-    doc.AddMember("jsonrpc", "2.0", allocator);
-
-    if (m_state == WaitReadyState) {
-        setState(ReadyState);
-
-        doc.AddMember("id",    m_loginId, allocator);
-        doc.AddMember("error", kNullType, allocator);
-
-        Value result(kObjectType);
-        result.AddMember("id",  StringRef(m_rpcId), allocator);
-        result.AddMember("job", params, allocator);
-
-        Value extensions(kArrayType);
-
-        if (hasExtension(EXT_ALGO)) {
-            extensions.PushBack("algo", allocator);
-        }
-
-        if (hasExtension(EXT_NICEHASH)) {
-            extensions.PushBack("nicehash", allocator);
-        }
-
-        if (hasExtension(EXT_CONNECT)) {
-            extensions.PushBack("connect", allocator);
-
-#           ifdef XMRIG_FEATURE_TLS
-            extensions.PushBack("tls", allocator);
-#           endif
-        }
-
-        extensions.PushBack("keepalive", allocator);
-
-        result.AddMember("extensions", extensions, allocator);
-        result.AddMember("status", "OK", allocator);
-
-        doc.AddMember("result", result, allocator);
-    }
-    else {
-        doc.AddMember("method", "job", allocator);
-        doc.AddMember("params", params, allocator);
-    }
-
-    send(doc);
+    sendJob(job.rawBlob(), job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height());
 }
 
 
@@ -270,7 +218,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
             m_agent    = Json::getString(params, "agent");
             m_rigId    = Json::getString(params, "rigid");
 
-            LoginEvent::create(this, id, algorithms)->start();
+            LoginEvent::create(this, id, algorithms, params)->start();
             return true;
         }
 
@@ -503,6 +451,69 @@ void xmrig::Miner::send(int size)
     }
 
     m_tx += size;
+}
+
+
+void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height)
+{
+    using namespace rapidjson;
+
+    Document doc(kObjectType);
+    auto &allocator = doc.GetAllocator();
+
+    Value params(kObjectType);
+    params.AddMember("blob",   StringRef(blob), allocator);
+    params.AddMember("job_id", StringRef(jobId), allocator);
+    params.AddMember("target", StringRef(target), allocator);
+    params.AddMember("algo",   StringRef(algo), allocator);
+
+    if (height) {
+        params.AddMember("height", height, allocator);
+    }
+
+    doc.AddMember("jsonrpc", "2.0", allocator);
+
+    if (m_state == WaitReadyState) {
+        setState(ReadyState);
+
+        doc.AddMember("id",    m_loginId, allocator);
+        doc.AddMember("error", kNullType, allocator);
+
+        Value result(kObjectType);
+        result.AddMember("id",  StringRef(m_rpcId), allocator);
+        result.AddMember("job", params, allocator);
+
+        Value extensions(kArrayType);
+
+        if (hasExtension(EXT_ALGO)) {
+            extensions.PushBack("algo", allocator);
+        }
+
+        if (hasExtension(EXT_NICEHASH)) {
+            extensions.PushBack("nicehash", allocator);
+        }
+
+        if (hasExtension(EXT_CONNECT)) {
+            extensions.PushBack("connect", allocator);
+
+#           ifdef XMRIG_FEATURE_TLS
+            extensions.PushBack("tls", allocator);
+#           endif
+        }
+
+        extensions.PushBack("keepalive", allocator);
+
+        result.AddMember("extensions", extensions, allocator);
+        result.AddMember("status", "OK", allocator);
+
+        doc.AddMember("result", result, allocator);
+    }
+    else {
+        doc.AddMember("method", "job", allocator);
+        doc.AddMember("params", params, allocator);
+    }
+
+    send(doc);
 }
 
 

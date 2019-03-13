@@ -172,6 +172,10 @@ void xmrig::NonceSplitter::onEvent(IEvent *event)
 
 void xmrig::NonceSplitter::login(LoginEvent *event)
 {
+    if (event->miner()->routeId() != -1) {
+        return;
+    }
+
     // try reuse active upstreams.
     for (NonceMapper *mapper : m_upstreams) {
         if (!mapper->isSuspended() && mapper->add(event->miner())) {
@@ -193,7 +197,7 @@ void xmrig::NonceSplitter::login(LoginEvent *event)
 
 void xmrig::NonceSplitter::remove(Miner *miner)
 {
-    if (miner->mapperId() < 0) {
+    if (miner->mapperId() < 0 || miner->routeId() != -1) {
         return;
     }
 
@@ -203,5 +207,9 @@ void xmrig::NonceSplitter::remove(Miner *miner)
 
 void xmrig::NonceSplitter::submit(SubmitEvent *event)
 {
+    if (event->miner()->mapperId() < 0 || event->miner()->routeId() != -1) {
+        return;
+    }
+
     m_upstreams[event->miner()->mapperId()]->submit(event);
 }

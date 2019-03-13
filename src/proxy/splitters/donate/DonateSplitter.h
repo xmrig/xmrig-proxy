@@ -22,61 +22,50 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
+#ifndef XMRIG_DONATESPLITTER_H
+#define XMRIG_DONATESPLITTER_H
 
 
-#include "core/Config.h"
-#include "core/Controller.h"
-#include "proxy/CustomDiff.h"
-#include "proxy/events/LoginEvent.h"
-#include "proxy/Miner.h"
+#include <stdint.h>
+#include <map>
 
 
-xmrig::CustomDiff::CustomDiff(xmrig::Controller *controller) :
-    m_controller(controller)
+#include "interfaces/IEventListener.h"
+
+
+namespace xmrig {
+
+
+class Controller;
+class DonateMapper;
+class LoginEvent;
+class Miner;
+class SubmitEvent;
+
+
+class DonateSplitter : public IEventListener
 {
-}
+public:
+    DonateSplitter(Controller *controller);
+
+protected:
+    inline void onRejectedEvent(IEvent *) override {}
+
+    void onEvent(IEvent *event) override;
+
+private:
+    void login(LoginEvent *event);
+    void remove(Miner *miner);
+    void remove(size_t id);
+    void submit(SubmitEvent *event);
+
+    Controller *m_controller;
+    std::map<uint64_t, DonateMapper *> m_mappers;
+    uint64_t m_sequence;
+};
 
 
-xmrig::CustomDiff::~CustomDiff()
-{
-}
+} /* namespace xmrig */
 
 
-void xmrig::CustomDiff::onEvent(IEvent *event)
-{
-    switch (event->type())
-    {
-    case IEvent::LoginType:
-        login(static_cast<LoginEvent*>(event));
-        break;
-
-    default:
-        break;
-    }
-}
-
-
-void xmrig::CustomDiff::login(LoginEvent *event)
-{
-    event->miner()->setCustomDiff(m_controller->config()->diff());
-
-    if (event->miner()->user().isNull()) {
-        return;
-    }
-
-    const char *str = strrchr(event->miner()->user(), '+');
-    if (!str) {
-        return;
-    }
-
-    const unsigned long diff = strtoul(str + 1, nullptr, 10);
-    if (diff < 100 || diff >= INT_MAX) {
-        return;
-    }
-
-    event->miner()->setCustomDiff(diff);
-}
+#endif /* XMRIG_DONATESPLITTER_H */

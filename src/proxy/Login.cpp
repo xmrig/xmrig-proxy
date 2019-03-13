@@ -82,7 +82,7 @@ bool xmrig::Login::verifyAlgorithms(LoginEvent *event)
 void xmrig::Login::login(LoginEvent *event)
 {
     const String &password = m_controller->config()->password();
-    if (!password.isEmpty() && event->miner()->password() != password) {
+    if (!password.isNull() && event->miner()->password() != password) {
         return reject(event, Error::toString(Error::Forbidden));
     }
 

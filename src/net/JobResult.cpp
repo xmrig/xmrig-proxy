@@ -35,7 +35,7 @@ xmrig::JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, co
     id(id),
     diff(0),
     algorithm(algorithm),
-    jobId(jobId, 3),
+    jobId(jobId),
     m_actualDiff(0)
 {
     if (result && strlen(result) == 64) {

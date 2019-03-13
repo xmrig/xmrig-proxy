@@ -84,6 +84,8 @@ set(HEADERS
     src/proxy/Proxy.h
     src/proxy/ProxyDebug.h
     src/proxy/Server.h
+    src/proxy/splitters/donate/DonateMapper.h
+    src/proxy/splitters/donate/DonateSplitter.h
     src/proxy/splitters/nicehash/NonceMapper.h
     src/proxy/splitters/nicehash/NonceSplitter.h
     src/proxy/splitters/nicehash/NonceStorage.h
@@ -148,6 +150,8 @@ set(SOURCES
     src/proxy/Proxy.cpp
     src/proxy/ProxyDebug.cpp
     src/proxy/Server.cpp
+    src/proxy/splitters/donate/DonateMapper.cpp
+    src/proxy/splitters/donate/DonateSplitter.cpp
     src/proxy/splitters/nicehash/NonceMapper.cpp
     src/proxy/splitters/nicehash/NonceSplitter.cpp
     src/proxy/splitters/nicehash/NonceStorage.cpp

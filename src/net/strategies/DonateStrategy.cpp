@@ -153,7 +153,7 @@ void xmrig::DonateStrategy::onClose(Client *, int)
 }
 
 
-void xmrig::DonateStrategy::onJobReceived(Client *client, const Job &job)
+void xmrig::DonateStrategy::onJobReceived(Client *client, const Job &job, const rapidjson::Value &)
 {
     if (!isActive()) {
         m_active = true;

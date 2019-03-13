@@ -66,6 +66,7 @@ public:
     Miner(const TlsContext *ctx, bool ipv6, uint16_t port);
     ~Miner();
     bool accept(uv_stream_t *server);
+    void forwardJob(const Job &job, const char *algo);
     void replyWithError(int64_t id, const char *message);
     void setJob(Job &job);
     void success(int64_t id, const char *status);
@@ -110,6 +111,7 @@ private:
     void readTLS(int nread);
     void send(const rapidjson::Document &doc);
     void send(int size);
+    void sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height);
     void setState(State state);
     void shutdown(bool had_error);
 

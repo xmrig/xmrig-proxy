@@ -61,7 +61,7 @@ protected:
     void printState() override;
 #   endif
 
-    inline void onRejectedEvent(IEvent *event) override {}
+    inline void onRejectedEvent(IEvent *) override {}
     void onConfigChanged(Config *config, Config *previousConfig) override;
     void onEvent(IEvent *event) override;
 

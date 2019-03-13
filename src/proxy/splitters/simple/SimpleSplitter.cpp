@@ -135,7 +135,7 @@ void xmrig::SimpleSplitter::printState()
 
 void xmrig::SimpleSplitter::onConfigChanged(Config *config, Config *previousConfig)
 {
-    m_reuseTimeout = config->reuseTimeout();
+    m_reuseTimeout = static_cast<uint64_t>(config->reuseTimeout());
 
     if (config->pools() != previousConfig->pools()) {
         config->printPools();
@@ -171,6 +171,10 @@ void xmrig::SimpleSplitter::onEvent(IEvent *event)
 
 void xmrig::SimpleSplitter::login(LoginEvent *event)
 {
+    if (event->miner()->routeId() != -1) {
+        return;
+    }
+
     if (!m_idles.empty()) {
         for (auto const &kv : m_idles) {
             if (kv.second->isReusable()) {
@@ -200,9 +204,8 @@ void xmrig::SimpleSplitter::stop(SimpleMapper *mapper)
 
 void xmrig::SimpleSplitter::remove(Miner *miner)
 {
-    const ssize_t id = miner->mapperId();
-
-    if (id < 0 || m_upstreams.count(id) == 0) {
+    const size_t id = static_cast<size_t>(miner->mapperId());
+    if (miner->mapperId() < 0 || miner->routeId() != -1 || m_upstreams.count(id) == 0) {
         return;
     }
 
@@ -240,6 +243,10 @@ void xmrig::SimpleSplitter::removeUpstream(uint64_t id)
 
 void xmrig::SimpleSplitter::submit(SubmitEvent *event)
 {
+    if (event->miner()->mapperId() < 0 || event->miner()->routeId() != -1) {
+        return;
+    }
+
     SimpleMapper *mapper = m_upstreams[event->miner()->mapperId()];
     if (mapper) {
         mapper->submit(event);

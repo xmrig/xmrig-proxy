@@ -22,61 +22,56 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
+#ifndef XMRIG_DONATEMAPPER_H
+#define XMRIG_DONATEMAPPER_H
 
 
-#include "core/Config.h"
-#include "core/Controller.h"
-#include "proxy/CustomDiff.h"
-#include "proxy/events/LoginEvent.h"
-#include "proxy/Miner.h"
+#include <stdint.h>
+#include <vector>
 
 
-xmrig::CustomDiff::CustomDiff(xmrig::Controller *controller) :
-    m_controller(controller)
+#include "base/tools/String.h"
+#include "common/interfaces/IClientListener.h"
+
+
+namespace xmrig {
+
+
+class LoginEvent;
+class Miner;
+class Pool;
+class SubmitEvent;
+
+
+class DonateMapper : public IClientListener
 {
-}
+public:
+    DonateMapper(uint64_t id, LoginEvent *event, const Pool &pool);
+    ~DonateMapper() override;
+
+    inline bool isActive() const { return m_active; }
+    inline uint64_t id() const   { return m_id; }
+
+    void submit(SubmitEvent *event);
+
+protected:
+    void onClose(Client *client, int failures) override;
+    void onJobReceived(Client *client, const Job &job, const rapidjson::Value &params) override;
+    void onLogin(Client *client, rapidjson::Document &doc, rapidjson::Value &params) override;
+    void onLoginSuccess(Client *client) override;
+    void onResultAccepted(Client *client, const SubmitResult &result, const char *error) override;
+
+private:
+    bool m_active;
+    Client *m_client;
+    Miner *m_miner;
+    std::vector<String> m_algorithms;
+    uint32_t m_diff;
+    uint64_t m_id;
+};
 
 
-xmrig::CustomDiff::~CustomDiff()
-{
-}
+} /* namespace xmrig */
 
 
-void xmrig::CustomDiff::onEvent(IEvent *event)
-{
-    switch (event->type())
-    {
-    case IEvent::LoginType:
-        login(static_cast<LoginEvent*>(event));
-        break;
-
-    default:
-        break;
-    }
-}
-
-
-void xmrig::CustomDiff::login(LoginEvent *event)
-{
-    event->miner()->setCustomDiff(m_controller->config()->diff());
-
-    if (event->miner()->user().isNull()) {
-        return;
-    }
-
-    const char *str = strrchr(event->miner()->user(), '+');
-    if (!str) {
-        return;
-    }
-
-    const unsigned long diff = strtoul(str + 1, nullptr, 10);
-    if (diff < 100 || diff >= INT_MAX) {
-        return;
-    }
-
-    event->miner()->setCustomDiff(diff);
-}
+#endif /* XMRIG_DONATEMAPPER_H */

@@ -29,6 +29,9 @@
 #include <stdint.h>
 
 
+#include "rapidjson/fwd.h"
+
+
 namespace xmrig {
 
 
@@ -43,7 +46,8 @@ public:
     virtual ~IClientListener() = default;
 
     virtual void onClose(Client *client, int failures)                                           = 0;
-    virtual void onJobReceived(Client *client, const Job &job)                                   = 0;
+    virtual void onJobReceived(Client *client, const Job &job, const rapidjson::Value &params)   = 0;
+    virtual void onLogin(Client *client, rapidjson::Document &doc, rapidjson::Value &params)     = 0;
     virtual void onLoginSuccess(Client *client)                                                  = 0;
     virtual void onResultAccepted(Client *client, const SubmitResult &result, const char *error) = 0;
 };

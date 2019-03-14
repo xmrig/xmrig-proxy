@@ -25,6 +25,7 @@
 
 #include "base/io/Json.h"
 #include "common/net/Client.h"
+#include "proxy/events/AcceptEvent.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"
 #include "proxy/Miner.h"
@@ -89,6 +90,7 @@ void xmrig::DonateMapper::onJobReceived(Client *, const Job &job, const rapidjso
         return;
     }
 
+    m_diff = job.diff();
     m_miner->forwardJob(job, Json::getString(params, "algo"));
 }
 
@@ -115,6 +117,8 @@ void xmrig::DonateMapper::onLoginSuccess(Client *)
 
 void xmrig::DonateMapper::onResultAccepted(Client *, const SubmitResult &result, const char *error)
 {
+    AcceptEvent::start(m_id, m_miner, result, true, error);
+
     if (error) {
         m_miner->replyWithError(result.reqId, error);
     }

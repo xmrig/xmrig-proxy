@@ -83,7 +83,7 @@ bool xmrig::ShareLog::isColors() const
 
 void xmrig::ShareLog::accept(const AcceptEvent *event)
 {
-    if (!m_controller->config()->isVerbose()) {
+    if (!m_controller->config()->isVerbose() || event->isDonate()) {
         return;
     }
 

@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,19 +22,39 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_C_STR_H
-#define XMRIG_C_STR_H
+#ifndef XMRIG_CONSOLE_H
+#define XMRIG_CONSOLE_H
 
 
-#include "base/tools/String.h"
+#include <uv.h>
+
 
 
 namespace xmrig {
 
 
-typedef String c_str;
+class IConsoleListener;
+
+
+class Console
+{
+public:
+    Console(IConsoleListener *listener);
+    ~Console();
+
+    void stop();
+
+private:
+    static void onAllocBuffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);
+    static void onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
+
+    char m_buf[1];
+    IConsoleListener *m_listener;
+    uv_tty_t *m_tty;
+};
 
 
 } /* namespace xmrig */
 
-#endif /* XMRIG_C_STR_H */
+
+#endif /* XMRIG_CONSOLE_H */

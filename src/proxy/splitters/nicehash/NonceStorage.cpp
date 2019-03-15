@@ -77,7 +77,7 @@ bool xmrig::NonceStorage::isUsed() const
 }
 
 
-bool xmrig::NonceStorage::isValidJobId(const xmrig::Id &id) const
+bool xmrig::NonceStorage::isValidJobId(const String &id) const
 {
     if (m_job.id() == id) {
         return true;

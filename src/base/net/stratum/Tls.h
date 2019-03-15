@@ -22,58 +22,48 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_NONCESTORAGE_H
-#define XMRIG_NONCESTORAGE_H
+#ifndef XMRIG_CLIENT_TLS_H
+#define XMRIG_CLIENT_TLS_H
 
 
-#include <map>
-#include <vector>
+#include <openssl/ssl.h>
 
 
-#include "base/net/stratum/Job.h"
+#include "base/net/stratum/Client.h"
 
 
 namespace xmrig {
 
 
-class Miner;
-
-
-class NonceStorage
+class Client::Tls
 {
 public:
-    NonceStorage();
-    ~NonceStorage();
+    Tls(Client *client);
+    ~Tls();
 
-    bool add(Miner *miner);
-    bool isUsed() const;
-    bool isValidJobId(const String &id) const;
-    Miner *miner(int64_t id);
-    void remove(const Miner *miner);
-    void reset();
-    void setJob(const Job &job);
-
-    inline bool isActive() const       { return m_active; }
-    inline const Job &job() const      { return m_job; }
-    inline void setActive(bool active) { m_active = active; }
-
-#   ifdef APP_DEVEL
-    void printState(size_t id);
-#   endif
+    bool handshake();
+    bool send(const char *data, size_t size);
+    const char *fingerprint() const;
+    const char *version() const;
+    void read(const char *data, size_t size);
 
 private:
-    int nextIndex(int start) const;
+    bool send();
+    bool verify(X509 *cert);
+    bool verifyFingerprint(X509 *cert);
 
-    bool m_active;
-    Job m_job;
-    Job m_prevJob;
-    std::map<int64_t, Miner*> m_miners;
-    std::vector<int64_t> m_used;
-    uint8_t m_index;
+    BIO *m_readBio;
+    BIO *m_writeBio;
+    bool m_ready;
+    char m_buf[1024 * 2];
+    char m_fingerprint[32 * 2 + 8];
+    Client *m_client;
+    SSL *m_ssl;
+    SSL_CTX *m_ctx;
 };
 
 
 } /* namespace xmrig */
 
 
-#endif /* XMRIG_NONCESTORAGE_H */
+#endif /* XMRIG_CLIENT_TLS_H */

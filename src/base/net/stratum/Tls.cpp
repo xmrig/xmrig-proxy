@@ -27,8 +27,9 @@
 #include <assert.h>
 
 
-#include "common/net/Client.h"
-#include "common/net/Tls.h"
+#include "base/net/stratum/Client.h"
+#include "base/net/stratum/Tls.h"
+#include "base/tools/Buffer.h"
 #include "common/log/Log.h"
 
 
@@ -134,7 +135,8 @@ void xmrig::Client::Tls::read(const char *data, size_t size)
 
     int bytes_read = 0;
     while ((bytes_read = SSL_read(m_ssl, m_buf, sizeof(m_buf))) > 0) {
-        m_client->parse(m_buf, bytes_read);
+        m_buf[bytes_read - 1] = '\0';
+        m_client->parse(m_buf, static_cast<size_t>(bytes_read));
     }
 }
 
@@ -183,7 +185,7 @@ bool xmrig::Client::Tls::verifyFingerprint(X509 *cert)
         return false;
     }
 
-    Job::toHex(md, 32, m_fingerprint);
+    Buffer::toHex(md, 32, m_fingerprint);
     const char *fingerprint = m_client->m_pool.fingerprint();
 
     return fingerprint == nullptr || strncasecmp(m_fingerprint, fingerprint, 64) == 0;

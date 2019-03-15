@@ -22,58 +22,57 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_NONCESTORAGE_H
-#define XMRIG_NONCESTORAGE_H
+
+#include "base/io/Console.h"
+#include "base/kernel/interfaces/IConsoleListener.h"
+#include "base/tools/Handle.h"
 
 
-#include <map>
-#include <vector>
-
-
-#include "base/net/stratum/Job.h"
-
-
-namespace xmrig {
-
-
-class Miner;
-
-
-class NonceStorage
+xmrig::Console::Console(IConsoleListener *listener)
+    : m_listener(listener)
 {
-public:
-    NonceStorage();
-    ~NonceStorage();
+    m_tty = new uv_tty_t;
 
-    bool add(Miner *miner);
-    bool isUsed() const;
-    bool isValidJobId(const String &id) const;
-    Miner *miner(int64_t id);
-    void remove(const Miner *miner);
-    void reset();
-    void setJob(const Job &job);
+    m_tty->data = this;
+    uv_tty_init(uv_default_loop(), m_tty, 0, 1);
 
-    inline bool isActive() const       { return m_active; }
-    inline const Job &job() const      { return m_job; }
-    inline void setActive(bool active) { m_active = active; }
+    if (!uv_is_readable(reinterpret_cast<uv_stream_t*>(m_tty))) {
+        return;
+    }
 
-#   ifdef APP_DEVEL
-    void printState(size_t id);
-#   endif
-
-private:
-    int nextIndex(int start) const;
-
-    bool m_active;
-    Job m_job;
-    Job m_prevJob;
-    std::map<int64_t, Miner*> m_miners;
-    std::vector<int64_t> m_used;
-    uint8_t m_index;
-};
+    uv_tty_set_mode(m_tty, UV_TTY_MODE_RAW);
+    uv_read_start(reinterpret_cast<uv_stream_t*>(m_tty), Console::onAllocBuffer, Console::onRead);
+}
 
 
-} /* namespace xmrig */
+xmrig::Console::~Console()
+{
+    stop();
+}
 
 
-#endif /* XMRIG_NONCESTORAGE_H */
+void xmrig::Console::stop()
+{
+    Handle::close(m_tty);
+    m_tty = nullptr;
+}
+
+
+void xmrig::Console::onAllocBuffer(uv_handle_t *handle, size_t, uv_buf_t *buf)
+{
+    auto console = static_cast<Console*>(handle->data);
+    buf->len  = 1;
+    buf->base = console->m_buf;
+}
+
+
+void xmrig::Console::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
+{
+    if (nread < 0) {
+        return uv_close(reinterpret_cast<uv_handle_t*>(stream), nullptr);
+    }
+
+    if (nread == 1) {
+        static_cast<Console*>(stream->data)->m_listener->onConsoleCommand(buf->base[0]);
+    }
+}

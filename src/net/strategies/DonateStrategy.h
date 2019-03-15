@@ -26,11 +26,10 @@
 #define XMRIG_DONATESTRATEGY_H
 
 
+#include "base/kernel/interfaces/IClientListener.h"
+#include "base/kernel/interfaces/IStrategy.h"
+#include "base/net/stratum/Job.h"
 #include "base/tools/String.h"
-#include "common/interfaces/IClientListener.h"
-#include "common/interfaces/IStrategy.h"
-#include "common/net/Job.h"
-
 
 
 namespace xmrig {

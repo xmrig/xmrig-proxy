@@ -22,48 +22,59 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_CLIENT_TLS_H
-#define XMRIG_CLIENT_TLS_H
+#ifndef XMRIG_DNS_H
+#define XMRIG_DNS_H
 
 
-#include <openssl/ssl.h>
+#include <vector>
+#include <uv.h>
 
 
-#include "common/net/Client.h"
+#include "base/net/dns/DnsRecord.h"
+#include "base/net/tools/Storage.h"
+#include "base/tools/String.h"
 
 
 namespace xmrig {
 
 
-class Client::Tls
+class IDnsListener;
+
+
+class Dns
 {
 public:
-    Tls(Client *client);
-    ~Tls();
+    Dns(IDnsListener *listener);
+    ~Dns();
 
-    bool handshake();
-    bool send(const char *data, size_t size);
-    const char *fingerprint() const;
-    const char *version() const;
-    void read(const char *data, size_t size);
+    inline bool isEmpty() const { return m_ipv4.empty() && m_ipv6.empty(); }
+    inline int status() const   { return m_status; }
+
+    bool resolve(const String &host);
+    const char *error() const;
+    const DnsRecord &get(DnsRecord::Type prefered = DnsRecord::A) const;
+    size_t count(DnsRecord::Type type = DnsRecord::Unknown) const;
 
 private:
-    bool send();
-    bool verify(X509 *cert);
-    bool verifyFingerprint(X509 *cert);
+    void clear();
+    void onResolved(int status, addrinfo *res);
 
-    BIO *m_readBio;
-    BIO *m_writeBio;
-    bool m_ready;
-    char m_buf[1024 * 2];
-    char m_fingerprint[32 * 2 + 8];
-    Client *m_client;
-    SSL *m_ssl;
-    SSL_CTX *m_ctx;
+    static void onResolved(uv_getaddrinfo_t *req, int status, addrinfo *res);
+
+    addrinfo m_hints;
+    IDnsListener *m_listener;
+    int m_status;
+    std::vector<DnsRecord> m_ipv4;
+    std::vector<DnsRecord> m_ipv6;
+    String m_host;
+    uintptr_t m_key;
+    uv_getaddrinfo_t *m_resolver;
+
+    static Storage<Dns> m_storage;
 };
 
 
 } /* namespace xmrig */
 
 
-#endif /* XMRIG_CLIENT_TLS_H */
+#endif /* XMRIG_DNS_H */

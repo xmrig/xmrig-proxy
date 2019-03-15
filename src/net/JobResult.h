@@ -30,8 +30,8 @@
 #include <string.h>
 
 
+#include "base/tools/String.h"
 #include "common/crypto/Algorithm.h"
-#include "common/net/Id.h"
 
 
 namespace xmrig {
@@ -55,12 +55,12 @@ public:
 
     inline uint64_t actualDiff() const { return m_actualDiff; }
 
+    Algorithm algorithm;
     const char *nonce;
     const char *result;
     const int64_t id;
+    String jobId;
     uint32_t diff;
-    xmrig::Algorithm algorithm;
-    xmrig::Id jobId;
 
 private:
     uint64_t m_actualDiff;

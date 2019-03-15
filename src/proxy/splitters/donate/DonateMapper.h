@@ -30,8 +30,8 @@
 #include <vector>
 
 
+#include "base/kernel/interfaces/IClientListener.h"
 #include "base/tools/String.h"
-#include "common/interfaces/IClientListener.h"
 
 
 namespace xmrig {

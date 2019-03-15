@@ -28,9 +28,9 @@
 #include <string.h>
 
 
-#include "base/net/Pools.h"
+#include "base/net/stratum/Client.h"
+#include "base/net/stratum/Pools.h"
 #include "common/log/Log.h"
-#include "common/net/Client.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "net/JobResult.h"

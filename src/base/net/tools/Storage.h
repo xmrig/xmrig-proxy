@@ -22,36 +22,76 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_SUBMITRESULT_H
-#define XMRIG_SUBMITRESULT_H
+#ifndef XMRIG_STORAGE_H
+#define XMRIG_STORAGE_H
 
 
-#include <uv.h>
+#include <assert.h>
+#include <map>
 
 
 namespace xmrig {
 
 
-class SubmitResult
+template <class TYPE>
+class Storage
 {
 public:
-    inline SubmitResult() : reqId(0), seq(0), diff(0), actualDiff(0), elapsed(0), start(0) {}
-    SubmitResult(int64_t seq, uint32_t diff, uint64_t actualDiff, int64_t reqId = 0);
+    inline Storage() :
+        m_counter(0)
+    {
+    }
 
-    void done();
 
-    int64_t reqId;
-    int64_t seq;
-    uint32_t diff;
-    uint64_t actualDiff;
-    uint64_t elapsed;
+    inline uintptr_t add(TYPE *ptr)
+    {
+        m_data[m_counter] = ptr;
+
+        return m_counter++;
+    }
+
+
+    inline static void *ptr(uintptr_t id) { return reinterpret_cast<void *>(id); }
+
+
+    inline TYPE *get(const void *id) const { return get(reinterpret_cast<uintptr_t>(id)); }
+    inline TYPE *get(uintptr_t id) const
+    {
+        assert(m_data.count(id) > 0);
+        if (m_data.count(id) == 0) {
+            return nullptr;
+        }
+
+        return m_data.at(id);
+    }
+
+
+    inline void remove(const void *id) { delete release(reinterpret_cast<uintptr_t>(id)); }
+    inline void remove(uintptr_t id)   { delete release(id); }
+
+
+    inline TYPE *release(const void *id) { release(reinterpret_cast<uintptr_t>(id)); }
+    inline TYPE *release(uintptr_t id)
+    {
+        TYPE *obj = get(id);
+        if (obj != nullptr) {
+            auto it = m_data.find(id);
+            if (it != m_data.end()) {
+                m_data.erase(it);
+            }
+        }
+
+        return obj;
+    }
+
 
 private:
-    uint64_t start;
+    std::map<uintptr_t, TYPE *> m_data;
+    uint64_t m_counter;
 };
 
 
 } /* namespace xmrig */
 
 
-#endif /* XMRIG_SUBMITRESULT_H */
+#endif /* XMRIG_STORAGE_H */

@@ -28,9 +28,10 @@
 
 
 #include "base/io/Json.h"
+#include "base/net/stratum/Job.h"
+#include "base/tools/Buffer.h"
 #include "base/tools/Chrono.h"
 #include "common/log/Log.h"
-#include "common/net/Job.h"
 #include "net/JobResult.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"
@@ -170,7 +171,7 @@ void xmrig::Miner::setJob(Job &job)
 
     if (m_customDiff && m_customDiff < m_diff) {
         const uint64_t t = 0xFFFFFFFFFFFFFFFFULL / m_customDiff;
-        Job::toHex(reinterpret_cast<const unsigned char *>(&t) + 4, 4, m_sendBuf);
+        Buffer::toHex(reinterpret_cast<const unsigned char *>(&t) + 4, 4, m_sendBuf);
         m_sendBuf[8] = '\0';
         customDiff = true;
     }

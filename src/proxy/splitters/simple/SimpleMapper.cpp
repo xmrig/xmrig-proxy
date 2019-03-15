@@ -27,9 +27,9 @@
 #include <string.h>
 
 
-#include "base/net/Pools.h"
+#include "base/net/stratum/Client.h"
+#include "base/net/stratum/Pools.h"
 #include "common/log/Log.h"
-#include "common/net/Client.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "net/JobResult.h"
@@ -236,7 +236,7 @@ bool xmrig::SimpleMapper::isColors() const
 }
 
 
-bool xmrig::SimpleMapper::isValidJobId(const xmrig::Id &id) const
+bool xmrig::SimpleMapper::isValidJobId(const String &id) const
 {
     if (m_job.id() == id) {
         return true;

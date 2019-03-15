@@ -23,9 +23,10 @@
  */
 
 
+#include "base/kernel/interfaces/IStrategyListener.h"
+#include "base/net/stratum/Client.h"
+#include "base/tools/Buffer.h"
 #include "common/crypto/keccak.h"
-#include "common/interfaces/IStrategyListener.h"
-#include "common/net/Client.h"
 #include "common/Platform.h"
 #include "common/xmrig.h"
 #include "core/Config.h"
@@ -54,7 +55,7 @@ xmrig::DonateStrategy::DonateStrategy(Controller *controller, IStrategyListener 
     const char *user = controller->config()->pools().data().front().user();
 
     xmrig::keccak(reinterpret_cast<const uint8_t *>(user), strlen(user), hash);
-    Job::toHex(hash, 32, userId);
+    Buffer::toHex(hash, 32, userId);
 
     m_client = new Client(-1, Platform::userAgent(), this);
 

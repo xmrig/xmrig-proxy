@@ -9,49 +9,26 @@ option(WITH_TLS             "Enable OpenSSL support"  ON)
 
 
 include (CheckIncludeFile)
+include (src/base/base.cmake)
 
 
 set(HEADERS
+    "${HEADERS_BASE}"
     src/3rdparty/align.h
     src/App.h
-    src/base/io/Json.h
-    src/base/io/Watcher.h
-    src/base/kernel/Entry.h
-    src/base/kernel/interfaces/IConfigListener.h
-    src/base/kernel/interfaces/ISignalListener.h
-    src/base/kernel/interfaces/IWatcherListener.h
-    src/base/kernel/Process.h
-    src/base/kernel/Signals.h
-    src/base/net/Pool.h
-    src/base/net/Pools.h
-    src/base/tools/Arguments.h
-    src/base/tools/Chrono.h
-    src/base/tools/Handle.h
-    src/base/tools/String.h
     src/common/config/CommonConfig.h
     src/common/config/ConfigLoader.h
     src/common/config/ConfigWatcher.h
-    src/common/Console.h
     src/common/crypto/Algorithm.h
     src/common/crypto/keccak.h
-    src/common/interfaces/IClientListener.h
     src/common/interfaces/IConfig.h
     src/common/interfaces/IConfigCreator.h
-    src/common/interfaces/IConsoleListener.h
     src/common/interfaces/IControllerListener.h
     src/common/interfaces/ILogBackend.h
-    src/common/interfaces/IStrategy.h
-    src/common/interfaces/IStrategyListener.h
     src/common/log/BasicLog.h
     src/common/log/ConsoleLog.h
     src/common/log/FileLog.h
     src/common/log/Log.h
-    src/common/net/Client.h
-    src/common/net/Id.h
-    src/common/net/Job.h
-    src/common/net/Storage.h
-    src/common/net/strategies/FailoverStrategy.h
-    src/common/net/strategies/SinglePoolStrategy.h
     src/common/Platform.h
     src/common/xmrig.h
     src/core/Config.h
@@ -103,32 +80,17 @@ set(HEADERS
    )
 
 set(SOURCES
+    "${SOURCES_BASE}"
     src/App.cpp
-    src/base/io/Json.cpp
-    src/base/io/Watcher.cpp
-    src/base/kernel/Entry.cpp
-    src/base/kernel/Process.cpp
-    src/base/kernel/Signals.cpp
-    src/base/net/Pool.cpp
-    src/base/net/Pools.cpp
-    src/base/tools/Arguments.cpp
-    src/base/tools/Handle.cpp
-    src/base/tools/String.cpp
     src/common/config/CommonConfig.cpp
     src/common/config/ConfigLoader.cpp
     src/common/config/ConfigWatcher.cpp
-    src/common/Console.cpp
     src/common/crypto/Algorithm.cpp
     src/common/crypto/keccak.cpp
     src/common/log/BasicLog.cpp
     src/common/log/ConsoleLog.cpp
     src/common/log/FileLog.cpp
     src/common/log/Log.cpp
-    src/common/net/Client.cpp
-    src/common/net/Job.cpp
-    src/common/net/strategies/FailoverStrategy.cpp
-    src/common/net/strategies/SinglePoolStrategy.cpp
-    src/common/net/SubmitResult.cpp
     src/common/Platform.cpp
     src/core/Config.cpp
     src/core/Controller.cpp

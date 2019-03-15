@@ -33,13 +33,16 @@
 #ifndef XMRIG_NO_TLS
 #   include <openssl/ssl.h>
 #   include <openssl/err.h>
-#   include "common/net/Tls.h"
+#   include "base/net/stratum/Tls.h"
 #endif
 
 
-#include "common/interfaces/IClientListener.h"
+#include "base/kernel/interfaces/IClientListener.h"
+#include "base/net/dns/Dns.h"
+#include "base/net/stratum/Client.h"
+#include "base/tools/Buffer.h"
+#include "base/tools/Chrono.h"
 #include "common/log/Log.h"
-#include "common/net/Client.h"
 #include "net/JobResult.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
@@ -72,17 +75,15 @@ static const char *states[] = {
 
 
 xmrig::Client::Client(int id, const char *agent, IClientListener *listener) :
+    m_enabled(true),
     m_ipv6(false),
-    m_nicehash(false),
     m_quiet(false),
     m_agent(agent),
     m_listener(listener),
-    m_extensions(0),
     m_id(id),
     m_retries(5),
     m_retryPause(5000),
     m_failures(0),
-    m_recvBufPos(0),
     m_state(UnconnectedState),
     m_tls(nullptr),
     m_expire(0),
@@ -93,23 +94,13 @@ xmrig::Client::Client(int id, const char *agent, IClientListener *listener) :
     m_socket(nullptr)
 {
     m_key = m_storage.add(this);
-
-    memset(m_ip, 0, sizeof(m_ip));
-    memset(&m_hints, 0, sizeof(m_hints));
-
-    m_resolver.data = m_storage.ptr(m_key);
-
-    m_hints.ai_family   = AF_UNSPEC;
-    m_hints.ai_socktype = SOCK_STREAM;
-    m_hints.ai_protocol = IPPROTO_TCP;
-
-    m_recvBuf.base = m_buf;
-    m_recvBuf.len  = sizeof(m_buf);
+    m_dns = new Dns(this);
 }
 
 
 xmrig::Client::~Client()
 {
+    delete m_dns;
     delete m_socket;
 }
 
@@ -167,7 +158,7 @@ void xmrig::Client::tick(uint64_t now)
 {
     if (m_state == ConnectedState) {
         if (m_expire && now > m_expire) {
-            LOG_DEBUG_ERR("[%s] timeout", m_pool.url());
+            LOG_DEBUG_ERR("[%s] timeout", url());
             close();
         }
         else if (m_keepAlive && now > m_keepAlive) {
@@ -232,10 +223,10 @@ int64_t xmrig::Client::submit(const JobResult &result)
     char *nonce = m_sendBuf;
     char *data  = m_sendBuf + 16;
 
-    Job::toHex(reinterpret_cast<const unsigned char*>(&result.nonce), 4, nonce);
+    Buffer::toHex(reinterpret_cast<const char*>(&result.nonce), 4, nonce);
     nonce[8] = '\0';
 
-    Job::toHex(result.result, 32, data);
+    Buffer::toHex(result.result, 32, data);
     data[64] = '\0';
 #   endif
 
@@ -252,7 +243,7 @@ int64_t xmrig::Client::submit(const JobResult &result)
     params.AddMember("nonce",  StringRef(nonce), allocator);
     params.AddMember("result", StringRef(data), allocator);
 
-    if ((m_extensions & AlgoExt) && result.algorithm.isValid()) {
+    if (has<EXT_ALGO>() && result.algorithm.isValid()) {
         params.AddMember("algo", StringRef(result.algorithm.shortName()), allocator);
     }
 
@@ -265,6 +256,36 @@ int64_t xmrig::Client::submit(const JobResult &result)
 #   endif
 
     return send(doc);
+}
+
+
+void xmrig::Client::onResolved(const Dns &dns, int status)
+{
+    assert(m_listener != nullptr);
+    if (!m_listener) {
+        return reconnect();
+    }
+
+    if (status < 0 && dns.isEmpty()) {
+        if (!isQuiet()) {
+            LOG_ERR("[%s] DNS error: \"%s\"", url(), uv_strerror(status));
+        }
+
+        return reconnect();
+    }
+
+    if (dns.isEmpty()) {
+        if (!isQuiet()) {
+            LOG_ERR("[%s] DNS error: \"No IPv4 (A) or IPv6 (AAAA) records found\"", url());
+        }
+
+        return reconnect();
+    }
+
+    const DnsRecord &record = dns.get();
+    m_ip = record.ip();
+
+    connect(record.addr(m_pool.port()));
 }
 
 
@@ -327,7 +348,7 @@ bool xmrig::Client::parseJob(const rapidjson::Value &params, int *code)
         return false;
     }
 
-    Job job(m_id, m_nicehash, m_pool.algorithm(), m_rpcId);
+    Job job(m_id, has<EXT_NICEHASH>(), m_pool.algorithm(), m_rpcId);
 
     if (!job.setId(params["job_id"].GetString())) {
         *code = 3;
@@ -387,7 +408,7 @@ bool xmrig::Client::parseJob(const rapidjson::Value &params, int *code)
     }
 
     if (!isQuiet()) {
-        LOG_WARN("[%s] duplicate job received, reconnect", m_pool.url());
+        LOG_WARN("[%s] duplicate job received, reconnect", url());
     }
 
     close();
@@ -397,16 +418,13 @@ bool xmrig::Client::parseJob(const rapidjson::Value &params, int *code)
 
 bool xmrig::Client::parseLogin(const rapidjson::Value &result, int *code)
 {
-    if (!m_rpcId.setId(result["id"].GetString())) {
+    m_rpcId = result["id"].GetString();
+    if (m_rpcId.isNull()) {
         *code = 1;
         return false;
     }
 
-    m_nicehash = m_pool.isNicehash();
-
-    if (result.HasMember("extensions")) {
-        parseExtensions(result["extensions"]);
-    }
+    parseExtensions(result);
 
     const bool rc = parseJob(result["job"], code);
     m_jobs = 0;
@@ -425,7 +443,7 @@ bool xmrig::Client::send(BIO *bio)
         return true;
     }
 
-    LOG_DEBUG("[%s] TLS send     (%d bytes)", m_pool.url(), static_cast<int>(buf.len));
+    LOG_DEBUG("[%s] TLS send     (%d bytes)", url(), static_cast<int>(buf.len));
 
     bool result = false;
     if (state() == ConnectedState && uv_is_writable(m_stream)) {
@@ -436,7 +454,7 @@ bool xmrig::Client::send(BIO *bio)
         }
     }
     else {
-        LOG_DEBUG_ERR("[%s] send failed, invalid state: %d", m_pool.url(), m_state);
+        LOG_DEBUG_ERR("[%s] send failed, invalid state: %d", url(), m_state);
     }
 
     (void) BIO_reset(bio);
@@ -475,22 +493,22 @@ bool xmrig::Client::verifyAlgorithm(const Algorithm &algorithm) const
 }
 
 
-int xmrig::Client::resolve(const char *host)
+int xmrig::Client::resolve(const String &host)
 {
     setState(HostLookupState);
 
-    m_expire     = 0;
-    m_recvBufPos = 0;
+    m_expire = 0;
+    m_recvBuf.reset();
 
     if (m_failures == -1) {
         m_failures = 0;
     }
 
-    const int r = uv_getaddrinfo(uv_default_loop(), &m_resolver, Client::onResolved, host, nullptr, &m_hints);
-    if (r) {
+    if (!m_dns->resolve(host)) {
         if (!isQuiet()) {
-            LOG_ERR("[%s:%u] getaddrinfo error: \"%s\"", host, m_pool.port(), uv_strerror(r));
+            LOG_ERR("[%s:%u] getaddrinfo error: \"%s\"", host.data(), m_pool.port(), uv_strerror(m_dns->status()));
         }
+
         return 1;
     }
 
@@ -502,13 +520,13 @@ int64_t xmrig::Client::send(const rapidjson::Document &doc)
 {
     using namespace rapidjson;
 
-    StringBuffer buffer(0, 512);
+    StringBuffer buffer(nullptr, 512);
     Writer<StringBuffer> writer(buffer);
     doc.Accept(writer);
 
     const size_t size = buffer.GetSize();
     if (size > (sizeof(m_sendBuf) - 2)) {
-        LOG_ERR("[%s] send failed: \"send buffer overflow: %zu > %zu\"", m_pool.url(), size, (sizeof(m_sendBuf) - 2));
+        LOG_ERR("[%s] send failed: \"send buffer overflow: %zu > %zu\"", url(), size, (sizeof(m_sendBuf) - 2));
         close();
         return -1;
     }
@@ -523,7 +541,7 @@ int64_t xmrig::Client::send(const rapidjson::Document &doc)
 
 int64_t xmrig::Client::send(size_t size)
 {
-    LOG_DEBUG("[%s] send (%d bytes): \"%s\"", m_pool.url(), size, m_sendBuf);
+    LOG_DEBUG("[%s] send (%d bytes): \"%s\"", url(), size, m_sendBuf);
 
 #   ifndef XMRIG_NO_TLS
     if (isTLS()) {
@@ -535,7 +553,7 @@ int64_t xmrig::Client::send(size_t size)
 #   endif
     {
         if (state() != ConnectedState || !uv_is_writable(m_stream)) {
-            LOG_DEBUG_ERR("[%s] send failed, invalid state: %d", m_pool.url(), m_state);
+            LOG_DEBUG_ERR("[%s] send failed, invalid state: %d", url(), m_state);
             return -1;
         }
 
@@ -547,26 +565,8 @@ int64_t xmrig::Client::send(size_t size)
         }
     }
 
-    m_expire = uv_now(uv_default_loop()) + kResponseTimeout;
+    m_expire = Chrono::steadyMSecs() + kResponseTimeout;
     return m_sequence++;
-}
-
-
-void xmrig::Client::connect(const std::vector<addrinfo*> &ipv4, const std::vector<addrinfo*> &ipv6)
-{
-    addrinfo *addr = nullptr;
-    m_ipv6         = ipv4.empty() && !ipv6.empty();
-
-    if (m_ipv6) {
-        addr = ipv6[ipv6.size() == 1 ? 0 : rand() % ipv6.size()];
-        uv_ip6_name(reinterpret_cast<sockaddr_in6*>(addr->ai_addr), m_ip, 45);
-    }
-    else {
-        addr = ipv4[ipv4.size() == 1 ? 0 : rand() % ipv4.size()];
-        uv_ip4_name(reinterpret_cast<sockaddr_in*>(addr->ai_addr), m_ip, 16);
-    }
-
-    connect(addr->ai_addr);
 }
 
 
@@ -590,6 +590,8 @@ void xmrig::Client::connect(sockaddr *addr)
 #   endif
 
     uv_tcp_connect(req, m_socket, reinterpret_cast<const sockaddr*>(addr), Client::onConnect);
+
+    delete addr;
 }
 
 
@@ -597,7 +599,7 @@ void xmrig::Client::handshake()
 {
 #   ifndef XMRIG_NO_TLS
     if (isTLS()) {
-        m_expire = uv_now(uv_default_loop()) + kResponseTimeout;
+        m_expire = Chrono::steadyMSecs() + kResponseTimeout;
 
         m_tls->handshake();
     }
@@ -622,12 +624,12 @@ void xmrig::Client::login()
     doc.AddMember("method",  "login", allocator);
 
     Value params(kObjectType);
-    params.AddMember("login", StringRef(m_pool.user()),     allocator);
-    params.AddMember("pass",  StringRef(m_pool.password()), allocator);
+    params.AddMember("login", m_pool.user().toJSON(),     allocator);
+    params.AddMember("pass",  m_pool.password().toJSON(), allocator);
     params.AddMember("agent", StringRef(m_agent),           allocator);
 
-    if (m_pool.rigId()) {
-        params.AddMember("rigid", StringRef(m_pool.rigId()), allocator);
+    if (!m_pool.rigId().isNull()) {
+        params.AddMember("rigid", m_pool.rigId().toJSON(), allocator);
     }
 
 #   ifdef XMRIG_PROXY_PROJECT
@@ -674,13 +676,11 @@ void xmrig::Client::parse(char *line, size_t len)
 {
     startTimeout();
 
-    line[len - 1] = '\0';
-
-    LOG_DEBUG("[%s] received (%d bytes): \"%s\"", m_pool.url(), len, line);
+    LOG_DEBUG("[%s] received (%d bytes): \"%s\"", url(), len, line);
 
     if (len < 32 || line[0] != '{') {
         if (!isQuiet()) {
-            LOG_ERR("[%s] JSON decode failed", m_pool.url());
+            LOG_ERR("[%s] JSON decode failed", url());
         }
 
         return;
@@ -689,7 +689,7 @@ void xmrig::Client::parse(char *line, size_t len)
     rapidjson::Document doc;
     if (doc.ParseInsitu(line).HasParseError()) {
         if (!isQuiet()) {
-            LOG_ERR("[%s] JSON decode failed: \"%s\"", m_pool.url(), rapidjson::GetParseError_En(doc.GetParseError()));
+            LOG_ERR("[%s] JSON decode failed: \"%s\"", url(), rapidjson::GetParseError_En(doc.GetParseError()));
         }
 
         return;
@@ -709,28 +709,37 @@ void xmrig::Client::parse(char *line, size_t len)
 }
 
 
-void xmrig::Client::parseExtensions(const rapidjson::Value &value)
+void xmrig::Client::parseExtensions(const rapidjson::Value &result)
 {
-    m_extensions = 0;
+    m_extensions.reset();
 
-    if (!value.IsArray()) {
+    if (!result.HasMember("extensions")) {
         return;
     }
 
-    for (const rapidjson::Value &ext : value.GetArray()) {
+    const rapidjson::Value &extensions = result["extensions"];
+    if (!extensions.IsArray()) {
+        return;
+    }
+
+    for (const rapidjson::Value &ext : extensions.GetArray()) {
         if (!ext.IsString()) {
             continue;
         }
 
-        if (strcmp(ext.GetString(), "algo") == 0) {
-            m_extensions |= AlgoExt;
-            continue;
-        }
+        const char *name = ext.GetString();
 
-        if (strcmp(ext.GetString(), "nicehash") == 0) {
-            m_extensions |= NicehashExt;
-            m_nicehash = true;
-            continue;
+        if (strcmp(name, "algo") == 0) {
+            setExtension(EXT_ALGO, true);
+        }
+        else if (strcmp(name, "nicehash") == 0) {
+            setExtension(EXT_NICEHASH, true);
+        }
+        else if (strcmp(name, "connect") == 0) {
+            setExtension(EXT_CONNECT, true);
+        }
+        else if (strcmp(name, "keepalive") == 0) {
+            setExtension(EXT_KEEPALIVE, true);
         }
     }
 }
@@ -740,7 +749,7 @@ void xmrig::Client::parseNotification(const char *method, const rapidjson::Value
 {
     if (error.IsObject()) {
         if (!isQuiet()) {
-            LOG_ERR("[%s] error: \"%s\", code: %d", m_pool.url(), error["message"].GetString(), error["code"].GetInt());
+            LOG_ERR("[%s] error: \"%s\", code: %d", url(), error["message"].GetString(), error["code"].GetInt());
         }
         return;
     }
@@ -758,7 +767,7 @@ void xmrig::Client::parseNotification(const char *method, const rapidjson::Value
         return;
     }
 
-    LOG_WARN("[%s] unsupported method: \"%s\"", m_pool.url(), method);
+    LOG_WARN("[%s] unsupported method: \"%s\"", url(), method);
 }
 
 
@@ -774,7 +783,7 @@ void xmrig::Client::parseResponse(int64_t id, const rapidjson::Value &result, co
             m_results.erase(it);
         }
         else if (!isQuiet()) {
-            LOG_ERR("[%s] error: \"%s\", code: %d", m_pool.url(), message, error["code"].GetInt());
+            LOG_ERR("[%s] error: \"%s\", code: %d", url(), message, error["code"].GetInt());
         }
 
         if (isCriticalError(message)) {
@@ -792,7 +801,7 @@ void xmrig::Client::parseResponse(int64_t id, const rapidjson::Value &result, co
         int code = -1;
         if (!parseLogin(result, &code)) {
             if (!isQuiet()) {
-                LOG_ERR("[%s] login error code: %d", m_pool.url(), code);
+                LOG_ERR("[%s] login error code: %d", url(), code);
             }
 
             close();
@@ -820,32 +829,42 @@ void xmrig::Client::ping()
 }
 
 
-void xmrig::Client::read()
+void xmrig::Client::read(ssize_t nread)
 {
-    char* end;
-    char* start = m_recvBuf.base;
-    size_t remaining = m_recvBufPos;
+    const size_t size = static_cast<size_t>(nread);
 
-    while ((end = static_cast<char*>(memchr(start, '\n', remaining))) != nullptr) {
-        end++;
-        size_t len = end - start;
-        parse(start, len);
-
-        remaining -= len;
-        start = end;
+    if (nread > 0 && size > m_recvBuf.available()) {
+        nread = UV_ENOBUFS;
     }
 
-    if (remaining == 0) {
-        m_recvBufPos = 0;
+    if (nread < 0) {
+        if (!isQuiet()) {
+            LOG_ERR("[%s] read error: \"%s\"", url(), uv_strerror(static_cast<int>(nread)));
+        }
+
+        close();
         return;
     }
 
-    if (start == m_recvBuf.base) {
-        return;
+    assert(m_listener != nullptr);
+    if (!m_listener) {
+        return reconnect();
     }
 
-    memcpy(m_recvBuf.base, start, remaining);
-    m_recvBufPos = remaining;
+    m_recvBuf.nread(size);
+
+#   ifndef XMRIG_NO_TLS
+    if (isTLS()) {
+        LOG_DEBUG("[%s] TLS received (%d bytes)", url(), static_cast<int>(nread));
+
+        m_tls->read(m_recvBuf.base(), m_recvBuf.pos());
+        m_recvBuf.reset();
+    }
+    else
+#   endif
+    {
+        m_recvBuf.getline(this);
+    }
 }
 
 
@@ -866,15 +885,15 @@ void xmrig::Client::reconnect()
     setState(ConnectingState);
 
     m_failures++;
-    m_listener->onClose(this, (int) m_failures);
+    m_listener->onClose(this, static_cast<int>(m_failures));
 
-    m_expire = uv_now(uv_default_loop()) + m_retryPause;
+    m_expire = Chrono::steadyMSecs() + m_retryPause;
 }
 
 
 void xmrig::Client::setState(SocketState state)
 {
-    LOG_DEBUG("[%s] state: \"%s\"", m_pool.url(), states[state]);
+    LOG_DEBUG("[%s] state: \"%s\"", url(), states[state]);
 
     if (m_state == state) {
         return;
@@ -888,21 +907,28 @@ void xmrig::Client::startTimeout()
 {
     m_expire = 0;
 
-    if (m_pool.keepAlive()) {
-        m_keepAlive = uv_now(uv_default_loop()) + (m_pool.keepAlive() * 1000);
+    if (has<EXT_KEEPALIVE>()) {
+        const uint64_t ms = static_cast<uint64_t>(m_pool.keepAlive() > 0 ? m_pool.keepAlive() : Pool::kKeepAliveTimeout) * 1000;
+
+        m_keepAlive = Chrono::steadyMSecs() + ms;
     }
 }
 
 
-void xmrig::Client::onAllocBuffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
+void xmrig::Client::onAllocBuffer(uv_handle_t *handle, size_t, uv_buf_t *buf)
 {
     auto client = getClient(handle->data);
     if (!client) {
         return;
     }
 
-    buf->base = &client->m_recvBuf.base[client->m_recvBufPos];
-    buf->len  = client->m_recvBuf.len - client->m_recvBufPos;
+    buf->base = client->m_recvBuf.current();
+
+#   ifdef _WIN32
+    buf->len = static_cast<ULONG>(client->m_recvBuf.available());
+#   else
+    buf->len = client->m_recvBuf.available();
+#   endif
 }
 
 
@@ -927,7 +953,7 @@ void xmrig::Client::onConnect(uv_connect_t *req, int status)
 
     if (status < 0) {
         if (!client->isQuiet()) {
-            LOG_ERR("[%s] connect error: \"%s\"", client->m_pool.url(), uv_strerror(status));
+            LOG_ERR("[%s] connect error: \"%s\"", client->url(), uv_strerror(status));
         }
 
         delete req;
@@ -946,94 +972,10 @@ void xmrig::Client::onConnect(uv_connect_t *req, int status)
 }
 
 
-void xmrig::Client::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
+void xmrig::Client::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *)
 {
     auto client = getClient(stream->data);
-    if (!client) {
-        return;
+    if (client) {
+        client->read(nread);
     }
-
-    if (nread < 0) {
-        if (!client->isQuiet()) {
-            LOG_ERR("[%s] read error: \"%s\"", client->m_pool.url(), uv_strerror((int) nread));
-        }
-
-        client->close();
-        return;
-    }
-
-    if ((size_t) nread > (sizeof(m_buf) - 8 - client->m_recvBufPos)) {
-        client->close();
-        return;
-    }
-
-    assert(client->m_listener != nullptr);
-    if (!client->m_listener) {
-        return client->reconnect();
-    }
-
-    client->m_recvBufPos += nread;
-
-#   ifndef XMRIG_NO_TLS
-    if (client->isTLS()) {
-        LOG_DEBUG("[%s] TLS received (%d bytes)", client->m_pool.url(), static_cast<int>(nread));
-
-        client->m_tls->read(client->m_recvBuf.base, client->m_recvBufPos);
-        client->m_recvBufPos = 0;
-    }
-    else
-#   endif
-    {
-        client->read();
-    }
-}
-
-
-void xmrig::Client::onResolved(uv_getaddrinfo_t *req, int status, struct addrinfo *res)
-{
-    auto client = getClient(req->data);
-    if (!client) {
-        return;
-    }
-
-    assert(client->m_listener != nullptr);
-    if (!client->m_listener) {
-        return client->reconnect();
-    }
-
-    if (status < 0) {
-        if (!client->isQuiet()) {
-            LOG_ERR("[%s] DNS error: \"%s\"", client->m_pool.url(), uv_strerror(status));
-        }
-
-        return client->reconnect();
-    }
-
-    addrinfo *ptr = res;
-    std::vector<addrinfo*> ipv4;
-    std::vector<addrinfo*> ipv6;
-
-    while (ptr != nullptr) {
-        if (ptr->ai_family == AF_INET) {
-            ipv4.push_back(ptr);
-        }
-
-        if (ptr->ai_family == AF_INET6) {
-            ipv6.push_back(ptr);
-        }
-
-        ptr = ptr->ai_next;
-    }
-
-    if (ipv4.empty() && ipv6.empty()) {
-        if (!client->isQuiet()) {
-            LOG_ERR("[%s] DNS error: \"No IPv4 (A) or IPv6 (AAAA) records found\"", client->m_pool.url());
-        }
-
-        uv_freeaddrinfo(res);
-        return client->reconnect();
-    }
-
-    client->connect(ipv4, ipv6);
-    uv_freeaddrinfo(res);
 }

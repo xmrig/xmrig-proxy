@@ -105,11 +105,11 @@ int xmrig::Controller::init()
     Platform::init(config()->userAgent());
 
     if (!config()->isBackground()) {
-        Log::add(new ConsoleLog(this));
+        Log::add(new ConsoleLog());
     }
 
     if (config()->logFile()) {
-        Log::add(new FileLog(this, config()->logFile()));
+        Log::add(new FileLog(config()->logFile()));
     }
 
 #   ifdef HAVE_SYSLOG_H

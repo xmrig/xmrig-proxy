@@ -5,6 +5,7 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
  * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -21,78 +22,45 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_ID_H
-#define XMRIG_ID_H
+#ifndef XMRIG_DNSRECORD_H
+#define XMRIG_DNSRECORD_H
 
 
-#include <string.h>
+struct addrinfo;
+struct sockaddr;
+
+
+#include "base/tools/String.h"
 
 
 namespace xmrig {
 
 
-class Id
+class DnsRecord
 {
 public:
-    inline Id() :
-        m_data()
-    {
-    }
+    enum Type {
+        Unknown,
+        A,
+        AAAA
+    };
 
+    inline DnsRecord() : m_type(Unknown) {}
+    DnsRecord(const addrinfo *addr);
 
-    inline Id(const char *id, size_t sizeFix = 0)
-    {
-        setId(id, sizeFix);
-    }
+    sockaddr *addr(uint16_t port = 0) const;
 
-
-    inline bool operator==(const Id &other) const
-    {
-        return memcmp(m_data, other.m_data, sizeof(m_data)) == 0;
-    }
-
-
-    inline bool operator!=(const Id &other) const
-    {
-        return memcmp(m_data, other.m_data, sizeof(m_data)) != 0;
-    }
-
-
-    Id &operator=(const Id &other)
-    {
-        memcpy(m_data, other.m_data, sizeof(m_data));
-
-        return *this;
-    }
-
-
-    inline bool setId(const char *id, size_t sizeFix = 0)
-    {
-        memset(m_data, 0, sizeof(m_data));
-        if (!id) {
-            return false;
-        }
-
-        const size_t size = strlen(id);
-        if (size >= sizeof(m_data)) {
-            return false;
-        }
-
-        memcpy(m_data, id, size - sizeFix);
-        return true;
-    }
-
-
-    inline const char *data() const { return m_data; }
-    inline bool isValid() const     { return *m_data != '\0'; }
-
+    inline bool isValid() const     { return m_type != Unknown; }
+    inline const String &ip() const { return m_ip; }
+    inline Type type() const        { return m_type; }
 
 private:
-    char m_data[64];
+    Type m_type;
+    String m_ip;
 };
 
 
 } /* namespace xmrig */
 
 
-#endif /* XMRIG_ID_H */
+#endif /* XMRIG_DNSRECORD_H */

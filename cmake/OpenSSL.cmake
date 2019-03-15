@@ -12,8 +12,8 @@ if (WITH_TLS)
 
     if (OPENSSL_FOUND)
         set(TLS_SOURCES
-            src/common/net/Tls.cpp
-            src/common/net/Tls.h
+            src/base/net/stratum/Tls.cpp
+            src/base/net/stratum/Tls.h
             src/proxy/tls/Tls.cpp
             src/proxy/tls/Tls.h
             src/proxy/tls/TlsConfig.cpp

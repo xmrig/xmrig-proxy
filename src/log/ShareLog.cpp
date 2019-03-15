@@ -25,8 +25,8 @@
 #include <inttypes.h>
 
 
+#include "base/net/stratum/SubmitResult.h"
 #include "common/log/Log.h"
-#include "common/net/SubmitResult.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "log/ShareLog.h"

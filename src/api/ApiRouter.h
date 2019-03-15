@@ -44,7 +44,7 @@ class ApiRouter : public xmrig::IControllerListener
 {
 public:
     ApiRouter(xmrig::Controller *controller);
-    ~ApiRouter();
+    ~ApiRouter() override;
 
     void get(const xmrig::HttpRequest &req, xmrig::HttpReply &reply) const;
     void exec(const xmrig::HttpRequest &req, xmrig::HttpReply &reply);

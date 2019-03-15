@@ -24,7 +24,7 @@
 
 
 #include "base/io/Json.h"
-#include "common/net/Client.h"
+#include "base/net/stratum/Client.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"

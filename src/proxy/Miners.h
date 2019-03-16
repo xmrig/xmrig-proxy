@@ -60,7 +60,7 @@ private:
     void tick();
 
     std::map<int64_t, Miner*> m_miners;
-    uv_timer_t m_timer;
+    uv_timer_t *m_timer;
 };
 
 

@@ -149,7 +149,7 @@ private:
     uint8_t m_fixedByte;
     uintptr_t m_key;
     uv_buf_t m_recvBuf;
-    uv_tcp_t m_socket;
+    uv_tcp_t *m_socket;
 
     static char m_sendBuf[2048];
     static Storage<Miner> m_storage;

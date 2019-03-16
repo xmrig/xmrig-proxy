@@ -42,7 +42,7 @@
 
 
 xmrig::SimpleSplitter::SimpleSplitter(xmrig::Controller *controller) : Splitter(controller),
-    m_reuseTimeout(controller->config()->reuseTimeout()),
+    m_reuseTimeout(static_cast<uint64_t>(controller->config()->reuseTimeout())),
     m_sequence(0)
 {
 }
@@ -50,6 +50,13 @@ xmrig::SimpleSplitter::SimpleSplitter(xmrig::Controller *controller) : Splitter(
 
 xmrig::SimpleSplitter::~SimpleSplitter()
 {
+    for (SimpleMapper *mapper : m_released) {
+        delete mapper;
+    }
+
+    for (auto const &kv : m_upstreams) {
+        delete kv.second;
+    }
 }
 
 

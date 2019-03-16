@@ -48,6 +48,9 @@ xmrig::NonceSplitter::NonceSplitter(Controller *controller) : Splitter(controlle
 
 xmrig::NonceSplitter::~NonceSplitter()
 {
+    for (NonceMapper *upstream : m_upstreams) {
+        delete upstream;
+    }
 }
 
 

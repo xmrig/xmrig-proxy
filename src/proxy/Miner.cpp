@@ -31,6 +31,7 @@
 #include "base/net/stratum/Job.h"
 #include "base/tools/Buffer.h"
 #include "base/tools/Chrono.h"
+#include "base/tools/Handle.h"
 #include "common/log/Log.h"
 #include "net/JobResult.h"
 #include "proxy/Counters.h"
@@ -83,8 +84,9 @@ xmrig::Miner::Miner(const TlsContext *ctx, bool ipv6, uint16_t port) :
 
     Uuid::create(m_rpcId, sizeof(m_rpcId));
 
-    m_socket.data = m_storage.ptr(m_key);
-    uv_tcp_init(uv_default_loop(), &m_socket);
+    m_socket = new uv_tcp_t;
+    m_socket->data = m_storage.ptr(m_key);
+    uv_tcp_init(uv_default_loop(), m_socket);
 
     m_recvBuf.base = m_buf;
     m_recvBuf.len  = sizeof(m_buf);
@@ -101,7 +103,7 @@ xmrig::Miner::Miner(const TlsContext *ctx, bool ipv6, uint16_t port) :
 
 xmrig::Miner::~Miner()
 {
-    m_socket.data = nullptr;
+    Handle::close(m_socket);
 
 #   ifndef XMRIG_NO_TLS
     delete m_tls;
@@ -113,7 +115,7 @@ xmrig::Miner::~Miner()
 
 bool xmrig::Miner::accept(uv_stream_t *server)
 {
-    const int rt = uv_accept(server, reinterpret_cast<uv_stream_t*>(&m_socket));
+    const int rt = uv_accept(server, reinterpret_cast<uv_stream_t*>(m_socket));
     if (rt < 0) {
         LOG_ERR("[miner] accept error: \"%s\"", uv_strerror(rt));
         return false;
@@ -122,7 +124,7 @@ bool xmrig::Miner::accept(uv_stream_t *server)
     sockaddr_storage addr = {};
     int size = sizeof(addr);
 
-    uv_tcp_getpeername(&m_socket, reinterpret_cast<sockaddr*>(&addr), &size);
+    uv_tcp_getpeername(m_socket, reinterpret_cast<sockaddr*>(&addr), &size);
 
     if (m_ipv6) {
         uv_ip6_name(reinterpret_cast<sockaddr_in6*>(&addr), m_ip, 45);
@@ -130,7 +132,7 @@ bool xmrig::Miner::accept(uv_stream_t *server)
         uv_ip4_name(reinterpret_cast<sockaddr_in*>(&addr), m_ip, 16);
     }
 
-    uv_read_start(reinterpret_cast<uv_stream_t*>(&m_socket), Miner::onAllocBuffer, Miner::onRead);
+    uv_read_start(reinterpret_cast<uv_stream_t*>(m_socket), Miner::onAllocBuffer, Miner::onRead);
 
 #   ifndef XMRIG_NO_TLS
     if (isTLS()) {
@@ -188,7 +190,7 @@ void xmrig::Miner::success(int64_t id, const char *status)
 
 bool xmrig::Miner::isWritable() const
 {
-    return m_state != ClosingState && uv_is_writable(reinterpret_cast<const uv_stream_t*>(&m_socket)) == 1;
+    return m_state != ClosingState && uv_is_writable(reinterpret_cast<const uv_stream_t*>(m_socket)) == 1;
 }
 
 
@@ -297,7 +299,7 @@ bool xmrig::Miner::send(BIO *bio)
         return false;
     }
 
-    const int rc = uv_try_write(reinterpret_cast<uv_stream_t*>(&m_socket), &buf, 1);
+    const int rc = uv_try_write(reinterpret_cast<uv_stream_t*>(m_socket), &buf, 1);
     (void) BIO_reset(bio);
 
     if (rc < 0) {
@@ -444,7 +446,7 @@ void xmrig::Miner::send(int size)
 #   endif
     {
         uv_buf_t buf = uv_buf_init(m_sendBuf, (unsigned int) size);
-        rc = uv_try_write(reinterpret_cast<uv_stream_t*>(&m_socket), &buf, 1);
+        rc = uv_try_write(reinterpret_cast<uv_stream_t*>(m_socket), &buf, 1);
     }
 
     if (rc < 0) {
@@ -537,16 +539,16 @@ void xmrig::Miner::setState(State state)
 }
 
 
-void xmrig::Miner::shutdown(bool had_error)
+void xmrig::Miner::shutdown(bool)
 {
     if (m_state == ClosingState) {
         return;
     }
 
     setState(ClosingState);
-    uv_read_stop(reinterpret_cast<uv_stream_t*>(&m_socket));
+    uv_read_stop(reinterpret_cast<uv_stream_t*>(m_socket));
 
-    uv_shutdown(new uv_shutdown_t, reinterpret_cast<uv_stream_t*>(&m_socket), [](uv_shutdown_t* req, int status) {
+    uv_shutdown(new uv_shutdown_t, reinterpret_cast<uv_stream_t*>(m_socket), [](uv_shutdown_t* req, int) {
 
         if (uv_is_closing(reinterpret_cast<uv_handle_t*>(req->handle)) == 0) {
             uv_close(reinterpret_cast<uv_handle_t*>(req->handle), [](uv_handle_t *handle) {

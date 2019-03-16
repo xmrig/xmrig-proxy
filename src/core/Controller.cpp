@@ -70,8 +70,6 @@ xmrig::Controller::Controller(Process *process)
 
 xmrig::Controller::~Controller()
 {
-    ConfigLoader::release();
-
     delete d_ptr;
 }
 
@@ -138,6 +136,15 @@ std::vector<xmrig::Miner*> xmrig::Controller::miners() const
 void xmrig::Controller::addListener(IControllerListener *listener)
 {
     d_ptr->listeners.push_back(listener);
+}
+
+
+void xmrig::Controller::stop()
+{
+    ConfigLoader::release();
+
+    delete d_ptr->proxy;
+    d_ptr->proxy = nullptr;
 }
 
 

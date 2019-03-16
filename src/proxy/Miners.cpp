@@ -26,6 +26,7 @@
 #include <vector>
 
 
+#include "base/tools/Handle.h"
 #include "common/log/Log.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/ConnectionEvent.h"
@@ -35,14 +36,20 @@
 
 xmrig::Miners::Miners()
 {
-    m_timer.data = this;
-    uv_timer_init(uv_default_loop(), &m_timer);
-    uv_timer_start(&m_timer, [](uv_timer_t *handle) { static_cast<Miners*>(handle->data)->tick(); }, kTickInterval, kTickInterval);
+    m_timer = new uv_timer_t;
+    m_timer->data = this;
+    uv_timer_init(uv_default_loop(), m_timer);
+    uv_timer_start(m_timer, [](uv_timer_t *handle) { static_cast<Miners*>(handle->data)->tick(); }, kTickInterval, kTickInterval);
 }
 
 
 xmrig::Miners::~Miners()
 {
+    Handle::close(m_timer);
+
+    for (const auto &s : m_miners) {
+        delete s.second;
+    }
 }
 
 

@@ -55,6 +55,7 @@ public:
     Proxy *proxy() const;
     std::vector<Miner*> miners() const;
     void addListener(IControllerListener *listener);
+    void stop();
     void watch();
 
 protected:

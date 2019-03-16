@@ -103,7 +103,7 @@ private:
     std::vector<Server*> m_servers;
     TlsContext *m_tls;
     uint64_t m_ticks;
-    uv_timer_t m_timer;
+    uv_timer_t *m_timer;
     Workers *m_workers;
 };
 

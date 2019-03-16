@@ -31,6 +31,7 @@
 #include <time.h>
 
 
+#include "base/tools/Handle.h"
 #include "common/log/Log.h"
 #include "common/Platform.h"
 #include "core/Config.h"
@@ -81,8 +82,9 @@ xmrig::Proxy::Proxy(xmrig::Controller *controller) :
     m_accessLog = new AccessLog(controller);
     m_workers   = new Workers(controller);
 
-    m_timer.data = this;
-    uv_timer_init(uv_default_loop(), &m_timer);
+    m_timer = new uv_timer_t;
+    m_timer->data = this;
+    uv_timer_init(uv_default_loop(), m_timer);
 
     Events::subscribe(IEvent::ConnectionType, m_miners);
     Events::subscribe(IEvent::ConnectionType, &m_stats);
@@ -120,6 +122,11 @@ xmrig::Proxy::Proxy(xmrig::Controller *controller) :
 xmrig::Proxy::~Proxy()
 {
     Events::stop();
+    Handle::close(m_timer);
+
+    for (Server *server : m_servers) {
+        delete server;
+    }
 
     delete m_donate;
     delete m_login;
@@ -156,7 +163,7 @@ void xmrig::Proxy::connect()
         this->bind(host);
     }
 
-    uv_timer_start(&m_timer, Proxy::onTick, 1000, 1000);
+    uv_timer_start(m_timer, Proxy::onTick, 1000, 1000);
 }
 
 

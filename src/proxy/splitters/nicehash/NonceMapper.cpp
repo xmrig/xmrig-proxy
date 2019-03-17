@@ -74,7 +74,6 @@ bool xmrig::NonceMapper::add(Miner *miner)
     if (!miner->hasExtension(Miner::EXT_NICEHASH)) {
         miner->setExtension(Miner::EXT_ALGO,     m_controller->config()->hasAlgoExt());
         miner->setExtension(Miner::EXT_NICEHASH, true);
-        miner->setMapperId(static_cast<ssize_t>(m_id));
     }
 
     if (!m_storage->add(miner)) {
@@ -85,6 +84,7 @@ bool xmrig::NonceMapper::add(Miner *miner)
         connect();
     }
 
+    miner->setMapperId(static_cast<ssize_t>(m_id));
     return true;
 }
 

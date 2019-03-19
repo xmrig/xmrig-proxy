@@ -22,38 +22,45 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_ISTRATEGY_H
-#define XMRIG_ISTRATEGY_H
+#ifndef XMRIG_TIMER_H
+#define XMRIG_TIMER_H
 
 
 #include <stdint.h>
 
 
+typedef struct uv_timer_s uv_timer_t;
+
+
 namespace xmrig {
 
 
-class Algorithm;
-class Client;
-class JobResult;
+class ITimerListener;
 
 
-class IStrategy
+class Timer
 {
 public:
-    virtual ~IStrategy() = default;
+    Timer(ITimerListener *listener);
+    Timer(ITimerListener *listener, uint64_t timeout, uint64_t repeat);
+    ~Timer();
 
-    virtual bool isActive() const                      = 0;
-    virtual Client *client() const                     = 0;
-    virtual int64_t submit(const JobResult &result)    = 0;
-    virtual void connect()                             = 0;
-    virtual void resume()                              = 0;
-    virtual void setAlgo(const Algorithm &algo)        = 0;
-    virtual void stop()                                = 0;
-    virtual void tick(uint64_t now)                    = 0;
+    uint64_t repeat() const;
+    void setRepeat(uint64_t repeat);
+    void start(uint64_t timeout, uint64_t repeat);
+    void stop();
+
+private:
+    void init();
+
+    static void onTimer(uv_timer_t *handle);
+
+    ITimerListener *m_listener;
+    uv_timer_t *m_timer;
 };
 
 
 } /* namespace xmrig */
 
 
-#endif // XMRIG_ISTRATEGY_H
+#endif /* XMRIG_TIMER_H */

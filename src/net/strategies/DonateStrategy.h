@@ -61,8 +61,9 @@ public:
     inline bool hasPendingJob() const     { return m_pending.job.isValid(); }
     inline const Pending &pending() const { return m_pending; }
 
-    inline bool isActive() const override { return m_active; }
-    inline void resume() override         {}
+    inline bool isActive() const override  { return m_active; }
+    inline Client *client() const override { return m_client; }
+    inline void resume() override          {}
 
     int64_t submit(const JobResult &result) override;
     void connect() override;

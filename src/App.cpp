@@ -195,4 +195,6 @@ void xmrig::App::close()
     m_controller->stop();
 
     Log::release();
+
+    uv_tty_reset_mode();
 }

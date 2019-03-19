@@ -22,38 +22,26 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_ISTRATEGY_H
-#define XMRIG_ISTRATEGY_H
-
-
-#include <stdint.h>
+#ifndef XMRIG_ITIMERLISTENER_H
+#define XMRIG_ITIMERLISTENER_H
 
 
 namespace xmrig {
 
 
-class Algorithm;
-class Client;
-class JobResult;
+class Timer;
 
 
-class IStrategy
+class ITimerListener
 {
 public:
-    virtual ~IStrategy() = default;
+    virtual ~ITimerListener() = default;
 
-    virtual bool isActive() const                      = 0;
-    virtual Client *client() const                     = 0;
-    virtual int64_t submit(const JobResult &result)    = 0;
-    virtual void connect()                             = 0;
-    virtual void resume()                              = 0;
-    virtual void setAlgo(const Algorithm &algo)        = 0;
-    virtual void stop()                                = 0;
-    virtual void tick(uint64_t now)                    = 0;
+    virtual void onTimer(const Timer *timer) = 0;
 };
 
 
 } /* namespace xmrig */
 
 
-#endif // XMRIG_ISTRATEGY_H
+#endif // XMRIG_ITIMERLISTENER_H

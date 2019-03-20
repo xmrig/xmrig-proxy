@@ -55,6 +55,7 @@ protected:
 
 private:
     void login(LoginEvent *event);
+    void reject(LoginEvent *event);
     void remove(Miner *miner);
     void remove(size_t id);
     void submit(SubmitEvent *event);

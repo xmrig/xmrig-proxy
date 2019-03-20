@@ -73,18 +73,18 @@ void xmrig::DonateSplitter::login(LoginEvent *event)
     Miner *miner = event->miner();
     miner->setExtension(Miner::EXT_CONNECT, true);
 
-    const char *url = Json::getString(event->params, "url");
-    if (!url) {
+    const String url = Json::getString(event->params, "url");
+    if (url.isNull()) {
         return;
+    }
+
+    if (!url.contains("xmrig.com")) {
+        return reject(event);
     }
 
     Pool pool(url);
     if (!pool.isValid()) {
-        event->reject();
-        miner->replyWithError(event->loginId, Error::toString(Error::Forbidden));
-        miner->close();
-
-        return;
+        return reject(event);
     }
 
     pool.setUser(miner->user());
@@ -93,6 +93,14 @@ void xmrig::DonateSplitter::login(LoginEvent *event)
 
     DonateMapper *mapper = new DonateMapper(m_sequence++, event, pool);
     m_mappers[mapper->id()] = mapper;
+}
+
+
+void xmrig::DonateSplitter::reject(LoginEvent *event)
+{
+    event->reject();
+    event->miner()->replyWithError(event->loginId, Error::toString(Error::Forbidden));
+    event->miner()->close();
 }
 
 

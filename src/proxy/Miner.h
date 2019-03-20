@@ -34,6 +34,8 @@
 #include "base/net/tools/Storage.h"
 #include "base/tools/String.h"
 #include "rapidjson/fwd.h"
+#include "base/net/stratum/Job.h"
+#include "base/kernel/interfaces/ITimerListener.h"
 
 
 typedef struct bio_st BIO;
@@ -44,9 +46,10 @@ namespace xmrig {
 
 class Job;
 class TlsContext;
+class Timer;
 
 
-class Miner
+class Miner : public ITimerListener
 {
 public:
     enum State {
@@ -69,6 +72,7 @@ public:
     void forwardJob(const Job &job, const char *algo);
     void replyWithError(int64_t id, const char *message);
     void setJob(Job &job);
+    void setFakeJob();
     void success(int64_t id, const char *status);
 
     inline bool hasExtension(Extension ext) const noexcept        { return m_extensions.test(ext); }
@@ -95,6 +99,9 @@ public:
     inline void setFixedByte(uint8_t fixedByte)                   { m_fixedByte = fixedByte; }
     inline void setMapperId(ssize_t mapperId)                     { m_mapperId = mapperId; }
     inline void setRouteId(int32_t id)                            { m_routeId = id; }
+
+protected:
+    void onTimer(const Timer *timer);
 
 private:
     class Tls;
@@ -150,6 +157,10 @@ private:
     uintptr_t m_key;
     uv_buf_t m_recvBuf;
     uv_tcp_t *m_socket;
+
+    uint64_t m_height;
+    Job m_job;
+    Timer *m_timer;
 
     static char m_sendBuf[2048];
     static Storage<Miner> m_storage;

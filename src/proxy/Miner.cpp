@@ -47,6 +47,7 @@
 #include "rapidjson/error/en.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
+#include "base/tools/Timer.h"
 
 
 #ifndef XMRIG_NO_TLS
@@ -78,11 +79,14 @@ xmrig::Miner::Miner(const TlsContext *ctx, bool ipv6, uint16_t port) :
     m_rx(0),
     m_timestamp(Chrono::currentMSecsSinceEpoch()),
     m_tx(0),
-    m_fixedByte(0)
+    m_fixedByte(0),
+    m_height(0)
 {
     m_key = m_storage.add(this);
 
     Uuid::create(m_rpcId, sizeof(m_rpcId));
+
+    m_timer = new Timer(this);
 
     m_socket = new uv_tcp_t;
     m_socket->data = m_storage.ptr(m_key);
@@ -103,6 +107,7 @@ xmrig::Miner::Miner(const TlsContext *ctx, bool ipv6, uint16_t port) :
 
 xmrig::Miner::~Miner()
 {
+    delete m_timer;
     Handle::close(m_socket);
 
 #   ifndef XMRIG_NO_TLS
@@ -161,7 +166,16 @@ void xmrig::Miner::replyWithError(int64_t id, const char *message)
 
 void xmrig::Miner::setJob(Job &job)
 {
+    m_timer->start(m_customDiff, m_customDiff);
+
     using namespace rapidjson;
+
+    if (m_job.isValid()) {
+        return;
+    }
+
+    m_height = job.height();
+    m_job    = job;
 
     if (hasExtension(EXT_NICEHASH)) {
         snprintf(m_sendBuf, 4, "%02hhx", m_fixedByte);
@@ -171,20 +185,54 @@ void xmrig::Miner::setJob(Job &job)
     m_diff = job.diff();
     bool customDiff = false;
 
-    if (m_customDiff && m_customDiff < m_diff) {
-        const uint64_t t = 0xFFFFFFFFFFFFFFFFULL / m_customDiff;
-        Buffer::toHex(reinterpret_cast<const unsigned char *>(&t) + 4, 4, m_sendBuf);
-        m_sendBuf[8] = '\0';
-        customDiff = true;
-    }
+//    if (m_customDiff && m_customDiff < m_diff) {
+//        const uint64_t t = 0xFFFFFFFFFFFFFFFFULL / m_customDiff;
+//        Buffer::toHex(reinterpret_cast<const unsigned char *>(&t) + 4, 4, m_sendBuf);
+//        m_sendBuf[8] = '\0';
+//        customDiff = true;
+//    }
 
     sendJob(job.rawBlob(), job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height());
+}
+
+
+void xmrig::Miner::setFakeJob()
+{
+    m_height++;
+    if (hasExtension(EXT_NICEHASH)) {
+        snprintf(m_sendBuf, 4, "%02hhx", m_fixedByte);
+        memcpy(m_job.rawBlob() + 84, m_sendBuf, 2);
+    }
+
+    bool customDiff = false;
+
+//    if (m_customDiff && m_customDiff < m_diff) {
+//        const uint64_t t = 0xFFFFFFFFFFFFFFFFULL / m_customDiff;
+//        Buffer::toHex(reinterpret_cast<const unsigned char *>(&t) + 4, 4, m_sendBuf);
+//        m_sendBuf[8] = '\0';
+//        customDiff = true;
+//    }
+
+    char buf[37];
+    Uuid::create(buf, sizeof(buf));
+    m_job.setId(buf);
+
+    Buffer::toHex(reinterpret_cast<const char *>(&m_height), 8, buf);
+    memcpy(m_job.rawBlob() + 96, buf, 16);
+
+    sendJob(m_job.rawBlob(), m_job.id().data(), customDiff ? m_sendBuf : m_job.rawTarget(), m_job.algorithm().shortName(), m_height);
 }
 
 
 void xmrig::Miner::success(int64_t id, const char *status)
 {
     send(snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"error\":null,\"result\":{\"status\":\"%s\"}}\n", id, status));
+}
+
+
+void xmrig::Miner::onTimer(const Timer *timer)
+{
+    setFakeJob();
 }
 
 
@@ -265,11 +313,9 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
             return true;
         }
 
-        if (!event->start()) {
-            replyWithError(id, event->message());
-        }
+        success(id, "OK");
 
-        return event->error() != Error::InvalidNonce;
+        return true;
     }
 
     if (strcmp(method, "keepalived") == 0) {

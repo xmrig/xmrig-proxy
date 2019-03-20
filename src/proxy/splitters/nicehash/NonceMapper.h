@@ -30,8 +30,8 @@
 #include <vector>
 
 
-#include "common/interfaces/IStrategyListener.h"
-#include "common/net/Job.h"
+#include "base/kernel/interfaces/IStrategyListener.h"
+#include "base/net/stratum/Job.h"
 
 
 namespace xmrig {

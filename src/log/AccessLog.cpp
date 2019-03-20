@@ -29,7 +29,7 @@
 #include <time.h>
 
 
-#include "common/utils/timestamp.h"
+#include "base/tools/Chrono.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "log/AccessLog.h"
@@ -69,7 +69,7 @@ void xmrig::AccessLog::onEvent(IEvent *event)
     {
     case IEvent::LoginType: {
             auto e = static_cast<LoginEvent*>(event);
-            write("#%" PRId64 " login: %s, \"%s\", ua: \"%s\", count: %" PRIu64, e->miner()->id(), e->miner()->ip(), e->miner()->user(), e->miner()->agent(), Counters::miners());
+            write("#%" PRId64 " login: %s, \"%s\", ua: \"%s\", count: %" PRIu64, e->miner()->id(), e->miner()->ip(), e->miner()->user().data(), e->miner()->agent().data(), Counters::miners());
         }
         break;
 
@@ -79,10 +79,10 @@ void xmrig::AccessLog::onEvent(IEvent *event)
                 break;
             }
 
-            const double time = (double)(xmrig::currentMSecsSinceEpoch() - e->miner()->timestamp()) / 1000;
+            const double time = (Chrono::currentMSecsSinceEpoch() - e->miner()->timestamp()) / 1000.0;
 
             write("#%" PRId64 " close: %s, \"%s\", time: %03.1fs, rx/tx: %" PRIu64 "/%" PRIu64 ", count: %" PRIu64,
-                  e->miner()->id(), e->miner()->ip(), e->miner()->user(), time, e->miner()->rx(), e->miner()->tx(), Counters::miners());
+                  e->miner()->id(), e->miner()->ip(), e->miner()->user().data(), time, e->miner()->rx(), e->miner()->tx(), Counters::miners());
         }
         break;
 
@@ -92,7 +92,7 @@ void xmrig::AccessLog::onEvent(IEvent *event)
 }
 
 
-void xmrig::AccessLog::onRejectedEvent(IEvent *event)
+void xmrig::AccessLog::onRejectedEvent(IEvent *)
 {
 }
 

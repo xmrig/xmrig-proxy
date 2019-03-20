@@ -25,7 +25,7 @@
 #include <chrono>
 
 
-#include "common/net/SubmitResult.h"
+#include "base/net/stratum/SubmitResult.h"
 #include "proxy/workers/Worker.h"
 
 

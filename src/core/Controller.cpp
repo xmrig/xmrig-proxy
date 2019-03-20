@@ -70,8 +70,6 @@ xmrig::Controller::Controller(Process *process)
 
 xmrig::Controller::~Controller()
 {
-    ConfigLoader::release();
-
     delete d_ptr;
 }
 
@@ -105,11 +103,11 @@ int xmrig::Controller::init()
     Platform::init(config()->userAgent());
 
     if (!config()->isBackground()) {
-        Log::add(new ConsoleLog(this));
+        Log::add(new ConsoleLog());
     }
 
     if (config()->logFile()) {
-        Log::add(new FileLog(this, config()->logFile()));
+        Log::add(new FileLog(config()->logFile()));
     }
 
 #   ifdef HAVE_SYSLOG_H
@@ -138,6 +136,15 @@ std::vector<xmrig::Miner*> xmrig::Controller::miners() const
 void xmrig::Controller::addListener(IControllerListener *listener)
 {
     d_ptr->listeners.push_back(listener);
+}
+
+
+void xmrig::Controller::stop()
+{
+    ConfigLoader::release();
+
+    delete d_ptr->proxy;
+    d_ptr->proxy = nullptr;
 }
 
 

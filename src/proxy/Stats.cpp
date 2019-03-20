@@ -24,7 +24,7 @@
 
 
 #include "api/Api.h"
-#include "common/net/SubmitResult.h"
+#include "base/net/stratum/SubmitResult.h"
 #include "Counters.h"
 #include "interfaces/ISplitter.h"
 #include "proxy/events/AcceptEvent.h"

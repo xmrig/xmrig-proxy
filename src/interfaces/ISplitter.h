@@ -43,7 +43,7 @@ public:
         sleep(sleep),
         total(total),
         error(total - active - sleep),
-        ratio(active > 0 ? ((double) miners / active) : 0.0)
+        ratio(active > 0 ? (static_cast<double>(miners) / active) : 0.0)
     {}
 
 

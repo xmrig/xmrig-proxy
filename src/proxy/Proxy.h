@@ -42,6 +42,7 @@ namespace xmrig {
 class AccessLog;
 class BindHost;
 class Controller;
+class DonateSplitter;
 class ISplitter;
 class Login;
 class Miner;
@@ -92,6 +93,7 @@ private:
     AccessLog *m_accessLog;
     Controller *m_controller;
     CustomDiff m_customDiff;
+    DonateSplitter *m_donate;
     ISplitter *m_splitter;
     Login *m_login;
     Miners *m_miners;
@@ -101,7 +103,7 @@ private:
     std::vector<Server*> m_servers;
     TlsContext *m_tls;
     uint64_t m_ticks;
-    uv_timer_t m_timer;
+    uv_timer_t *m_timer;
     Workers *m_workers;
 };
 

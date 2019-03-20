@@ -31,6 +31,7 @@
 #include <time.h>
 
 
+#include "base/tools/Handle.h"
 #include "common/log/Log.h"
 #include "common/Platform.h"
 #include "core/Config.h"
@@ -46,6 +47,7 @@
 #include "proxy/Proxy.h"
 #include "proxy/ProxyDebug.h"
 #include "proxy/Server.h"
+#include "proxy/splitters/donate/DonateSplitter.h"
 #include "proxy/splitters/nicehash/NonceSplitter.h"
 #include "proxy/splitters/simple/SimpleSplitter.h"
 #include "proxy/Stats.h"
@@ -74,31 +76,35 @@ xmrig::Proxy::Proxy(xmrig::Controller *controller) :
         splitter = new SimpleSplitter(controller);
     }
 
-    m_splitter = splitter;
-
+    m_splitter  = splitter;
+    m_donate    = new DonateSplitter(controller);
     m_shareLog  = new ShareLog(controller, m_stats);
     m_accessLog = new AccessLog(controller);
     m_workers   = new Workers(controller);
 
-    m_timer.data = this;
-    uv_timer_init(uv_default_loop(), &m_timer);
+    m_timer = new uv_timer_t;
+    m_timer->data = this;
+    uv_timer_init(uv_default_loop(), m_timer);
 
     Events::subscribe(IEvent::ConnectionType, m_miners);
     Events::subscribe(IEvent::ConnectionType, &m_stats);
 
     Events::subscribe(IEvent::CloseType, m_miners);
+    Events::subscribe(IEvent::CloseType, m_donate);
     Events::subscribe(IEvent::CloseType, splitter);
     Events::subscribe(IEvent::CloseType, &m_stats);
     Events::subscribe(IEvent::CloseType, m_accessLog);
     Events::subscribe(IEvent::CloseType, m_workers);
 
     Events::subscribe(IEvent::LoginType, m_login);
+    Events::subscribe(IEvent::LoginType, m_donate);
     Events::subscribe(IEvent::LoginType, &m_customDiff);
     Events::subscribe(IEvent::LoginType, splitter);
     Events::subscribe(IEvent::LoginType, &m_stats);
     Events::subscribe(IEvent::LoginType, m_accessLog);
     Events::subscribe(IEvent::LoginType, m_workers);
 
+    Events::subscribe(IEvent::SubmitType, m_donate);
     Events::subscribe(IEvent::SubmitType, splitter);
     Events::subscribe(IEvent::SubmitType, &m_stats);
     Events::subscribe(IEvent::SubmitType, m_workers);
@@ -116,7 +122,13 @@ xmrig::Proxy::Proxy(xmrig::Controller *controller) :
 xmrig::Proxy::~Proxy()
 {
     Events::stop();
+    Handle::close(m_timer);
 
+    for (Server *server : m_servers) {
+        delete server;
+    }
+
+    delete m_donate;
     delete m_login;
     delete m_miners;
     delete m_splitter;
@@ -146,12 +158,12 @@ void xmrig::Proxy::connect()
 
     m_splitter->connect();
 
-    const xmrig::BindHosts &bind = m_controller->config()->bind();
-    for (const xmrig::BindHost &host : bind) {
+    const BindHosts &bind = m_controller->config()->bind();
+    for (const BindHost &host : bind) {
         this->bind(host);
     }
 
-    uv_timer_start(&m_timer, Proxy::onTick, 1000, 1000);
+    uv_timer_start(m_timer, Proxy::onTick, 1000, 1000);
 }
 
 
@@ -211,7 +223,7 @@ void xmrig::Proxy::printState()
 #endif
 
 
-void xmrig::Proxy::onConfigChanged(xmrig::Config *config, xmrig::Config *previousConfig)
+void xmrig::Proxy::onConfigChanged(xmrig::Config *config, xmrig::Config *)
 {
     m_debug->setEnabled(config->isDebug());
 }

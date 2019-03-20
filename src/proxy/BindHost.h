@@ -29,7 +29,7 @@
 #include <vector>
 
 
-#include "common/utils/c_str.h"
+#include "base/tools/String.h"
 #include "rapidjson/fwd.h"
 
 
@@ -70,7 +70,7 @@ private:
     bool m_tls;
     int m_version;
     uint16_t m_port;
-    xmrig::c_str m_host;
+    String m_host;
 };
 
 

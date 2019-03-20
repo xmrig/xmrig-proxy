@@ -29,8 +29,8 @@
 
 #include "api/Api.h"
 #include "App.h"
+#include "base/io/Console.h"
 #include "base/kernel/Signals.h"
-#include "common/Console.h"
 #include "common/log/Log.h"
 #include "common/Platform.h"
 #include "core/Config.h"
@@ -62,8 +62,6 @@ xmrig::App::App(Process *process) :
 
 xmrig::App::~App()
 {
-    uv_tty_reset_mode();
-
     delete m_signals;
     delete m_console;
     delete m_controller;
@@ -106,10 +104,10 @@ int xmrig::App::exec()
     m_controller->watch();
     m_controller->proxy()->connect();
 
-    const int r = uv_run(uv_default_loop(), UV_RUN_DEFAULT);
+    const int rc = uv_run(uv_default_loop(), UV_RUN_DEFAULT);
     uv_loop_close(uv_default_loop());
 
-    return r;
+    return rc;
 }
 
 
@@ -186,5 +184,13 @@ void xmrig::App::onSignal(int signum)
 
 void xmrig::App::close()
 {
-    uv_stop(uv_default_loop());
+#   ifndef XMRIG_NO_HTTPD
+    m_httpd->stop();
+#   endif
+
+    m_signals->stop();
+    m_console->stop();
+    m_controller->stop();
+
+    Log::release();
 }

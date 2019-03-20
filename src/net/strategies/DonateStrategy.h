@@ -26,11 +26,10 @@
 #define XMRIG_DONATESTRATEGY_H
 
 
+#include "base/kernel/interfaces/IClientListener.h"
+#include "base/kernel/interfaces/IStrategy.h"
+#include "base/net/stratum/Job.h"
 #include "base/tools/String.h"
-#include "common/interfaces/IClientListener.h"
-#include "common/interfaces/IStrategy.h"
-#include "common/net/Job.h"
-
 
 
 namespace xmrig {
@@ -62,8 +61,9 @@ public:
     inline bool hasPendingJob() const     { return m_pending.job.isValid(); }
     inline const Pending &pending() const { return m_pending; }
 
-    inline bool isActive() const override { return m_active; }
-    inline void resume() override         {}
+    inline bool isActive() const override  { return m_active; }
+    inline Client *client() const override { return m_client; }
+    inline void resume() override          {}
 
     int64_t submit(const JobResult &result) override;
     void connect() override;
@@ -71,8 +71,10 @@ public:
     void tick(uint64_t now) override;
 
 protected:
+    inline void onLogin(Client *, rapidjson::Document &, rapidjson::Value &) override {}
+
     void onClose(Client *client, int failures) override;
-    void onJobReceived(Client *client, const Job &job) override;
+    void onJobReceived(Client *client, const Job &job, const rapidjson::Value &params) override;
     void onLoginSuccess(Client *client) override;
     void onResultAccepted(Client *client, const SubmitResult &result, const char *error) override;
 

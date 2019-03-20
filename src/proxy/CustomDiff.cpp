@@ -60,12 +60,15 @@ void xmrig::CustomDiff::onEvent(IEvent *event)
 }
 
 
-
 void xmrig::CustomDiff::login(LoginEvent *event)
 {
+    if (event->miner()->routeId() != -1) {
+        return;
+    }
+
     event->miner()->setCustomDiff(m_controller->config()->diff());
 
-    if (!event->miner()->user()) {
+    if (event->miner()->user().isNull()) {
         return;
     }
 

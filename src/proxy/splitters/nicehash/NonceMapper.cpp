@@ -28,9 +28,9 @@
 #include <string.h>
 
 
-#include "base/net/Pools.h"
+#include "base/net/stratum/Client.h"
+#include "base/net/stratum/Pools.h"
 #include "common/log/Log.h"
-#include "common/net/Client.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "net/JobResult.h"
@@ -71,6 +71,11 @@ xmrig::NonceMapper::~NonceMapper()
 
 bool xmrig::NonceMapper::add(Miner *miner)
 {
+    if (!miner->hasExtension(Miner::EXT_NICEHASH)) {
+        miner->setExtension(Miner::EXT_ALGO,     m_controller->config()->hasAlgoExt());
+        miner->setExtension(Miner::EXT_NICEHASH, true);
+    }
+
     if (!m_storage->add(miner)) {
         return false;
     }
@@ -79,8 +84,7 @@ bool xmrig::NonceMapper::add(Miner *miner)
         connect();
     }
 
-    miner->setNiceHash(true);
-    miner->setMapperId(m_id);
+    miner->setMapperId(static_cast<ssize_t>(m_id));
     return true;
 }
 
@@ -150,7 +154,7 @@ void xmrig::NonceMapper::submit(SubmitEvent *event)
 }
 
 
-void xmrig::NonceMapper::tick(uint64_t ticks, uint64_t now)
+void xmrig::NonceMapper::tick(uint64_t, uint64_t now)
 {
     m_strategy->tick(now);
 
@@ -207,7 +211,7 @@ void xmrig::NonceMapper::onActive(IStrategy *strategy, Client *client)
 }
 
 
-void xmrig::NonceMapper::onJob(IStrategy *strategy, Client *client, const Job &job)
+void xmrig::NonceMapper::onJob(IStrategy *, Client *client, const Job &job)
 {
     if (m_donate) {
         if (m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {
@@ -222,7 +226,7 @@ void xmrig::NonceMapper::onJob(IStrategy *strategy, Client *client, const Job &j
 }
 
 
-void xmrig::NonceMapper::onPause(IStrategy *strategy)
+void xmrig::NonceMapper::onPause(IStrategy *)
 {
     m_storage->setActive(false);
 
@@ -232,7 +236,7 @@ void xmrig::NonceMapper::onPause(IStrategy *strategy)
 }
 
 
-void xmrig::NonceMapper::onResultAccepted(IStrategy *strategy, Client *client, const SubmitResult &result, const char *error)
+void xmrig::NonceMapper::onResultAccepted(IStrategy *, Client *client, const SubmitResult &result, const char *error)
 {
     const SubmitCtx ctx = submitCtx(result.seq);
 

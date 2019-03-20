@@ -30,7 +30,7 @@
 #include <vector>
 
 
-#include "common/net/Job.h"
+#include "base/net/stratum/Job.h"
 
 
 namespace xmrig {
@@ -47,7 +47,7 @@ public:
 
     bool add(Miner *miner);
     bool isUsed() const;
-    bool isValidJobId(const Id &id) const;
+    bool isValidJobId(const String &id) const;
     Miner *miner(int64_t id);
     void remove(const Miner *miner);
     void reset();

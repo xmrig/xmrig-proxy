@@ -31,8 +31,8 @@
 #include <vector>
 
 
-#include "common/interfaces/IStrategyListener.h"
-#include "common/net/Job.h"
+#include "base/kernel/interfaces/IStrategyListener.h"
+#include "base/net/stratum/Job.h"
 
 
 namespace xmrig {
@@ -75,7 +75,7 @@ protected:
 
 private:
     bool isColors() const;
-    bool isValidJobId(const Id &id) const;
+    bool isValidJobId(const String &id) const;
     void connect();
     void setJob(const Job &job);
 

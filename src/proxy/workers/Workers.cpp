@@ -311,12 +311,20 @@ void xmrig::Workers::accept(const AcceptEvent *event)
 
 void xmrig::Workers::login(const LoginEvent *event)
 {
+    if (event->miner()->routeId() != -1) {
+        return;
+    }
+
     add(event->miner());
 }
 
 
 void xmrig::Workers::reject(const SubmitEvent *event)
 {
+    if (event->miner()->routeId() != -1) {
+        return;
+    }
+
     size_t index = 0;
     if (!indexByMiner(event->miner(), &index)) {
         return;
@@ -328,6 +336,10 @@ void xmrig::Workers::reject(const SubmitEvent *event)
 
 void xmrig::Workers::remove(const CloseEvent *event)
 {
+    if (event->miner()->routeId() != -1) {
+        return;
+    }
+
     size_t index = 0;
     if (!indexByMiner(event->miner(), &index)) {
         return;

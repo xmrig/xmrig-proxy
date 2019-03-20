@@ -37,7 +37,7 @@
 
 static void print_mode(xmrig::Controller *controller)
 {
-    Log::i()->text(controller->config()->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-13s") MAGENTA_BOLD("%s")
+    xmrig::Log::i()->text(controller->config()->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-13s") MAGENTA_BOLD("%s")
                                                     : " * %-13s%s",
                    "MODE", controller->config()->modeName());
 }
@@ -45,7 +45,7 @@ static void print_mode(xmrig::Controller *controller)
 
 static void print_algo(xmrig::Controller *controller)
 {
-    Log::i()->text(controller->config()->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-13s") MAGENTA_BOLD("%s")
+    xmrig::Log::i()->text(controller->config()->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-13s") MAGENTA_BOLD("%s")
                                                     : " * %-13s%s",
                    "ALGO", controller->config()->algorithm().name());
 }
@@ -57,7 +57,7 @@ static void print_bind(xmrig::Controller *controller)
 
     if (controller->config()->isColors()) {
         for (size_t i = 0; i < bind.size(); ++i) {
-            Log::i()->text(GREEN_BOLD(" * ") WHITE_BOLD("BIND #%-7zu") CYAN("%s%s%s:") "\x1B[1;%dm%d\x1B[0m",
+            xmrig::Log::i()->text(GREEN_BOLD(" * ") WHITE_BOLD("BIND #%-7zu") CYAN("%s%s%s:") "\x1B[1;%dm%d\x1B[0m",
                            i + 1,
                            bind[i].isIPv6() ? "[" : "",
                            bind[i].host(),
@@ -68,7 +68,7 @@ static void print_bind(xmrig::Controller *controller)
     }
     else {
         for (size_t i = 0; i < bind.size(); ++i) {
-            Log::i()->text(" * BIND #%-7zu%s%s%s:%d TLS=%d",
+            xmrig::Log::i()->text(" * BIND #%-7zu%s%s%s:%d TLS=%d",
                            i + 1,
                            bind[i].isIPv6() ? "[" : "",
                            bind[i].host(),
@@ -83,13 +83,13 @@ static void print_bind(xmrig::Controller *controller)
 static void print_commands(xmrig::Controller *controller)
 {
     if (controller->config()->isColors()) {
-        Log::i()->text(GREEN_BOLD(" * ") WHITE_BOLD("COMMANDS     ") MAGENTA_BOLD("h") WHITE_BOLD("ashrate, ")
+        xmrig::Log::i()->text(GREEN_BOLD(" * ") WHITE_BOLD("COMMANDS     ") MAGENTA_BOLD("h") WHITE_BOLD("ashrate, ")
                                                                      MAGENTA_BOLD("c") WHITE_BOLD("onnections, ")
                                                                      MAGENTA_BOLD("v") WHITE_BOLD("erbose, ")
                                                                      MAGENTA_BOLD("w") WHITE_BOLD("orkers"));
     }
     else {
-        Log::i()->text(" * COMMANDS    'h' hashrate, 'c' connections, 'v' verbose, 'w' workers");
+        xmrig::Log::i()->text(" * COMMANDS    'h' hashrate, 'c' connections, 'v' verbose, 'w' workers");
     }
 }
 

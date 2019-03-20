@@ -25,8 +25,8 @@
 #include <inttypes.h>
 
 
+#include "base/net/stratum/SubmitResult.h"
 #include "common/log/Log.h"
-#include "common/net/SubmitResult.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "log/ShareLog.h"
@@ -83,7 +83,7 @@ bool xmrig::ShareLog::isColors() const
 
 void xmrig::ShareLog::accept(const AcceptEvent *event)
 {
-    if (!m_controller->config()->isVerbose()) {
+    if (!m_controller->config()->isVerbose() || event->isDonate()) {
         return;
     }
 

@@ -98,6 +98,9 @@ Both miner and pool should support short algorithm name aliases:
 | `cryptonight/gpu`        | `cn/gpu`        | `"gpu"`     | CryptoNight-GPU (RYO).                               |
 | `cryptonight/wow`        | `cn/wow`        | `"wow"`     | CryptoNightR (Wownero).                              |
 | `cryptonight/r`          | `cn/r`          | `"r"`       | CryptoNightR (Monero's variant 4).                   |
+| `cryptonight/rwz`        | `cn/rwz`        | `"rwz"`     | CryptoNight variant 2 "ReverseWaltz" (Graft).        |
+| `cryptonight/zls`        | `cn/zls`        | `"zls"`     | CryptoNight variant 2 with 3/4 iterations (Zelerius).  |
+| `cryptonight/double`     | `cn/double`     | `"double"`  | CryptoNight variant 2 with double iterations (X-CASH). |
 | `cryptonight-lite`       | `cn-lite`       | `-1`        | Autodetect works only for Aeon.                      |
 | `cryptonight-lite/0`     | `cn-lite/0`     | `0`         | Original/old CryptoNight-Lite.                       |
 | `cryptonight-lite/1`     | `cn-lite/1`     | `1`         | Also known as `aeon7`                                |

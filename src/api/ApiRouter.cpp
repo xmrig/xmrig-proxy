@@ -34,10 +34,10 @@
 
 
 #include "api/ApiRouter.h"
+#include "base/tools/Buffer.h"
 #include "common/api/HttpReply.h"
 #include "common/api/HttpRequest.h"
 #include "common/crypto/keccak.h"
-#include "common/net/Job.h"
 #include "common/Platform.h"
 #include "core/Config.h"
 #include "core/Controller.h"
@@ -177,7 +177,7 @@ void ApiRouter::genId(const char *id)
             memcpy(input + sizeof(uint16_t) + addrSize, APP_KIND, strlen(APP_KIND));
 
             xmrig::keccak(input, inSize, hash);
-            xmrig::Job::toHex(hash, 8, m_id);
+            xmrig::Buffer::toHex(hash, 8, m_id);
 
             delete [] input;
             break;

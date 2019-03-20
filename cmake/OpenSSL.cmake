@@ -12,8 +12,8 @@ if (WITH_TLS)
 
     if (OPENSSL_FOUND)
         set(TLS_SOURCES
-            src/common/net/Tls.cpp
-            src/common/net/Tls.h
+            src/base/net/stratum/Tls.cpp
+            src/base/net/stratum/Tls.h
             src/proxy/tls/Tls.cpp
             src/proxy/tls/Tls.h
             src/proxy/tls/TlsConfig.cpp
@@ -25,9 +25,13 @@ if (WITH_TLS)
     else()
         message(FATAL_ERROR "OpenSSL NOT found: use `-DWITH_TLS=OFF` to build without TLS support")
     endif()
+
+    add_definitions(/DXMRIG_FEATURE_TLS)
+    remove_definitions(/DXMRIG_NO_TLS)
 else()
     set(TLS_SOURCES "")
     set(OPENSSL_LIBRARIES "")
+    remove_definitions(/DXMRIG_FEATURE_TLS)
     add_definitions(/DXMRIG_NO_TLS)
 
     set(CMAKE_PROJECT_NAME "${CMAKE_PROJECT_NAME}-notls")

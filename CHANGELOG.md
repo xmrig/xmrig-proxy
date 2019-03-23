@@ -1,3 +1,6 @@
+# v2.14.1
+- [#306](https://github.com/xmrig/xmrig-proxy/issues/306) [#310](https://github.com/xmrig/xmrig-proxy/issues/310) Fixed compile issues and random crashing if verbose mode or access log was enabled.
+
 # v2.14.0
 - **[#969](https://github.com/xmrig/xmrig/pull/969) Added new algorithm `cryptonight/rwz`, short alias `cn/rwz` (also known as CryptoNight ReverseWaltz), for upcoming [Graft](https://www.graft.network/) fork.**
 - **[#931](https://github.com/xmrig/xmrig/issues/931) Added new algorithm `cryptonight/zls`, short alias `cn/zls` for [Zelerius Network](https://zelerius.org) fork.**

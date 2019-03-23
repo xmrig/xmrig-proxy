@@ -1,3 +1,8 @@
+# v2.15.0-beta
+- [#314](https://github.com/xmrig/xmrig-proxy/issues/314) Added donate over proxy feature and changed donation model.
+  - Added new options `algo-ext` and `access-password`.
+  - Added real graceful exit.
+
 # v2.14.1
 - [#306](https://github.com/xmrig/xmrig-proxy/issues/306) [#310](https://github.com/xmrig/xmrig-proxy/issues/310) Fixed compile issues and random crashing if verbose mode or access log was enabled.
 

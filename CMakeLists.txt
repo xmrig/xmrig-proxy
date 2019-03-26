@@ -218,12 +218,6 @@ endif()
 
 include(cmake/OpenSSL.cmake)
 
-CHECK_INCLUDE_FILE (syslog.h HAVE_SYSLOG_H)
-if (HAVE_SYSLOG_H)
-    add_definitions(/DHAVE_SYSLOG_H)
-    set(SOURCES_SYSLOG src/common/log/SysLog.h src/common/log/SysLog.cpp)
-endif()
-
 if (WITH_GOOGLE_BREAKPAD)
     include_directories(/usr/local/include/breakpad)
     set(GOOGLE_BREAKPAD_LIBS breakpad_client)

@@ -30,7 +30,6 @@
 #include "base/kernel/interfaces/ISignalListener.h"
 
 
-class Httpd;
 class Proxy;
 
 
@@ -39,6 +38,7 @@ namespace xmrig {
 
 class Console;
 class Controller;
+class Httpd;
 class Process;
 class Signals;
 

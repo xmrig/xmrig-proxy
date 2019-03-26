@@ -28,9 +28,9 @@
 #include <string.h>
 
 
+#include "base/io/log/Log.h"
 #include "base/net/stratum/Client.h"
 #include "base/net/stratum/Pools.h"
-#include "common/log/Log.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "net/JobResult.h"
@@ -54,7 +54,7 @@ xmrig::NonceMapper::NonceMapper(size_t id, Controller *controller) :
     m_storage  = new NonceStorage();
     m_strategy = controller->config()->pools().createStrategy(this);
 
-    if (controller->config()->donateLevel() > 0) {
+    if (controller->config()->pools().donateLevel() > 0) {
         m_donate = new DonateStrategy(controller, this);
     }
 }
@@ -199,8 +199,7 @@ void xmrig::NonceMapper::onActive(IStrategy *strategy, Client *client)
     if (m_controller->config()->isVerbose()) {
         const char *tlsVersion = client->tlsVersion();
 
-        LOG_INFO(isColors() ? "#%03u " WHITE_BOLD("use pool ") CYAN_BOLD("%s:%d ") GREEN_BOLD("%s") " \x1B[1;30m%s "
-                            : "#%03u use pool %s:%d %s %s",
+        LOG_INFO("#%03u " WHITE_BOLD("use pool ") CYAN_BOLD("%s:%d ") GREEN_BOLD("%s") " \x1B[1;30m%s ",
                  m_id, client->host(), client->port(), tlsVersion ? tlsVersion : "", client->ip());
 
         const char *fingerprint = client->tlsFingerprint();
@@ -255,12 +254,6 @@ void xmrig::NonceMapper::onResultAccepted(IStrategy *, Client *client, const Sub
 }
 
 
-bool xmrig::NonceMapper::isColors() const
-{
-    return m_controller->config()->isColors();
-}
-
-
 xmrig::SubmitCtx xmrig::NonceMapper::submitCtx(int64_t seq)
 {
     if (!m_results.count(seq)) {
@@ -294,13 +287,11 @@ void xmrig::NonceMapper::setJob(const char *host, int port, const Job &job)
 {
     if (m_controller->config()->isVerbose()) {
         if (job.height()) {
-            LOG_INFO(isColors() ? "#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s") " height " WHITE_BOLD("%" PRIu64)
-                                : "#%03u new job from %s:%d diff %d algo %s height %" PRIu64,
+            LOG_INFO("#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s") " height " WHITE_BOLD("%" PRIu64),
                      m_id, host, port, job.diff(), job.algorithm().shortName(), job.height());
         }
         else {
-            LOG_INFO(isColors() ? "#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s")
-                                : "#%03u new job from %s:%d diff %d algo %s",
+            LOG_INFO("#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s"),
                      m_id, host, port, job.diff(), job.algorithm().shortName());
         }
     }

@@ -22,11 +22,11 @@
  */
 
 
+#include "base/io/log/backends/ConsoleLog.h"
+#include "base/io/log/backends/FileLog.h"
+#include "base/io/log/Log.h"
 #include "common/config/ConfigLoader.h"
 #include "common/interfaces/IControllerListener.h"
-#include "common/log/ConsoleLog.h"
-#include "common/log/FileLog.h"
-#include "common/log/Log.h"
 #include "common/Platform.h"
 #include "core/Config.h"
 #include "core/Controller.h"
@@ -34,7 +34,7 @@
 
 
 #ifdef HAVE_SYSLOG_H
-#   include "common/log/SysLog.h"
+#   include "base/io/log/backends/SysLog.h"
 #endif
 
 
@@ -99,7 +99,6 @@ int xmrig::Controller::init()
         return 1;
     }
 
-    Log::init();
     Platform::init(config()->userAgent());
 
     if (!config()->isBackground()) {

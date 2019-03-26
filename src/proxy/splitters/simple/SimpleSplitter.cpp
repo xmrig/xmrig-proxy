@@ -25,7 +25,7 @@
 #include <inttypes.h>
 
 
-#include "common/log/Log.h"
+#include "base/io/log/Log.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "proxy/Counters.h"
@@ -88,20 +88,11 @@ void xmrig::SimpleSplitter::printConnections()
 {
     const Upstreams info = upstreams();
 
-    if (m_controller->config()->isColors()) {
-        LOG_INFO("\x1B[01;32m* \x1B[01;37mupstreams\x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("sleep") "\x1B[01;37m%" PRIu64 "\x1B[0m" LABEL("error") "%s%" PRIu64 "\x1B[0m" LABEL("total") "\x1B[01;37m%" PRIu64,
-                 info.active ? "\x1B[01;32m" : "\x1B[01;31m", info.active, info.sleep, info.error ? "\x1B[01;31m" : "\x1B[01;37m", info.error, m_upstreams.size());
+    LOG_INFO("\x1B[01;32m* \x1B[01;37mupstreams\x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("sleep") "\x1B[01;37m%" PRIu64 "\x1B[0m" LABEL("error") "%s%" PRIu64 "\x1B[0m" LABEL("total") "\x1B[01;37m%" PRIu64,
+             info.active ? "\x1B[01;32m" : "\x1B[01;31m", info.active, info.sleep, info.error ? "\x1B[01;31m" : "\x1B[01;37m", info.error, m_upstreams.size());
 
-        LOG_INFO("\x1B[01;32m* \x1B[01;37mminers   \x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("max") "\x1B[01;37m%" PRIu64 "\x1B[0m",
-                 Counters::miners() ? "\x1B[01;32m" : "\x1B[01;31m", Counters::miners(), Counters::maxMiners());
-    }
-    else {
-        LOG_INFO("* upstreams: active %" PRIu64 " sleep %" PRIu64 " error %" PRIu64 " total %" PRIu64,
-                 info.active, info.sleep, info.error, m_upstreams.size());
-
-        LOG_INFO("* miners:    active %" PRIu64 " max %" PRIu64,
-                 Counters::miners(), Counters::maxMiners());
-    }
+    LOG_INFO("\x1B[01;32m* \x1B[01;37mminers   \x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("max") "\x1B[01;37m%" PRIu64 "\x1B[0m",
+             Counters::miners() ? "\x1B[01;32m" : "\x1B[01;31m", Counters::miners(), Counters::maxMiners());
 }
 
 

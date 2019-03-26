@@ -55,9 +55,8 @@
 
 
 #include "base/io/Json.h"
+#include "base/io/log/Log.h"
 #include "common/config/CommonConfig.h"
-#include "common/log/Log.h"
-#include "donate.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/prettywriter.h"
@@ -75,16 +74,9 @@ xmrig::CommonConfig::CommonConfig() :
     m_syslog(false),
     m_watch(true),
     m_apiPort(0),
-    m_donateLevel(kDefaultDonateLevel),
     m_printTime(60),
     m_state(NoneState)
 {
-}
-
-
-bool xmrig::CommonConfig::isColors() const
-{
-    return Log::colors;
 }
 
 
@@ -95,9 +87,7 @@ void xmrig::CommonConfig::printAPI()
         return;
     }
 
-    Log::i()->text(isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-13s") CYAN("%s:") CYAN_BOLD("%d")
-                              : " * %-13s%s:%d",
-                   "API BIND", isApiIPv6() ? "[::]" : "0.0.0.0", apiPort());
+    Log::print(GREEN_BOLD(" * ") WHITE_BOLD("%-13s") CYAN("%s:") CYAN_BOLD("%d"), "API BIND", isApiIPv6() ? "[::]" : "0.0.0.0", apiPort());
 #   endif
 }
 
@@ -120,9 +110,7 @@ void xmrig::CommonConfig::printVersions()
     snprintf(buf, sizeof buf, "MSVC/%d", MSVC_VERSION);
 #   endif
 
-    Log::i()->text(isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-13s") CYAN_BOLD("%s/%s") WHITE_BOLD(" %s")
-                              : " * %-13s%s/%s %s",
-                   "ABOUT", APP_NAME, APP_VERSION, buf);
+    Log::print(GREEN_BOLD(" * ") WHITE_BOLD("%-13s") CYAN_BOLD("%s/%s") WHITE_BOLD(" %s"), "ABOUT", APP_NAME, APP_VERSION, buf);
 
 #   if defined(XMRIG_AMD_PROJECT)
 #   if CL_VERSION_2_0
@@ -159,9 +147,7 @@ void xmrig::CommonConfig::printVersions()
     length += snprintf(buf + length, (sizeof buf) - length, "microhttpd/%s ", MHD_get_version());
 #   endif
 
-    Log::i()->text(isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-13slibuv/%s %s")
-                              : " * %-13slibuv/%s %s",
-                   "LIBS", uv_version_string(), buf);
+    Log::print(GREEN_BOLD(" * ") WHITE_BOLD("%-13slibuv/%s %s"), "LIBS", uv_version_string(), buf);
 }
 
 
@@ -340,12 +326,6 @@ bool xmrig::CommonConfig::parseString(int key, const char *arg)
         return parseBoolean(key, false);
 
     case DonateLevelKey: /* --donate-level */
-#       ifdef XMRIG_PROXY_PROJECT
-        if (strncmp(arg, "minemonero.pro", 14) == 0) {
-            m_donateLevel = 0;
-            return true;
-        }
-#       endif
         return parseUint64(key, strtol(arg, nullptr, 10));
 
     default:
@@ -397,9 +377,11 @@ bool xmrig::CommonConfig::parseInt(int key, int arg)
         break;
 
     case DonateLevelKey: /* --donate-level */
-        if (arg >= kMinimumDonateLevel && arg <= 99) {
-            m_donateLevel = arg;
-        }
+        m_pools.setDonateLevel(arg);
+        break;
+
+    case ProxyDonateKey: /* --donate-over-proxy */
+        m_pools.setProxyDonate(arg);
         break;
 
     case ApiPort: /* --api-port */

@@ -31,13 +31,13 @@
 #include "App.h"
 #include "base/io/Console.h"
 #include "base/kernel/Signals.h"
-#include "common/log/Log.h"
 #include "common/Platform.h"
 #include "core/Config.h"
 #include "core/Controller.h"
 #include "proxy/Proxy.h"
 #include "Summary.h"
 #include "version.h"
+#include "base/io/log/Log.h"
 
 #ifndef XMRIG_NO_HTTPD
 #   include "common/api/Httpd.h"
@@ -69,8 +69,6 @@ xmrig::App::~App()
 #   ifndef XMRIG_NO_HTTPD
     delete m_httpd;
 #   endif
-
-    Log::release();
 }
 
 
@@ -192,5 +190,5 @@ void xmrig::App::close()
     m_console->stop();
     m_controller->stop();
 
-    Log::release();
+    Log::destroy();
 }

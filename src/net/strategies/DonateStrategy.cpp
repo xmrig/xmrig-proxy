@@ -69,7 +69,7 @@ xmrig::DonateStrategy::DonateStrategy(Controller *controller, IStrategyListener 
     m_client->setAlgo(controller->config()->algorithm());
     m_client->setQuiet(true);
 
-    m_target = (100 - controller->config()->donateLevel()) * 60 * randomf(0.5, 1.5);
+    m_target = (100 - controller->config()->pools().donateLevel()) * 60 * randomf(0.5, 1.5);
 }
 
 
@@ -81,7 +81,7 @@ xmrig::DonateStrategy::~DonateStrategy()
 
 bool xmrig::DonateStrategy::reschedule()
 {
-    const uint64_t level = m_controller->config()->donateLevel() * 60;
+    const uint64_t level = m_controller->config()->pools().donateLevel() * 60;
     if (m_donateTicks < level) {
         return false;
     }

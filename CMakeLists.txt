@@ -24,11 +24,6 @@ set(HEADERS
     src/common/interfaces/IConfig.h
     src/common/interfaces/IConfigCreator.h
     src/common/interfaces/IControllerListener.h
-    src/common/interfaces/ILogBackend.h
-    src/common/log/BasicLog.h
-    src/common/log/ConsoleLog.h
-    src/common/log/FileLog.h
-    src/common/log/Log.h
     src/common/Platform.h
     src/common/xmrig.h
     src/core/Config.h
@@ -87,10 +82,6 @@ set(SOURCES
     src/common/config/ConfigWatcher.cpp
     src/common/crypto/Algorithm.cpp
     src/common/crypto/keccak.cpp
-    src/common/log/BasicLog.cpp
-    src/common/log/ConsoleLog.cpp
-    src/common/log/FileLog.cpp
-    src/common/log/Log.cpp
     src/common/Platform.cpp
     src/core/Config.cpp
     src/core/Controller.cpp

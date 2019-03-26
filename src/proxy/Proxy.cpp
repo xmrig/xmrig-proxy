@@ -31,8 +31,8 @@
 #include <time.h>
 
 
+#include "base/io/log/Log.h"
 #include "base/tools/Handle.h"
-#include "common/log/Log.h"
 #include "common/Platform.h"
 #include "core/Config.h"
 #include "core/Controller.h"
@@ -175,8 +175,7 @@ void xmrig::Proxy::printConnections()
 
 void xmrig::Proxy::printHashrate()
 {
-    LOG_INFO(isColors() ? "\x1B[01;32m* \x1B[01;37mspeed\x1B[0m \x1B[01;30m(1m) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(10m) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(1h) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(12h) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(24h) \x1B[01;36m%03.2f kH/s"
-                        : "* speed (1m) %03.2f, (10m) %03.2f, (1h) %03.2f, (12h) %03.2f, (24h) %03.2f kH/s",
+    LOG_INFO("\x1B[01;32m* \x1B[01;37mspeed\x1B[0m \x1B[01;30m(1m) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(10m) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(1h) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(12h) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(24h) \x1B[01;36m%03.2f kH/s",
              m_stats.hashrate(60), m_stats.hashrate(600), m_stats.hashrate(3600), m_stats.hashrate(3600 * 12), m_stats.hashrate(3600 * 24));
 }
 
@@ -229,12 +228,6 @@ void xmrig::Proxy::onConfigChanged(xmrig::Config *config, xmrig::Config *)
 }
 
 
-bool xmrig::Proxy::isColors() const
-{
-    return m_controller->config()->isColors();
-}
-
-
 void xmrig::Proxy::bind(const xmrig::BindHost &host)
 {
 #   ifndef XMRIG_NO_TLS
@@ -264,9 +257,8 @@ void xmrig::Proxy::gc()
 
 void xmrig::Proxy::print()
 {
-    LOG_INFO(isColors() ? "\x1B[01;36m%03.2f kH/s\x1B[0m, shares: \x1B[01;37m%" PRIu64 "\x1B[0m/%s%" PRIu64 "\x1B[0m +%" PRIu64 ", upstreams: \x1B[01;37m%" PRIu64 "\x1B[0m, miners: \x1B[01;37m%" PRIu64 "\x1B[0m (max \x1B[01;37m%" PRIu64 "\x1B[0m) +%u/-%u"
-                        : "%03.2f kH/s, shares: %" PRIu64 "/%s%" PRIu64 " +%" PRIu64 ", upstreams: %" PRIu64 ", miners: %" PRIu64 " (max %" PRIu64 " +%u/-%u",
-             m_stats.hashrate(60), m_stats.data().accepted, isColors() ? (m_stats.data().rejected ? "\x1B[31m" : "\x1B[01;37m") : "", m_stats.data().rejected,
+    LOG_INFO("\x1B[01;36m%03.2f kH/s\x1B[0m, shares: \x1B[01;37m%" PRIu64 "\x1B[0m/%s%" PRIu64 "\x1B[0m +%" PRIu64 ", upstreams: \x1B[01;37m%" PRIu64 "\x1B[0m, miners: \x1B[01;37m%" PRIu64 "\x1B[0m (max \x1B[01;37m%" PRIu64 "\x1B[0m) +%u/-%u",
+             m_stats.hashrate(60), m_stats.data().accepted, (m_stats.data().rejected ? "\x1B[0;31m" : "\x1B[1;37m"), m_stats.data().rejected,
              Counters::accepted, m_splitter->upstreams().active, Counters::miners(), Counters::maxMiners(), Counters::added(), Counters::removed());
 
     Counters::reset();

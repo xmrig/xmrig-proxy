@@ -81,7 +81,6 @@ private:
     constexpr static int kPrintInterval = 60;
     constexpr static int kGCInterval    = 60;
 
-    bool isColors() const;
     void bind(const BindHost &host);
     void gc();
     void print();

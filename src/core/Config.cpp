@@ -22,13 +22,14 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <assert.h>
 #include <limits.h>
 #include <string.h>
 #include <uv.h>
 
 
+#include "base/io/log/Log.h"
 #include "common/config/ConfigLoader.h"
-#include "common/log/Log.h"
 #include "common/xmrig.h"
 #include "core/Config.h"
 #include "core/ConfigCreator.h"
@@ -118,9 +119,9 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     }
 
     doc.AddMember("bind",          bind, allocator);
-    doc.AddMember("colors",        isColors(), allocator);
+    doc.AddMember("colors",        Log::colors, allocator);
     doc.AddMember("custom-diff",   diff(), allocator);
-    doc.AddMember("donate-level",  donateLevel(), allocator);
+    doc.AddMember("donate-level",  m_pools.donateLevel(), allocator);
     doc.AddMember("log-file",      m_logFile.toJSON(), allocator);
     doc.AddMember("mode",          StringRef(modeName()), allocator);
     doc.AddMember("pools",         m_pools.toJSON(doc), allocator);
@@ -132,12 +133,8 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("tls", m_tls.toJSON(doc), allocator);
 #   endif
 
-    doc.AddMember("user-agent",    m_userAgent.toJSON(), allocator);
-
-#   ifdef HAVE_SYSLOG_H
-    doc.AddMember("syslog", isSyslog(), allocator);
-#   endif
-
+    doc.AddMember("user-agent",   m_userAgent.toJSON(), allocator);
+    doc.AddMember("syslog",       isSyslog(), allocator);
     doc.AddMember("verbose",      isVerbose(), allocator);
     doc.AddMember("watch",        m_watch,     allocator);
     doc.AddMember("workers",      Workers::modeToJSON(workersMode()), allocator);

@@ -224,7 +224,7 @@ void ApiRouter::getMiner(rapidjson::Document &doc) const
     doc.AddMember("mode",         rapidjson::StringRef(m_controller->config()->modeName()), allocator);
     doc.AddMember("ua",           rapidjson::StringRef(Platform::userAgent()), allocator);
     doc.AddMember("uptime",       stats.uptime(), allocator);
-    doc.AddMember("donate_level", m_controller->config()->donateLevel(), allocator);
+    doc.AddMember("donate_level", m_controller->config()->pools().donateLevel(), allocator);
 
     if (stats.hashes && stats.donateHashes) {
         doc.AddMember("donated", normalize((double) stats.donateHashes / stats.hashes * 100.0), allocator);

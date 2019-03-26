@@ -25,7 +25,7 @@
 #include <inttypes.h>
 
 
-#include "common/log/Log.h"
+#include "base/io/log/Log.h"
 #include "proxy/Counters.h"
 #include "proxy/Miner.h"
 #include "proxy/splitters/nicehash/NonceStorage.h"

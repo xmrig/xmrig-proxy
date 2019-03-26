@@ -28,11 +28,11 @@
 
 
 #include "base/io/Json.h"
+#include "base/io/log/Log.h"
 #include "base/net/stratum/Job.h"
 #include "base/tools/Buffer.h"
 #include "base/tools/Chrono.h"
 #include "base/tools/Handle.h"
-#include "common/log/Log.h"
 #include "net/JobResult.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"

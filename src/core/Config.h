@@ -110,7 +110,6 @@ private:
     BindHosts m_bind;
     bool m_algoExt;
     bool m_debug;
-    bool m_ready;
     bool m_verbose;
     int m_mode;
     int m_reuseTimeout;

@@ -53,7 +53,6 @@ static const char *modeNames[] = {
 xmrig::Config::Config() : xmrig::CommonConfig(),
     m_algoExt(true),
     m_debug(false),
-    m_ready(false),
     m_verbose(false),
     m_mode(NICEHASH_MODE),
     m_reuseTimeout(0),

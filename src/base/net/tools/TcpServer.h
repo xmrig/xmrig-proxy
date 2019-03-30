@@ -22,65 +22,43 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
+#ifndef XMRIG_TCPSERVER_H
+#define XMRIG_TCPSERVER_H
 
 
-#include "core/config/Config.h"
-#include "core/Controller.h"
-#include "proxy/CustomDiff.h"
-#include "proxy/events/LoginEvent.h"
-#include "proxy/Miner.h"
+#include <uv.h>
 
 
-xmrig::CustomDiff::CustomDiff(xmrig::Controller *controller) :
-    m_controller(controller)
+namespace xmrig {
+
+
+class ITcpServerListener;
+class String;
+
+
+class TcpServer
 {
-}
+public:
+    TcpServer(const String &host, uint16_t port, ITcpServerListener *listener);
+    ~TcpServer();
+
+    int bind();
+
+private:
+    void create(uv_stream_t *stream, int status);
+
+    static void onConnection(uv_stream_t *stream, int status);
+
+    const String &m_host;
+    int m_version;
+    ITcpServerListener *m_listener;
+    sockaddr_storage m_addr;
+    uint16_t m_port;
+    uv_tcp_t *m_tcp;
+};
 
 
-xmrig::CustomDiff::~CustomDiff()
-{
-}
+} /* namespace xmrig */
 
 
-void xmrig::CustomDiff::onEvent(IEvent *event)
-{
-    switch (event->type())
-    {
-    case IEvent::LoginType:
-        login(static_cast<LoginEvent*>(event));
-        break;
-
-    default:
-        break;
-    }
-}
-
-
-void xmrig::CustomDiff::login(LoginEvent *event)
-{
-    if (event->miner()->routeId() != -1) {
-        return;
-    }
-
-    event->miner()->setCustomDiff(m_controller->config()->diff());
-
-    if (event->miner()->user().isNull()) {
-        return;
-    }
-
-    const char *str = strrchr(event->miner()->user(), '+');
-    if (!str) {
-        return;
-    }
-
-    const unsigned long diff = strtoul(str + 1, nullptr, 10);
-    if (diff < 100 || diff >= INT_MAX) {
-        return;
-    }
-
-    event->miner()->setCustomDiff(diff);
-}
+#endif /* XMRIG_TCPSERVER_H */

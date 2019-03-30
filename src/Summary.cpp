@@ -28,7 +28,7 @@
 
 
 #include "base/io/log/Log.h"
-#include "core/Config.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/BindHost.h"
 #include "Summary.h"
@@ -82,8 +82,7 @@ void Summary::print(xmrig::Controller *controller)
     controller->config()->printVersions();
     print_mode(controller);
     print_algo(controller);
-    controller->config()->printPools();
+    controller->config()->pools().print();
     print_bind(controller);
-    controller->config()->printAPI();
     print_commands(controller);
 }

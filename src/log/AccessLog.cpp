@@ -30,7 +30,7 @@
 
 
 #include "base/tools/Chrono.h"
-#include "core/Config.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "log/AccessLog.h"
 #include "proxy/Counters.h"

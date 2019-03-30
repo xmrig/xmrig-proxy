@@ -30,23 +30,18 @@
 #include "api/Api.h"
 #include "App.h"
 #include "base/io/Console.h"
+#include "base/io/log/Log.h"
 #include "base/kernel/Signals.h"
 #include "common/Platform.h"
-#include "core/Config.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/Proxy.h"
 #include "Summary.h"
 #include "version.h"
-#include "base/io/log/Log.h"
-
-#ifndef XMRIG_NO_HTTPD
-#   include "common/api/Httpd.h"
-#endif
 
 
 xmrig::App::App(Process *process) :
     m_console(nullptr),
-    m_httpd(nullptr),
     m_signals(nullptr)
 {
     m_controller = new Controller(process);
@@ -65,10 +60,6 @@ xmrig::App::~App()
     delete m_signals;
     delete m_console;
     delete m_controller;
-
-#   ifndef XMRIG_NO_HTTPD
-    delete m_httpd;
-#   endif
 }
 
 
@@ -86,17 +77,6 @@ int xmrig::App::exec()
 
 #   ifndef XMRIG_NO_API
     Api::start(m_controller);
-#   endif
-
-#   ifndef XMRIG_NO_HTTPD
-    m_httpd = new Httpd(
-                m_controller->config()->apiPort(),
-                m_controller->config()->apiToken(),
-                m_controller->config()->isApiIPv6(),
-                m_controller->config()->isApiRestricted()
-                );
-
-    m_httpd->start();
 #   endif
 
     m_controller->watch();
@@ -182,10 +162,6 @@ void xmrig::App::onSignal(int signum)
 
 void xmrig::App::close()
 {
-#   ifndef XMRIG_NO_HTTPD
-    m_httpd->stop();
-#   endif
-
     m_signals->stop();
     m_console->stop();
     m_controller->stop();

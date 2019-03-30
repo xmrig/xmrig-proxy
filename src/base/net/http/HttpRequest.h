@@ -5,8 +5,9 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
- *
+ * Copyright 2014-2019 heapwolf    <https://github.com/heapwolf>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,32 +23,38 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __HTTPREPLY_H__
-#define __HTTPREPLY_H__
+
+#ifndef XMRIG_HTTPREQUEST_H
+#define XMRIG_HTTPREQUEST_H
 
 
-#include <stdint.h>
+#include <map>
+#include <sstream>
+#include <string>
 
 
 namespace xmrig {
 
 
-class HttpReply
+class HttpRequest
 {
 public:
-    HttpReply() :
-        buf(nullptr),
-        status(200),
-        size(0)
-    {}
+    inline HttpRequest(uint64_t id) : method(0), m_id(id) {}
 
-    char *buf;
-    int status;
-    size_t size;
+    inline uint64_t id() const { return m_id; }
+
+    int method;
+    std::map<const std::string, const std::string> headers;
+    std::string body;
+    std::string url;
+
+private:
+    const uint64_t m_id;
 };
 
 
-} /* namespace xmrig */
+} // namespace xmrig
 
 
-#endif /* __HTTPREPLY_H__ */
+#endif // XMRIG_HTTPREQUEST_H
+

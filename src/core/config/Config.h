@@ -72,7 +72,7 @@ public:
     Config();
 
     bool isTLS() const;
-    bool reload(const char *json);
+    bool reload(const rapidjson::Value &json);
     const char *modeName() const;
 
     void getJSON(rapidjson::Document &doc) const override;
@@ -88,6 +88,7 @@ public:
     inline const xmrig::BindHosts &bind() const    { return m_bind; }
     inline int mode() const                        { return m_mode; }
     inline int reuseTimeout() const                { return m_reuseTimeout; }
+    inline static IConfig *create()                { return new Config(); }
     inline uint64_t diff() const                   { return m_diff; }
     inline void setVerbose(bool verbose)           { m_verbose = verbose; }
     inline void toggleVerbose()                    { m_verbose = !m_verbose; }
@@ -102,7 +103,7 @@ protected:
     bool parseBoolean(int key, bool enable) override;
     bool parseString(int key, const char *arg) override;
     bool parseUint64(int key, uint64_t arg) override;
-    void parseJSON(const rapidjson::Document &doc) override;
+    void parseJSON(const rapidjson::Value &json) override;
 
 private:
     void setMode(const char *mode);

@@ -25,10 +25,10 @@
 #include "base/io/log/backends/ConsoleLog.h"
 #include "base/io/log/backends/FileLog.h"
 #include "base/io/log/Log.h"
+#include "base/kernel/interfaces/IControllerListener.h"
 #include "common/config/ConfigLoader.h"
-#include "common/interfaces/IControllerListener.h"
 #include "common/Platform.h"
-#include "core/Config.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/Proxy.h"
 

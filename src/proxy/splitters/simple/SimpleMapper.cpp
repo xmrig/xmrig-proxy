@@ -30,7 +30,7 @@
 #include "base/io/log/Log.h"
 #include "base/net/stratum/Client.h"
 #include "base/net/stratum/Pools.h"
-#include "core/Config.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "net/JobResult.h"
 #include "net/strategies/DonateStrategy.h"

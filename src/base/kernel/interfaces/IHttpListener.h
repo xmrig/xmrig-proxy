@@ -22,65 +22,27 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
+#ifndef XMRIG_IHTTPLISTENER_H
+#define XMRIG_IHTTPLISTENER_H
 
 
-#include "core/config/Config.h"
-#include "core/Controller.h"
-#include "proxy/CustomDiff.h"
-#include "proxy/events/LoginEvent.h"
-#include "proxy/Miner.h"
+namespace xmrig {
 
 
-xmrig::CustomDiff::CustomDiff(xmrig::Controller *controller) :
-    m_controller(controller)
+class HttpRequest;
+class HttpResponse;
+
+
+class IHttpListener
 {
-}
+public:
+    virtual ~IHttpListener() = default;
+
+    virtual void onHttpRequest(const HttpRequest &req) = 0;
+};
 
 
-xmrig::CustomDiff::~CustomDiff()
-{
-}
+} /* namespace xmrig */
 
 
-void xmrig::CustomDiff::onEvent(IEvent *event)
-{
-    switch (event->type())
-    {
-    case IEvent::LoginType:
-        login(static_cast<LoginEvent*>(event));
-        break;
-
-    default:
-        break;
-    }
-}
-
-
-void xmrig::CustomDiff::login(LoginEvent *event)
-{
-    if (event->miner()->routeId() != -1) {
-        return;
-    }
-
-    event->miner()->setCustomDiff(m_controller->config()->diff());
-
-    if (event->miner()->user().isNull()) {
-        return;
-    }
-
-    const char *str = strrchr(event->miner()->user(), '+');
-    if (!str) {
-        return;
-    }
-
-    const unsigned long diff = strtoul(str + 1, nullptr, 10);
-    if (diff < 100 || diff >= INT_MAX) {
-        return;
-    }
-
-    event->miner()->setCustomDiff(diff);
-}
+#endif // XMRIG_IHTTPLISTENER_H

@@ -26,7 +26,7 @@
 
 
 #include "base/io/log/Log.h"
-#include "core/Config.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/Counters.h"
 #include "proxy/events/CloseEvent.h"
@@ -133,7 +133,7 @@ void xmrig::NonceSplitter::printState()
 void xmrig::NonceSplitter::onConfigChanged(Config *config, Config *previousConfig)
 {
     if (config->pools() != previousConfig->pools()) {
-        config->printPools();
+        config->pools().print();
 
         for (NonceMapper *mapper : m_upstreams) {
             mapper->reload(config->pools());

@@ -25,7 +25,7 @@
 
 #include "base/io/Json.h"
 #include "base/net/stratum/Pool.h"
-#include "core/Config.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"

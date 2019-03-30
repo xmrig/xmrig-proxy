@@ -5,6 +5,7 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2014-2019 heapwolf    <https://github.com/heapwolf>
  * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
  * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
@@ -23,64 +24,38 @@
  */
 
 
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
+#ifndef XMRIG_HTTPRESPONSE_H
+#define XMRIG_HTTPRESPONSE_H
 
 
-#include "core/config/Config.h"
-#include "core/Controller.h"
-#include "proxy/CustomDiff.h"
-#include "proxy/events/LoginEvent.h"
-#include "proxy/Miner.h"
+#include <map>
+#include <string>
 
 
-xmrig::CustomDiff::CustomDiff(xmrig::Controller *controller) :
-    m_controller(controller)
+namespace xmrig {
+
+
+class HttpResponse
 {
-}
+public:
+    HttpResponse(uint64_t id);
+
+    inline int statusCode() const                                           { return m_statusCode; }
+    inline void setHeader(const std::string &key, const std::string &value) { m_headers.insert({ key, value }); }
+    inline void setStatus(int code)                                         { m_statusCode = code; }
+
+    bool isAlive() const;
+    void end(const char *data = nullptr, size_t size = 0);
+
+private:
+    const uint64_t m_id;
+    int m_statusCode;
+    std::map<const std::string, const std::string> m_headers;
+};
 
 
-xmrig::CustomDiff::~CustomDiff()
-{
-}
+} // namespace xmrig
 
 
-void xmrig::CustomDiff::onEvent(IEvent *event)
-{
-    switch (event->type())
-    {
-    case IEvent::LoginType:
-        login(static_cast<LoginEvent*>(event));
-        break;
+#endif // XMRIG_HTTPRESPONSE_H
 
-    default:
-        break;
-    }
-}
-
-
-void xmrig::CustomDiff::login(LoginEvent *event)
-{
-    if (event->miner()->routeId() != -1) {
-        return;
-    }
-
-    event->miner()->setCustomDiff(m_controller->config()->diff());
-
-    if (event->miner()->user().isNull()) {
-        return;
-    }
-
-    const char *str = strrchr(event->miner()->user(), '+');
-    if (!str) {
-        return;
-    }
-
-    const unsigned long diff = strtoul(str + 1, nullptr, 10);
-    if (diff < 100 || diff >= INT_MAX) {
-        return;
-    }
-
-    event->miner()->setCustomDiff(diff);
-}

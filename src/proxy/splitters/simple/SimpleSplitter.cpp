@@ -26,7 +26,7 @@
 
 
 #include "base/io/log/Log.h"
-#include "core/Config.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/Counters.h"
 #include "proxy/events/CloseEvent.h"
@@ -136,7 +136,7 @@ void xmrig::SimpleSplitter::onConfigChanged(Config *config, Config *previousConf
     m_reuseTimeout = static_cast<uint64_t>(config->reuseTimeout());
 
     if (config->pools() != previousConfig->pools()) {
-        config->printPools();
+        config->pools().print();
 
         for (auto const &kv : m_upstreams) {
             kv.second->reload(config->pools());

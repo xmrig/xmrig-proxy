@@ -38,7 +38,6 @@ namespace xmrig {
 
 class Console;
 class Controller;
-class Httpd;
 class Process;
 class Signals;
 
@@ -61,7 +60,6 @@ private:
 
     Console *m_console;
     Controller *m_controller;
-    Httpd *m_httpd;
     Signals *m_signals;
 };
 

@@ -27,7 +27,7 @@
 
 #include "base/io/log/Log.h"
 #include "base/net/stratum/SubmitResult.h"
-#include "core/Config.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "log/ShareLog.h"
 #include "proxy/events/AcceptEvent.h"

@@ -5,6 +5,7 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2014-2019 heapwolf    <https://github.com/heapwolf>
  * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
  * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
@@ -22,26 +23,35 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_ICONFIGCREATOR_H
-#define XMRIG_ICONFIGCREATOR_H
+
+#ifndef XMRIG_HTTPAPIRESPONSE_H
+#define XMRIG_HTTPAPIRESPONSE_H
+
+
+#include "base/net/http/HttpResponse.h"
+#include "rapidjson/document.h"
 
 
 namespace xmrig {
 
 
-class IConfig;
-
-
-class IConfigCreator
+class HttpApiResponse : public HttpResponse
 {
 public:
-    virtual ~IConfigCreator() = default;
+    HttpApiResponse(uint64_t id);
+    HttpApiResponse(uint64_t id, int status);
 
-    virtual IConfig *create() const = 0;
+    inline rapidjson::Document &doc() { return m_doc; }
+
+    void end();
+
+private:
+    rapidjson::Document m_doc;
 };
 
 
-} /* namespace xmrig */
+} // namespace xmrig
 
 
-#endif // XMRIG_ICONFIGCREATOR_H
+#endif // XMRIG_HTTPAPIRESPONSE_H
+

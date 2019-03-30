@@ -63,7 +63,7 @@ xmrig::Config::Config() : xmrig::CommonConfig(),
 
 bool xmrig::Config::isTLS() const
 {
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     for (const BindHost &host : m_bind) {
         if (host.isTLS()) {
             return true;
@@ -124,7 +124,7 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("retry-pause",   m_pools.retryPause(), allocator);
     doc.AddMember("reuse-timeout", reuseTimeout(), allocator);
 
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     doc.AddMember("tls", m_tls.toJSON(doc), allocator);
 #   endif
 
@@ -320,7 +320,7 @@ void xmrig::Config::parseJSON(const rapidjson::Value &json)
         }
     }
 
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     const rapidjson::Value &tls = json["tls"];
     if (tls.IsObject()) {
         m_tls = std::move(TlsConfig(tls));

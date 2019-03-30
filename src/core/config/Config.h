@@ -37,7 +37,7 @@
 #include "rapidjson/fwd.h"
 
 
-#ifndef XMRIG_NO_TLS
+#ifdef XMRIG_FEATURE_TLS
 #   include "proxy/tls/TlsConfig.h"
 #endif
 

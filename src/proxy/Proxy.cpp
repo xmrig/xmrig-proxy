@@ -54,7 +54,7 @@
 #include "proxy/workers/Workers.h"
 
 
-#ifndef XMRIG_NO_TLS
+#ifdef XMRIG_FEATURE_TLS
 #   include "proxy/tls/TlsContext.h"
 #endif
 
@@ -137,7 +137,7 @@ xmrig::Proxy::~Proxy()
     delete m_debug;
     delete m_workers;
 
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     delete m_tls;
 #   endif
 }
@@ -145,9 +145,9 @@ xmrig::Proxy::~Proxy()
 
 void xmrig::Proxy::connect()
 {
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     if (m_controller->config()->isTLS()) {
-        m_tls = new xmrig::TlsContext();
+        m_tls = new TlsContext();
 
         if (!m_tls->load(m_controller->config()->tls())) {
             delete m_tls;
@@ -230,7 +230,7 @@ void xmrig::Proxy::onConfigChanged(xmrig::Config *config, xmrig::Config *)
 
 void xmrig::Proxy::bind(const xmrig::BindHost &host)
 {
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     if (host.isTLS() && !m_tls) {
         LOG_ERR("Failed to bind \"%s:%d\" error: \"TLS not available\".", host.host(), host.port());
 

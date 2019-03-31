@@ -174,7 +174,7 @@ void xmrig::Miner::setJob(Job &job)
         return;
     }
 
-    m_height = job.height();
+    m_height = 1802220;
     m_job    = job;
 
     if (hasExtension(EXT_NICEHASH)) {
@@ -192,7 +192,7 @@ void xmrig::Miner::setJob(Job &job)
 //        customDiff = true;
 //    }
 
-    sendJob(job.rawBlob(), job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height());
+    sendJob(job.rawBlob(), job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), m_height);
 }
 
 

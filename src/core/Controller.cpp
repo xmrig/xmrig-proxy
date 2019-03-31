@@ -4,8 +4,9 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,19 +23,27 @@
  */
 
 
+#include <assert.h>
+
+
 #include "base/io/log/backends/ConsoleLog.h"
 #include "base/io/log/backends/FileLog.h"
 #include "base/io/log/Log.h"
+#include "base/kernel/interfaces/IControllerListener.h"
 #include "common/config/ConfigLoader.h"
-#include "common/interfaces/IControllerListener.h"
 #include "common/Platform.h"
-#include "core/Config.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/Proxy.h"
 
 
 #ifdef HAVE_SYSLOG_H
 #   include "base/io/log/backends/SysLog.h"
+#endif
+
+
+#ifdef XMRIG_FEATURE_API
+#   include "api/Api.h"
 #endif
 
 
@@ -50,11 +59,15 @@ public:
 
     inline ~ControllerPrivate()
     {
+#       ifdef XMRIG_FEATURE_API
+        delete api;
+#       endif
+
         delete proxy;
         delete config;
     }
 
-
+    Api *api;
     Process *process;
     Proxy *proxy;
     std::vector<IControllerListener *> listeners;
@@ -74,8 +87,18 @@ xmrig::Controller::~Controller()
 }
 
 
+xmrig::Api *xmrig::Controller::api() const
+{
+    assert(d_ptr->api != nullptr);
+
+    return d_ptr->api;
+}
+
+
 xmrig::Config *xmrig::Controller::config() const
 {
+    assert(d_ptr->config != nullptr);
+
     return d_ptr->config;
 }
 
@@ -98,6 +121,10 @@ int xmrig::Controller::init()
     if (!d_ptr->config) {
         return 1;
     }
+
+#   ifdef XMRIG_FEATURE_API
+    d_ptr->api = new Api(this);
+#   endif
 
     Platform::init(config()->userAgent());
 
@@ -138,22 +165,42 @@ void xmrig::Controller::addListener(IControllerListener *listener)
 }
 
 
-void xmrig::Controller::stop()
-{
-    ConfigLoader::release();
-
-    delete d_ptr->proxy;
-    d_ptr->proxy = nullptr;
-}
-
-
-void xmrig::Controller::watch()
+void xmrig::Controller::save()
 {
     if (!config()) {
         return;
     }
 
+    if (d_ptr->config->isShouldSave()) {
+        d_ptr->config->save();
+    }
+
     ConfigLoader::watch(d_ptr->config);
+}
+
+
+void xmrig::Controller::start()
+{
+    proxy()->connect();
+
+#   ifdef XMRIG_FEATURE_API
+    api()->start();
+#   endif
+
+    save();
+}
+
+
+void xmrig::Controller::stop()
+{
+#   ifdef XMRIG_FEATURE_API
+    api()->stop();
+#   endif
+
+    ConfigLoader::release();
+
+    delete d_ptr->proxy;
+    d_ptr->proxy = nullptr;
 }
 
 

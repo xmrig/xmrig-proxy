@@ -28,7 +28,7 @@
 #include <string.h>
 
 
-#include "core/Config.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/CustomDiff.h"
 #include "proxy/events/LoginEvent.h"

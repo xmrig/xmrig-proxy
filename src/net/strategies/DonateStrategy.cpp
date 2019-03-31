@@ -29,7 +29,7 @@
 #include "common/crypto/keccak.h"
 #include "common/Platform.h"
 #include "common/xmrig.h"
-#include "core/Config.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "donate.h"
 #include "net/strategies/DonateStrategy.h"
@@ -59,7 +59,7 @@ xmrig::DonateStrategy::DonateStrategy(Controller *controller, IStrategyListener 
 
     m_client = new Client(-1, Platform::userAgent(), this);
 
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     m_client->setPool(Pool("donate.ssl.xmrig.com", 8443, userId, nullptr, Pool::kKeepAliveTimeout, false, true));
 #   else
     m_client->setPool(Pool("donate.v2.xmrig.com", 5555, userId, nullptr));

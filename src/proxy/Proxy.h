@@ -30,7 +30,7 @@
 #include <uv.h>
 
 
-#include "common/interfaces/IControllerListener.h"
+#include "base/kernel/interfaces/IControllerListener.h"
 #include "proxy/CustomDiff.h"
 #include "proxy/Stats.h"
 #include "proxy/workers/Worker.h"

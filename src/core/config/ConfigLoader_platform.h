@@ -46,12 +46,13 @@ static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:A:a:C:m:";
 static struct option const options[] = {
     { "access-log-file",   1, nullptr, IConfig::AccessLogFileKey  },
     { "algo",              1, nullptr, IConfig::AlgorithmKey      },
-    { "api-access-token",  1, nullptr, IConfig::ApiAccessTokenKey },
-    { "api-ipv6",          0, nullptr, IConfig::ApiIPv6Key        },
-    { "api-no-restricted", 0, nullptr, IConfig::ApiRestrictedKey  },
-    { "api-port",          1, nullptr, IConfig::ApiPort           },
     { "api-worker-id",     1, nullptr, IConfig::ApiWorkerIdKey    },
     { "api-id",            1, nullptr, IConfig::ApiIdKey          },
+    { "http-enabled",      0, nullptr, IConfig::HttpEnabledKey    },
+    { "http-host",         1, nullptr, IConfig::HttpHostKey       },
+    { "http-access-token", 1, nullptr, IConfig::HttpAccessTokenKey},
+    { "http-port",         1, nullptr, IConfig::HttpPort          },
+    { "http-no-restricted",0, nullptr, IConfig::HttpRestrictedKey },
     { "background",        0, nullptr, IConfig::BackgroundKey     },
     { "bind",              1, nullptr, IConfig::BindKey           },
     { "coin",              1, nullptr, IConfig::CoinKey           },
@@ -90,6 +91,14 @@ static struct option const options[] = {
     { "tls-ciphersuites",  1, nullptr, IConfig::TlsCipherSuitesKey},
     { "no-algo-ext",       0, nullptr, IConfig::AlgoExtKey        },
     { "access-password",   1, nullptr, IConfig::ProxyPasswordKey  },
+
+#   ifdef XMRIG_DEPRECATED
+    { "api-port",              1, nullptr, IConfig::ApiPort               },
+    { "api-access-token",      1, nullptr, IConfig::ApiAccessTokenKey     },
+    { "api-no-restricted",     0, nullptr, IConfig::ApiRestrictedKey      },
+    { "api-ipv6",              0, nullptr, IConfig::ApiIPv6Key            },
+#   endif
+
     { nullptr,             0, nullptr, 0 }
 };
 
@@ -120,11 +129,7 @@ static struct option const config_options[] = {
 
 
 static struct option const api_options[] = {
-    { "port",          1, nullptr, IConfig::ApiPort           },
-    { "access-token",  1, nullptr, IConfig::ApiAccessTokenKey },
     { "worker-id",     1, nullptr, IConfig::ApiWorkerIdKey    },
-    { "ipv6",          0, nullptr, IConfig::ApiIPv6Key        },
-    { "restricted",    0, nullptr, IConfig::ApiRestrictedKey  },
     { "id",            1, nullptr, IConfig::ApiIdKey          },
     { nullptr,         0, nullptr, 0 }
 };

@@ -27,7 +27,7 @@
 
 
 #include "base/io/log/Log.h"
-#include "core/Config.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/events/CloseEvent.h"

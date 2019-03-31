@@ -31,8 +31,7 @@
 #include "base/io/log/Log.h"
 #include "common/config/ConfigLoader.h"
 #include "common/xmrig.h"
-#include "core/Config.h"
-#include "core/ConfigCreator.h"
+#include "core/config/Config.h"
 #include "donate.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filewritestream.h"
@@ -64,7 +63,7 @@ xmrig::Config::Config() : xmrig::CommonConfig(),
 
 bool xmrig::Config::isTLS() const
 {
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     for (const BindHost &host : m_bind) {
         if (host.isTLS()) {
             return true;
@@ -76,9 +75,9 @@ bool xmrig::Config::isTLS() const
 }
 
 
-bool xmrig::Config::reload(const char *json)
+bool xmrig::Config::reload(const rapidjson::Value &json)
 {
-    return xmrig::ConfigLoader::reload(this, json);
+    return ConfigLoader::reload(this, json);
 }
 
 
@@ -102,13 +101,10 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("algo-ext",        m_algoExt, allocator);
 
     Value api(kObjectType);
-    api.AddMember("port",         apiPort(), allocator);
-    api.AddMember("access-token", m_apiToken.toJSON(), allocator);
     api.AddMember("id",           m_apiId.toJSON(), allocator);
     api.AddMember("worker-id",    m_apiWorkerId.toJSON(), allocator);
-    api.AddMember("ipv6",         isApiIPv6(), allocator);
-    api.AddMember("restricted",   isApiRestricted(), allocator);
     doc.AddMember("api",          api, allocator);
+    doc.AddMember("http",         m_http.toJSON(doc), allocator);
 
     doc.AddMember("background",   isBackground(), allocator);
 
@@ -128,7 +124,7 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("retry-pause",   m_pools.retryPause(), allocator);
     doc.AddMember("reuse-timeout", reuseTimeout(), allocator);
 
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     doc.AddMember("tls", m_tls.toJSON(doc), allocator);
 #   endif
 
@@ -142,7 +138,7 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
 
 xmrig::Config *xmrig::Config::load(Process *process, IConfigListener *listener)
 {
-    return static_cast<Config*>(ConfigLoader::load(process, new ConfigCreator(), listener));
+    return static_cast<Config*>(ConfigLoader::load(process, listener));
 }
 
 
@@ -305,11 +301,11 @@ bool xmrig::Config::parseUint64(int key, uint64_t arg)
 }
 
 
-void xmrig::Config::parseJSON(const rapidjson::Document &doc)
+void xmrig::Config::parseJSON(const rapidjson::Value &json)
 {
-    CommonConfig::parseJSON(doc);
+    CommonConfig::parseJSON(json);
 
-    const rapidjson::Value &bind = doc["bind"];
+    const rapidjson::Value &bind = json["bind"];
     if (bind.IsArray()) {
         for (const rapidjson::Value &value : bind.GetArray()) {
             if (value.IsObject()) {
@@ -324,8 +320,8 @@ void xmrig::Config::parseJSON(const rapidjson::Document &doc)
         }
     }
 
-#   ifndef XMRIG_NO_TLS
-    const rapidjson::Value &tls = doc["tls"];
+#   ifdef XMRIG_FEATURE_TLS
+    const rapidjson::Value &tls = json["tls"];
     if (tls.IsObject()) {
         m_tls = std::move(TlsConfig(tls));
     }

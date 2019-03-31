@@ -22,54 +22,46 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_CONTROLLER_H
-#define XMRIG_CONTROLLER_H
+
+#ifndef XMRIG_APIREQUEST_H
+#define XMRIG_APIREQUEST_H
 
 
-#include "base/kernel/interfaces/IConfigListener.h"
-#include "proxy/workers/Worker.h"
+#include "api/interfaces/IApiRequest.h"
 
 
 namespace xmrig {
 
 
-class Api;
-class Config;
-class ControllerPrivate;
-class IControllerListener;
-class Miner;
-class Process;
-class Proxy;
-class StatsData;
-
-
-class Controller : public IConfigListener
+class ApiRequest : public IApiRequest
 {
 public:
-    Controller(Process *process);
-    ~Controller() override;
-
-    Api *api() const;
-    Config *config() const;
-    const StatsData &statsData() const;
-    const std::vector<Worker> &workers() const;
-    int init();
-    Proxy *proxy() const;
-    std::vector<Miner*> miners() const;
-    void addListener(IControllerListener *listener);
-    void save();
-    void start();
-    void stop();
+    ApiRequest(Source source, bool restricted);
+    ~ApiRequest() override;
 
 protected:
-    void onNewConfig(IConfig *config) override;
+    inline bool isDone() const override          { return m_state == STATE_DONE; }
+    inline bool isNew() const override           { return m_state == STATE_NEW; }
+    inline bool isRestricted() const override    { return m_restricted; }
+    inline Source source() const override        { return m_source; }
+    inline void accept() override                { m_state = STATE_ACCEPTED; }
+    inline void done(int) override               { m_state = STATE_DONE; }
 
 private:
-    ControllerPrivate *d_ptr;
+    enum State {
+        STATE_NEW,
+        STATE_ACCEPTED,
+        STATE_DONE
+    };
+
+    bool m_restricted;
+    Source m_source;
+    State m_state;
 };
 
 
-} /* namespace xmrig */
+} // namespace xmrig
 
 
-#endif /* XMRIG_CONTROLLER_H */
+#endif // XMRIG_APIREQUEST_H
+

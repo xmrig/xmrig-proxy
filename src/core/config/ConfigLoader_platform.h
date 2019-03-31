@@ -129,11 +129,7 @@ static struct option const config_options[] = {
 
 
 static struct option const api_options[] = {
-    { "port",          1, nullptr, IConfig::ApiPort           },
-    { "access-token",  1, nullptr, IConfig::ApiAccessTokenKey },
     { "worker-id",     1, nullptr, IConfig::ApiWorkerIdKey    },
-    { "ipv6",          0, nullptr, IConfig::ApiIPv6Key        },
-    { "restricted",    0, nullptr, IConfig::ApiRestrictedKey  },
     { "id",            1, nullptr, IConfig::ApiIdKey          },
     { nullptr,         0, nullptr, 0 }
 };

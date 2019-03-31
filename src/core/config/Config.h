@@ -82,6 +82,7 @@ public:
     inline bool hasAlgoExt() const                 { return isDonateOverProxy() ? m_algoExt : true; }
     inline bool isDebug() const                    { return m_debug; }
     inline bool isDonateOverProxy() const          { return m_pools.donateLevel() == 0 || m_mode == SIMPLE_MODE; }
+    inline bool isShouldSave() const               { return m_upgrade && isAutoSave(); }
     inline bool isVerbose() const                  { return m_verbose; }
     inline const String &accessLog() const         { return m_accessLog; }
     inline const String &password() const          { return m_password; }

@@ -22,54 +22,48 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_CONTROLLER_H
-#define XMRIG_CONTROLLER_H
+
+#ifndef XMRIG_HTTPAPIREQUEST_H
+#define XMRIG_HTTPAPIREQUEST_H
 
 
-#include "base/kernel/interfaces/IConfigListener.h"
-#include "proxy/workers/Worker.h"
+#include "api/requests/ApiRequest.h"
+#include "base/net/http/HttpApiResponse.h"
+#include "base/tools/String.h"
 
 
 namespace xmrig {
 
 
-class Api;
-class Config;
-class ControllerPrivate;
-class IControllerListener;
-class Miner;
-class Process;
-class Proxy;
-class StatsData;
+class HttpRequest;
 
 
-class Controller : public IConfigListener
+class HttpApiRequest : public ApiRequest
 {
 public:
-    Controller(Process *process);
-    ~Controller() override;
-
-    Api *api() const;
-    Config *config() const;
-    const StatsData &statsData() const;
-    const std::vector<Worker> &workers() const;
-    int init();
-    Proxy *proxy() const;
-    std::vector<Miner*> miners() const;
-    void addListener(IControllerListener *listener);
-    void save();
-    void start();
-    void stop();
+    HttpApiRequest(const HttpRequest &req, bool restricted);
 
 protected:
-    void onNewConfig(IConfig *config) override;
+    inline rapidjson::Document &doc() override           { return m_res.doc(); }
+    inline rapidjson::Value &reply() override            { return m_res.doc(); }
+    inline const String &url() const override            { return m_url; }
+
+    const rapidjson::Value &json() const override;
+    Method method() const override;
+    void accept() override;
+    void done(int status) override;
 
 private:
-    ControllerPrivate *d_ptr;
+    bool m_parsed;
+    const HttpRequest &m_req;
+    HttpApiResponse m_res;
+    rapidjson::Document m_body;
+    String m_url;
 };
 
 
-} /* namespace xmrig */
+} // namespace xmrig
 
 
-#endif /* XMRIG_CONTROLLER_H */
+#endif // XMRIG_HTTPAPIREQUEST_H
+

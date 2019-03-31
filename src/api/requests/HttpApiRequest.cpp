@@ -22,54 +22,55 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_CONTROLLER_H
-#define XMRIG_CONTROLLER_H
+
+#include "api/requests/HttpApiRequest.h"
+#include "base/net/http/HttpRequest.h"
+#include "rapidjson/error/en.h"
 
 
-#include "base/kernel/interfaces/IConfigListener.h"
-#include "proxy/workers/Worker.h"
-
-
-namespace xmrig {
-
-
-class Api;
-class Config;
-class ControllerPrivate;
-class IControllerListener;
-class Miner;
-class Process;
-class Proxy;
-class StatsData;
-
-
-class Controller : public IConfigListener
+xmrig::HttpApiRequest::HttpApiRequest(const HttpRequest &req, bool restricted) :
+    ApiRequest(SOURCE_HTTP, restricted),
+    m_parsed(false),
+    m_req(req),
+    m_res(req.id()),
+    m_url(req.url.c_str())
 {
-public:
-    Controller(Process *process);
-    ~Controller() override;
-
-    Api *api() const;
-    Config *config() const;
-    const StatsData &statsData() const;
-    const std::vector<Worker> &workers() const;
-    int init();
-    Proxy *proxy() const;
-    std::vector<Miner*> miners() const;
-    void addListener(IControllerListener *listener);
-    void save();
-    void start();
-    void stop();
-
-protected:
-    void onNewConfig(IConfig *config) override;
-
-private:
-    ControllerPrivate *d_ptr;
-};
+}
 
 
-} /* namespace xmrig */
+const rapidjson::Value &xmrig::HttpApiRequest::json() const
+{
+    return m_body;
+}
 
 
-#endif /* XMRIG_CONTROLLER_H */
+xmrig::IApiRequest::Method xmrig::HttpApiRequest::method() const
+{
+    return static_cast<IApiRequest::Method>(m_req.method);
+}
+
+
+void xmrig::HttpApiRequest::accept()
+{
+    using namespace rapidjson;
+
+    ApiRequest::accept();
+
+    if (!m_parsed && !m_req.body.empty()) {
+        m_parsed = true;
+        m_body.Parse<kParseCommentsFlag | kParseTrailingCommasFlag>(m_req.body.c_str());
+
+        if (m_body.HasParseError()) {
+            reply().AddMember("error", StringRef(GetParseError_En(m_body.GetParseError())), doc().GetAllocator());;
+        }
+    }
+}
+
+
+void xmrig::HttpApiRequest::done(int status)
+{
+    ApiRequest::done(status);
+
+    m_res.setStatus(status);
+    m_res.end();
+}

@@ -22,54 +22,18 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_CONTROLLER_H
-#define XMRIG_CONTROLLER_H
+
+#include "api/requests/ApiRequest.h"
 
 
-#include "base/kernel/interfaces/IConfigListener.h"
-#include "proxy/workers/Worker.h"
-
-
-namespace xmrig {
-
-
-class Api;
-class Config;
-class ControllerPrivate;
-class IControllerListener;
-class Miner;
-class Process;
-class Proxy;
-class StatsData;
-
-
-class Controller : public IConfigListener
+xmrig::ApiRequest::ApiRequest(Source source, bool restricted) :
+    m_restricted(restricted),
+    m_source(source),
+    m_state(STATE_NEW)
 {
-public:
-    Controller(Process *process);
-    ~Controller() override;
-
-    Api *api() const;
-    Config *config() const;
-    const StatsData &statsData() const;
-    const std::vector<Worker> &workers() const;
-    int init();
-    Proxy *proxy() const;
-    std::vector<Miner*> miners() const;
-    void addListener(IControllerListener *listener);
-    void save();
-    void start();
-    void stop();
-
-protected:
-    void onNewConfig(IConfig *config) override;
-
-private:
-    ControllerPrivate *d_ptr;
-};
+}
 
 
-} /* namespace xmrig */
-
-
-#endif /* XMRIG_CONTROLLER_H */
+xmrig::ApiRequest::~ApiRequest()
+{
+}

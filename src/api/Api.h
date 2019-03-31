@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
- *
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,30 +22,60 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __API_H__
-#define __API_H__
+#ifndef XMRIG_API_H
+#define XMRIG_API_H
 
 
-class ApiRouter;
+#include <vector>
+
+
+#include "base/kernel/interfaces/IControllerListener.h"
 
 
 namespace xmrig {
-    class Controller;
-    class HttpReply;
-    class HttpRequest;
-}
 
 
-class Api
+class ApiRouter;
+class Controller;
+class Httpd;
+class HttpRequest;
+class IApiListener;
+class IApiRequest;
+class String;
+
+
+class Api : public IControllerListener
 {
 public:
-    static bool start(xmrig::Controller *controller);
-    static void release();
+    Api(Controller *controller);
+    ~Api() override;
 
-    static void exec(const xmrig::HttpRequest &req, xmrig::HttpReply &reply);
+    inline const char *id() const                   { return m_id; }
+    inline const char *workerId() const             { return m_workerId; }
+    inline void addListener(IApiListener *listener) { m_listeners.push_back(listener); }
+
+    void request(const HttpRequest &req);
+    void start();
+    void stop();
+
+protected:
+    void onConfigChanged(Config *config, Config *previousConfig) override;
 
 private:
-    static ApiRouter *m_router;
+    void exec(IApiRequest &request);
+    void genId(const String &id);
+    void genWorkerId(const String &id);
+
+    ApiRouter *m_v1;
+    char m_id[32];
+    char m_workerId[128];
+    Controller *m_controller;
+    Httpd *m_httpd;
+    std::vector<IApiListener *> m_listeners;
 };
 
-#endif /* __API_H__ */
+
+} // namespace xmrig
+
+
+#endif /* XMRIG_API_H */

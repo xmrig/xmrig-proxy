@@ -75,12 +75,7 @@ int xmrig::App::exec()
 
     Summary::print(m_controller);
 
-#   ifndef XMRIG_NO_API
-    Api::start(m_controller);
-#   endif
-
-    m_controller->watch();
-    m_controller->proxy()->connect();
+    m_controller->start();
 
     const int rc = uv_run(uv_default_loop(), UV_RUN_DEFAULT);
     uv_loop_close(uv_default_loop());

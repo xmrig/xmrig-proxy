@@ -22,54 +22,49 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_CONTROLLER_H
-#define XMRIG_CONTROLLER_H
+#ifndef XMRIG_HTTPD_H
+#define XMRIG_HTTPD_H
 
 
-#include "base/kernel/interfaces/IConfigListener.h"
-#include "proxy/workers/Worker.h"
+#include <stdint.h>
+
+
+#include "base/kernel/interfaces/IControllerListener.h"
+#include "base/kernel/interfaces/IHttpListener.h"
 
 
 namespace xmrig {
 
 
-class Api;
-class Config;
-class ControllerPrivate;
-class IControllerListener;
-class Miner;
-class Process;
-class Proxy;
-class StatsData;
+class Controller;
+class HttpServer;
+class TcpServer;
 
 
-class Controller : public IConfigListener
+class Httpd : public IControllerListener, public IHttpListener
 {
 public:
-    Controller(Process *process);
-    ~Controller() override;
+    Httpd(Controller *controller);
+    ~Httpd() override;
 
-    Api *api() const;
-    Config *config() const;
-    const StatsData &statsData() const;
-    const std::vector<Worker> &workers() const;
-    int init();
-    Proxy *proxy() const;
-    std::vector<Miner*> miners() const;
-    void addListener(IControllerListener *listener);
-    void save();
-    void start();
+    bool start();
     void stop();
 
 protected:
-    void onNewConfig(IConfig *config) override;
+    void onConfigChanged(Config *config, Config *previousConfig) override;
+    void onHttpRequest(const HttpRequest &req) override;
 
 private:
-    ControllerPrivate *d_ptr;
+    int auth(const HttpRequest &req) const;
+
+    Controller *m_controller;
+    HttpServer *m_http;
+    TcpServer *m_server;
+    uint16_t m_port;
 };
 
 
 } /* namespace xmrig */
 
 
-#endif /* XMRIG_CONTROLLER_H */
+#endif /* XMRIG_HTTPD_H */

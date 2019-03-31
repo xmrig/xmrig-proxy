@@ -22,54 +22,51 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_CONTROLLER_H
-#define XMRIG_CONTROLLER_H
+#ifndef XMRIG_APIROUTER_H
+#define XMRIG_APIROUTER_H
 
 
-#include "base/kernel/interfaces/IConfigListener.h"
-#include "proxy/workers/Worker.h"
+#include "api/interfaces/IApiListener.h"
+#include "proxy/StatsData.h"
+#include "rapidjson/fwd.h"
 
 
 namespace xmrig {
 
 
-class Api;
-class Config;
-class ControllerPrivate;
-class IControllerListener;
-class Miner;
-class Process;
-class Proxy;
-class StatsData;
+class Controller;
+class HttpReply;
+class HttpRequest;
 
 
-class Controller : public IConfigListener
+
+class ApiRouter : public xmrig::IApiListener
 {
 public:
-    Controller(Process *process);
-    ~Controller() override;
+    ApiRouter(Controller *controller);
+    ~ApiRouter() override;
 
-    Api *api() const;
-    Config *config() const;
-    const StatsData &statsData() const;
-    const std::vector<Worker> &workers() const;
-    int init();
-    Proxy *proxy() const;
-    std::vector<Miner*> miners() const;
-    void addListener(IControllerListener *listener);
-    void save();
-    void start();
-    void stop();
+//    void get(const xmrig::HttpRequest &req, xmrig::HttpReply &reply) const;
+//    void exec(const xmrig::HttpRequest &req, xmrig::HttpReply &reply);
 
 protected:
-    void onNewConfig(IConfig *config) override;
+    void onRequest(IApiRequest &request) override;
 
 private:
-    ControllerPrivate *d_ptr;
+    void getHashrate(rapidjson::Value &reply, rapidjson::Document &doc) const;
+    void getIdentify(rapidjson::Value &reply, rapidjson::Document &doc) const;
+    void getMiner(rapidjson::Value &reply, rapidjson::Document &doc) const;
+    void getMiners(rapidjson::Value &reply, rapidjson::Document &doc) const;
+    void getMinersSummary(rapidjson::Value &reply, rapidjson::Document &doc) const;
+    void getResourcesSummary(rapidjson::Value &reply, rapidjson::Document &doc) const;
+    void getResults(rapidjson::Value &reply, rapidjson::Document &doc) const;
+    void getWorkers(rapidjson::Value &reply, rapidjson::Document &doc) const;
+
+    Controller *m_controller;
 };
 
 
-} /* namespace xmrig */
+} // namespace xmrig
 
 
-#endif /* XMRIG_CONTROLLER_H */
+#endif /* XMRIG_APIROUTER_H */

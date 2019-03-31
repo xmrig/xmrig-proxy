@@ -27,17 +27,9 @@
 #include <uv.h>
 #include <thread>
 
-#if _WIN32
-#   include "winsock2.h"
-#else
-#   include "unistd.h"
-#endif
-
 
 #include "api/v1/ApiRouter.h"
 #include "base/tools/Buffer.h"
-//#include "common/api/HttpReply.h"
-//#include "common/api/HttpRequest.h"
 #include "common/crypto/keccak.h"
 #include "common/Platform.h"
 #include "core/config/Config.h"

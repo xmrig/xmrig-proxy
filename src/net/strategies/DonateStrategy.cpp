@@ -29,7 +29,7 @@
 #include "common/crypto/keccak.h"
 #include "common/Platform.h"
 #include "common/xmrig.h"
-#include "core/Config.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "donate.h"
 #include "net/strategies/DonateStrategy.h"
@@ -59,7 +59,7 @@ xmrig::DonateStrategy::DonateStrategy(Controller *controller, IStrategyListener 
 
     m_client = new Client(-1, Platform::userAgent(), this);
 
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     m_client->setPool(Pool("donate.ssl.xmrig.com", 8443, userId, nullptr, Pool::kKeepAliveTimeout, false, true));
 #   else
     m_client->setPool(Pool("donate.v2.xmrig.com", 5555, userId, nullptr));
@@ -69,7 +69,7 @@ xmrig::DonateStrategy::DonateStrategy(Controller *controller, IStrategyListener 
     m_client->setAlgo(controller->config()->algorithm());
     m_client->setQuiet(true);
 
-    m_target = (100 - controller->config()->donateLevel()) * 60 * randomf(0.5, 1.5);
+    m_target = (100 - controller->config()->pools().donateLevel()) * 60 * randomf(0.5, 1.5);
 }
 
 
@@ -81,7 +81,7 @@ xmrig::DonateStrategy::~DonateStrategy()
 
 bool xmrig::DonateStrategy::reschedule()
 {
-    const uint64_t level = m_controller->config()->donateLevel() * 60;
+    const uint64_t level = m_controller->config()->pools().donateLevel() * 60;
     if (m_donateTicks < level) {
         return false;
     }

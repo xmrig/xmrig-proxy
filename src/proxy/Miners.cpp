@@ -26,8 +26,8 @@
 #include <vector>
 
 
+#include "base/io/log/Log.h"
 #include "base/tools/Handle.h"
-#include "common/log/Log.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/ConnectionEvent.h"
 #include "proxy/Miner.h"

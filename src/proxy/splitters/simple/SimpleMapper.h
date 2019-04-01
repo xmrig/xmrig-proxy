@@ -74,7 +74,6 @@ protected:
     void onResultAccepted(IStrategy *strategy, Client *client, const SubmitResult &result, const char *error) override;
 
 private:
-    bool isColors() const;
     bool isValidJobId(const String &id) const;
     void connect();
     void setJob(const Job &job);

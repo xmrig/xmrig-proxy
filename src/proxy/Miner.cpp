@@ -28,11 +28,11 @@
 
 
 #include "base/io/Json.h"
+#include "base/io/log/Log.h"
 #include "base/net/stratum/Job.h"
 #include "base/tools/Buffer.h"
 #include "base/tools/Chrono.h"
 #include "base/tools/Handle.h"
-#include "common/log/Log.h"
 #include "net/JobResult.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"
@@ -49,7 +49,7 @@
 #include "rapidjson/writer.h"
 
 
-#ifndef XMRIG_NO_TLS
+#ifdef XMRIG_FEATURE_TLS
 #   include "proxy/tls/Tls.h"
 #endif
 
@@ -91,7 +91,7 @@ xmrig::Miner::Miner(const TlsContext *ctx, bool ipv6, uint16_t port) :
     m_recvBuf.base = m_buf;
     m_recvBuf.len  = sizeof(m_buf);
 
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     if (ctx != nullptr) {
         m_tls = new Tls(ctx->ctx(), this);
     }
@@ -105,7 +105,7 @@ xmrig::Miner::~Miner()
 {
     Handle::close(m_socket);
 
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     delete m_tls;
 #   endif
 
@@ -126,7 +126,7 @@ bool xmrig::Miner::accept(uv_stream_t *server)
 
     uv_tcp_getpeername(m_socket, reinterpret_cast<sockaddr*>(&addr), &size);
 
-    if (m_ipv6) {
+    if (reinterpret_cast<sockaddr_in *>(&addr)->sin_family == AF_INET6) {
         uv_ip6_name(reinterpret_cast<sockaddr_in6*>(&addr), m_ip, 45);
     } else {
         uv_ip4_name(reinterpret_cast<sockaddr_in*>(&addr), m_ip, 16);
@@ -134,7 +134,7 @@ bool xmrig::Miner::accept(uv_stream_t *server)
 
     uv_read_start(reinterpret_cast<uv_stream_t*>(m_socket), Miner::onAllocBuffer, Miner::onRead);
 
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     if (isTLS()) {
         return m_tls->accept();
     }
@@ -285,7 +285,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
 
 bool xmrig::Miner::send(BIO *bio)
 {
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     uv_buf_t buf;
     buf.len = BIO_get_mem_data(bio, &buf.base);
 
@@ -388,7 +388,7 @@ void xmrig::Miner::read()
 
 void xmrig::Miner::readTLS(int nread)
 {
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     if (isTLS()) {
         LOG_DEBUG("[%s] TLS received (%d bytes)", m_ip, nread);
 
@@ -438,7 +438,7 @@ void xmrig::Miner::send(int size)
     }
 
     int rc = -1;
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     if (isTLS()) {
         rc = m_tls->send(m_sendBuf, size) ? 0 : -1;
     }

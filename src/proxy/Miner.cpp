@@ -126,7 +126,7 @@ bool xmrig::Miner::accept(uv_stream_t *server)
 
     uv_tcp_getpeername(m_socket, reinterpret_cast<sockaddr*>(&addr), &size);
 
-    if (m_ipv6) {
+    if (reinterpret_cast<sockaddr_in *>(&addr)->sin_family == AF_INET6) {
         uv_ip6_name(reinterpret_cast<sockaddr_in6*>(&addr), m_ip, 45);
     } else {
         uv_ip4_name(reinterpret_cast<sockaddr_in*>(&addr), m_ip, 16);

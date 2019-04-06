@@ -26,80 +26,51 @@
 #include <assert.h>
 
 
-#include "base/io/log/backends/ConsoleLog.h"
-#include "base/io/log/backends/FileLog.h"
-#include "base/io/log/Log.h"
-#include "base/kernel/interfaces/IControllerListener.h"
-#include "common/config/ConfigLoader.h"
 #include "common/Platform.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/Proxy.h"
 
 
-#ifdef HAVE_SYSLOG_H
-#   include "base/io/log/backends/SysLog.h"
-#endif
-
-
-#ifdef XMRIG_FEATURE_API
-#   include "api/Api.h"
-#endif
-
-
-class xmrig::ControllerPrivate
-{
-public:
-    inline ControllerPrivate(Process *process) :
-        process(process),
-        proxy(nullptr),
-        config(nullptr)
-    {}
-
-
-    inline ~ControllerPrivate()
-    {
-#       ifdef XMRIG_FEATURE_API
-        delete api;
-#       endif
-
-        delete proxy;
-        delete config;
-    }
-
-    Api *api;
-    Process *process;
-    Proxy *proxy;
-    std::vector<IControllerListener *> listeners;
-    xmrig::Config *config;
-};
-
-
 xmrig::Controller::Controller(Process *process)
-    : d_ptr(new ControllerPrivate(process))
+    : Base(process),
+    m_proxy(nullptr)
 {
 }
 
 
 xmrig::Controller::~Controller()
 {
-    delete d_ptr;
+    delete m_proxy;
 }
 
 
-xmrig::Api *xmrig::Controller::api() const
+int xmrig::Controller::init()
 {
-    assert(d_ptr->api != nullptr);
+    const int rc = Base::init();
+    if (rc != 0) {
+        return rc;
+    }
 
-    return d_ptr->api;
+    m_proxy = new Proxy(this);
+    return 0;
 }
 
 
-xmrig::Config *xmrig::Controller::config() const
+void xmrig::Controller::start()
 {
-    assert(d_ptr->config != nullptr);
+    Base::start();
 
-    return d_ptr->config;
+    proxy()->connect();
+}
+
+
+void xmrig::Controller::stop()
+{
+    Base::stop();
+
+    delete m_proxy;
+    m_proxy = nullptr;
 }
 
 
@@ -115,103 +86,13 @@ const std::vector<xmrig::Worker> &xmrig::Controller::workers() const
 }
 
 
-int xmrig::Controller::init()
-{
-    d_ptr->config = Config::load(d_ptr->process, this);
-    if (!d_ptr->config) {
-        return 1;
-    }
-
-#   ifdef XMRIG_FEATURE_API
-    d_ptr->api = new Api(this);
-#   endif
-
-    Platform::init(config()->userAgent());
-
-    if (!config()->isBackground()) {
-        Log::add(new ConsoleLog());
-    }
-
-    if (config()->logFile()) {
-        Log::add(new FileLog(config()->logFile()));
-    }
-
-#   ifdef HAVE_SYSLOG_H
-    if (config()->isSyslog()) {
-        Log::add(new SysLog());
-    }
-#   endif
-
-    d_ptr->proxy = new Proxy(this);
-    return 0;
-}
-
-
 xmrig::Proxy *xmrig::Controller::proxy() const
 {
-    return d_ptr->proxy;
+    return m_proxy;
 }
 
 
 std::vector<xmrig::Miner*> xmrig::Controller::miners() const
 {
     return proxy()->miners();
-}
-
-
-void xmrig::Controller::addListener(IControllerListener *listener)
-{
-    d_ptr->listeners.push_back(listener);
-}
-
-
-void xmrig::Controller::save()
-{
-    if (!config()) {
-        return;
-    }
-
-    if (d_ptr->config->isShouldSave()) {
-        d_ptr->config->save();
-    }
-
-    ConfigLoader::watch(d_ptr->config);
-}
-
-
-void xmrig::Controller::start()
-{
-    proxy()->connect();
-
-#   ifdef XMRIG_FEATURE_API
-    api()->start();
-#   endif
-
-    save();
-}
-
-
-void xmrig::Controller::stop()
-{
-#   ifdef XMRIG_FEATURE_API
-    api()->stop();
-#   endif
-
-    ConfigLoader::release();
-
-    delete d_ptr->proxy;
-    d_ptr->proxy = nullptr;
-}
-
-
-void xmrig::Controller::onNewConfig(IConfig *config)
-{
-    Config *previousConfig = d_ptr->config;
-    d_ptr->config = static_cast<Config*>(config);
-
-    for (xmrig::IControllerListener *listener : d_ptr->listeners) {
-        listener->onConfigChanged(d_ptr->config, previousConfig);
-    }
-
-    delete previousConfig;
 }

@@ -17,16 +17,13 @@ set(HEADERS
     "${HEADERS_BASE_HTTP}"
     src/3rdparty/align.h
     src/App.h
-    src/common/config/CommonConfig.h
-    src/common/config/ConfigLoader.h
-    src/common/config/ConfigWatcher.h
     src/common/crypto/Algorithm.h
     src/common/crypto/keccak.h
-    src/common/interfaces/IConfig.h
     src/common/Platform.h
     src/common/xmrig.h
+    src/core/config/Config_platform.h
     src/core/config/Config.h
-    src/core/config/ConfigLoader_platform.h
+    src/core/config/ConfigTransform.h
     src/core/config/usage.h
     src/core/Controller.h
     src/donate.h
@@ -77,13 +74,11 @@ set(SOURCES
     "${SOURCES_BASE}"
     "${SOURCES_BASE_HTTP}"
     src/App.cpp
-    src/common/config/CommonConfig.cpp
-    src/common/config/ConfigLoader.cpp
-    src/common/config/ConfigWatcher.cpp
     src/common/crypto/Algorithm.cpp
     src/common/crypto/keccak.cpp
     src/common/Platform.cpp
     src/core/config/Config.cpp
+    src/core/config/ConfigTransform.cpp
     src/core/Controller.cpp
     src/log/AccessLog.cpp
     src/log/ShareLog.cpp

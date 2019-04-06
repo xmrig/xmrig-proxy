@@ -34,20 +34,14 @@
 namespace xmrig {
 
 
-class Controller;
-class HttpReply;
-class HttpRequest;
-
+class Base;
 
 
 class ApiRouter : public xmrig::IApiListener
 {
 public:
-    ApiRouter(Controller *controller);
+    ApiRouter(Base *base);
     ~ApiRouter() override;
-
-//    void get(const xmrig::HttpRequest &req, xmrig::HttpReply &reply) const;
-//    void exec(const xmrig::HttpRequest &req, xmrig::HttpReply &reply);
 
 protected:
     void onRequest(IApiRequest &request) override;
@@ -62,7 +56,7 @@ private:
     void getResults(rapidjson::Value &reply, rapidjson::Document &doc) const;
     void getWorkers(rapidjson::Value &reply, rapidjson::Document &doc) const;
 
-    Controller *m_controller;
+    Base *m_base;
 };
 
 

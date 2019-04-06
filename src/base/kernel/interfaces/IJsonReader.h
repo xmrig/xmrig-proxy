@@ -22,32 +22,35 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_SPLITTER_H
-#define XMRIG_SPLITTER_H
+#ifndef XMRIG_IJSONREADER_H
+#define XMRIG_IJSONREADER_H
 
 
-#include "base/kernel/interfaces/IBaseListener.h"
-#include "interfaces/IEventListener.h"
-#include "interfaces/ISplitter.h"
+#include "rapidjson/fwd.h"
 
 
 namespace xmrig {
 
 
-class Controller;
-
-
-class Splitter : public IEventListener, public ISplitter, public IBaseListener
+class IJsonReader
 {
 public:
-    Splitter(Controller *controller);
+    virtual ~IJsonReader() = default;
 
-protected:
-    Controller *m_controller;
+    virtual bool getBool(const char *key, bool defaultValue = false) const                       = 0;
+    virtual bool isEmpty() const                                                                 = 0;
+    virtual const char *getString(const char *key, const char *defaultValue = nullptr) const     = 0;
+    virtual const rapidjson::Value &getArray(const char *key) const                              = 0;
+    virtual const rapidjson::Value &getObject(const char *key) const                             = 0;
+    virtual const rapidjson::Value &getValue(const char *key) const                              = 0;
+    virtual int getInt(const char *key, int defaultValue = 0) const                              = 0;
+    virtual int64_t getInt64(const char *key, int64_t defaultValue = 0) const                    = 0;
+    virtual uint64_t getUint64(const char *key, uint64_t defaultValue = 0) const                 = 0;
+    virtual unsigned getUint(const char *key, unsigned defaultValue = 0) const                   = 0;
 };
 
 
 } /* namespace xmrig */
 
 
-#endif /* XMRIG_SPLITTER_H */
+#endif // XMRIG_IJSONREADER_H

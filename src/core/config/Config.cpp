@@ -29,13 +29,11 @@
 
 
 #include "base/io/log/Log.h"
-#include "common/config/ConfigLoader.h"
 #include "common/xmrig.h"
 #include "core/config/Config.h"
 #include "donate.h"
 #include "rapidjson/document.h"
-#include "rapidjson/filewritestream.h"
-#include "rapidjson/prettywriter.h"
+#include "base/kernel/interfaces/IJsonReader.h"
 
 
 static const char *modeNames[] = {
@@ -49,7 +47,7 @@ static const char *modeNames[] = {
 #endif
 
 
-xmrig::Config::Config() : xmrig::CommonConfig(),
+xmrig::Config::Config() :
     m_algoExt(true),
     m_debug(false),
     m_verbose(false),
@@ -75,15 +73,60 @@ bool xmrig::Config::isTLS() const
 }
 
 
-bool xmrig::Config::reload(const rapidjson::Value &json)
-{
-    return ConfigLoader::reload(this, json);
-}
-
-
 const char *xmrig::Config::modeName() const
 {
     return modeNames[m_mode];
+}
+
+
+bool xmrig::Config::read(const IJsonReader &reader, const char *fileName)
+{
+    if (!BaseConfig::read(reader, fileName)) {
+        return false;
+    }
+
+    m_verbose      = reader.getBool("verbose", m_verbose);
+    m_debug        = reader.getBool("debug", m_debug);
+    m_algoExt      = reader.getBool("algo-ext", m_algoExt);
+    m_reuseTimeout = reader.getInt("reuse-timeout", m_reuseTimeout);
+    m_accessLog    = reader.getString("access-log-file");
+    m_password     = reader.getString("access-password");
+
+    setCustomDiff(reader.getUint64("custom-diff", m_diff));
+    setMode(reader.getString("mode"));
+    setWorkersMode(reader.getValue("workers"));
+
+#   ifdef XMRIG_FEATURE_TLS
+    const rapidjson::Value &tls = reader.getObject("tls");
+    if (tls.IsObject()) {
+        m_tls = std::move(TlsConfig(tls));
+    }
+#   endif
+
+    const rapidjson::Value &bind = reader.getArray("bind");
+    if (bind.IsArray()) {
+        for (const rapidjson::Value &value : bind.GetArray()) {
+            if (value.IsObject()) {
+                BindHost host(value);
+                if (host.isValid()) {
+                    m_bind.push_back(std::move(host));
+                }
+            }
+            else if (value.IsString()) {
+                BindHost host(value.GetString());
+                if (host.isValid()) {
+                    m_bind.push_back(std::move(host));
+                }
+            }
+        }
+    }
+
+    if (m_bind.empty()) {
+        m_bind.push_back(BindHost("0.0.0.0", 3333, 4));
+        m_bind.push_back(BindHost("::", 3333, 6));
+    }
+
+    return true;
 }
 
 
@@ -136,202 +179,16 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
 }
 
 
-xmrig::Config *xmrig::Config::load(Process *process, IConfigListener *listener)
+void xmrig::Config::setCustomDiff(uint64_t diff)
 {
-    return static_cast<Config*>(ConfigLoader::load(process, listener));
-}
-
-
-bool xmrig::Config::finalize()
-{
-    if (m_state != NoneState) {
-        return CommonConfig::finalize();
+    if (diff >= 100 && diff < INT_MAX) {
+        m_diff = diff;
     }
-
-    if (!CommonConfig::finalize()) {
-        return false;
-    }
-
-    if (m_bind.empty()) {
-        m_bind.push_back(BindHost("0.0.0.0", 3333, 4));
-        m_bind.push_back(BindHost("::", 3333, 6));
-    }
-
-    return true;
-}
-
-
-bool xmrig::Config::parseBoolean(int key, bool enable)
-{
-    if (!CommonConfig::parseBoolean(key, enable)) {
-        return false;
-    }
-
-    switch (key) {
-    case VerboseKey: /* --verbose */
-        m_verbose = enable;
-        break;
-
-    case DebugKey: /* --debug */
-        m_debug = enable;
-        break;
-
-    case WorkersKey: /* workers */
-    case WorkersAdvKey:
-        m_workersMode = enable ? Workers::RigID : Workers::None;
-        break;
-
-    case AlgoExtKey:
-        m_algoExt = enable;
-        break;
-
-    default:
-        break;
-    }
-
-    return true;
-}
-
-
-bool xmrig::Config::parseString(int key, const char *arg)
-{
-    if (!CommonConfig::parseString(key, arg)) {
-        return false;
-    }
-
-    switch (key) {
-    case ModeKey: /* --mode */
-        setMode(arg);
-        break;
-
-    case BindKey:    /* --bind */
-    case TlsBindKey: /* --tls-bind */
-        {
-            xmrig::BindHost host(arg);
-            host.setTLS(key == TlsBindKey);
-
-            if (host.isValid()) {
-                m_bind.push_back(std::move(host));
-            }
-        }
-        break;
-
-    case CoinKey: /* --coin */
-        break;
-
-    case AccessLogFileKey: /* --access-log-file **/
-        m_accessLog = arg;
-        break;
-
-    case ProxyPasswordKey: /* --access-passowrd */
-        m_password = arg;
-        break;
-
-    case VerboseKey: /* --verbose */
-    case DebugKey:   /* --debug */
-        return parseBoolean(key, true);
-
-    case WorkersKey: /* --no-workers */
-    case AlgoExtKey: /* --no-algo-ext */
-        return parseBoolean(key, false);
-
-    case WorkersAdvKey:
-        m_workersMode = Workers::parseMode(arg);
-        break;
-
-    case CustomDiffKey:   /* --custom-diff */
-        return parseUint64(key, static_cast<uint64_t>(strtol(arg, nullptr, 10)));
-
-#   ifdef XMRIG_FEATURE_TLS
-    case TlsCertKey: /* --tls-cert */
-        m_tls.setCert(arg);
-        break;
-
-    case TlsCertKeyKey: /* --tls-cert-key */
-        m_tls.setKey(arg);
-        break;
-
-    case TlsDHparamKey: /* --tls-dhparam */
-        m_tls.setDH(arg);
-        break;
-
-    case TlsCiphersKey: /* --tls-ciphers */
-        m_tls.setCiphers(arg);
-        break;
-
-    case TlsCipherSuitesKey: /* --tls-ciphersuites */
-        m_tls.setCipherSuites(arg);
-        break;
-
-    case TlsProtocolsKey: /* --tls-protocols */
-        m_tls.setProtocols(arg);
-        break;
-#   endif
-
-    default:
-        break;
-    }
-
-    return true;
-}
-
-
-bool xmrig::Config::parseUint64(int key, uint64_t arg)
-{
-    if (!CommonConfig::parseUint64(key, arg)) {
-        return false;
-    }
-
-    switch (key) {
-    case CustomDiffKey: /* --custom-diff */
-        if (arg >= 100 && arg < INT_MAX) {
-            m_diff = arg;
-        }
-        break;
-
-    case ReuseTimeoutKey: /* --reuse-timeout */
-        m_reuseTimeout = static_cast<int>(arg);
-        break;
-
-    default:
-        break;
-    }
-
-    return true;
-}
-
-
-void xmrig::Config::parseJSON(const rapidjson::Value &json)
-{
-    CommonConfig::parseJSON(json);
-
-    const rapidjson::Value &bind = json["bind"];
-    if (bind.IsArray()) {
-        for (const rapidjson::Value &value : bind.GetArray()) {
-            if (value.IsObject()) {
-                xmrig::BindHost host(value);
-                if (host.isValid()) {
-                    m_bind.push_back(std::move(host));
-                }
-            }
-            else if (value.IsString()) {
-                parseString(BindKey, value.GetString());
-            }
-        }
-    }
-
-#   ifdef XMRIG_FEATURE_TLS
-    const rapidjson::Value &tls = json["tls"];
-    if (tls.IsObject()) {
-        m_tls = std::move(TlsConfig(tls));
-    }
-#   endif
 }
 
 
 void xmrig::Config::setMode(const char *mode)
 {
-    assert(mode != nullptr);
     if (mode == nullptr) {
         m_mode = NICEHASH_MODE;
         return;
@@ -344,5 +201,16 @@ void xmrig::Config::setMode(const char *mode)
             m_mode = static_cast<int>(i);
             break;
         }
+    }
+}
+
+
+void xmrig::Config::setWorkersMode(const rapidjson::Value &value)
+{
+    if (value.IsBool()) {
+        m_workersMode = value.GetBool() ? Workers::RigID : Workers::None;
+    }
+    else if (value.IsString()) {
+        m_workersMode = Workers::parseMode(value.GetString());
     }
 }

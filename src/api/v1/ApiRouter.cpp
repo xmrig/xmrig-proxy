@@ -52,8 +52,8 @@ static inline double normalize(double d)
 }
 
 
-xmrig::ApiRouter::ApiRouter(Controller *controller) :
-    m_controller(controller)
+xmrig::ApiRouter::ApiRouter(Base *base) :
+    m_base(base)
 {
 }
 
@@ -89,14 +89,14 @@ void xmrig::ApiRouter::onRequest(IApiRequest &request)
             }
 
             request.accept();
-            m_controller->config()->getJSON(request.doc());
+            m_base->config()->getJSON(request.doc());
         }
     }
     else if (request.method() == IApiRequest::METHOD_PUT || request.method() == IApiRequest::METHOD_POST) {
         if (request.url() == "/1/config") {
             request.accept();
 
-            if (!m_controller->config()->reload(request.json())) {
+            if (!m_base->reload(request.json())) {
                 return request.done(400);
             }
 
@@ -113,7 +113,7 @@ void xmrig::ApiRouter::getHashrate(rapidjson::Value &reply, rapidjson::Document 
     rapidjson::Value hashrate(rapidjson::kObjectType);
     rapidjson::Value total(rapidjson::kArrayType);
 
-    auto &stats = m_controller->statsData();
+    auto &stats = static_cast<Controller *>(m_base)->statsData();
 
     for (size_t i = 0; i < sizeof(stats.hashrate) / sizeof(stats.hashrate[0]); i++) {
         total.PushBack(normalize(stats.hashrate[i]), allocator);
@@ -127,15 +127,15 @@ void xmrig::ApiRouter::getHashrate(rapidjson::Value &reply, rapidjson::Document 
 void xmrig::ApiRouter::getMiner(rapidjson::Value &reply, rapidjson::Document &doc) const
 {
     auto &allocator = doc.GetAllocator();
-    auto &stats = m_controller->statsData();
+    auto &stats = static_cast<Controller *>(m_base)->statsData();
 
     reply.AddMember("version",      APP_VERSION, allocator);
     reply.AddMember("kind",         APP_KIND, allocator);
-    reply.AddMember("algo",         rapidjson::StringRef(m_controller->config()->algorithm().name()), allocator);
-    reply.AddMember("mode",         rapidjson::StringRef(m_controller->config()->modeName()), allocator);
+    reply.AddMember("algo",         rapidjson::StringRef(m_base->config()->algorithm().name()), allocator);
+    reply.AddMember("mode",         rapidjson::StringRef(m_base->config()->modeName()), allocator);
     reply.AddMember("ua",           rapidjson::StringRef(Platform::userAgent()), allocator);
     reply.AddMember("uptime",       stats.uptime(), allocator);
-    reply.AddMember("donate_level", m_controller->config()->pools().donateLevel(), allocator);
+    reply.AddMember("donate_level", m_base->config()->pools().donateLevel(), allocator);
 
     if (stats.hashes && stats.donateHashes) {
         reply.AddMember("donated", normalize((double) stats.donateHashes / stats.hashes * 100.0), allocator);
@@ -151,7 +151,7 @@ void xmrig::ApiRouter::getMiners(rapidjson::Value &reply, rapidjson::Document &d
     using namespace rapidjson;
 
     auto &allocator = doc.GetAllocator();
-    auto list       = m_controller->miners();
+    auto list       = static_cast<Controller *>(m_base)->miners();
 
     Value miners(kArrayType);
 
@@ -195,7 +195,7 @@ void xmrig::ApiRouter::getMiners(rapidjson::Value &reply, rapidjson::Document &d
 void xmrig::ApiRouter::getMinersSummary(rapidjson::Value &reply, rapidjson::Document &doc) const
 {
     auto &allocator = doc.GetAllocator();
-    auto &stats = m_controller->statsData();
+    auto &stats = static_cast<Controller *>(m_base)->statsData();
 
     rapidjson::Value miners(rapidjson::kObjectType);
 
@@ -203,7 +203,7 @@ void xmrig::ApiRouter::getMinersSummary(rapidjson::Value &reply, rapidjson::Docu
     miners.AddMember("max", stats.maxMiners, allocator);
 
     reply.AddMember("miners",  miners, allocator);
-    reply.AddMember("workers", static_cast<uint64_t>(m_controller->workers().size()), allocator);
+    reply.AddMember("workers", static_cast<uint64_t>(static_cast<Controller *>(m_base)->workers().size()), allocator);
 
     rapidjson::Value upstreams(rapidjson::kObjectType);
 
@@ -250,7 +250,7 @@ void xmrig::ApiRouter::getResourcesSummary(rapidjson::Value &reply, rapidjson::D
 void xmrig::ApiRouter::getResults(rapidjson::Value &reply, rapidjson::Document &doc) const
 {
     auto &allocator = doc.GetAllocator();
-    auto &stats = m_controller->statsData();
+    auto &stats = static_cast<Controller *>(m_base)->statsData();
 
     rapidjson::Value results(rapidjson::kObjectType);
 
@@ -279,7 +279,7 @@ void xmrig::ApiRouter::getWorkers(rapidjson::Value &reply, rapidjson::Document &
     using namespace rapidjson;
 
     auto &allocator = doc.GetAllocator();
-    auto &list      = m_controller->workers();
+    auto &list      = static_cast<Controller *>(m_base)->workers();
 
     Value workers(kArrayType);
 
@@ -302,6 +302,6 @@ void xmrig::ApiRouter::getWorkers(rapidjson::Value &reply, rapidjson::Document &
          workers.PushBack(array, allocator);
     }
 
-    reply.AddMember("mode", StringRef(Workers::modeName(m_controller->config()->workersMode())), allocator);
+    reply.AddMember("mode", StringRef(Workers::modeName(static_cast<Controller *>(m_base)->config()->workersMode())), allocator);
     reply.AddMember("workers", workers, allocator);
 }

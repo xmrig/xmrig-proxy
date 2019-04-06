@@ -30,7 +30,7 @@
 #include <uv.h>
 
 
-#include "base/kernel/interfaces/IControllerListener.h"
+#include "base/kernel/interfaces/IBaseListener.h"
 #include "proxy/CustomDiff.h"
 #include "proxy/Stats.h"
 #include "proxy/workers/Worker.h"
@@ -54,7 +54,7 @@ class TlsContext;
 class Workers;
 
 
-class Proxy : public IControllerListener
+class Proxy : public IBaseListener
 {
 public:
     Proxy(Controller *controller);

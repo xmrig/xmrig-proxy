@@ -138,7 +138,6 @@ else()
     set(SOURCES_OS
         "${SOURCES_OS}"
         src/App_unix.cpp
-        src/base/io/Json_unix.cpp
         src/common/Platform_unix.cpp
         src/proxy/Uuid_unix.cpp
         )

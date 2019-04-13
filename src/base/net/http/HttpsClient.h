@@ -5,6 +5,7 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2014-2019 heapwolf    <https://github.com/heapwolf>
  * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
  * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
@@ -22,60 +23,55 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_API_H
-#define XMRIG_API_H
+
+#ifndef XMRIG_HTTPSCLIENT_H
+#define XMRIG_HTTPSCLIENT_H
 
 
-#include <vector>
+typedef struct bio_st BIO;
+typedef struct ssl_ctx_st SSL_CTX;
+typedef struct ssl_st SSL;
+typedef struct x509_st X509;
 
 
-#include "base/kernel/interfaces/IBaseListener.h"
+#include "base/net/http/HttpClient.h"
+#include "base/tools/String.h"
 
 
 namespace xmrig {
 
 
-class ApiRouter;
-class Base;
-class Httpd;
-class HttpData;
-class IApiListener;
-class IApiRequest;
-class String;
-
-
-class Api : public IBaseListener
+class HttpsClient : public HttpClient
 {
 public:
-    Api(Base *base);
-    ~Api() override;
+    HttpsClient(int method, const String &url, IHttpListener *listener, const char *data, size_t size, const String &fingerprint);
+    ~HttpsClient() override;
 
-    inline const char *id() const                   { return m_id; }
-    inline const char *workerId() const             { return m_workerId; }
-    inline void addListener(IApiListener *listener) { m_listeners.push_back(listener); }
-
-    void request(const HttpData &req);
-    void start();
-    void stop();
+    const char *fingerprint() const;
+    const char *version() const;
 
 protected:
-    void onConfigChanged(Config *config, Config *previousConfig) override;
+    void handshake() override;
+    void read(const char *data, size_t size) override;
+    void write(const std::string &header) override;
 
 private:
-    void exec(IApiRequest &request);
-    void genId(const String &id);
-    void genWorkerId(const String &id);
+    bool verify(X509 *cert);
+    bool verifyFingerprint(X509 *cert);
+    void flush();
 
-    ApiRouter *m_v1;
-    Base *m_base;
-    char m_id[32];
-    char m_workerId[128];
-    Httpd *m_httpd;
-    std::vector<IApiListener *> m_listeners;
+    BIO *m_readBio;
+    BIO *m_writeBio;
+    bool m_ready;
+    char m_buf[1024 * 2];
+    char m_fingerprint[32 * 2 + 8];
+    SSL *m_ssl;
+    SSL_CTX *m_ctx;
+    String m_fp;
 };
 
 
 } // namespace xmrig
 
 
-#endif /* XMRIG_API_H */
+#endif // XMRIG_HTTPSCLIENT_H

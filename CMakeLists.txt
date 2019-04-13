@@ -4,7 +4,7 @@ project(xmrig-proxy)
 
 option(WITH_GOOGLE_BREAKPAD "Use Google Breakpad"     OFF)
 option(WITH_DEBUG_LOG       "Enable debug log output" OFF)
-option(WITH_HTTPD           "HTTP REST API"           ON)
+option(WITH_HTTP            "HTTP protocol support (client/server)" ON)
 option(WITH_TLS             "Enable OpenSSL support"  ON)
 
 
@@ -220,8 +220,8 @@ else()
     add_definitions(/DXMRIG_NO_GOOGLE_BREAKPAD)
 endif()
 
-if (WITH_HTTPD)
-    set(HTTPD_SOURCES
+if (WITH_HTTP)
+    set(HTTP_SOURCES
         src/api/Api.cpp
         src/api/Api.h
         src/api/Httpd.cpp
@@ -235,9 +235,7 @@ if (WITH_HTTPD)
         src/api/v1/ApiRouter.h
         )
 else()
-    set(HTTPD_SOURCES "")
-    add_definitions(/DXMRIG_NO_HTTPD)
-    add_definitions(/DXMRIG_NO_API)
+    set(HTTP_SOURCES "")
 endif()
 
 if (WITH_DEBUG_LOG)
@@ -248,5 +246,5 @@ include_directories(src)
 include_directories(src/3rdparty)
 include_directories(${UV_INCLUDE_DIR})
 
-add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_SYSLOG} ${HTTPD_SOURCES} ${TLS_SOURCES})
+add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_SYSLOG} ${HTTP_SOURCES} ${TLS_SOURCES})
 target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENSSL_LIBRARIES} ${UV_LIBRARIES} ${EXTRA_LIBS} ${GOOGLE_BREAKPAD_LIBS})

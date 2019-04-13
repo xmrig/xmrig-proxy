@@ -98,7 +98,20 @@ void xmrig::BaseTransform::transform(rapidjson::Document &doc, int key, const ch
         return set(doc, "algo", arg);
 
     case IConfig::UserpassKey: /* --userpass */
-        return add(doc, kPools, "userpass", arg);
+        {
+            const char *p = strrchr(arg, ':');
+            if (!p) {
+                return;
+            }
+
+            char *user = new char[p - arg + 1]();
+            strncpy(user, arg, static_cast<size_t>(p - arg));
+
+            add<const char *>(doc, kPools, "user", user);
+            add(doc, kPools, "pass", p + 1);
+            delete [] user;
+        }
+        break;
 
     case IConfig::UrlKey: /* --url */
         return add(doc, kPools, "url", arg, true);
@@ -148,6 +161,7 @@ void xmrig::BaseTransform::transform(rapidjson::Document &doc, int key, const ch
     case IConfig::PrintTimeKey:   /* --print-time */
     case IConfig::HttpPort:       /* --http-port */
     case IConfig::DonateLevelKey: /* --donate-level */
+    case IConfig::DaemonPollKey:  /* --daemon-poll-interval */
 #   ifdef XMRIG_DEPRECATED
     case IConfig::ApiPort:       /* --api-port */
 #   endif
@@ -160,6 +174,7 @@ void xmrig::BaseTransform::transform(rapidjson::Document &doc, int key, const ch
     case IConfig::TlsKey:         /* --tls */
     case IConfig::DryRunKey:      /* --dry-run */
     case IConfig::HttpEnabledKey: /* --http-enabled */
+    case IConfig::DaemonKey:      /* --daemon */
         return transformBoolean(doc, key, true);
 
     case IConfig::ColorKey:          /* --no-color */
@@ -190,6 +205,9 @@ void xmrig::BaseTransform::transformBoolean(rapidjson::Document &doc, int key, b
 
     case IConfig::TlsKey: /* --tls */
         return add(doc, kPools, "tls", enable);
+
+    case IConfig::DaemonKey: /* --daemon */
+        return add(doc, kPools, "daemon", enable);
 
 #   ifndef XMRIG_PROXY_PROJECT
     case IConfig::NicehashKey: /* --nicehash */
@@ -251,6 +269,9 @@ void xmrig::BaseTransform::transformUint64(rapidjson::Document &doc, int key, ui
 
     case IConfig::PrintTimeKey: /* --print-time */
         return set(doc, "print-time", arg);
+
+    case IConfig::DaemonPollKey:  /* --daemon-poll-interval */
+        return add(doc, kPools, "daemon-poll-interval", arg);
 
     default:
         break;

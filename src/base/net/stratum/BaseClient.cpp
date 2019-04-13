@@ -22,60 +22,41 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_API_H
-#define XMRIG_API_H
 
-
-#include <vector>
-
-
-#include "base/kernel/interfaces/IBaseListener.h"
+#include "base/kernel/interfaces/IClientListener.h"
+#include "base/net/stratum/BaseClient.h"
+#include "base/net/stratum/SubmitResult.h"
 
 
 namespace xmrig {
 
+int64_t BaseClient::m_sequence = 1;
 
-class ApiRouter;
-class Base;
-class Httpd;
-class HttpData;
-class IApiListener;
-class IApiRequest;
-class String;
+} /* namespace xmrig */
 
 
-class Api : public IBaseListener
+xmrig::BaseClient::BaseClient(int id, IClientListener *listener) :
+    m_quiet(false),
+    m_listener(listener),
+    m_id(id),
+    m_retries(5),
+    m_failures(0),
+    m_state(UnconnectedState),
+    m_retryPause(5000)
 {
-public:
-    Api(Base *base);
-    ~Api() override;
-
-    inline const char *id() const                   { return m_id; }
-    inline const char *workerId() const             { return m_workerId; }
-    inline void addListener(IApiListener *listener) { m_listeners.push_back(listener); }
-
-    void request(const HttpData &req);
-    void start();
-    void stop();
-
-protected:
-    void onConfigChanged(Config *config, Config *previousConfig) override;
-
-private:
-    void exec(IApiRequest &request);
-    void genId(const String &id);
-    void genWorkerId(const String &id);
-
-    ApiRouter *m_v1;
-    Base *m_base;
-    char m_id[32];
-    char m_workerId[128];
-    Httpd *m_httpd;
-    std::vector<IApiListener *> m_listeners;
-};
+}
 
 
-} // namespace xmrig
+bool xmrig::BaseClient::handleSubmitResponse(int64_t id, const char *error)
+{
+    auto it = m_results.find(id);
+    if (it != m_results.end()) {
+        it->second.done();
+        m_listener->onResultAccepted(this, it->second, error);
+        m_results.erase(it);
 
+        return true;
+    }
 
-#endif /* XMRIG_API_H */
+    return false;
+}

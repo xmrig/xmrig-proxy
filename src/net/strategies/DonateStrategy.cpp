@@ -94,11 +94,11 @@ bool xmrig::DonateStrategy::reschedule()
 }
 
 
-void xmrig::DonateStrategy::save(const Client *client, const Job &job)
+void xmrig::DonateStrategy::save(const IClient *client, const Job &job)
 {
     m_pending.job  = job;
-    m_pending.host = client->host();
-    m_pending.port = client->port();
+    m_pending.host = client->pool().host();
+    m_pending.port = client->pool().port();
 }
 
 
@@ -143,7 +143,7 @@ void xmrig::DonateStrategy::tick(uint64_t now)
 }
 
 
-void xmrig::DonateStrategy::onClose(Client *, int)
+void xmrig::DonateStrategy::onClose(IClient *, int)
 {
     if (!isActive()) {
         return;
@@ -154,7 +154,7 @@ void xmrig::DonateStrategy::onClose(Client *, int)
 }
 
 
-void xmrig::DonateStrategy::onJobReceived(Client *client, const Job &job, const rapidjson::Value &)
+void xmrig::DonateStrategy::onJobReceived(IClient *client, const Job &job, const rapidjson::Value &)
 {
     if (!isActive()) {
         m_active = true;
@@ -165,12 +165,12 @@ void xmrig::DonateStrategy::onJobReceived(Client *client, const Job &job, const 
 }
 
 
-void xmrig::DonateStrategy::onLoginSuccess(Client *)
+void xmrig::DonateStrategy::onLoginSuccess(IClient *)
 {
 }
 
 
-void xmrig::DonateStrategy::onResultAccepted(Client *client, const SubmitResult &result, const char *error)
+void xmrig::DonateStrategy::onResultAccepted(IClient *client, const SubmitResult &result, const char *error)
 {
     m_listener->onResultAccepted(this, client, result, error);
 }

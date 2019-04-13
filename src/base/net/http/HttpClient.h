@@ -24,37 +24,51 @@
  */
 
 
-#ifndef XMRIG_HTTPREQUEST_H
-#define XMRIG_HTTPREQUEST_H
+#ifndef XMRIG_HTTPCLIENT_H
+#define XMRIG_HTTPCLIENT_H
 
 
-#include <map>
-#include <sstream>
-#include <string>
+#include "base/net/http/HttpContext.h"
+#include "base/kernel/interfaces/IDnsListener.h"
 
 
 namespace xmrig {
 
 
-class HttpRequest
+class String;
+
+
+class HttpClient : public HttpContext, public IDnsListener
 {
 public:
-    inline HttpRequest(uint64_t id) : method(0), m_id(id) {}
+    HttpClient(int method, const String &url, IHttpListener *listener, const char *data = nullptr, size_t size = 0);
+    ~HttpClient() override;
 
-    inline uint64_t id() const { return m_id; }
+    inline uint16_t port() const     { return m_port; }
+    inline void setQuiet(bool quiet) { m_quiet = quiet; }
 
-    int method;
-    std::map<const std::string, const std::string> headers;
-    std::string body;
-    std::string url;
+    bool connect(const String &host, uint16_t port);
+    const String &host() const;
+
+protected:
+    void onResolved(const Dns &dns, int status) override;
+
+    virtual void handshake();
+    virtual void read(const char *data, size_t size);
+    virtual void write(const std::string &header);
+
+    bool m_quiet;
 
 private:
-    const uint64_t m_id;
+    static void onConnect(uv_connect_t *req, int status);
+
+    Dns *m_dns;
+    uint16_t m_port;
 };
 
 
 } // namespace xmrig
 
 
-#endif // XMRIG_HTTPREQUEST_H
+#endif // XMRIG_HTTPCLIENT_H
 

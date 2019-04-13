@@ -23,40 +23,16 @@
  */
 
 
-#include <fstream>
-
-
-#include "base/io/Json.h"
+#include "base/io/json/JsonRequest.h"
 #include "rapidjson/document.h"
-#include "rapidjson/istreamwrapper.h"
-#include "rapidjson/ostreamwrapper.h"
-#include "rapidjson/prettywriter.h"
 
 
-bool xmrig::Json::get(const char *fileName, rapidjson::Document &doc)
+void xmrig::JsonRequest::create(rapidjson::Document &doc, int64_t id, const char *method, rapidjson::Value &params)
 {
-    std::ifstream ifs(fileName, std::ios_base::in | std::ios_base::binary);
-    if (!ifs.is_open()) {
-        return false;
-    }
+    auto &allocator = doc.GetAllocator();
 
-    rapidjson::IStreamWrapper isw(ifs);
-    doc.ParseStream<rapidjson::kParseCommentsFlag | rapidjson::kParseTrailingCommasFlag>(isw);
-
-    return !doc.HasParseError() && doc.IsObject();
-}
-
-
-bool xmrig::Json::save(const char *fileName, const rapidjson::Document &doc)
-{
-    std::ofstream ofs(fileName, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
-    if (!ofs.is_open()) {
-        return false;
-    }
-
-    rapidjson::OStreamWrapper osw(ofs);
-    rapidjson::PrettyWriter<rapidjson::OStreamWrapper> writer(osw);
-    doc.Accept(writer);
-
-    return true;
+    doc.AddMember("id",      id, allocator);
+    doc.AddMember("jsonrpc", "2.0", allocator);
+    doc.AddMember("method",  rapidjson::StringRef(method), allocator);
+    doc.AddMember("params",  params, allocator);
 }

@@ -115,9 +115,9 @@ set(SOURCES
 
 if (WIN32)
     set(SOURCES_OS
+        "${SOURCES_OS}"
         res/app.rc
         src/App_win.cpp
-        src/base/io/Json_win.cpp
         src/common/Platform_win.cpp
         src/proxy/Uuid_win.cpp
         )
@@ -126,8 +126,8 @@ if (WIN32)
     set(EXTRA_LIBS ws2_32 psapi iphlpapi userenv)
 elseif (APPLE)
     set(SOURCES_OS
+        "${SOURCES_OS}"
         src/App_unix.cpp
-        src/base/io/Json_unix.cpp
         src/common/Platform_mac.cpp
         src/proxy/Uuid_mac.cpp
         )
@@ -136,6 +136,7 @@ elseif (APPLE)
     set(EXTRA_LIBS ${CFLIB})
 else()
     set(SOURCES_OS
+        "${SOURCES_OS}"
         src/App_unix.cpp
         src/base/io/Json_unix.cpp
         src/common/Platform_unix.cpp

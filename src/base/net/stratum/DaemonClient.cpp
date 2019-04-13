@@ -29,7 +29,8 @@
 
 
 #include "3rdparty/http-parser/http_parser.h"
-#include "base/io/Json.h"
+#include "base/io/json/Json.h"
+#include "base/io/json/JsonRequest.h"
 #include "base/io/log/Log.h"
 #include "base/kernel/interfaces/IClientListener.h"
 #include "base/net/http/HttpClient.h"
@@ -49,8 +50,21 @@
 #endif
 
 
+namespace xmrig {
+
+static const char *kBlocktemplateBlob       = "blocktemplate_blob";
+static const char *kGetHeight               = "/getheight";
+static const char *kGetInfo                 = "/getinfo";
+static const char *kHash                    = "hash";
+static const char *kHeight                  = "height";
+static const char *kJsonRPC                 = "/json_rpc";
+
+}
+
+
 xmrig::DaemonClient::DaemonClient(int id, IClientListener *listener) :
-    BaseClient(id, listener)
+    BaseClient(id, listener),
+    m_monero(true)
 {
     m_timer = new Timer(this);
 }
@@ -96,16 +110,11 @@ int64_t xmrig::DaemonClient::submit(const JobResult &result)
 
     using namespace rapidjson;
     Document doc(kObjectType);
-    auto &allocator = doc.GetAllocator();
-
-    doc.AddMember("id",      m_sequence,    allocator);
-    doc.AddMember("jsonrpc", "2.0",         allocator);
-    doc.AddMember("method",  "submitblock", allocator);
 
     Value params(kArrayType);
-    params.PushBack(m_blocktemplate.toJSON(), allocator);
+    params.PushBack(m_blocktemplate.toJSON(), doc.GetAllocator());
 
-    doc.AddMember("params", params, allocator);
+    JsonRequest::create(doc, m_sequence, "submitblock", params);
 
 #   ifdef XMRIG_PROXY_PROJECT
     m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff(), result.id);
@@ -113,7 +122,7 @@ int64_t xmrig::DaemonClient::submit(const JobResult &result)
     m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff());
 #   endif
 
-    send(HTTP_POST, "/json_rpc", doc);
+    send(HTTP_POST, kJsonRPC, doc);
 
     return m_sequence++;
 }
@@ -159,8 +168,19 @@ void xmrig::DaemonClient::onHttpData(const HttpData &data)
         return retry();
     }
 
-    if (data.method == HTTP_GET && data.url == "/getheight") {
-        if (m_job.height() != Json::getUint64(doc, "height")) {
+    if (data.method == HTTP_GET) {
+        if (data.url == kGetHeight) {
+            if (!doc.HasMember(kHash)) {
+                m_monero = false;
+
+                return send(HTTP_GET, kGetInfo);
+            }
+
+            if (isOutdated(Json::getUint64(doc, kHeight), Json::getString(doc, kHash))) {
+                getBlockTemplate();
+            }
+        }
+        else if (data.url == kGetInfo && isOutdated(Json::getUint64(doc, kHeight), Json::getString(doc, "top_block_hash"))) {
             getBlockTemplate();
         }
 
@@ -179,8 +199,14 @@ void xmrig::DaemonClient::onTimer(const Timer *)
         getBlockTemplate();
     }
     else if (m_state == ConnectedState) {
-        send(HTTP_GET, "/getheight");
+        send(HTTP_GET, m_monero ? kGetHeight : kGetInfo);
     }
+}
+
+
+bool xmrig::DaemonClient::isOutdated(uint64_t height, const char *hash) const
+{
+    return m_job.height() != height || m_prevHash != hash;
 }
 
 
@@ -188,18 +214,19 @@ bool xmrig::DaemonClient::parseJob(const rapidjson::Value &params, int *code)
 {
     Job job(m_id, false, m_pool.algorithm(), String());
 
-    String blocktemplate = Json::getString(params, "blocktemplate_blob");
+    String blocktemplate = Json::getString(params, kBlocktemplateBlob);
     if (blocktemplate.isNull() || !job.setBlob(Json::getString(params, "blockhashing_blob"))) {
         *code = 4;
         return false;
     }
 
-    job.setHeight(Json::getUint64(params, "height"));
+    job.setHeight(Json::getUint64(params, kHeight));
     job.setDiff(Json::getUint64(params, "difficulty"));
     job.setId(blocktemplate.data() + blocktemplate.size() - 32);
 
     m_job           = std::move(job);
     m_blocktemplate = std::move(blocktemplate);
+    m_prevHash      = Json::getString(params, "prev_hash");
 
     if (m_state == ConnectingState) {
         setState(ConnectedState);
@@ -231,7 +258,7 @@ bool xmrig::DaemonClient::parseResponse(int64_t id, const rapidjson::Value &resu
     }
 
     int code = -1;
-    if (result.HasMember("blocktemplate_blob") && parseJob(result, &code)) {
+    if (result.HasMember(kBlocktemplateBlob) && parseJob(result, &code)) {
         return true;
     }
 
@@ -251,17 +278,13 @@ int64_t xmrig::DaemonClient::getBlockTemplate()
     Document doc(kObjectType);
     auto &allocator = doc.GetAllocator();
 
-    doc.AddMember("id",      m_sequence,         allocator);
-    doc.AddMember("jsonrpc", "2.0",              allocator);
-    doc.AddMember("method",  "getblocktemplate", allocator);
-
     Value params(kObjectType);
     params.AddMember("wallet_address", m_pool.user().toJSON(), allocator);
     params.AddMember("reserve_size",   8,                      allocator);
 
-    doc.AddMember("params", params, allocator);
+    JsonRequest::create(doc, m_sequence, "getblocktemplate", params);
 
-    send(HTTP_POST, "/json_rpc", doc);
+    send(HTTP_POST, kJsonRPC, doc);
 
     return m_sequence++;
 }

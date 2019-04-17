@@ -22,41 +22,24 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <fstream>
-
-
-#include "base/io/Json.h"
-#include "rapidjson/document.h"
-#include "rapidjson/istreamwrapper.h"
-#include "rapidjson/ostreamwrapper.h"
-#include "rapidjson/prettywriter.h"
+#ifndef XMRIG_BATON_H
+#define XMRIG_BATON_H
 
 
-bool xmrig::Json::get(const char *fileName, rapidjson::Document &doc)
+namespace xmrig {
+
+
+template<typename REQ>
+class Baton
 {
-    std::ifstream ifs(fileName, std::ios_base::in | std::ios_base::binary);
-    if (!ifs.is_open()) {
-        return false;
-    }
+public:
+    inline Baton() { req.data = this; }
 
-    rapidjson::IStreamWrapper isw(ifs);
-    doc.ParseStream<rapidjson::kParseCommentsFlag | rapidjson::kParseTrailingCommasFlag>(isw);
-
-    return !doc.HasParseError() && doc.IsObject();
-}
+    REQ req;
+};
 
 
-bool xmrig::Json::save(const char *fileName, const rapidjson::Document &doc)
-{
-    std::ofstream ofs(fileName, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
-    if (!ofs.is_open()) {
-        return false;
-    }
+} /* namespace xmrig */
 
-    rapidjson::OStreamWrapper osw(ofs);
-    rapidjson::PrettyWriter<rapidjson::OStreamWrapper> writer(osw);
-    doc.Accept(writer);
 
-    return true;
-}
+#endif /* XMRIG_BATON_H */

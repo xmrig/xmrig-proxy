@@ -26,7 +26,7 @@
 #define XMRIG_SPLITTER_H
 
 
-#include "base/kernel/interfaces/IControllerListener.h"
+#include "base/kernel/interfaces/IBaseListener.h"
 #include "interfaces/IEventListener.h"
 #include "interfaces/ISplitter.h"
 
@@ -37,7 +37,7 @@ namespace xmrig {
 class Controller;
 
 
-class Splitter : public IEventListener, public ISplitter, public IControllerListener
+class Splitter : public IEventListener, public ISplitter, public IBaseListener
 {
 public:
     Splitter(Controller *controller);

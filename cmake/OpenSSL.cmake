@@ -21,7 +21,12 @@ if (WITH_TLS)
             src/proxy/tls/TlsContext.cpp
             src/proxy/tls/TlsContext.h
             )
+
         include_directories(${OPENSSL_INCLUDE_DIR})
+
+        if (WITH_HTTP)
+            set(TLS_SOURCES ${TLS_SOURCES} src/base/net/http/HttpsClient.h src/base/net/http/HttpsClient.cpp)
+        endif()
     else()
         message(FATAL_ERROR "OpenSSL NOT found: use `-DWITH_TLS=OFF` to build without TLS support")
     endif()

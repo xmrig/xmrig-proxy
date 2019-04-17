@@ -4,7 +4,7 @@ project(xmrig-proxy)
 
 option(WITH_GOOGLE_BREAKPAD "Use Google Breakpad"     OFF)
 option(WITH_DEBUG_LOG       "Enable debug log output" OFF)
-option(WITH_HTTPD           "HTTP REST API"           ON)
+option(WITH_HTTP            "HTTP protocol support (client/server)" ON)
 option(WITH_TLS             "Enable OpenSSL support"  ON)
 
 
@@ -17,16 +17,13 @@ set(HEADERS
     "${HEADERS_BASE_HTTP}"
     src/3rdparty/align.h
     src/App.h
-    src/common/config/CommonConfig.h
-    src/common/config/ConfigLoader.h
-    src/common/config/ConfigWatcher.h
     src/common/crypto/Algorithm.h
     src/common/crypto/keccak.h
-    src/common/interfaces/IConfig.h
     src/common/Platform.h
     src/common/xmrig.h
+    src/core/config/Config_platform.h
     src/core/config/Config.h
-    src/core/config/ConfigLoader_platform.h
+    src/core/config/ConfigTransform.h
     src/core/config/usage.h
     src/core/Controller.h
     src/donate.h
@@ -77,13 +74,11 @@ set(SOURCES
     "${SOURCES_BASE}"
     "${SOURCES_BASE_HTTP}"
     src/App.cpp
-    src/common/config/CommonConfig.cpp
-    src/common/config/ConfigLoader.cpp
-    src/common/config/ConfigWatcher.cpp
     src/common/crypto/Algorithm.cpp
     src/common/crypto/keccak.cpp
     src/common/Platform.cpp
     src/core/config/Config.cpp
+    src/core/config/ConfigTransform.cpp
     src/core/Controller.cpp
     src/log/AccessLog.cpp
     src/log/ShareLog.cpp
@@ -120,9 +115,9 @@ set(SOURCES
 
 if (WIN32)
     set(SOURCES_OS
+        "${SOURCES_OS}"
         res/app.rc
         src/App_win.cpp
-        src/base/io/Json_win.cpp
         src/common/Platform_win.cpp
         src/proxy/Uuid_win.cpp
         )
@@ -131,8 +126,8 @@ if (WIN32)
     set(EXTRA_LIBS ws2_32 psapi iphlpapi userenv)
 elseif (APPLE)
     set(SOURCES_OS
+        "${SOURCES_OS}"
         src/App_unix.cpp
-        src/base/io/Json_unix.cpp
         src/common/Platform_mac.cpp
         src/proxy/Uuid_mac.cpp
         )
@@ -141,8 +136,8 @@ elseif (APPLE)
     set(EXTRA_LIBS ${CFLIB})
 else()
     set(SOURCES_OS
+        "${SOURCES_OS}"
         src/App_unix.cpp
-        src/base/io/Json_unix.cpp
         src/common/Platform_unix.cpp
         src/proxy/Uuid_unix.cpp
         )
@@ -225,8 +220,8 @@ else()
     add_definitions(/DXMRIG_NO_GOOGLE_BREAKPAD)
 endif()
 
-if (WITH_HTTPD)
-    set(HTTPD_SOURCES
+if (WITH_HTTP)
+    set(HTTP_SOURCES
         src/api/Api.cpp
         src/api/Api.h
         src/api/Httpd.cpp
@@ -240,9 +235,7 @@ if (WITH_HTTPD)
         src/api/v1/ApiRouter.h
         )
 else()
-    set(HTTPD_SOURCES "")
-    add_definitions(/DXMRIG_NO_HTTPD)
-    add_definitions(/DXMRIG_NO_API)
+    set(HTTP_SOURCES "")
 endif()
 
 if (WITH_DEBUG_LOG)
@@ -253,5 +246,5 @@ include_directories(src)
 include_directories(src/3rdparty)
 include_directories(${UV_INCLUDE_DIR})
 
-add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_SYSLOG} ${HTTPD_SOURCES} ${TLS_SOURCES})
+add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_SYSLOG} ${HTTP_SOURCES} ${TLS_SOURCES})
 target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENSSL_LIBRARIES} ${UV_LIBRARIES} ${EXTRA_LIBS} ${GOOGLE_BREAKPAD_LIBS})

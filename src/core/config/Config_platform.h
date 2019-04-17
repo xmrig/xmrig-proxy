@@ -22,8 +22,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_CONFIGLOADER_PLATFORM_H
-#define XMRIG_CONFIGLOADER_PLATFORM_H
+#ifndef XMRIG_CONFIG_PLATFORM_H
+#define XMRIG_CONFIG_PLATFORM_H
 
 
 #ifdef _MSC_VER
@@ -33,7 +33,7 @@
 #endif
 
 
-#include "common/interfaces/IConfig.h"
+#include "base/kernel/interfaces/IConfig.h"
 #include "version.h"
 
 
@@ -55,7 +55,6 @@ static struct option const options[] = {
     { "http-no-restricted",0, nullptr, IConfig::HttpRestrictedKey },
     { "background",        0, nullptr, IConfig::BackgroundKey     },
     { "bind",              1, nullptr, IConfig::BindKey           },
-    { "coin",              1, nullptr, IConfig::CoinKey           },
     { "config",            1, nullptr, IConfig::ConfigKey         },
     { "custom-diff",       1, nullptr, IConfig::CustomDiffKey     },
     { "debug",             0, nullptr, IConfig::DebugKey          },
@@ -63,7 +62,6 @@ static struct option const options[] = {
     { "keepalive",         2, nullptr, IConfig::KeepAliveKey      },
     { "log-file",          1, nullptr, IConfig::LogFileKey        },
     { "no-color",          0, nullptr, IConfig::ColorKey          },
-    { "no-watch",          0, nullptr, IConfig::WatchKey          },
     { "no-workers",        0, nullptr, IConfig::WorkersKey        },
     { "workers",           1, nullptr, IConfig::WorkersAdvKey     },
     { "pass",              1, nullptr, IConfig::PasswordKey       },
@@ -107,7 +105,6 @@ static struct option const config_options[] = {
     { "access-log-file",  1, nullptr, IConfig::AccessLogFileKey  },
     { "algo",             1, nullptr, IConfig::AlgorithmKey      },
     { "background",       0, nullptr, IConfig::BackgroundKey     },
-    { "coin",             1, nullptr, IConfig::CoinKey           },
     { "colors",           0, nullptr, IConfig::ColorKey          },
     { "custom-diff",      1, nullptr, IConfig::CustomDiffKey     },
     { "debug",            0, nullptr, IConfig::DebugKey          },
@@ -118,7 +115,6 @@ static struct option const config_options[] = {
     { "syslog",           0, nullptr, IConfig::SyslogKey         },
     { "user-agent",       1, nullptr, IConfig::UserAgentKey      },
     { "verbose",          0, nullptr, IConfig::VerboseKey        },
-    { "watch",            0, nullptr, IConfig::WatchKey          },
     { "workers",          1, nullptr, IConfig::WorkersAdvKey     },
     { "reuse-timeout",    1, nullptr, IConfig::ReuseTimeoutKey   },
     { "mode",             1, nullptr, IConfig::ModeKey           },
@@ -128,14 +124,7 @@ static struct option const config_options[] = {
 };
 
 
-static struct option const api_options[] = {
-    { "worker-id",     1, nullptr, IConfig::ApiWorkerIdKey    },
-    { "id",            1, nullptr, IConfig::ApiIdKey          },
-    { nullptr,         0, nullptr, 0 }
-};
-
-
 } /* namespace xmrig */
 
 
-#endif /* XMRIG_CONFIGLOADER_PLATFORM_H */
+#endif /* XMRIG_CONFIG_PLATFORM_H */

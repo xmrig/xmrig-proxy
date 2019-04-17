@@ -22,26 +22,50 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_ICONTROLLERLISTENER_H
-#define XMRIG_ICONTROLLERLISTENER_H
+#ifndef XMRIG_BASE_H
+#define XMRIG_BASE_H
+
+
+#include "base/kernel/interfaces/IConfigListener.h"
+#include "base/kernel/interfaces/IWatcherListener.h"
+#include "rapidjson/fwd.h"
 
 
 namespace xmrig {
 
 
+class Api;
 class Config;
+class BasePrivate;
+class IBaseListener;
+class Process;
 
 
-class IControllerListener
+class Base : public IWatcherListener
 {
 public:
-    virtual ~IControllerListener() = default;
+    Base(Process *process);
+    ~Base() override;
 
-    virtual void onConfigChanged(Config *config, Config *previousConfig) = 0;
+    virtual bool isReady() const;
+    virtual int init();
+    virtual void start();
+    virtual void stop();
+
+    Api *api() const;
+    bool reload(const rapidjson::Value &json);
+    Config *config() const;
+    void addListener(IBaseListener *listener);
+
+protected:
+    void onFileChanged(const String &fileName) override;
+
+private:
+    BasePrivate *d_ptr;
 };
 
 
 } /* namespace xmrig */
 
 
-#endif // XMRIG_ICONTROLLERLISTENER_H
+#endif /* XMRIG_BASE_H */

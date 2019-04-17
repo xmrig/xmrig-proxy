@@ -181,7 +181,7 @@ void xmrig::NonceMapper::printState()
 #endif
 
 
-void xmrig::NonceMapper::onActive(IStrategy *strategy, Client *client)
+void xmrig::NonceMapper::onActive(IStrategy *strategy, IClient *client)
 {
     m_storage->setActive(true);
 
@@ -199,8 +199,8 @@ void xmrig::NonceMapper::onActive(IStrategy *strategy, Client *client)
     if (m_controller->config()->isVerbose()) {
         const char *tlsVersion = client->tlsVersion();
 
-        LOG_INFO("#%03u " WHITE_BOLD("use pool ") CYAN_BOLD("%s:%d ") GREEN_BOLD("%s") " \x1B[1;30m%s ",
-                 m_id, client->host(), client->port(), tlsVersion ? tlsVersion : "", client->ip());
+        LOG_INFO("#%03u " WHITE_BOLD("use %s ") CYAN_BOLD("%s:%d ") GREEN_BOLD("%s") " \x1B[1;30m%s ",
+                 m_id, client->mode(), client->pool().host().data(), client->pool().port(), tlsVersion ? tlsVersion : "", client->ip().data());
 
         const char *fingerprint = client->tlsFingerprint();
         if (fingerprint != nullptr) {
@@ -210,7 +210,7 @@ void xmrig::NonceMapper::onActive(IStrategy *strategy, Client *client)
 }
 
 
-void xmrig::NonceMapper::onJob(IStrategy *, Client *client, const Job &job)
+void xmrig::NonceMapper::onJob(IStrategy *, IClient *client, const Job &job)
 {
     if (m_donate) {
         if (m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {
@@ -221,7 +221,7 @@ void xmrig::NonceMapper::onJob(IStrategy *, Client *client, const Job &job)
         m_donate->setAlgo(job.algorithm());
     }
 
-    setJob(client->host(), client->port(), job);
+    setJob(client->pool().host(), client->pool().port(), job);
 }
 
 
@@ -235,7 +235,7 @@ void xmrig::NonceMapper::onPause(IStrategy *)
 }
 
 
-void xmrig::NonceMapper::onResultAccepted(IStrategy *, Client *client, const SubmitResult &result, const char *error)
+void xmrig::NonceMapper::onResultAccepted(IStrategy *, IClient *client, const SubmitResult &result, const char *error)
 {
     const SubmitCtx ctx = submitCtx(result.seq);
 
@@ -287,11 +287,11 @@ void xmrig::NonceMapper::setJob(const char *host, int port, const Job &job)
 {
     if (m_controller->config()->isVerbose()) {
         if (job.height()) {
-            LOG_INFO("#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s") " height " WHITE_BOLD("%" PRIu64),
+            LOG_INFO("#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%" PRIu64) " algo " WHITE_BOLD("%s") " height " WHITE_BOLD("%" PRIu64),
                      m_id, host, port, job.diff(), job.algorithm().shortName(), job.height());
         }
         else {
-            LOG_INFO("#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s"),
+            LOG_INFO("#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%" PRIu64) " algo " WHITE_BOLD("%s"),
                      m_id, host, port, job.diff(), job.algorithm().shortName());
         }
     }

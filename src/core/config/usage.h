@@ -57,7 +57,6 @@ Options:\n\
       --donate-level=N      donate level, default 2%%\n\
   -B, --background          run the miner in the background\n\
   -c, --config=FILE         load a JSON-format configuration file\n\
-      --no-watch            disable configuration file watching\n\
   -l, --log-file=FILE       log all output to a file\n"
 #ifdef HAVE_SYSLOG_H
 "\

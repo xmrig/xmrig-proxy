@@ -82,10 +82,10 @@ public:
 #   endif
 
 protected:
-    void onActive(IStrategy *strategy, Client *client) override;
-    void onJob(IStrategy *strategy, Client *client, const Job &job) override;
+    void onActive(IStrategy *strategy, IClient *client) override;
+    void onJob(IStrategy *strategy, IClient *client, const Job &job) override;
     void onPause(IStrategy *strategy) override;
-    void onResultAccepted(IStrategy *strategy, Client *client, const SubmitResult &result, const char *error) override;
+    void onResultAccepted(IStrategy *strategy, IClient *client, const SubmitResult &result, const char *error) override;
 
 private:
     SubmitCtx submitCtx(int64_t seq);

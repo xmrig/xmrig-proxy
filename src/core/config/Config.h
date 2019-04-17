@@ -30,8 +30,8 @@
 #include <vector>
 
 
+#include "base/kernel/config/BaseConfig.h"
 #include "base/tools/String.h"
-#include "common/config/CommonConfig.h"
 #include "proxy/BindHost.h"
 #include "proxy/workers/Workers.h"
 #include "rapidjson/fwd.h"
@@ -61,7 +61,7 @@ class Process;
  *   api/worker-id
  *   pools/
  */
-class Config : public CommonConfig
+class Config : public BaseConfig
 {
 public:
     enum Mode {
@@ -72,12 +72,10 @@ public:
     Config();
 
     bool isTLS() const;
-    bool reload(const rapidjson::Value &json);
     const char *modeName() const;
 
+    bool read(const IJsonReader &reader, const char *fileName) override;
     void getJSON(rapidjson::Document &doc) const override;
-
-    static Config *load(Process *process, IConfigListener *listener);
 
     inline bool hasAlgoExt() const                 { return isDonateOverProxy() ? m_algoExt : true; }
     inline bool isDebug() const                    { return m_debug; }
@@ -99,15 +97,10 @@ public:
     inline const xmrig::TlsConfig &tls() const { return m_tls; }
 #   endif
 
-protected:
-    bool finalize() override;
-    bool parseBoolean(int key, bool enable) override;
-    bool parseString(int key, const char *arg) override;
-    bool parseUint64(int key, uint64_t arg) override;
-    void parseJSON(const rapidjson::Value &json) override;
-
 private:
+    void setCustomDiff(uint64_t diff);
     void setMode(const char *mode);
+    void setWorkersMode(const rapidjson::Value &value);
 
     BindHosts m_bind;
     bool m_algoExt;

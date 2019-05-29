@@ -1,3 +1,7 @@
+# v2.14.4
+- Fixed MSVC 2019 version detection.
+- Removed obsolete automatic variants.
+
 # v2.14.1
 - [#306](https://github.com/xmrig/xmrig-proxy/issues/306) [#310](https://github.com/xmrig/xmrig-proxy/issues/310) Fixed compile issues and random crashing if verbose mode or access log was enabled.
 

@@ -149,7 +149,7 @@ void xmrig::Miner::forwardJob(const Job &job, const char *algo)
     m_diff = job.diff();
     setFixedByte(job.fixedByte());
 
-    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().shortName(), job.height());
+    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().shortName(), job.height(), job.rawSeedHash());
 }
 
 
@@ -178,7 +178,7 @@ void xmrig::Miner::setJob(Job &job)
         customDiff = true;
     }
 
-    sendJob(job.rawBlob(), job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height());
+    sendJob(job.rawBlob(), job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height(), job.rawSeedHash());
 }
 
 
@@ -457,7 +457,7 @@ void xmrig::Miner::send(int size)
 }
 
 
-void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height)
+void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height, const String &seedHash)
 {
     using namespace rapidjson;
 
@@ -472,6 +472,10 @@ void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *targ
 
     if (height) {
         params.AddMember("height", height, allocator);
+    }
+
+    if (!seedHash.isNull()) {
+        params.AddMember("seed_hash", seedHash.toJSON(), allocator);
     }
 
     doc.AddMember("jsonrpc", "2.0", allocator);

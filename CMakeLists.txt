@@ -17,7 +17,6 @@ set(HEADERS
     "${HEADERS_BASE_HTTP}"
     src/3rdparty/align.h
     src/App.h
-    src/common/crypto/Algorithm.h
     src/common/crypto/keccak.h
     src/common/Platform.h
     src/common/xmrig.h
@@ -26,6 +25,7 @@ set(HEADERS
     src/core/config/ConfigTransform.h
     src/core/config/usage.h
     src/core/Controller.h
+    src/crypto/common/Algorithm.h
     src/donate.h
     src/interfaces/IEvent.h
     src/interfaces/IEventListener.h
@@ -74,12 +74,12 @@ set(SOURCES
     "${SOURCES_BASE}"
     "${SOURCES_BASE_HTTP}"
     src/App.cpp
-    src/common/crypto/Algorithm.cpp
     src/common/crypto/keccak.cpp
     src/common/Platform.cpp
     src/core/config/Config.cpp
     src/core/config/ConfigTransform.cpp
     src/core/Controller.cpp
+    src/crypto/common/Algorithm.cpp
     src/log/AccessLog.cpp
     src/log/ShareLog.cpp
     src/net/JobResult.cpp
@@ -154,6 +154,12 @@ add_definitions(/DUNICODE)
 add_definitions(/D__STDC_FORMAT_MACROS)
 add_definitions(/DAPP_DEVEL)
 add_definitions(/DXMRIG_NO_ASM)
+
+add_definitions(/DXMRIG_ALGO_RANDOMX)
+add_definitions(/DXMRIG_ALGO_CN_LITE)
+add_definitions(/DXMRIG_ALGO_CN_HEAVY)
+add_definitions(/DXMRIG_ALGO_CN_PICO)
+add_definitions(/DXMRIG_ALGO_CN_GPU)
 
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$" AND CMAKE_SIZEOF_VOID_P EQUAL 8)
     add_definitions(/DRAPIDJSON_SSE2)

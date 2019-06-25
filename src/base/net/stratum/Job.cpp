@@ -42,7 +42,8 @@ xmrig::Job::Job() :
     m_diff(0),
     m_height(0),
     m_target(0),
-    m_blob()
+    m_blob(),
+    m_seedHash()
 {
 }
 
@@ -58,7 +59,8 @@ xmrig::Job::Job(int poolId, bool nicehash, const Algorithm &algorithm, const Str
     m_diff(0),
     m_height(0),
     m_target(0),
-    m_blob()
+    m_blob(),
+    m_seedHash()
 {
 }
 
@@ -102,30 +104,26 @@ bool xmrig::Job::setBlob(const char *blob)
         m_algorithm.setVariant(variant());
     }
 
-    if (!m_algorithm.isForced()) {
-        if (m_algorithm.variant() == VARIANT_XTL && m_blob[0] >= 9) {
-            m_algorithm.setVariant(VARIANT_HALF);
-        }
-        else if (m_algorithm.variant() == VARIANT_MSR && m_blob[0] >= 8) {
-            m_algorithm.setVariant(VARIANT_HALF);
-        }
-        else if (m_algorithm.variant() == VARIANT_WOW && m_blob[0] < 11) {
-            m_algorithm.setVariant(VARIANT_2);
-        }
-        else if (m_algorithm.variant() == VARIANT_RWZ && m_blob[0] < 12) {
-            m_algorithm.setVariant(VARIANT_2);
-        }
-        else if (m_algorithm.variant() == VARIANT_ZLS && m_blob[0] < 8) {
-            m_algorithm.setVariant(VARIANT_2);
-        }
-    }
-
 #   ifdef XMRIG_PROXY_PROJECT
     memset(m_rawBlob, 0, sizeof(m_rawBlob));
     memcpy(m_rawBlob, blob, m_size * 2);
 #   endif
 
     return true;
+}
+
+
+bool xmrig::Job::setSeedHash(const char *hash)
+{
+    if (!hash || (strlen(hash) != sizeof(m_seedHash) * 2)) {
+        return false;
+    }
+
+#   ifdef XMRIG_PROXY_PROJECT
+    m_rawSeedHash = hash;
+#   endif
+
+    return Buffer::fromHex(hash, sizeof(m_seedHash) * 2, m_seedHash);
 }
 
 

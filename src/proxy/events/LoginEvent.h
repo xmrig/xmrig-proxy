@@ -29,7 +29,7 @@
 #include <stdint.h>
 
 
-#include "common/crypto/Algorithm.h"
+#include "crypto/common/Algorithm.h"
 #include "proxy/events/MinerEvent.h"
 #include "rapidjson/fwd.h"
 

@@ -111,7 +111,7 @@ private:
     void readTLS(int nread);
     void send(const rapidjson::Document &doc);
     void send(int size);
-    void sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height);
+    void sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height, const String &seedHash);
     void setState(State state);
     void shutdown(bool had_error);
 

@@ -201,8 +201,6 @@ void xmrig::Algorithm::parseAlgorithm(const char *algo)
         }
     }
 
-    printf(">>>>>>>>>>>> %s\n", algo);
-
     if (m_algo == INVALID_ALGO) {
         assert(false);
     }

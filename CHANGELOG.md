@@ -1,3 +1,8 @@
+# v2.16.0-beta
+- Added RandomWOW (RandomX with different preferences) algorithm support for [Wownero](http://wownero.org/).
+  - Algorithm name used by proxy is `randomx/wow` or `rx/wow`.
+  - Currently runtime algorithm switching NOT supported with other algorithms.
+  
 # v2.15.3-beta
 - [#1014](https://github.com/xmrig/xmrig/issues/1014) Fixed regression, default value for `algo` option was not applied.
 

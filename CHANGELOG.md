@@ -1,3 +1,7 @@
+# v2.16.1-beta
+- [#1036](https://github.com/xmrig/xmrig/pull/1036) Added RandomXL algorithm for [Loki](https://loki.network/).
+  - Algorithm name used by proxy is `randomx/loki` or `rx/loki`.
+  
 # v2.16.0-beta
 - [#1036](https://github.com/xmrig/xmrig/pull/1036) Added RandomWOW (RandomX with different preferences) algorithm support for [Wownero](http://wownero.org/).
   - Algorithm name used by proxy is `randomx/wow` or `rx/wow`.

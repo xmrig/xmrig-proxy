@@ -72,6 +72,7 @@ static AlgoData const algorithms[] = {
 
 #   ifdef XMRIG_ALGO_RANDOMX
     { "randomx/wow",           "rx/wow",       xmrig::RANDOM_X,          xmrig::VARIANT_RX_WOW },
+    { "randomx/loki",          "rx/loki",      xmrig::RANDOM_X,          xmrig::VARIANT_RX_LOKI },
     { "randomx",               "rx",           xmrig::RANDOM_X,          xmrig::VARIANT_RX_WOW },
 #   endif
 
@@ -145,6 +146,7 @@ static const char *variants[] = {
     "zls",
     "double",
     "rx/wow",
+    "rx/loki",
 };
 
 
@@ -200,10 +202,6 @@ void xmrig::Algorithm::parseAlgorithm(const char *algo)
             break;
         }
     }
-
-    if (m_algo == INVALID_ALGO) {
-        assert(false);
-    }
 }
 
 
@@ -224,6 +222,11 @@ void xmrig::Algorithm::parseVariant(const char *variant)
     for (size_t i = 0; i < ARRAY_SIZE(variants); i++) {
         if (strcasecmp(variant, variants[i]) == 0) {
             m_variant = static_cast<Variant>(i);
+
+            if (m_variant == VARIANT_RX_WOW || m_variant == VARIANT_RX_LOKI) { // FIXME
+                m_algo = RANDOM_X;
+            }
+
             return;
         }
     }

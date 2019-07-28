@@ -24,10 +24,10 @@
 
 
 #include "base/kernel/interfaces/IStrategyListener.h"
+#include "base/kernel/Platform.h"
 #include "base/net/stratum/Client.h"
 #include "base/tools/Buffer.h"
 #include "common/crypto/keccak.h"
-#include "common/Platform.h"
 #include "common/xmrig.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
@@ -66,7 +66,7 @@ xmrig::DonateStrategy::DonateStrategy(Controller *controller, IStrategyListener 
 #   endif
 
     m_client->setRetryPause(1000);
-    m_client->setAlgo(controller->config()->algorithm());
+//    m_client->setAlgo(controller->config()->algorithm()); // FIXME
     m_client->setQuiet(true);
 
     m_target = (100 - controller->config()->pools().donateLevel()) * 60 * randomf(0.5, 1.5);
@@ -173,4 +173,10 @@ void xmrig::DonateStrategy::onLoginSuccess(IClient *)
 void xmrig::DonateStrategy::onResultAccepted(IClient *client, const SubmitResult &result, const char *error)
 {
     m_listener->onResultAccepted(this, client, result, error);
+}
+
+
+void xmrig::DonateStrategy::onVerifyAlgorithm(const IClient *client, const Algorithm &algorithm, bool *ok)
+{
+
 }

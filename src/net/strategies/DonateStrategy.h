@@ -77,6 +77,7 @@ protected:
     void onJobReceived(IClient *client, const Job &job, const rapidjson::Value &params) override;
     void onLoginSuccess(IClient *client) override;
     void onResultAccepted(IClient *client, const SubmitResult &result, const char *error) override;
+    void onVerifyAlgorithm(const IClient *client, const Algorithm &algorithm, bool *ok) override;
 
 private:
     bool m_active;

@@ -18,13 +18,13 @@ set(HEADERS
     src/3rdparty/align.h
     src/App.h
     src/common/crypto/keccak.h
-    src/common/Platform.h
     src/common/xmrig.h
     src/core/config/Config_platform.h
     src/core/config/Config.h
     src/core/config/ConfigTransform.h
     src/core/config/usage.h
     src/core/Controller.h
+    src/crypto/cn/CnAlgo.h
     src/crypto/common/Algorithm.h
     src/donate.h
     src/interfaces/IEvent.h
@@ -75,7 +75,6 @@ set(SOURCES
     "${SOURCES_BASE_HTTP}"
     src/App.cpp
     src/common/crypto/keccak.cpp
-    src/common/Platform.cpp
     src/core/config/Config.cpp
     src/core/config/ConfigTransform.cpp
     src/core/Controller.cpp
@@ -118,7 +117,6 @@ if (WIN32)
         "${SOURCES_OS}"
         res/app.rc
         src/App_win.cpp
-        src/common/Platform_win.cpp
         src/proxy/Uuid_win.cpp
         )
 
@@ -128,7 +126,6 @@ elseif (APPLE)
     set(SOURCES_OS
         "${SOURCES_OS}"
         src/App_unix.cpp
-        src/common/Platform_mac.cpp
         src/proxy/Uuid_mac.cpp
         )
 
@@ -138,7 +135,6 @@ else()
     set(SOURCES_OS
         "${SOURCES_OS}"
         src/App_unix.cpp
-        src/common/Platform_unix.cpp
         src/proxy/Uuid_unix.cpp
         )
 

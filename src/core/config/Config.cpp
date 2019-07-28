@@ -140,7 +140,6 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
 
     doc.AddMember("access-log-file", m_accessLog.toJSON(), allocator);
     doc.AddMember("access-password", m_password.toJSON(), allocator);
-    doc.AddMember("algo",            StringRef(algorithm().name()), allocator);
     doc.AddMember("algo-ext",        m_algoExt, allocator);
 
     Value api(kObjectType);

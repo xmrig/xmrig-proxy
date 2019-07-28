@@ -68,12 +68,12 @@ bool xmrig::Login::verifyAlgorithms(LoginEvent *event)
         return true;
     }
 
-    const xmrig::Algo baseAlgo = m_controller->config()->algorithm().algo();
-    for (const xmrig::Algorithm &algo : event->algorithms) {
-        if (algo.algo() == baseAlgo) {
-            return true;
-        }
-    }
+//    const xmrig::Algo baseAlgo = m_controller->config()->algorithm().algo(); FIXME
+//    for (const xmrig::Algorithm &algo : event->algorithms) {
+//        if (algo.algo() == baseAlgo) {
+//            return true;
+//        }
+//    }
 
     return false;
 }

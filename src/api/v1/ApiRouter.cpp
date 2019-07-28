@@ -28,10 +28,11 @@
 #include <thread>
 
 
+#include "api/interfaces/IApiRequest.h"
 #include "api/v1/ApiRouter.h"
+#include "base/kernel/Platform.h"
 #include "base/tools/Buffer.h"
 #include "common/crypto/keccak.h"
-#include "common/Platform.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/Miner.h"
@@ -39,7 +40,6 @@
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/stringbuffer.h"
 #include "version.h"
-#include "api/interfaces/IApiRequest.h"
 
 
 static inline double normalize(double d)
@@ -131,7 +131,7 @@ void xmrig::ApiRouter::getMiner(rapidjson::Value &reply, rapidjson::Document &do
 
     reply.AddMember("version",      APP_VERSION, allocator);
     reply.AddMember("kind",         APP_KIND, allocator);
-    reply.AddMember("algo",         rapidjson::StringRef(m_base->config()->algorithm().name()), allocator);
+//    reply.AddMember("algo",         rapidjson::StringRef(m_base->config()->algorithm().name()), allocator); FIXME
     reply.AddMember("mode",         rapidjson::StringRef(m_base->config()->modeName()), allocator);
     reply.AddMember("ua",           rapidjson::StringRef(Platform::userAgent()), allocator);
     reply.AddMember("uptime",       stats.uptime(), allocator);

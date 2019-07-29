@@ -26,10 +26,10 @@
 #define XMRIG_ACCESSLOG_H
 
 
-#include <uv.h>
+#include "proxy/interfaces/IEventListener.h"
 
 
-#include "interfaces/IEventListener.h"
+typedef struct uv_fs_s uv_fs_t;
 
 
 class Stats;

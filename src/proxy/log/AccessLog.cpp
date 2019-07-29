@@ -32,10 +32,10 @@
 #include "base/tools/Chrono.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
-#include "log/AccessLog.h"
 #include "proxy/Counters.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
+#include "proxy/log/AccessLog.h"
 #include "proxy/Miner.h"
 #include "proxy/Stats.h"
 

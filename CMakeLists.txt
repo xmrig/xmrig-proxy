@@ -25,11 +25,6 @@ set(HEADERS
     src/crypto/common/Algorithm.h
     src/crypto/common/keccak.h
     src/donate.h
-    src/interfaces/IEvent.h
-    src/interfaces/IEventListener.h
-    src/interfaces/ISplitter.h
-    src/log/AccessLog.h
-    src/log/ShareLog.h
     src/net/JobResult.h
     src/net/strategies/DonateStrategy.h
     src/proxy/BindHost.h
@@ -44,6 +39,11 @@ set(HEADERS
     src/proxy/events/LoginEvent.h
     src/proxy/events/MinerEvent.h
     src/proxy/events/SubmitEvent.h
+    src/proxy/interfaces/IEvent.h
+    src/proxy/interfaces/IEventListener.h
+    src/proxy/interfaces/ISplitter.h
+    src/proxy/log/AccessLog.h
+    src/proxy/log/ShareLog.h
     src/proxy/Login.h
     src/proxy/Miner.h
     src/proxy/Miners.h
@@ -77,8 +77,6 @@ set(SOURCES
     src/core/Controller.cpp
     src/crypto/common/Algorithm.cpp
     src/crypto/common/keccak.cpp
-    src/log/AccessLog.cpp
-    src/log/ShareLog.cpp
     src/net/JobResult.cpp
     src/net/strategies/DonateStrategy.cpp
     src/proxy/BindHost.cpp
@@ -89,6 +87,8 @@ set(SOURCES
     src/proxy/events/ConnectionEvent.h
     src/proxy/events/Event.cpp
     src/proxy/events/MinerEvent.cpp
+    src/proxy/log/AccessLog.cpp
+    src/proxy/log/ShareLog.cpp
     src/proxy/Login.cpp
     src/proxy/Miner.cpp
     src/proxy/Miners.cpp

@@ -27,19 +27,22 @@
 #include "base/kernel/Platform.h"
 #include "base/net/stratum/Client.h"
 #include "base/tools/Buffer.h"
-#include "common/crypto/keccak.h"
-#include "common/xmrig.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
+#include "crypto/common/keccak.h"
 #include "donate.h"
 #include "net/strategies/DonateStrategy.h"
 #include "proxy/Counters.h"
 #include "proxy/StatsData.h"
 
 
-static inline float randomf(float min, float max) {
-    return (max - min) * ((((float) rand()) / (float) RAND_MAX)) + min;
-}
+namespace xmrig {
+
+
+static inline double randomf(double min, double max)    { return (max - min) * (((static_cast<double>(rand())) / static_cast<double>(RAND_MAX))) + min; }
+
+
+} // namespace xmrig
 
 
 xmrig::DonateStrategy::DonateStrategy(Controller *controller, IStrategyListener *listener) :
@@ -54,7 +57,7 @@ xmrig::DonateStrategy::DonateStrategy(Controller *controller, IStrategyListener 
     char userId[65] = { 0 };
     const char *user = controller->config()->pools().data().front().user();
 
-    xmrig::keccak(reinterpret_cast<const uint8_t *>(user), strlen(user), hash);
+    keccak(reinterpret_cast<const uint8_t *>(user), strlen(user), hash);
     Buffer::toHex(hash, 32, userId);
 
     m_client = new Client(-1, Platform::userAgent(), this);

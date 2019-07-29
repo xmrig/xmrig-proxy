@@ -29,7 +29,6 @@
 
 
 #include "base/io/log/Log.h"
-#include "common/xmrig.h"
 #include "core/config/Config.h"
 #include "donate.h"
 #include "rapidjson/document.h"

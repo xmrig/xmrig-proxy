@@ -243,7 +243,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
 
         Algorithm algorithm;
         if (params.HasMember("algo")) {
-            const char *algo = Json::getString(params, "algo");
+//            const char *algo = Json::getString(params, "algo");
 
 //            algorithm.parseAlgorithm(algo); FIXME
 //            if (!algorithm.isValid()) {

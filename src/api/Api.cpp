@@ -38,9 +38,9 @@
 #include "api/v1/ApiRouter.h"
 #include "base/kernel/Base.h"
 #include "base/tools/Buffer.h"
-#include "common/crypto/keccak.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
+#include "crypto/common/keccak.h"
 #include "version.h"
 
 
@@ -163,8 +163,8 @@ void xmrig::Api::genId(const String &id)
             memcpy(input + sizeof(uint16_t), interfaces[i].phys_addr, addrSize);
             memcpy(input + sizeof(uint16_t) + addrSize, APP_KIND, strlen(APP_KIND));
 
-            xmrig::keccak(input, inSize, hash);
-            xmrig::Buffer::toHex(hash, 8, m_id);
+            keccak(input, inSize, hash);
+            Buffer::toHex(hash, 8, m_id);
 
             delete [] input;
             break;

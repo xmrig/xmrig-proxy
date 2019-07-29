@@ -15,10 +15,7 @@ include (src/base/base.cmake)
 set(HEADERS
     "${HEADERS_BASE}"
     "${HEADERS_BASE_HTTP}"
-    src/3rdparty/align.h
     src/App.h
-    src/common/crypto/keccak.h
-    src/common/xmrig.h
     src/core/config/Config_platform.h
     src/core/config/Config.h
     src/core/config/ConfigTransform.h
@@ -26,6 +23,7 @@ set(HEADERS
     src/core/Controller.h
     src/crypto/cn/CnAlgo.h
     src/crypto/common/Algorithm.h
+    src/crypto/common/keccak.h
     src/donate.h
     src/interfaces/IEvent.h
     src/interfaces/IEventListener.h
@@ -74,11 +72,11 @@ set(SOURCES
     "${SOURCES_BASE}"
     "${SOURCES_BASE_HTTP}"
     src/App.cpp
-    src/common/crypto/keccak.cpp
     src/core/config/Config.cpp
     src/core/config/ConfigTransform.cpp
     src/core/Controller.cpp
     src/crypto/common/Algorithm.cpp
+    src/crypto/common/keccak.cpp
     src/log/AccessLog.cpp
     src/log/ShareLog.cpp
     src/net/JobResult.cpp

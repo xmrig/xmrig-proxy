@@ -75,7 +75,7 @@ bool xmrig::Login::verifyAlgorithms(LoginEvent *event)
 //        }
 //    }
 
-    return false;
+    return true;
 }
 
 

@@ -241,15 +241,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
             return true;
         }
 
-        Algorithm algorithm;
-        if (params.HasMember("algo")) {
-//            const char *algo = Json::getString(params, "algo");
-
-//            algorithm.parseAlgorithm(algo); FIXME
-//            if (!algorithm.isValid()) {
-//                algorithm.parseXmrStakAlgorithm(algo);
-//            }
-        }
+        Algorithm algorithm(Json::getString(params, "algo"));
 
         SubmitEvent *event = SubmitEvent::create(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm);
 

@@ -82,25 +82,6 @@ void xmrig::ApiRouter::onRequest(IApiRequest &request)
             request.accept();
             getMiners(request.reply(), request.doc());
         }
-        else if (request.url() == "/1/config") {
-            if (request.isRestricted()) {
-                return request.done(403);
-            }
-
-            request.accept();
-            m_base->config()->getJSON(request.doc());
-        }
-    }
-    else if (request.method() == IApiRequest::METHOD_PUT || request.method() == IApiRequest::METHOD_POST) {
-        if (request.url() == "/1/config") {
-            request.accept();
-
-            if (!m_base->reload(request.json())) {
-                return request.done(400);
-            }
-
-            request.done(204);
-        }
     }
 }
 
@@ -134,7 +115,6 @@ void xmrig::ApiRouter::getMiner(rapidjson::Value &reply, rapidjson::Document &do
     reply.AddMember("algo",         "invalid", allocator);
     reply.AddMember("mode",         rapidjson::StringRef(m_base->config()->modeName()), allocator);
     reply.AddMember("ua",           rapidjson::StringRef(Platform::userAgent()), allocator);
-    reply.AddMember("uptime",       stats.uptime(), allocator);
     reply.AddMember("donate_level", m_base->config()->pools().donateLevel(), allocator);
 
     if (stats.hashes && stats.donateHashes) {

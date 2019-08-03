@@ -28,10 +28,10 @@
 #include <thread>
 
 
+#include "api/interfaces/IApiRequest.h"
 #include "api/v1/ApiRouter.h"
+#include "base/kernel/Platform.h"
 #include "base/tools/Buffer.h"
-#include "common/crypto/keccak.h"
-#include "common/Platform.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/Miner.h"
@@ -39,7 +39,6 @@
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/stringbuffer.h"
 #include "version.h"
-#include "api/interfaces/IApiRequest.h"
 
 
 static inline double normalize(double d)
@@ -66,7 +65,7 @@ xmrig::ApiRouter::~ApiRouter()
 void xmrig::ApiRouter::onRequest(IApiRequest &request)
 {
     if (request.method() == IApiRequest::METHOD_GET) {
-        if (request.url() == "/1/summary") {
+        if (request.type() == IApiRequest::REQ_SUMMARY) {
             request.accept();
             getMiner(request.reply(), request.doc());
             getHashrate(request.reply(), request.doc());
@@ -82,25 +81,6 @@ void xmrig::ApiRouter::onRequest(IApiRequest &request)
         else if (request.url() == "/1/miners") {
             request.accept();
             getMiners(request.reply(), request.doc());
-        }
-        else if (request.url() == "/1/config") {
-            if (request.isRestricted()) {
-                return request.done(403);
-            }
-
-            request.accept();
-            m_base->config()->getJSON(request.doc());
-        }
-    }
-    else if (request.method() == IApiRequest::METHOD_PUT || request.method() == IApiRequest::METHOD_POST) {
-        if (request.url() == "/1/config") {
-            request.accept();
-
-            if (!m_base->reload(request.json())) {
-                return request.done(400);
-            }
-
-            request.done(204);
         }
     }
 }
@@ -131,10 +111,9 @@ void xmrig::ApiRouter::getMiner(rapidjson::Value &reply, rapidjson::Document &do
 
     reply.AddMember("version",      APP_VERSION, allocator);
     reply.AddMember("kind",         APP_KIND, allocator);
-    reply.AddMember("algo",         rapidjson::StringRef(m_base->config()->algorithm().name()), allocator);
+    reply.AddMember("algo",         "invalid", allocator);
     reply.AddMember("mode",         rapidjson::StringRef(m_base->config()->modeName()), allocator);
     reply.AddMember("ua",           rapidjson::StringRef(Platform::userAgent()), allocator);
-    reply.AddMember("uptime",       stats.uptime(), allocator);
     reply.AddMember("donate_level", m_base->config()->pools().donateLevel(), allocator);
 
     if (stats.hashes && stats.donateHashes) {

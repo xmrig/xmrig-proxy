@@ -84,8 +84,10 @@ public:
 protected:
     void onActive(IStrategy *strategy, IClient *client) override;
     void onJob(IStrategy *strategy, IClient *client, const Job &job) override;
+    void onLogin(IStrategy *strategy, IClient *client, rapidjson::Document &doc, rapidjson::Value &params) override;
     void onPause(IStrategy *strategy) override;
     void onResultAccepted(IStrategy *strategy, IClient *client, const SubmitResult &result, const char *error) override;
+    void onVerifyAlgorithm(IStrategy *strategy, const IClient *client, const Algorithm &algorithm, bool *ok) override;
 
 private:
     SubmitCtx submitCtx(int64_t seq);

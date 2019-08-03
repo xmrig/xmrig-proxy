@@ -41,12 +41,6 @@ static void print_mode(xmrig::Controller *controller)
 }
 
 
-static void print_algo(xmrig::Controller *controller)
-{
-    xmrig::Log::print(GREEN_BOLD(" * ") WHITE_BOLD("%-13s") MAGENTA_BOLD("%s"), "ALGO", controller->config()->algorithm().name());
-}
-
-
 static void print_bind(xmrig::Controller *controller)
 {
     const xmrig::BindHosts &bind = controller->config()->bind();
@@ -81,7 +75,6 @@ void Summary::print(xmrig::Controller *controller)
 {
     controller->config()->printVersions();
     print_mode(controller);
-    print_algo(controller);
     controller->config()->pools().print();
     print_bind(controller);
     print_commands(controller);

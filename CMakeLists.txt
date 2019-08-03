@@ -15,23 +15,16 @@ include (src/base/base.cmake)
 set(HEADERS
     "${HEADERS_BASE}"
     "${HEADERS_BASE_HTTP}"
-    src/3rdparty/align.h
     src/App.h
-    src/common/crypto/keccak.h
-    src/common/Platform.h
-    src/common/xmrig.h
     src/core/config/Config_platform.h
     src/core/config/Config.h
     src/core/config/ConfigTransform.h
     src/core/config/usage.h
     src/core/Controller.h
+    src/crypto/cn/CnAlgo.h
     src/crypto/common/Algorithm.h
+    src/crypto/common/keccak.h
     src/donate.h
-    src/interfaces/IEvent.h
-    src/interfaces/IEventListener.h
-    src/interfaces/ISplitter.h
-    src/log/AccessLog.h
-    src/log/ShareLog.h
     src/net/JobResult.h
     src/net/strategies/DonateStrategy.h
     src/proxy/BindHost.h
@@ -46,6 +39,11 @@ set(HEADERS
     src/proxy/events/LoginEvent.h
     src/proxy/events/MinerEvent.h
     src/proxy/events/SubmitEvent.h
+    src/proxy/interfaces/IEvent.h
+    src/proxy/interfaces/IEventListener.h
+    src/proxy/interfaces/ISplitter.h
+    src/proxy/log/AccessLog.h
+    src/proxy/log/ShareLog.h
     src/proxy/Login.h
     src/proxy/Miner.h
     src/proxy/Miners.h
@@ -74,14 +72,11 @@ set(SOURCES
     "${SOURCES_BASE}"
     "${SOURCES_BASE_HTTP}"
     src/App.cpp
-    src/common/crypto/keccak.cpp
-    src/common/Platform.cpp
     src/core/config/Config.cpp
     src/core/config/ConfigTransform.cpp
     src/core/Controller.cpp
     src/crypto/common/Algorithm.cpp
-    src/log/AccessLog.cpp
-    src/log/ShareLog.cpp
+    src/crypto/common/keccak.cpp
     src/net/JobResult.cpp
     src/net/strategies/DonateStrategy.cpp
     src/proxy/BindHost.cpp
@@ -92,6 +87,8 @@ set(SOURCES
     src/proxy/events/ConnectionEvent.h
     src/proxy/events/Event.cpp
     src/proxy/events/MinerEvent.cpp
+    src/proxy/log/AccessLog.cpp
+    src/proxy/log/ShareLog.cpp
     src/proxy/Login.cpp
     src/proxy/Miner.cpp
     src/proxy/Miners.cpp
@@ -118,7 +115,6 @@ if (WIN32)
         "${SOURCES_OS}"
         res/app.rc
         src/App_win.cpp
-        src/common/Platform_win.cpp
         src/proxy/Uuid_win.cpp
         )
 
@@ -128,7 +124,6 @@ elseif (APPLE)
     set(SOURCES_OS
         "${SOURCES_OS}"
         src/App_unix.cpp
-        src/common/Platform_mac.cpp
         src/proxy/Uuid_mac.cpp
         )
 
@@ -138,7 +133,6 @@ else()
     set(SOURCES_OS
         "${SOURCES_OS}"
         src/App_unix.cpp
-        src/common/Platform_unix.cpp
         src/proxy/Uuid_unix.cpp
         )
 

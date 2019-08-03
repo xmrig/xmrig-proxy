@@ -32,7 +32,7 @@
 
 
 #include "base/kernel/interfaces/IBaseListener.h"
-#include "interfaces/IEventListener.h"
+#include "proxy/interfaces/IEventListener.h"
 #include "proxy/workers/Worker.h"
 #include "rapidjson/fwd.h"
 

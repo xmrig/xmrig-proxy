@@ -74,7 +74,6 @@ static struct option const options[] = {
     { "user-agent",        1, nullptr, IConfig::UserAgentKey      },
     { "userpass",          1, nullptr, IConfig::UserpassKey       },
     { "verbose",           0, nullptr, IConfig::VerboseKey        },
-    { "variant",           1, nullptr, IConfig::VariantKey        },
     { "reuse-timeout",     1, nullptr, IConfig::ReuseTimeoutKey   },
     { "mode",              1, nullptr, IConfig::ModeKey           },
     { "rig-id",            1, nullptr, IConfig::RigIdKey          },
@@ -89,38 +88,7 @@ static struct option const options[] = {
     { "tls-ciphersuites",  1, nullptr, IConfig::TlsCipherSuitesKey},
     { "no-algo-ext",       0, nullptr, IConfig::AlgoExtKey        },
     { "access-password",   1, nullptr, IConfig::ProxyPasswordKey  },
-
-#   ifdef XMRIG_DEPRECATED
-    { "api-port",              1, nullptr, IConfig::ApiPort               },
-    { "api-access-token",      1, nullptr, IConfig::ApiAccessTokenKey     },
-    { "api-no-restricted",     0, nullptr, IConfig::ApiRestrictedKey      },
-    { "api-ipv6",              0, nullptr, IConfig::ApiIPv6Key            },
-#   endif
-
     { nullptr,             0, nullptr, 0 }
-};
-
-
-static struct option const config_options[] = {
-    { "access-log-file",  1, nullptr, IConfig::AccessLogFileKey  },
-    { "algo",             1, nullptr, IConfig::AlgorithmKey      },
-    { "background",       0, nullptr, IConfig::BackgroundKey     },
-    { "colors",           0, nullptr, IConfig::ColorKey          },
-    { "custom-diff",      1, nullptr, IConfig::CustomDiffKey     },
-    { "debug",            0, nullptr, IConfig::DebugKey          },
-    { "donate-level",     1, nullptr, IConfig::DonateLevelKey    },
-    { "log-file",         1, nullptr, IConfig::LogFileKey        },
-    { "retries",          1, nullptr, IConfig::RetriesKey        },
-    { "retry-pause",      1, nullptr, IConfig::RetryPauseKey     },
-    { "syslog",           0, nullptr, IConfig::SyslogKey         },
-    { "user-agent",       1, nullptr, IConfig::UserAgentKey      },
-    { "verbose",          0, nullptr, IConfig::VerboseKey        },
-    { "workers",          1, nullptr, IConfig::WorkersAdvKey     },
-    { "reuse-timeout",    1, nullptr, IConfig::ReuseTimeoutKey   },
-    { "mode",             1, nullptr, IConfig::ModeKey           },
-    { "algo-ext",         0, nullptr, IConfig::AlgoExtKey        },
-    { "access-password",  1, nullptr, IConfig::ProxyPasswordKey  },
-    { nullptr,            0, nullptr, 0 }
 };
 
 

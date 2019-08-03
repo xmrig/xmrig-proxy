@@ -126,3 +126,9 @@ void xmrig::DonateMapper::onResultAccepted(IClient *, const SubmitResult &result
         m_miner->success(result.reqId, "OK");
     }
 }
+
+
+void xmrig::DonateMapper::onVerifyAlgorithm(const IClient *client, const Algorithm &algorithm, bool *ok)
+{
+
+}

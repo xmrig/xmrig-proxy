@@ -62,36 +62,11 @@ void xmrig::Login::onEvent(IEvent *event)
 }
 
 
-bool xmrig::Login::verifyAlgorithms(LoginEvent *event)
-{
-    if (event->algorithms.empty()) {
-        return true;
-    }
-
-    const xmrig::Algo baseAlgo = m_controller->config()->algorithm().algo();
-    for (const xmrig::Algorithm &algo : event->algorithms) {
-        if (algo.algo() == baseAlgo) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-
 void xmrig::Login::login(LoginEvent *event)
 {
     const String &password = m_controller->config()->password();
     if (!password.isNull() && event->miner()->password() != password) {
         return reject(event, Error::toString(Error::Forbidden));
-    }
-
-    if (event->algorithms.empty()) {
-        return;
-    }
-
-    if (!verifyAlgorithms(event)) {
-        return reject(event, Error::toString(Error::IncompatibleAlgorithm));
     }
 }
 

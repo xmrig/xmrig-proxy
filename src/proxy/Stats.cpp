@@ -34,7 +34,6 @@
 xmrig::Stats::Stats() :
     m_hashrate(4)
 {
-    m_data.startTime = uv_now(uv_default_loop());
 }
 
 
@@ -56,7 +55,7 @@ void xmrig::Stats::tick(uint64_t ticks, const ISplitter *splitter)
         m_data.hashrate[2] = hashrate(3600);
         m_data.hashrate[3] = hashrate(3600 * 12);
         m_data.hashrate[4] = hashrate(3600 * 24);
-        m_data.hashrate[5] = hashrate(m_data.uptime());
+        m_data.hashrate[5] = hashrate(static_cast<int>(m_data.uptime()));
 
         m_data.upstreams = splitter->upstreams();
         m_data.miners    = Counters::miners();

@@ -34,6 +34,7 @@
 #include "net/strategies/DonateStrategy.h"
 #include "proxy/Counters.h"
 #include "proxy/StatsData.h"
+#include "rapidjson/document.h"
 
 
 namespace xmrig {
@@ -68,8 +69,7 @@ xmrig::DonateStrategy::DonateStrategy(Controller *controller, IStrategyListener 
     m_client->setPool(Pool("donate.v2.xmrig.com", 5555, userId, nullptr));
 #   endif
 
-    m_client->setRetryPause(1000);
-//    m_client->setAlgo(controller->config()->algorithm()); // FIXME
+    m_client->setRetryPause(5000);
     m_client->setQuiet(true);
 
     m_target = (100 - controller->config()->pools().donateLevel()) * 60 * randomf(0.5, 1.5);
@@ -165,6 +165,18 @@ void xmrig::DonateStrategy::onJobReceived(IClient *client, const Job &job, const
     }
 
     m_listener->onJob(this, client, job);
+}
+
+
+void xmrig::DonateStrategy::onLogin(IClient *, rapidjson::Document &doc, rapidjson::Value &params)
+{
+    using namespace rapidjson;
+    auto &allocator = doc.GetAllocator();
+
+    Value algo(kArrayType);
+    algo.PushBack(m_client->pool().algorithm().toJSON(), allocator);
+
+    params.AddMember("algo", algo, allocator);
 }
 
 

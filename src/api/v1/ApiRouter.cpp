@@ -65,7 +65,7 @@ xmrig::ApiRouter::~ApiRouter()
 void xmrig::ApiRouter::onRequest(IApiRequest &request)
 {
     if (request.method() == IApiRequest::METHOD_GET) {
-        if (request.url() == "/1/summary") {
+        if (request.type() == IApiRequest::REQ_SUMMARY) {
             request.accept();
             getMiner(request.reply(), request.doc());
             getHashrate(request.reply(), request.doc());
@@ -111,7 +111,6 @@ void xmrig::ApiRouter::getMiner(rapidjson::Value &reply, rapidjson::Document &do
 
     reply.AddMember("version",      APP_VERSION, allocator);
     reply.AddMember("kind",         APP_KIND, allocator);
-//    reply.AddMember("algo",         rapidjson::StringRef(m_base->config()->algorithm().name()), allocator); FIXME
     reply.AddMember("algo",         "invalid", allocator);
     reply.AddMember("mode",         rapidjson::StringRef(m_base->config()->modeName()), allocator);
     reply.AddMember("ua",           rapidjson::StringRef(Platform::userAgent()), allocator);

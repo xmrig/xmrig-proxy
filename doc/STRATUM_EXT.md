@@ -79,55 +79,8 @@ Second, miner add fields `algo` to submit request.
 }
 ```
 
-Note about xmr-stak, this miner use [different algorithm names](#15-xmr-stak-algorithm-names).
-
 ### 1.4 Algorithm names and variants
-Both miner and pool should support short algorithm name aliases:
-
-| Long name                | Short name      | Variant     | Notes                                                |
-|--------------------------|-----------------|-------------|------------------------------------------------------|
-| `cryptonight`            | `cn`            | `-1`        | Autodetect works only for Monero.                    |
-| `cryptonight/0`          | `cn/0`          | `0`         | Original/old CryptoNight.                            |
-| `cryptonight/1`          | `cn/1`          | `1`         | Also known as `monero7` and `CryptoNightV7`.         |
-| `cryptonight/2`          | `cn/2`          | `2`         | CryptoNight variant 2.                               |
-| `cryptonight/xtl`        | `cn/xtl`        | `"xtl"`     | Stellite (XTL).                                      |
-| `cryptonight/msr`        | `cn/msr`        | `"msr"`     | Masari (MSR), also known as `cryptonight-fast`.      |
-| `cryptonight/xao`        | `cn/xao`        | `"xao"`     | Alloy (XAO)                                          |
-| `cryptonight/rto`        | `cn/rto`        | `"rto"`     | Arto (RTO)                                           |
-| `cryptonight/half`       | `cn/half`       | `"half"`    | CryptoNight variant 2 with half iterations.          |
-| `cryptonight/gpu`        | `cn/gpu`        | `"gpu"`     | CryptoNight-GPU (RYO).                               |
-| `cryptonight/wow`        | `cn/wow`        | `"wow"`     | CryptoNightR (Wownero).                              |
-| `cryptonight/r`          | `cn/r`          | `"r"`       | CryptoNightR (Monero's variant 4).                   |
-| `cryptonight/rwz`        | `cn/rwz`        | `"rwz"`     | CryptoNight variant 2 "ReverseWaltz" (Graft).        |
-| `cryptonight/zls`        | `cn/zls`        | `"zls"`     | CryptoNight variant 2 with 3/4 iterations (Zelerius).  |
-| `cryptonight/double`     | `cn/double`     | `"double"`  | CryptoNight variant 2 with double iterations (X-CASH). |
-| `cryptonight-lite`       | `cn-lite`       | `-1`        | Autodetect works only for Aeon.                      |
-| `cryptonight-lite/0`     | `cn-lite/0`     | `0`         | Original/old CryptoNight-Lite.                       |
-| `cryptonight-lite/1`     | `cn-lite/1`     | `1`         | Also known as `aeon7`                                |
-| `cryptonight-lite/ipbc`  | `cn-lite/ipbc`  | `"ipbc"`    | IPBC variant, **obsolete**                           |
-| `cryptonight-heavy`      | `cn-heavy`      | `0`         | Ryo and Loki                                         |
-| `cryptonight-heavy/xhv`  | `cn-heavy/xhv`  | `"xhv"`     | Haven Protocol                                       |
-| `cryptonight-heavy/tube` | `cn-heavy/tube` | `"tube"`    | BitTube (TUBE)                                       |
-| `cryptonight-pico/trtl`  | `cn-pico/trtl`  | `"trtl"`    | TurtleCoin (TRTL)                                    |
-
-Proper pool/proxy implementation should avoid any automatic/autodetect variants, variant must explicitly specified.
-
-### 1.5 XMR-Stak algorithm names
-Mapping between XMR-Stak algorithm names and XMRig names.
-
-| XMR-Stak name             | XMRig Short name | 
-|---------------------------|------------------|
-| `cryptonight`             | `cn/0`           |
-| `cryptonight-monerov7`    | `cn/1`           |
-| `cryptonight_v7`          | `cn/1`           |
-| `cryptonight_v7_stellite` | `cn/xtl`         |
-| `cryptonight_masari`      | `cn/msr`         |
-| `cryptonight_lite`        | `cn-lite/0`      |
-| `cryptonight-aeonv7`      | `cn-lite/1`      |
-| `cryptonight_lite_v7`     | `cn-lite/1`      |
-| `cryptonight_lite_v7_xor` | `cn-lite/ipbc`   |
-| `cryptonight_heavy`       | `cn-heavy`       |
-| `cryptonight_haven`       | `cn-heavy/xhv`   |
+* https://github.com/xmrig/xmrig/blob/beta/doc/ALGORITHMS.md#algorithm-names
 
 ## Rig identifier
 User defined rig identifier. Optional field `rigid` in `login` request. More details: https://github.com/fireice-uk/xmr-stak/issues/849

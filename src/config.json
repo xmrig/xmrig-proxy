@@ -1,7 +1,6 @@
 {
     "access-log-file": null,
     "access-password": null,
-    "algo": "cryptonight",
     "algo-ext": true,
     "api": {
         "id": null,
@@ -29,22 +28,21 @@
     ],
     "colors": true,
     "custom-diff": 0,
-    "donate-level": 2,
+    "donate-level": 0,
     "log-file": null,
     "mode": "nicehash",
     "pools": [
         {
+            "algo": null,
             "url": "donate.v2.xmrig.com:5555",
             "user": "YOUR_WALLET",
             "pass": "x",
             "rig-id": null,
             "keepalive": false,
-            "variant": -1,
             "enabled": true,
             "tls": false,
             "tls-fingerprint": null,
-            "daemon": false,
-            "daemon-poll-interval": 1000
+            "daemon": false
         }
     ],
     "retries": 2,

@@ -22,41 +22,42 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_SHARELOG_H
-#define XMRIG_SHARELOG_H
+#ifndef XMRIG_PLATFORM_H
+#define XMRIG_PLATFORM_H
 
 
-#include "interfaces/IEventListener.h"
+#include <stdint.h>
 
 
-namespace xmrig {
+#include "base/tools/String.h"
 
 
-class AcceptEvent;
-class Controller;
-class Stats;
-
-
-class ShareLog : public IEventListener
+class Platform
 {
 public:
-    ShareLog(Controller *controller, const Stats &stats);
-    ~ShareLog() override;
+    static inline bool trySetThreadAffinity(int64_t cpu_id)
+    {
+        if (cpu_id < 0) {
+            return false;
+        }
 
-protected:
-    void onEvent(IEvent *event) override;
-    void onRejectedEvent(IEvent *event) override;
+        return setThreadAffinity(static_cast<uint64_t>(cpu_id));
+    }
+
+    static bool setThreadAffinity(uint64_t cpu_id);
+    static uint32_t setTimerResolution(uint32_t resolution);
+    static void init(const char *userAgent);
+    static void restoreTimerResolution();
+    static void setProcessPriority(int priority);
+    static void setThreadPriority(int priority);
+
+    static inline const char *userAgent() { return m_userAgent; }
 
 private:
-    void accept(const AcceptEvent *event);
-    void reject(const AcceptEvent *event);
+    static char *createUserAgent();
 
-    const Stats &m_stats;
-    Controller *m_controller;
+    static xmrig::String m_userAgent;
 };
 
 
-} /* namespace xmrig */
-
-
-#endif /* XMRIG_SHARELOG_H */
+#endif /* XMRIG_PLATFORM_H */

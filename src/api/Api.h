@@ -27,6 +27,7 @@
 
 
 #include <vector>
+#include <stdint.h>
 
 
 #include "base/kernel/interfaces/IBaseListener.h"
@@ -70,6 +71,7 @@ private:
     Base *m_base;
     char m_id[32];
     char m_workerId[128];
+    const uint64_t m_timestamp;
     Httpd *m_httpd;
     std::vector<IApiListener *> m_listeners;
 };

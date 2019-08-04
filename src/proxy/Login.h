@@ -47,7 +47,6 @@ protected:
     inline void onRejectedEvent(IEvent *) override {}
 
 private:
-    bool verifyAlgorithms(LoginEvent *event);
     void login(LoginEvent *event);
     void reject(LoginEvent *event, const char *message);
 

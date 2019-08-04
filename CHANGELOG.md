@@ -1,3 +1,10 @@
+# v2.99.0-beta
+* [#335](https://github.com/xmrig/xmrig-proxy/issues/335) Added support for unlimited algorithm switching.
+* Config files from previous versions NOT compatible, `variant` option replaced to `algo`, global option `algo` removed.
+* Command line options also not compatible, `--variant` option replaced to `--algo`.
+* Algorithm `cn/msr` renamed to `cn/fast`.
+* Algorithm `cn/xtl` removed.
+
 # v2.16.1-beta
 - Added RandomXL algorithm for [Loki](https://loki.network/).
   - Algorithm name used by proxy is `randomx/loki` or `rx/loki`.

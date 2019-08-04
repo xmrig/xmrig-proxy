@@ -225,6 +225,12 @@ void xmrig::NonceMapper::onJob(IStrategy *, IClient *client, const Job &job)
 }
 
 
+void xmrig::NonceMapper::onLogin(IStrategy *strategy, IClient *client, rapidjson::Document &doc, rapidjson::Value &params)
+{
+
+}
+
+
 void xmrig::NonceMapper::onPause(IStrategy *)
 {
     m_storage->setActive(false);
@@ -251,6 +257,12 @@ void xmrig::NonceMapper::onResultAccepted(IStrategy *, IClient *client, const Su
     else {
         ctx.miner->success(ctx.id, "OK");
     }
+}
+
+
+void xmrig::NonceMapper::onVerifyAlgorithm(IStrategy *strategy, const IClient *client, const Algorithm &algorithm, bool *ok)
+{
+
 }
 
 

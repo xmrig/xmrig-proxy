@@ -38,9 +38,9 @@
 #include "api/v1/ApiRouter.h"
 #include "base/kernel/Base.h"
 #include "base/tools/Buffer.h"
-#include "common/crypto/keccak.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
+#include "crypto/common/keccak.h"
 #include "version.h"
 
 
@@ -53,6 +53,7 @@ xmrig::Api::Api(Base *base) :
     m_base(base),
     m_id(),
     m_workerId(),
+    m_timestamp(Chrono::currentMSecsSinceEpoch()),
     m_httpd(nullptr)
 {
     base->addListener(this);
@@ -117,10 +118,34 @@ void xmrig::Api::exec(IApiRequest &request)
 {
     using namespace rapidjson;
 
-    if (request.method() == IApiRequest::METHOD_GET && (request.url() == "/1/summary" || request.url() == "/api.json")) {
+    if (request.type() == IApiRequest::REQ_SUMMARY) {
+        auto &allocator = request.doc().GetAllocator();
+
         request.accept();
-        request.reply().AddMember("id",        StringRef(m_id),       request.doc().GetAllocator());
-        request.reply().AddMember("worker_id", StringRef(m_workerId), request.doc().GetAllocator());;
+        request.reply().AddMember("id",        StringRef(m_id),       allocator);
+        request.reply().AddMember("worker_id", StringRef(m_workerId), allocator);
+        request.reply().AddMember("uptime",    (Chrono::currentMSecsSinceEpoch() - m_timestamp) / 1000, allocator);
+
+        Value features(kArrayType);
+#       ifdef XMRIG_FEATURE_API
+        features.PushBack("api", allocator);
+#       endif
+#       ifdef XMRIG_FEATURE_ASM
+        features.PushBack("asm", allocator);
+#       endif
+#       ifdef XMRIG_FEATURE_HTTP
+        features.PushBack("http", allocator);
+#       endif
+#       ifdef XMRIG_FEATURE_LIBCPUID
+        features.PushBack("cpuid", allocator);
+#       endif
+#       ifdef XMRIG_FEATURE_HWLOC
+        features.PushBack("hwloc", allocator);
+#       endif
+#       ifdef XMRIG_FEATURE_TLS
+        features.PushBack("tls", allocator);
+#       endif
+        request.reply().AddMember("features", features, allocator);
     }
 
     for (IApiListener *listener : m_listeners) {
@@ -163,8 +188,8 @@ void xmrig::Api::genId(const String &id)
             memcpy(input + sizeof(uint16_t), interfaces[i].phys_addr, addrSize);
             memcpy(input + sizeof(uint16_t) + addrSize, APP_KIND, strlen(APP_KIND));
 
-            xmrig::keccak(input, inSize, hash);
-            xmrig::Buffer::toHex(hash, 8, m_id);
+            keccak(input, inSize, hash);
+            Buffer::toHex(hash, 8, m_id);
 
             delete [] input;
             break;

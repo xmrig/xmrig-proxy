@@ -26,7 +26,6 @@
 #include <assert.h>
 
 
-#include "common/Platform.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/Proxy.h"

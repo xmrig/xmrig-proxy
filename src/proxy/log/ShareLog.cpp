@@ -29,8 +29,8 @@
 #include "base/net/stratum/SubmitResult.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
-#include "log/ShareLog.h"
 #include "proxy/events/AcceptEvent.h"
+#include "proxy/log/ShareLog.h"
 #include "proxy/Miner.h"
 #include "proxy/Stats.h"
 

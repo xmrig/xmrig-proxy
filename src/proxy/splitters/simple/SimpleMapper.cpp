@@ -202,6 +202,12 @@ void xmrig::SimpleMapper::onJob(IStrategy *, IClient *client, const Job &job)
 }
 
 
+void xmrig::SimpleMapper::onLogin(IStrategy *strategy, IClient *client, rapidjson::Document &doc, rapidjson::Value &params)
+{
+
+}
+
+
 void xmrig::SimpleMapper::onPause(IStrategy *strategy)
 {
     if (m_strategy == strategy) {
@@ -224,6 +230,12 @@ void xmrig::SimpleMapper::onResultAccepted(IStrategy *, IClient *client, const S
     else {
         m_miner->success(result.reqId, "OK");
     }
+}
+
+
+void xmrig::SimpleMapper::onVerifyAlgorithm(IStrategy *strategy, const IClient *client, const Algorithm &algorithm, bool *ok)
+{
+
 }
 
 

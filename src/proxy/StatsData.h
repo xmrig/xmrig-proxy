@@ -28,11 +28,11 @@
 
 #include <algorithm>
 #include <array>
-#include <uv.h>
 #include <vector>
 
 
-#include "interfaces/ISplitter.h"
+#include "base/tools/Chrono.h"
+#include "proxy/interfaces/ISplitter.h"
 
 
 namespace xmrig {
@@ -41,18 +41,9 @@ namespace xmrig {
 class StatsData
 {
 public:
-    inline StatsData() :
-        accepted(0),
-        connections(0),
-        donateHashes(0),
-        expired(0),
-        hashes(0),
-        invalid(0),
-        maxMiners(0),
-        miners(0),
-        rejected(0),
-        startTime(0)
+    inline StatsData()
     {
+        startTime = Chrono::currentMSecsSinceEpoch();
     }
 
 
@@ -80,29 +71,25 @@ public:
     }
 
 
-    inline int uptime() const
+    inline uint64_t uptime() const
     {
-        if (startTime == 0) {
-            return 0;
-        }
-
-        return (uv_now(uv_default_loop()) - startTime) / 1000;
+        return (Chrono::currentMSecsSinceEpoch() - startTime) / 1000;
     }
 
 
     double hashrate[6] { 0.0 };
     std::array<uint64_t, 10> topDiff { { } };
     std::vector<uint16_t> latency;
-    uint64_t accepted;
-    uint64_t connections;
-    uint64_t donateHashes;
-    uint64_t expired;
-    uint64_t hashes;
-    uint64_t invalid;
-    uint64_t maxMiners;
-    uint64_t miners;
-    uint64_t rejected;
-    uint64_t startTime;
+    uint64_t accepted       = 0;
+    uint64_t connections    = 0;
+    uint64_t donateHashes   = 0;
+    uint64_t expired        = 0;
+    uint64_t hashes         = 0;
+    uint64_t invalid        = 0;
+    uint64_t maxMiners      = 0;
+    uint64_t miners         = 0;
+    uint64_t rejected       = 0;
+    uint64_t startTime      = 0;
     Upstreams upstreams;
 };
 

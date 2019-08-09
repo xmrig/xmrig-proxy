@@ -178,7 +178,9 @@ void xmrig::Miner::setJob(Job &job)
         customDiff = true;
     }
 
-    sendJob(job.rawBlob(), job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height(), job.rawSeedHash());
+    Algorithm algo(Algorithm::RX_0);
+
+    sendJob(job.rawBlob(), job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), algo.shortName(), job.height(), job.rawSeedHash());
 }
 
 
@@ -252,7 +254,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
             event->reject(Error::InvalidNonce);
         }
 
-        if (event->error() == Error::NoError && m_customDiff && event->request.actualDiff() < m_diff) {
+        if (event->error() == Error::NoError) {
             success(id, "OK");
             return true;
         }

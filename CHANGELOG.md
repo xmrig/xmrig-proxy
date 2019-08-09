@@ -1,3 +1,7 @@
+# v2.99.1-beta
+- [#1066](https://github.com/xmrig/xmrig/issues/1066#issuecomment-518080529) Added error message if pool not ready for RandomX.
+- Name for reference RandomX configuration changed to `rx/text` to avoid potential conflicts in future.
+
 # v2.99.0-beta
 * [#335](https://github.com/xmrig/xmrig-proxy/issues/335) Added support for unlimited algorithm switching.
 * Config files from previous versions NOT compatible, `variant` option replaced to `algo`, global option `algo` removed.

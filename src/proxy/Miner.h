@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,11 +27,12 @@
 
 
 #include <algorithm>
+#include <bitset>
 #include <uv.h>
 
 
+#include "base/net/tools/Storage.h"
 #include "base/tools/String.h"
-#include "common/net/Storage.h"
 #include "rapidjson/fwd.h"
 
 
@@ -54,36 +56,45 @@ public:
         ClosingState
     };
 
+    enum Extension {
+        EXT_ALGO,
+        EXT_NICEHASH,
+        EXT_CONNECT,
+        EXT_MAX
+    };
+
     Miner(const TlsContext *ctx, bool ipv6, uint16_t port);
     ~Miner();
     bool accept(uv_stream_t *server);
+    void forwardJob(const Job &job, const char *algo);
     void replyWithError(int64_t id, const char *message);
     void setJob(Job &job);
     void success(int64_t id, const char *status);
 
-    inline const char *ip() const                       { return m_ip; }
-    inline const String &agent() const                  { return m_agent; }
-    inline const String &password() const               { return m_password; }
-    inline const String &rigId(bool safe = false) const { return (safe ? (m_rigId.size() > 0 ? m_rigId : m_user) : m_rigId); }
-    inline const String &user() const                   { return m_user; }
-    inline int32_t routeId() const                      { return m_routeId; }
-    inline int64_t id() const                           { return m_id; }
-    inline ssize_t mapperId() const                     { return m_mapperId; }
-    inline State state() const                          { return m_state; }
-    inline uint16_t localPort() const                   { return m_localPort; }
-    inline uint64_t customDiff() const                  { return m_customDiff; }
-    inline uint64_t diff() const                        { return (m_customDiff ? std::min(m_customDiff, m_diff) : m_diff); }
-    inline uint64_t expire() const                      { return m_expire; }
-    inline uint64_t rx() const                          { return m_rx; }
-    inline uint64_t timestamp() const                   { return m_timestamp; }
-    inline uint64_t tx() const                          { return m_tx; }
-    inline uint8_t fixedByte() const                    { return m_fixedByte; }
-    inline void close()                                 { shutdown(true); }
-    inline void setCustomDiff(uint64_t diff)            { m_customDiff = diff; }
-    inline void setFixedByte(uint8_t fixedByte)         { m_fixedByte = fixedByte; }
-    inline void setMapperId(ssize_t mapperId)           { m_mapperId = mapperId; }
-    inline void setNiceHash(bool nicehash)              { m_nicehash = nicehash; }
-    inline void setRouteId(int32_t id)                  { m_routeId = id; }
+    inline bool hasExtension(Extension ext) const noexcept        { return m_extensions.test(ext); }
+    inline const char *ip() const                                 { return m_ip; }
+    inline const String &agent() const                            { return m_agent; }
+    inline const String &password() const                         { return m_password; }
+    inline const String &rigId(bool safe = false) const           { return (safe ? (m_rigId.size() > 0 ? m_rigId : m_user) : m_rigId); }
+    inline const String &user() const                             { return m_user; }
+    inline int32_t routeId() const                                { return m_routeId; }
+    inline int64_t id() const                                     { return m_id; }
+    inline ssize_t mapperId() const                               { return m_mapperId; }
+    inline State state() const                                    { return m_state; }
+    inline uint16_t localPort() const                             { return m_localPort; }
+    inline uint64_t customDiff() const                            { return m_customDiff; }
+    inline uint64_t diff() const                                  { return (m_customDiff ? std::min(m_customDiff, m_diff) : m_diff); }
+    inline uint64_t expire() const                                { return m_expire; }
+    inline uint64_t rx() const                                    { return m_rx; }
+    inline uint64_t timestamp() const                             { return m_timestamp; }
+    inline uint64_t tx() const                                    { return m_tx; }
+    inline uint8_t fixedByte() const                              { return m_fixedByte; }
+    inline void close()                                           { shutdown(true); }
+    inline void setCustomDiff(uint64_t diff)                      { m_customDiff = diff; }
+    inline void setExtension(Extension ext, bool enable) noexcept { m_extensions.set(ext, enable); }
+    inline void setFixedByte(uint8_t fixedByte)                   { m_fixedByte = fixedByte; }
+    inline void setMapperId(ssize_t mapperId)                     { m_mapperId = mapperId; }
+    inline void setRouteId(int32_t id)                            { m_routeId = id; }
 
 private:
     class Tls;
@@ -100,6 +111,7 @@ private:
     void readTLS(int nread);
     void send(const rapidjson::Document &doc);
     void send(int size);
+    void sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height, const String &seedHash);
     void setState(State state);
     void shutdown(bool had_error);
 
@@ -112,7 +124,6 @@ private:
     static inline Miner *getMiner(void *data) { return m_storage.get(data); }
 
     bool m_ipv6;
-    bool m_nicehash;
     char m_buf[1024];
     char m_ip[46];
     char m_rpcId[37];
@@ -122,6 +133,7 @@ private:
     size_t m_recvBufPos;
     ssize_t m_mapperId;
     State m_state;
+    std::bitset<EXT_MAX> m_extensions;
     String m_agent;
     String m_password;
     String m_rigId;
@@ -137,10 +149,10 @@ private:
     uint8_t m_fixedByte;
     uintptr_t m_key;
     uv_buf_t m_recvBuf;
-    uv_tcp_t m_socket;
+    uv_tcp_t *m_socket;
 
     static char m_sendBuf[2048];
-    static xmrig::Storage<Miner> m_storage;
+    static Storage<Miner> m_storage;
 };
 
 

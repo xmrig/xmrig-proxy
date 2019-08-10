@@ -25,7 +25,7 @@
 #include <inttypes.h>
 
 
-#include "common/log/Log.h"
+#include "base/io/log/Log.h"
 #include "proxy/Counters.h"
 #include "proxy/Miner.h"
 #include "proxy/splitters/nicehash/NonceStorage.h"
@@ -77,7 +77,7 @@ bool xmrig::NonceStorage::isUsed() const
 }
 
 
-bool xmrig::NonceStorage::isValidJobId(const xmrig::Id &id) const
+bool xmrig::NonceStorage::isValidJobId(const String &id) const
 {
     if (m_job.id() == id) {
         return true;

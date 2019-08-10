@@ -24,7 +24,7 @@
 
 
 #include "api/Api.h"
-#include "common/net/SubmitResult.h"
+#include "base/net/stratum/SubmitResult.h"
 #include "Counters.h"
 #include "interfaces/ISplitter.h"
 #include "proxy/events/AcceptEvent.h"
@@ -34,7 +34,6 @@
 xmrig::Stats::Stats() :
     m_hashrate(4)
 {
-    m_data.startTime = uv_now(uv_default_loop());
 }
 
 
@@ -50,13 +49,13 @@ void xmrig::Stats::tick(uint64_t ticks, const ISplitter *splitter)
     if ((ticks % m_hashrate.tickTime()) == 0) {
         m_hashrate.tick();
 
-#       ifndef XMRIG_NO_API
+#       ifdef XMRIG_FEATURE_API
         m_data.hashrate[0] = hashrate(60);
         m_data.hashrate[1] = hashrate(600);
         m_data.hashrate[2] = hashrate(3600);
         m_data.hashrate[3] = hashrate(3600 * 12);
         m_data.hashrate[4] = hashrate(3600 * 24);
-        m_data.hashrate[5] = hashrate(m_data.uptime());
+        m_data.hashrate[5] = hashrate(static_cast<int>(m_data.uptime()));
 
         m_data.upstreams = splitter->upstreams();
         m_data.miners    = Counters::miners();

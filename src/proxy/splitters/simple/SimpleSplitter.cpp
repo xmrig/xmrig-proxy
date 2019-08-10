@@ -25,8 +25,8 @@
 #include <inttypes.h>
 
 
-#include "common/log/Log.h"
-#include "core/Config.h"
+#include "base/io/log/Log.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/Counters.h"
 #include "proxy/events/CloseEvent.h"
@@ -42,7 +42,7 @@
 
 
 xmrig::SimpleSplitter::SimpleSplitter(xmrig::Controller *controller) : Splitter(controller),
-    m_reuseTimeout(controller->config()->reuseTimeout()),
+    m_reuseTimeout(static_cast<uint64_t>(controller->config()->reuseTimeout())),
     m_sequence(0)
 {
 }
@@ -50,6 +50,13 @@ xmrig::SimpleSplitter::SimpleSplitter(xmrig::Controller *controller) : Splitter(
 
 xmrig::SimpleSplitter::~SimpleSplitter()
 {
+    for (SimpleMapper *mapper : m_released) {
+        delete mapper;
+    }
+
+    for (auto const &kv : m_upstreams) {
+        delete kv.second;
+    }
 }
 
 
@@ -81,20 +88,11 @@ void xmrig::SimpleSplitter::printConnections()
 {
     const Upstreams info = upstreams();
 
-    if (m_controller->config()->isColors()) {
-        LOG_INFO("\x1B[01;32m* \x1B[01;37mupstreams\x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("sleep") "\x1B[01;37m%" PRIu64 "\x1B[0m" LABEL("error") "%s%" PRIu64 "\x1B[0m" LABEL("total") "\x1B[01;37m%" PRIu64,
-                 info.active ? "\x1B[01;32m" : "\x1B[01;31m", info.active, info.sleep, info.error ? "\x1B[01;31m" : "\x1B[01;37m", info.error, m_upstreams.size());
+    LOG_INFO("\x1B[01;32m* \x1B[01;37mupstreams\x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("sleep") "\x1B[01;37m%" PRIu64 "\x1B[0m" LABEL("error") "%s%" PRIu64 "\x1B[0m" LABEL("total") "\x1B[01;37m%" PRIu64,
+             info.active ? "\x1B[01;32m" : "\x1B[01;31m", info.active, info.sleep, info.error ? "\x1B[01;31m" : "\x1B[01;37m", info.error, m_upstreams.size());
 
-        LOG_INFO("\x1B[01;32m* \x1B[01;37mminers   \x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("max") "\x1B[01;37m%" PRIu64 "\x1B[0m",
-                 Counters::miners() ? "\x1B[01;32m" : "\x1B[01;31m", Counters::miners(), Counters::maxMiners());
-    }
-    else {
-        LOG_INFO("* upstreams: active %" PRIu64 " sleep %" PRIu64 " error %" PRIu64 " total %" PRIu64,
-                 info.active, info.sleep, info.error, m_upstreams.size());
-
-        LOG_INFO("* miners:    active %" PRIu64 " max %" PRIu64,
-                 Counters::miners(), Counters::maxMiners());
-    }
+    LOG_INFO("\x1B[01;32m* \x1B[01;37mminers   \x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("max") "\x1B[01;37m%" PRIu64 "\x1B[0m",
+             Counters::miners() ? "\x1B[01;32m" : "\x1B[01;31m", Counters::miners(), Counters::maxMiners());
 }
 
 
@@ -135,10 +133,10 @@ void xmrig::SimpleSplitter::printState()
 
 void xmrig::SimpleSplitter::onConfigChanged(Config *config, Config *previousConfig)
 {
-    m_reuseTimeout = config->reuseTimeout();
+    m_reuseTimeout = static_cast<uint64_t>(config->reuseTimeout());
 
     if (config->pools() != previousConfig->pools()) {
-        config->printPools();
+        config->pools().print();
 
         for (auto const &kv : m_upstreams) {
             kv.second->reload(config->pools());
@@ -171,6 +169,10 @@ void xmrig::SimpleSplitter::onEvent(IEvent *event)
 
 void xmrig::SimpleSplitter::login(LoginEvent *event)
 {
+    if (event->miner()->routeId() != -1) {
+        return;
+    }
+
     if (!m_idles.empty()) {
         for (auto const &kv : m_idles) {
             if (kv.second->isReusable()) {
@@ -200,9 +202,8 @@ void xmrig::SimpleSplitter::stop(SimpleMapper *mapper)
 
 void xmrig::SimpleSplitter::remove(Miner *miner)
 {
-    const ssize_t id = miner->mapperId();
-
-    if (id < 0 || m_upstreams.count(id) == 0) {
+    const size_t id = static_cast<size_t>(miner->mapperId());
+    if (miner->mapperId() < 0 || miner->routeId() != -1 || m_upstreams.count(id) == 0) {
         return;
     }
 
@@ -240,6 +241,10 @@ void xmrig::SimpleSplitter::removeUpstream(uint64_t id)
 
 void xmrig::SimpleSplitter::submit(SubmitEvent *event)
 {
+    if (event->miner()->mapperId() < 0 || event->miner()->routeId() != -1) {
+        return;
+    }
+
     SimpleMapper *mapper = m_upstreams[event->miner()->mapperId()];
     if (mapper) {
         mapper->submit(event);

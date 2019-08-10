@@ -28,7 +28,7 @@
 
 
 #include "App.h"
-#include "core/Config.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 
 

@@ -26,7 +26,7 @@
 #define XMRIG_SUBMITEVENT_H
 
 
-#include "common/crypto/Algorithm.h"
+#include "crypto/common/Algorithm.h"
 #include "net/JobResult.h"
 #include "proxy/Error.h"
 #include "proxy/events/MinerEvent.h"

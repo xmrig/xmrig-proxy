@@ -26,18 +26,17 @@
 #define XMRIG_APP_H
 
 
+#include "base/kernel/interfaces/IConsoleListener.h"
 #include "base/kernel/interfaces/ISignalListener.h"
-#include "common/interfaces/IConsoleListener.h"
 
 
-class Console;
-class Httpd;
 class Proxy;
 
 
 namespace xmrig {
 
 
+class Console;
 class Controller;
 class Process;
 class Signals;
@@ -61,7 +60,6 @@ private:
 
     Console *m_console;
     Controller *m_controller;
-    Httpd *m_httpd;
     Signals *m_signals;
 };
 

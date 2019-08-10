@@ -26,8 +26,8 @@
 #include <inttypes.h>
 
 
-#include "common/log/Log.h"
-#include "core/Config.h"
+#include "base/io/log/Log.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/events/CloseEvent.h"
@@ -78,8 +78,8 @@ void xmrig::Workers::printWorkers()
     char workerName[24] = { 0 };
     size_t size = 0;
 
-    Log::i()->text(m_controller->config()->isColors() ? "\x1B[01;37m%-23s | %-15s | %-5s | %-8s | %-3s | %11s | %11s |" : "%-23s | %-15s | %-5s | %-8s | %-3s | %11s | %11s |",
-                   "WORKER NAME", "LAST IP", "COUNT", "ACCEPTED", "REJ", "10 MINUTES", "24 HOURS");
+    Log::print(WHITE_BOLD_S "%-23s | %-15s | %-5s | %-8s | %-3s | %11s | %11s |",
+               "WORKER NAME", "LAST IP", "COUNT", "ACCEPTED", "REJ", "10 MINUTES", "24 HOURS");
 
     for (const Worker &worker : m_workers) {
         const char *name = worker.name();
@@ -100,8 +100,8 @@ void xmrig::Workers::printWorkers()
             strncpy(workerName, name, sizeof(workerName) - 1);
         }
 
-        Log::i()->text("%-23s | %-15s | %5" PRIu64 " | %8" PRIu64 " | %3" PRIu64 " | %6.2f kH/s | %6.2f kH/s |",
-                       workerName, worker.ip(), worker.connections(), worker.accepted(), worker.rejected(), worker.hashrate(600), worker.hashrate(86400));
+        Log::print("%-23s | %-15s | %5" PRIu64 " | %8" PRIu64 " | %3" PRIu64 " | %6.2f kH/s | %6.2f kH/s |",
+                   workerName, worker.ip(), worker.connections(), worker.accepted(), worker.rejected(), worker.hashrate(600), worker.hashrate(86400));
     }
 }
 
@@ -311,12 +311,20 @@ void xmrig::Workers::accept(const AcceptEvent *event)
 
 void xmrig::Workers::login(const LoginEvent *event)
 {
+    if (event->miner()->routeId() != -1) {
+        return;
+    }
+
     add(event->miner());
 }
 
 
 void xmrig::Workers::reject(const SubmitEvent *event)
 {
+    if (event->miner()->routeId() != -1) {
+        return;
+    }
+
     size_t index = 0;
     if (!indexByMiner(event->miner(), &index)) {
         return;
@@ -328,6 +336,10 @@ void xmrig::Workers::reject(const SubmitEvent *event)
 
 void xmrig::Workers::remove(const CloseEvent *event)
 {
+    if (event->miner()->routeId() != -1) {
+        return;
+    }
+
     size_t index = 0;
     if (!indexByMiner(event->miner(), &index)) {
         return;

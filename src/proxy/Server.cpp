@@ -23,7 +23,8 @@
  */
 
 
-#include "common/log/Log.h"
+#include "base/io/log/Log.h"
+#include "base/tools/Handle.h"
 #include "proxy/BindHost.h"
 #include "proxy/events/ConnectionEvent.h"
 #include "proxy/Miner.h"
@@ -36,10 +37,12 @@ xmrig::Server::Server(const BindHost &host, const TlsContext *ctx) :
     m_port(host.port()),
     m_host(host.host())
 {
-    uv_tcp_init(uv_default_loop(), &m_server);
-    m_server.data = this;
+    m_server = new uv_tcp_t;
 
-    uv_tcp_nodelay(&m_server, 1);
+    uv_tcp_init(uv_default_loop(), m_server);
+    m_server->data = this;
+
+    uv_tcp_nodelay(m_server, 1);
 
     if (host.isIPv6() && uv_ip6_addr(m_host.data(), m_port, &m_addr6) == 0) {
         m_version = 6;
@@ -52,6 +55,12 @@ xmrig::Server::Server(const BindHost &host, const TlsContext *ctx) :
 }
 
 
+xmrig::Server::~Server()
+{
+    Handle::close(m_server);
+}
+
+
 bool xmrig::Server::bind()
 {
     if (!m_version) {
@@ -59,9 +68,9 @@ bool xmrig::Server::bind()
     }
 
     const sockaddr *addr = m_version == 6 ? reinterpret_cast<const sockaddr*>(&m_addr6) : reinterpret_cast<const sockaddr*>(&m_addr);
-    uv_tcp_bind(&m_server, addr, m_version == 6 ? UV_TCP_IPV6ONLY : 0);
+    uv_tcp_bind(m_server, addr, m_version == 6 ? UV_TCP_IPV6ONLY : 0);
 
-    const int r = uv_listen(reinterpret_cast<uv_stream_t*>(&m_server), 511, Server::onConnection);
+    const int r = uv_listen(reinterpret_cast<uv_stream_t*>(m_server), 511, Server::onConnection);
     if (r) {
         LOG_ERR("[%s:%u] listen error: \"%s\"", m_host.data(), m_port, uv_strerror(r));
         return false;

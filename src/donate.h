@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,8 +22,11 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __DONATE_H__
-#define __DONATE_H__
+#ifndef XMRIG_DONATE_H
+#define XMRIG_DONATE_H
+
+
+#include <stdint.h>
 
 
 /*
@@ -35,15 +39,16 @@
  * BTC: 1P7ujsXeX7GxQwHNnJsRMgAdNkFZmNVqJT
  *
  * How it works:
- * First pool connection (up to 256 workers) always without fee.
- * Other connections first randomly switch to dev pool in range from 50 to 150 minutes, to reduce dev pool peak load.
+ * Upstreams randomly switch to dev pool in range from 50 to 150 minutes, to reduce dev pool peak load.
  * Stays on dev pool at least kDonateLevel minutes.
  * Choice next donation time, with overime compensation. In proxy no way to use precise donation time.
  * You can check actual donation via API.
+ *
+ * Since 2.15.0
+ * If you set level to 0 it will enable donate over proxy feature.
  */
-constexpr const int kDefaultDonateLevel = 2;
+constexpr const int kDefaultDonateLevel = 0;
 constexpr const int kMinimumDonateLevel = 0;
-constexpr const uint64_t kFreeThreshold = 256;
 
 
-#endif /* __DONATE_H__ */
+#endif /* XMRIG_DONATE_H */

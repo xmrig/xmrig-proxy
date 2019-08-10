@@ -29,8 +29,9 @@
 #include <stdint.h>
 
 
-#include "common/crypto/Algorithm.h"
+#include "crypto/common/Algorithm.h"
 #include "proxy/events/MinerEvent.h"
+#include "rapidjson/fwd.h"
 
 
 namespace xmrig {
@@ -39,21 +40,23 @@ namespace xmrig {
 class LoginEvent : public MinerEvent
 {
 public:
-    static inline LoginEvent *create(Miner *miner, int64_t id, const Algorithms &algorithms)
+    static inline LoginEvent *create(Miner *miner, int64_t id, const Algorithms &algorithms, const rapidjson::Value &params)
     {
-        return new (m_buf) LoginEvent(miner, id, algorithms);
+        return new (m_buf) LoginEvent(miner, id, algorithms, params);
     }
 
 
-    const int64_t loginId;
     const Algorithms &algorithms;
+    const int64_t loginId;
+    const rapidjson::Value &params;
 
 
 protected:
-    inline LoginEvent(Miner *miner, int64_t id, const Algorithms &algorithms)
+    inline LoginEvent(Miner *miner, int64_t id, const Algorithms &algorithms, const rapidjson::Value &params)
         : MinerEvent(LoginType, miner),
+          algorithms(algorithms),
           loginId(id),
-          algorithms(algorithms)
+          params(params)
     {}
 };
 

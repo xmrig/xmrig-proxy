@@ -63,7 +63,7 @@ public:
         EXT_MAX
     };
 
-    Miner(const TlsContext *ctx, bool ipv6, uint16_t port);
+    Miner(const TlsContext *ctx, uint16_t port);
     ~Miner();
     bool accept(uv_stream_t *server);
     void forwardJob(const Job &job, const char *algo);
@@ -123,7 +123,6 @@ private:
 
     static inline Miner *getMiner(void *data) { return m_storage.get(data); }
 
-    bool m_ipv6;
     char m_buf[1024];
     char m_ip[46];
     char m_rpcId[37];

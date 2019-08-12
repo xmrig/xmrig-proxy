@@ -40,6 +40,7 @@ namespace xmrig {
 
 
 class AccessLog;
+class ApiRouter;
 class BindHost;
 class Controller;
 class DonateSplitter;
@@ -90,6 +91,7 @@ private:
     static void onTimer(uv_timer_t *handle);
 
     AccessLog *m_accessLog;
+    ApiRouter *m_api = nullptr;
     Controller *m_controller;
     CustomDiff m_customDiff;
     DonateSplitter *m_donate;

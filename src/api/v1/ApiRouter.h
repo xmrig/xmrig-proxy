@@ -26,7 +26,7 @@
 #define XMRIG_APIROUTER_H
 
 
-#include "api/interfaces/IApiListener.h"
+#include "base/api/interfaces/IApiListener.h"
 #include "proxy/StatsData.h"
 #include "rapidjson/fwd.h"
 

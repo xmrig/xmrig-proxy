@@ -23,47 +23,16 @@
  */
 
 
-#ifndef XMRIG_HTTPAPIREQUEST_H
-#define XMRIG_HTTPAPIREQUEST_H
+#include "base/api/requests/ApiRequest.h"
 
 
-#include "api/requests/ApiRequest.h"
-#include "base/net/http/HttpApiResponse.h"
-#include "base/tools/String.h"
-
-
-namespace xmrig {
-
-
-class HttpData;
-
-
-class HttpApiRequest : public ApiRequest
+xmrig::ApiRequest::ApiRequest(Source source, bool restricted) :
+    m_restricted(restricted),
+    m_source(source)
 {
-public:
-    HttpApiRequest(const HttpData &req, bool restricted);
-
-protected:
-    inline rapidjson::Document &doc() override           { return m_res.doc(); }
-    inline rapidjson::Value &reply() override            { return m_res.doc(); }
-    inline const String &url() const override            { return m_url; }
-
-    const rapidjson::Value &json() const override;
-    Method method() const override;
-    void accept() override;
-    void done(int status) override;
-
-private:
-    bool m_parsed;
-    const HttpData &m_req;
-    HttpApiResponse m_res;
-    rapidjson::Document m_body;
-    String m_url;
-};
+}
 
 
-} // namespace xmrig
-
-
-#endif // XMRIG_HTTPAPIREQUEST_H
-
+xmrig::ApiRequest::~ApiRequest()
+{
+}

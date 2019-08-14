@@ -22,62 +22,54 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_API_H
-#define XMRIG_API_H
+
+#ifndef XMRIG_APIREQUEST_H
+#define XMRIG_APIREQUEST_H
 
 
-#include <vector>
-#include <stdint.h>
-
-
-#include "base/kernel/interfaces/IBaseListener.h"
+#include "base/api/interfaces/IApiRequest.h"
+#include "base/tools/String.h"
 
 
 namespace xmrig {
 
 
-class ApiRouter;
-class Base;
-class Httpd;
-class HttpData;
-class IApiListener;
-class IApiRequest;
-class String;
-
-
-class Api : public IBaseListener
+class ApiRequest : public IApiRequest
 {
 public:
-    Api(Base *base);
-    ~Api() override;
-
-    inline const char *id() const                   { return m_id; }
-    inline const char *workerId() const             { return m_workerId; }
-    inline void addListener(IApiListener *listener) { m_listeners.push_back(listener); }
-
-    void request(const HttpData &req);
-    void start();
-    void stop();
+    ApiRequest(Source source, bool restricted);
+    ~ApiRequest() override;
 
 protected:
-    void onConfigChanged(Config *config, Config *previousConfig) override;
+    enum State {
+        STATE_NEW,
+        STATE_ACCEPTED,
+        STATE_DONE
+    };
+
+    inline bool accept() override                   { m_state = STATE_ACCEPTED; return true; }
+    inline bool isDone() const override             { return m_state == STATE_DONE; }
+    inline bool isNew() const override              { return m_state == STATE_NEW; }
+    inline bool isRestricted() const override       { return m_restricted; }
+    inline const String &rpcMethod() const override { return m_rpcMethod; }
+    inline int version() const override             { return m_version; }
+    inline RequestType type() const override        { return m_type; }
+    inline Source source() const override           { return m_source; }
+    inline void done(int) override                  { m_state = STATE_DONE; }
+
+    int m_version       = 1;
+    RequestType m_type  = REQ_UNKNOWN;
+    State m_state       = STATE_NEW;
+    String m_rpcMethod;
 
 private:
-    void exec(IApiRequest &request);
-    void genId(const String &id);
-    void genWorkerId(const String &id);
-
-    ApiRouter *m_v1;
-    Base *m_base;
-    char m_id[32];
-    char m_workerId[128];
-    const uint64_t m_timestamp;
-    Httpd *m_httpd;
-    std::vector<IApiListener *> m_listeners;
+    bool m_restricted;
+    Source m_source;
 };
 
 
 } // namespace xmrig
 
 
-#endif /* XMRIG_API_H */
+#endif // XMRIG_APIREQUEST_H
+

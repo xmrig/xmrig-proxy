@@ -26,8 +26,8 @@
 #include <inttypes.h>
 
 
-#include "common/log/Log.h"
-#include "common/net/SubmitResult.h"
+#include "base/io/log/Log.h"
+#include "base/net/stratum/SubmitResult.h"
 #include "net/JobResult.h"
 #include "proxy/Events.h"
 #include "proxy/events/AcceptEvent.h"

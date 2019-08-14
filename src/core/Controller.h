@@ -26,44 +26,40 @@
 #define XMRIG_CONTROLLER_H
 
 
-#include "base/kernel/interfaces/IConfigListener.h"
+#include "base/kernel/Base.h"
 #include "proxy/workers/Worker.h"
 
 
 namespace xmrig {
 
 
-class Config;
-class ControllerPrivate;
-class IControllerListener;
 class Miner;
 class Process;
 class Proxy;
 class StatsData;
 
 
-class Controller : public IConfigListener
+class Controller : public Base
 {
 public:
     Controller(Process *process);
     ~Controller() override;
 
-    Config *config() const;
+    int init() override;
+    void start() override;
+    void stop() override;
+
     const StatsData &statsData() const;
     const std::vector<Worker> &workers() const;
-    int init();
     Proxy *proxy() const;
     std::vector<Miner*> miners() const;
-    void addListener(IControllerListener *listener);
-    void watch();
-
-protected:
-    void onNewConfig(IConfig *config) override;
 
 private:
-    ControllerPrivate *d_ptr;
+    Proxy *m_proxy;
 };
 
+
 } /* namespace xmrig */
+
 
 #endif /* XMRIG_CONTROLLER_H */

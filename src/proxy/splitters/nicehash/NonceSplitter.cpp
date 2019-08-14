@@ -25,8 +25,8 @@
 #include <inttypes.h>
 
 
-#include "common/log/Log.h"
-#include "core/Config.h"
+#include "base/io/log/Log.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/Counters.h"
 #include "proxy/events/CloseEvent.h"
@@ -48,6 +48,9 @@ xmrig::NonceSplitter::NonceSplitter(Controller *controller) : Splitter(controlle
 
 xmrig::NonceSplitter::~NonceSplitter()
 {
+    for (NonceMapper *upstream : m_upstreams) {
+        delete upstream;
+    }
 }
 
 
@@ -99,20 +102,11 @@ void xmrig::NonceSplitter::printConnections()
 {
     const Upstreams info = upstreams();
 
-    if (m_controller->config()->isColors()) {
-        LOG_INFO("\x1B[01;32m* \x1B[01;37mupstreams\x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("sleep") "\x1B[01;37m%" PRIu64 "\x1B[0m" LABEL("error") "%s%" PRIu64 "\x1B[0m" LABEL("total") "\x1B[01;37m%" PRIu64,
-                 info.active ? "\x1B[01;32m" : "\x1B[01;31m", info.active, info.sleep, info.error ? "\x1B[01;31m" : "\x1B[01;37m", info.error, info.total);
+    LOG_INFO("\x1B[01;32m* \x1B[01;37mupstreams\x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("sleep") "\x1B[01;37m%" PRIu64 "\x1B[0m" LABEL("error") "%s%" PRIu64 "\x1B[0m" LABEL("total") "\x1B[01;37m%" PRIu64,
+             info.active ? "\x1B[01;32m" : "\x1B[01;31m", info.active, info.sleep, info.error ? "\x1B[01;31m" : "\x1B[01;37m", info.error, info.total);
 
-        LOG_INFO("\x1B[01;32m* \x1B[01;37mminers   \x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("max") "\x1B[01;37m%" PRIu64 "\x1B[0m" LABEL("ratio") "%s1:%3.1f",
-                 Counters::miners() ? "\x1B[01;32m" : "\x1B[01;31m", Counters::miners(), Counters::maxMiners(), (info.ratio > 200 ? "\x1B[01;32m" : "\x1B[01;33m"), info.ratio);
-    }
-    else {
-        LOG_INFO("* upstreams: active %" PRIu64 " sleep %" PRIu64 " error %" PRIu64 " total %" PRIu64,
-                 info.active, info.sleep, info.error, info.total);
-
-        LOG_INFO("* miners:    active %" PRIu64 " max %" PRIu64 " ratio 1:%3.1f",
-                 Counters::miners(), Counters::maxMiners(), info.ratio);
-    }
+    LOG_INFO("\x1B[01;32m* \x1B[01;37mminers   \x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("max") "\x1B[01;37m%" PRIu64 "\x1B[0m" LABEL("ratio") "%s1:%3.1f",
+             Counters::miners() ? "\x1B[01;32m" : "\x1B[01;31m", Counters::miners(), Counters::maxMiners(), (info.ratio > 200 ? "\x1B[01;32m" : "\x1B[01;33m"), info.ratio);
 }
 
 
@@ -139,7 +133,7 @@ void xmrig::NonceSplitter::printState()
 void xmrig::NonceSplitter::onConfigChanged(Config *config, Config *previousConfig)
 {
     if (config->pools() != previousConfig->pools()) {
-        config->printPools();
+        config->pools().print();
 
         for (NonceMapper *mapper : m_upstreams) {
             mapper->reload(config->pools());
@@ -172,6 +166,10 @@ void xmrig::NonceSplitter::onEvent(IEvent *event)
 
 void xmrig::NonceSplitter::login(LoginEvent *event)
 {
+    if (event->miner()->routeId() != -1) {
+        return;
+    }
+
     // try reuse active upstreams.
     for (NonceMapper *mapper : m_upstreams) {
         if (!mapper->isSuspended() && mapper->add(event->miner())) {
@@ -193,7 +191,7 @@ void xmrig::NonceSplitter::login(LoginEvent *event)
 
 void xmrig::NonceSplitter::remove(Miner *miner)
 {
-    if (miner->mapperId() < 0) {
+    if (miner->mapperId() < 0 || miner->routeId() != -1) {
         return;
     }
 
@@ -203,5 +201,9 @@ void xmrig::NonceSplitter::remove(Miner *miner)
 
 void xmrig::NonceSplitter::submit(SubmitEvent *event)
 {
+    if (event->miner()->mapperId() < 0 || event->miner()->routeId() != -1) {
+        return;
+    }
+
     m_upstreams[event->miner()->mapperId()]->submit(event);
 }

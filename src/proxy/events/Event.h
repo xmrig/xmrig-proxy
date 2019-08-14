@@ -29,7 +29,7 @@
 #include <new>
 
 
-#include "interfaces/IEvent.h"
+#include "proxy/interfaces/IEvent.h"
 
 
 namespace xmrig {

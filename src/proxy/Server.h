@@ -43,6 +43,7 @@ class Server
 {
 public:
     Server(const BindHost &host, const TlsContext *ctx);
+    ~Server();
     bool bind();
 
 private:
@@ -55,7 +56,7 @@ private:
     sockaddr_in m_addr;
     sockaddr_in6 m_addr6;
     uint16_t m_port;
-    uv_tcp_t m_server;
+    uv_tcp_t *m_server;
     String m_host;
 };
 

@@ -31,8 +31,8 @@
 #include <vector>
 
 
-#include "common/interfaces/IControllerListener.h"
-#include "interfaces/IEventListener.h"
+#include "base/kernel/interfaces/IBaseListener.h"
+#include "proxy/interfaces/IEventListener.h"
 #include "proxy/workers/Worker.h"
 #include "rapidjson/fwd.h"
 
@@ -48,7 +48,7 @@ class Miner;
 class SubmitEvent;
 
 
-class Workers : public IEventListener, public IControllerListener
+class Workers : public IEventListener, public IBaseListener
 {
 public:
     enum Mode {

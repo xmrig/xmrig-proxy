@@ -4,8 +4,9 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2018 XMRig       <support@xmrig.com>
- *
+ * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,63 +23,53 @@
  */
 
 
-#include "common/config/ConfigLoader.h"
-#include "common/interfaces/IControllerListener.h"
-#include "common/log/ConsoleLog.h"
-#include "common/log/FileLog.h"
-#include "common/log/Log.h"
-#include "common/Platform.h"
-#include "core/Config.h"
+#include <assert.h>
+
+
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/Proxy.h"
 
 
-#ifdef HAVE_SYSLOG_H
-#   include "common/log/SysLog.h"
-#endif
-
-
-class xmrig::ControllerPrivate
-{
-public:
-    inline ControllerPrivate(Process *process) :
-        process(process),
-        proxy(nullptr),
-        config(nullptr)
-    {}
-
-
-    inline ~ControllerPrivate()
-    {
-        delete proxy;
-        delete config;
-    }
-
-
-    Process *process;
-    Proxy *proxy;
-    std::vector<IControllerListener *> listeners;
-    xmrig::Config *config;
-};
-
-
 xmrig::Controller::Controller(Process *process)
-    : d_ptr(new ControllerPrivate(process))
+    : Base(process),
+    m_proxy(nullptr)
 {
 }
 
 
 xmrig::Controller::~Controller()
 {
-    ConfigLoader::release();
-
-    delete d_ptr;
+    delete m_proxy;
 }
 
 
-xmrig::Config *xmrig::Controller::config() const
+int xmrig::Controller::init()
 {
-    return d_ptr->config;
+    const int rc = Base::init();
+    if (rc != 0) {
+        return rc;
+    }
+
+    m_proxy = new Proxy(this);
+    return 0;
+}
+
+
+void xmrig::Controller::start()
+{
+    Base::start();
+
+    proxy()->connect();
+}
+
+
+void xmrig::Controller::stop()
+{
+    Base::stop();
+
+    delete m_proxy;
+    m_proxy = nullptr;
 }
 
 
@@ -94,71 +85,13 @@ const std::vector<xmrig::Worker> &xmrig::Controller::workers() const
 }
 
 
-int xmrig::Controller::init()
-{
-    d_ptr->config = Config::load(d_ptr->process, this);
-    if (!d_ptr->config) {
-        return 1;
-    }
-
-    Log::init();
-    Platform::init(config()->userAgent());
-
-    if (!config()->isBackground()) {
-        Log::add(new ConsoleLog(this));
-    }
-
-    if (config()->logFile()) {
-        Log::add(new FileLog(this, config()->logFile()));
-    }
-
-#   ifdef HAVE_SYSLOG_H
-    if (config()->isSyslog()) {
-        Log::add(new SysLog());
-    }
-#   endif
-
-    d_ptr->proxy = new Proxy(this);
-    return 0;
-}
-
-
 xmrig::Proxy *xmrig::Controller::proxy() const
 {
-    return d_ptr->proxy;
+    return m_proxy;
 }
 
 
 std::vector<xmrig::Miner*> xmrig::Controller::miners() const
 {
     return proxy()->miners();
-}
-
-
-void xmrig::Controller::addListener(IControllerListener *listener)
-{
-    d_ptr->listeners.push_back(listener);
-}
-
-
-void xmrig::Controller::watch()
-{
-    if (!config()) {
-        return;
-    }
-
-    ConfigLoader::watch(d_ptr->config);
-}
-
-
-void xmrig::Controller::onNewConfig(IConfig *config)
-{
-    Config *previousConfig = d_ptr->config;
-    d_ptr->config = static_cast<Config*>(config);
-
-    for (xmrig::IControllerListener *listener : d_ptr->listeners) {
-        listener->onConfigChanged(d_ptr->config, previousConfig);
-    }
-
-    delete previousConfig;
 }

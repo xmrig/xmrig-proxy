@@ -25,22 +25,23 @@
 #include <stdio.h>
 
 
-#include "common/net/Job.h"
+#include "base/net/stratum/Job.h"
+#include "base/tools/Buffer.h"
 #include "net/JobResult.h"
 
 
 xmrig::JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, const char *result, const xmrig::Algorithm &algorithm) :
+    algorithm(algorithm),
     nonce(nonce),
     result(result),
     id(id),
+    jobId(jobId),
     diff(0),
-    algorithm(algorithm),
-    jobId(jobId, 3),
     m_actualDiff(0)
 {
     if (result && strlen(result) == 64) {
         uint64_t target = 0;
-        Job::fromHex(result + 48, 16, reinterpret_cast<unsigned char*>(&target));
+        Buffer::fromHex(result + 48, 16, reinterpret_cast<unsigned char*>(&target));
 
         if (target > 0) {
             m_actualDiff = Job::toDiff(target);
@@ -52,7 +53,7 @@ xmrig::JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, co
 bool xmrig::JobResult::isCompatible(uint8_t fixedByte) const
 {
     uint8_t n[4];
-    if (!Job::fromHex(nonce, 8, n)) {
+    if (!Buffer::fromHex(nonce, 8, n)) {
         return false;
     }
 
@@ -66,5 +67,5 @@ bool xmrig::JobResult::isValid() const
         return false;
     }
 
-    return strlen(nonce) == 8 && jobId.isValid();
+    return strlen(nonce) == 8 && !jobId.isNull();
 }

@@ -27,9 +27,12 @@
 #include <string.h>
 
 
-#include "common/log/Log.h"
-#include "common/net/Job.h"
-#include "common/utils/timestamp.h"
+#include "base/io/json/Json.h"
+#include "base/io/log/Log.h"
+#include "base/net/stratum/Job.h"
+#include "base/tools/Buffer.h"
+#include "base/tools/Chrono.h"
+#include "base/tools/Handle.h"
 #include "net/JobResult.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"
@@ -46,7 +49,7 @@
 #include "rapidjson/writer.h"
 
 
-#ifndef XMRIG_NO_TLS
+#ifdef XMRIG_FEATURE_TLS
 #   include "proxy/tls/Tls.h"
 #endif
 
@@ -58,9 +61,7 @@ namespace xmrig {
 }
 
 
-xmrig::Miner::Miner(const TlsContext *ctx, bool ipv6, uint16_t port) :
-    m_ipv6(ipv6),
-    m_nicehash(true),
+xmrig::Miner::Miner(const TlsContext *ctx, uint16_t port) :
     m_ip(),
     m_routeId(-1),
     m_id(++nextId),
@@ -72,9 +73,9 @@ xmrig::Miner::Miner(const TlsContext *ctx, bool ipv6, uint16_t port) :
     m_localPort(port),
     m_customDiff(0),
     m_diff(0),
-    m_expire(uv_now(uv_default_loop()) + kLoginTimeout),
+    m_expire(Chrono::steadyMSecs() + kLoginTimeout),
     m_rx(0),
-    m_timestamp(currentMSecsSinceEpoch()),
+    m_timestamp(Chrono::currentMSecsSinceEpoch()),
     m_tx(0),
     m_fixedByte(0)
 {
@@ -82,13 +83,14 @@ xmrig::Miner::Miner(const TlsContext *ctx, bool ipv6, uint16_t port) :
 
     Uuid::create(m_rpcId, sizeof(m_rpcId));
 
-    m_socket.data = m_storage.ptr(m_key);
-    uv_tcp_init(uv_default_loop(), &m_socket);
+    m_socket = new uv_tcp_t;
+    m_socket->data = m_storage.ptr(m_key);
+    uv_tcp_init(uv_default_loop(), m_socket);
 
     m_recvBuf.base = m_buf;
     m_recvBuf.len  = sizeof(m_buf);
 
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     if (ctx != nullptr) {
         m_tls = new Tls(ctx->ctx(), this);
     }
@@ -100,9 +102,9 @@ xmrig::Miner::Miner(const TlsContext *ctx, bool ipv6, uint16_t port) :
 
 xmrig::Miner::~Miner()
 {
-    m_socket.data = nullptr;
+    Handle::close(m_socket);
 
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     delete m_tls;
 #   endif
 
@@ -112,32 +114,41 @@ xmrig::Miner::~Miner()
 
 bool xmrig::Miner::accept(uv_stream_t *server)
 {
-    const int rt = uv_accept(server, reinterpret_cast<uv_stream_t*>(&m_socket));
+    const int rt = uv_accept(server, reinterpret_cast<uv_stream_t*>(m_socket));
     if (rt < 0) {
         LOG_ERR("[miner] accept error: \"%s\"", uv_strerror(rt));
         return false;
     }
 
-    sockaddr_storage addr = { 0 };
+    sockaddr_storage addr = {};
     int size = sizeof(addr);
 
-    uv_tcp_getpeername(&m_socket, reinterpret_cast<sockaddr*>(&addr), &size);
+    uv_tcp_getpeername(m_socket, reinterpret_cast<sockaddr*>(&addr), &size);
 
-    if (m_ipv6) {
+    if (reinterpret_cast<sockaddr_in *>(&addr)->sin_family == AF_INET6) {
         uv_ip6_name(reinterpret_cast<sockaddr_in6*>(&addr), m_ip, 45);
     } else {
         uv_ip4_name(reinterpret_cast<sockaddr_in*>(&addr), m_ip, 16);
     }
 
-    uv_read_start(reinterpret_cast<uv_stream_t*>(&m_socket), Miner::onAllocBuffer, Miner::onRead);
+    uv_read_start(reinterpret_cast<uv_stream_t*>(m_socket), Miner::onAllocBuffer, Miner::onRead);
 
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     if (isTLS()) {
         return m_tls->accept();
     }
 #   endif
 
     return true;
+}
+
+
+void xmrig::Miner::forwardJob(const Job &job, const char *algo)
+{
+    m_diff = job.diff();
+    setFixedByte(job.fixedByte());
+
+    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().shortName(), job.height(), job.rawSeedHash());
 }
 
 
@@ -151,7 +162,7 @@ void xmrig::Miner::setJob(Job &job)
 {
     using namespace rapidjson;
 
-    if (m_nicehash) {
+    if (hasExtension(EXT_NICEHASH)) {
         snprintf(m_sendBuf, 4, "%02hhx", m_fixedByte);
         memcpy(job.rawBlob() + 84, m_sendBuf, 2);
     }
@@ -161,60 +172,12 @@ void xmrig::Miner::setJob(Job &job)
 
     if (m_customDiff && m_customDiff < m_diff) {
         const uint64_t t = 0xFFFFFFFFFFFFFFFFULL / m_customDiff;
-        Job::toHex(reinterpret_cast<const unsigned char *>(&t) + 4, 4, m_sendBuf);
+        Buffer::toHex(reinterpret_cast<const unsigned char *>(&t) + 4, 4, m_sendBuf);
         m_sendBuf[8] = '\0';
         customDiff = true;
     }
 
-    sprintf(m_sendBuf + 16, "%s%02hhx0", job.id().data(), m_fixedByte);
-
-    Document doc(kObjectType);
-    auto &allocator = doc.GetAllocator();
-
-    Value params(kObjectType);
-    params.AddMember("blob",   StringRef(job.rawBlob()), allocator);
-    params.AddMember("job_id", StringRef(m_sendBuf + 16), allocator);
-    params.AddMember("target", StringRef(customDiff ? m_sendBuf : job.rawTarget()), allocator);
-    params.AddMember("algo",   StringRef(job.algorithm().shortName()), allocator);
-
-    if (job.height()) {
-        params.AddMember("height", job.height(), allocator);
-    }
-
-    if (job.algorithm().variant() == VARIANT_0 || job.algorithm().variant() == VARIANT_1) {
-        params.AddMember("variant", job.algorithm().variant(), allocator);
-    }
-
-    doc.AddMember("jsonrpc", "2.0", allocator);
-
-    if (m_state == WaitReadyState) {
-        setState(ReadyState);
-
-        doc.AddMember("id",    m_loginId, allocator);
-        doc.AddMember("error", kNullType, allocator);
-
-        Value result(kObjectType);
-        result.AddMember("id",  StringRef(m_rpcId), allocator);
-        result.AddMember("job", params, allocator);
-
-        Value extensions(kArrayType);
-        extensions.PushBack("algo", allocator);
-
-        if (m_nicehash) {
-            extensions.PushBack("nicehash", allocator);
-        }
-
-        result.AddMember("extensions", extensions, allocator);
-        result.AddMember("status", "OK", allocator);
-
-        doc.AddMember("result", result, allocator);
-    }
-    else {
-        doc.AddMember("method", "job", allocator);
-        doc.AddMember("params", params, allocator);
-    }
-
-    send(doc);
+    sendJob(job.rawBlob(), job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height(), job.rawSeedHash());
 }
 
 
@@ -226,7 +189,7 @@ void xmrig::Miner::success(int64_t id, const char *status)
 
 bool xmrig::Miner::isWritable() const
 {
-    return m_state != ClosingState && uv_is_writable(reinterpret_cast<const uv_stream_t*>(&m_socket)) == 1;
+    return m_state != ClosingState && uv_is_writable(reinterpret_cast<const uv_stream_t*>(m_socket)) == 1;
 }
 
 
@@ -252,12 +215,12 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
                 }
             }
 
-            m_user     = params["login"].GetString();
-            m_password = params["pass"].GetString();
-            m_agent    = params["agent"].GetString();
-            m_rigId    = params["rigid"].GetString();
+            m_user     = Json::getString(params, "login");
+            m_password = Json::getString(params, "pass");
+            m_agent    = Json::getString(params, "agent");
+            m_rigId    = Json::getString(params, "rigid");
 
-            LoginEvent::create(this, id, algorithms)->start();
+            LoginEvent::create(this, id, algorithms, params)->start();
             return true;
         }
 
@@ -271,28 +234,20 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
     if (strcmp(method, "submit") == 0) {
         heartbeat();
 
-        const char *rpcId = params["id"].GetString();
+        const char *rpcId = Json::getString(params, "id");
         if (!rpcId || strncmp(m_rpcId, rpcId, sizeof(m_rpcId)) != 0) {
             replyWithError(id, Error::toString(Error::Unauthenticated));
             return true;
         }
 
-        Algorithm algorithm;
-        if (params.HasMember("algo")) {
-            const char *algo = params["algo"].GetString();
+        Algorithm algorithm(Json::getString(params, "algo"));
 
-            algorithm.parseAlgorithm(algo);
-            if (!algorithm.isValid()) {
-                algorithm.parseXmrStakAlgorithm(algo);
-            }
-        }
-
-        SubmitEvent *event = SubmitEvent::create(this, id, params["job_id"].GetString(), params["nonce"].GetString(), params["result"].GetString(), algorithm);
+        SubmitEvent *event = SubmitEvent::create(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm);
 
         if (!event->request.isValid() || event->request.actualDiff() < diff()) {
             event->reject(Error::LowDifficulty);
         }
-        else if (m_nicehash && !event->request.isCompatible(m_fixedByte)) {
+        else if (hasExtension(EXT_NICEHASH) && !event->request.isCompatible(m_fixedByte)) {
             event->reject(Error::InvalidNonce);
         }
 
@@ -321,7 +276,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
 
 bool xmrig::Miner::send(BIO *bio)
 {
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     uv_buf_t buf;
     buf.len = BIO_get_mem_data(bio, &buf.base);
 
@@ -335,7 +290,7 @@ bool xmrig::Miner::send(BIO *bio)
         return false;
     }
 
-    const int rc = uv_try_write(reinterpret_cast<uv_stream_t*>(&m_socket), &buf, 1);
+    const int rc = uv_try_write(reinterpret_cast<uv_stream_t*>(m_socket), &buf, 1);
     (void) BIO_reset(bio);
 
     if (rc < 0) {
@@ -355,7 +310,7 @@ bool xmrig::Miner::send(BIO *bio)
 
 void xmrig::Miner::heartbeat()
 {
-    m_expire = uv_now(uv_default_loop()) + kSocketTimeout;
+    m_expire = Chrono::steadyMSecs() + kSocketTimeout;
 }
 
 
@@ -424,7 +379,7 @@ void xmrig::Miner::read()
 
 void xmrig::Miner::readTLS(int nread)
 {
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     if (isTLS()) {
         LOG_DEBUG("[%s] TLS received (%d bytes)", m_ip, nread);
 
@@ -445,7 +400,7 @@ void xmrig::Miner::send(const rapidjson::Document &doc)
 {
     using namespace rapidjson;
 
-    StringBuffer buffer(0, 512);
+    StringBuffer buffer(nullptr, 512);
     Writer<StringBuffer> writer(buffer);
     doc.Accept(writer);
 
@@ -474,7 +429,7 @@ void xmrig::Miner::send(int size)
     }
 
     int rc = -1;
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     if (isTLS()) {
         rc = m_tls->send(m_sendBuf, size) ? 0 : -1;
     }
@@ -482,7 +437,7 @@ void xmrig::Miner::send(int size)
 #   endif
     {
         uv_buf_t buf = uv_buf_init(m_sendBuf, (unsigned int) size);
-        rc = uv_try_write(reinterpret_cast<uv_stream_t*>(&m_socket), &buf, 1);
+        rc = uv_try_write(reinterpret_cast<uv_stream_t*>(m_socket), &buf, 1);
     }
 
     if (rc < 0) {
@@ -490,6 +445,73 @@ void xmrig::Miner::send(int size)
     }
 
     m_tx += size;
+}
+
+
+void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height, const String &seedHash)
+{
+    using namespace rapidjson;
+
+    Document doc(kObjectType);
+    auto &allocator = doc.GetAllocator();
+
+    Value params(kObjectType);
+    params.AddMember("blob",   StringRef(blob), allocator);
+    params.AddMember("job_id", StringRef(jobId), allocator);
+    params.AddMember("target", StringRef(target), allocator);
+    params.AddMember("algo",   StringRef(algo), allocator);
+
+    if (height) {
+        params.AddMember("height", height, allocator);
+    }
+
+    if (!seedHash.isNull()) {
+        params.AddMember("seed_hash", seedHash.toJSON(), allocator);
+    }
+
+    doc.AddMember("jsonrpc", "2.0", allocator);
+
+    if (m_state == WaitReadyState) {
+        setState(ReadyState);
+
+        doc.AddMember("id",    m_loginId, allocator);
+        doc.AddMember("error", kNullType, allocator);
+
+        Value result(kObjectType);
+        result.AddMember("id",  StringRef(m_rpcId), allocator);
+        result.AddMember("job", params, allocator);
+
+        Value extensions(kArrayType);
+
+        if (hasExtension(EXT_ALGO)) {
+            extensions.PushBack("algo", allocator);
+        }
+
+        if (hasExtension(EXT_NICEHASH)) {
+            extensions.PushBack("nicehash", allocator);
+        }
+
+        if (hasExtension(EXT_CONNECT)) {
+            extensions.PushBack("connect", allocator);
+
+#           ifdef XMRIG_FEATURE_TLS
+            extensions.PushBack("tls", allocator);
+#           endif
+        }
+
+        extensions.PushBack("keepalive", allocator);
+
+        result.AddMember("extensions", extensions, allocator);
+        result.AddMember("status", "OK", allocator);
+
+        doc.AddMember("result", result, allocator);
+    }
+    else {
+        doc.AddMember("method", "job", allocator);
+        doc.AddMember("params", params, allocator);
+    }
+
+    send(doc);
 }
 
 
@@ -512,16 +534,16 @@ void xmrig::Miner::setState(State state)
 }
 
 
-void xmrig::Miner::shutdown(bool had_error)
+void xmrig::Miner::shutdown(bool)
 {
     if (m_state == ClosingState) {
         return;
     }
 
     setState(ClosingState);
-    uv_read_stop(reinterpret_cast<uv_stream_t*>(&m_socket));
+    uv_read_stop(reinterpret_cast<uv_stream_t*>(m_socket));
 
-    uv_shutdown(new uv_shutdown_t, reinterpret_cast<uv_stream_t*>(&m_socket), [](uv_shutdown_t* req, int status) {
+    uv_shutdown(new uv_shutdown_t, reinterpret_cast<uv_stream_t*>(m_socket), [](uv_shutdown_t* req, int) {
 
         if (uv_is_closing(reinterpret_cast<uv_handle_t*>(req->handle)) == 0) {
             uv_close(reinterpret_cast<uv_handle_t*>(req->handle), [](uv_handle_t *handle) {

@@ -26,11 +26,10 @@
 #define XMRIG_DONATESTRATEGY_H
 
 
+#include "base/kernel/interfaces/IClientListener.h"
+#include "base/kernel/interfaces/IStrategy.h"
+#include "base/net/stratum/Job.h"
 #include "base/tools/String.h"
-#include "common/interfaces/IClientListener.h"
-#include "common/interfaces/IStrategy.h"
-#include "common/net/Job.h"
-
 
 
 namespace xmrig {
@@ -52,18 +51,19 @@ public:
     };
 
 
-    DonateStrategy(xmrig::Controller *controller, IStrategyListener *listener);
+    DonateStrategy(Controller *controller, IStrategyListener *listener);
     ~DonateStrategy() override;
 
     bool reschedule();
-    void save(const Client *client, const Job &job);
+    void save(const IClient *client, const Job &job);
     void setAlgo(const xmrig::Algorithm &algorithm) override;
 
     inline bool hasPendingJob() const     { return m_pending.job.isValid(); }
     inline const Pending &pending() const { return m_pending; }
 
-    inline bool isActive() const override { return m_active; }
-    inline void resume() override         {}
+    inline bool isActive() const override  { return m_active; }
+    inline IClient *client() const override { return m_client; }
+    inline void resume() override          {}
 
     int64_t submit(const JobResult &result) override;
     void connect() override;
@@ -71,14 +71,16 @@ public:
     void tick(uint64_t now) override;
 
 protected:
-    void onClose(Client *client, int failures) override;
-    void onJobReceived(Client *client, const Job &job) override;
-    void onLoginSuccess(Client *client) override;
-    void onResultAccepted(Client *client, const SubmitResult &result, const char *error) override;
+    void onClose(IClient *client, int failures) override;
+    void onJobReceived(IClient *client, const Job &job, const rapidjson::Value &params) override;
+    void onLogin(IClient *client, rapidjson::Document &doc, rapidjson::Value &params) override;
+    void onLoginSuccess(IClient *client) override;
+    void onResultAccepted(IClient *client, const SubmitResult &result, const char *error) override;
+    void onVerifyAlgorithm(const IClient *client, const Algorithm &algorithm, bool *ok) override;
 
 private:
     bool m_active;
-    Client *m_client;
+    IClient *m_client;
     Controller *m_controller;
     IStrategyListener *m_listener;
     Pending m_pending;

@@ -154,6 +154,7 @@ add_definitions(/DXMRIG_ALGO_CN_LITE)
 add_definitions(/DXMRIG_ALGO_CN_HEAVY)
 add_definitions(/DXMRIG_ALGO_CN_PICO)
 add_definitions(/DXMRIG_ALGO_CN_GPU)
+add_definitions(/DXMRIG_ALGO_ARGON2)
 
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$" AND CMAKE_SIZEOF_VOID_P EQUAL 8)
     add_definitions(/DRAPIDJSON_SSE2)

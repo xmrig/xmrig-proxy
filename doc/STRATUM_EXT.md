@@ -80,7 +80,7 @@ Second, miner add fields `algo` to submit request.
 ```
 
 ### 1.4 Algorithm names and variants
-* https://github.com/xmrig/xmrig/blob/beta/doc/ALGORITHMS.md#algorithm-names
+* https://github.com/xmrig/xmrig/blob/master/doc/ALGORITHMS.md#algorithm-names
 
 ## Rig identifier
 User defined rig identifier. Optional field `rigid` in `login` request. More details: https://github.com/fireice-uk/xmr-stak/issues/849

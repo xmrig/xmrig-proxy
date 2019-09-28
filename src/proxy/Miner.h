@@ -123,7 +123,7 @@ private:
 
     static inline Miner *getMiner(void *data) { return m_storage.get(data); }
 
-    char m_buf[1024];
+    char m_buf[4096];
     char m_ip[46];
     char m_rpcId[37];
     int32_t m_routeId;

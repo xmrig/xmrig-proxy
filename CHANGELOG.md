@@ -1,3 +1,7 @@
+# v3.2.0
+- Added per pool option `coin` with single possible value `monero` for pools without algorithm negotiation, for upcoming Monero fork.
+- [#1183](https://github.com/xmrig/xmrig/issues/1183) Fixed compatibility with systemd.
+
 # v3.1.1
 - [#1133](https://github.com/xmrig/xmrig/issues/1133) Fixed syslog regression.
 - [#1138](https://github.com/xmrig/xmrig/issues/1138) Fixed multiple network bugs.

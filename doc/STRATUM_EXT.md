@@ -16,7 +16,7 @@ Miner should send list of [algorithms](#14-algorithm-names-and-variants) support
 In case if miner not support dynamic algorithm change, miner should send list with one item, for example `"algo": ["cn-heavy"]`, pool/proxy should provide work for selected algorithm or send error.
 
 ### 1.2. Extended job object
-To each `job` object pool/proxy should add additional field `algo` and optional `variant` field.
+To each `job` object pool/proxy should add additional field `algo`.
 
 ```json
 {
@@ -25,7 +25,7 @@ To each `job` object pool/proxy should add additional field `algo` and optional 
     "id": "...",
     "job": {
       "blob": "...", "job_id": "...", "target": "...", "id": "...",
-      "algo": "cn/1", "variant": 1
+      "algo": "cn/r"
     },
     "status": "OK"
   }
@@ -37,16 +37,10 @@ To each `job` object pool/proxy should add additional field `algo` and optional 
   "jsonrpc": "2.0", "method": "job",
   "params": {
     "blob": "...", "job_id": "...", "target": "b88d0600", "id": "...",
-    "algo": "cn/1"
+    "algo": "cn/r"
   }
 }
 ```
-Possible values for `variant`:
-
-* `1` Force use variant 1 of algorithm.
-* `0` Force use original cn/cn-lite algorithm.
-
-This field used for backward compatibility with xmrig 2.5, new miner implementations should support only `algo`.
 
 If miner not support algorithm connection should be closed by miner to initiate switch to backup pool.
 
@@ -80,7 +74,7 @@ Second, miner add fields `algo` to submit request.
 ```
 
 ### 1.4 Algorithm names and variants
-* https://github.com/xmrig/xmrig/blob/beta/doc/ALGORITHMS.md#algorithm-names
+* https://github.com/xmrig/xmrig/blob/master/doc/ALGORITHMS.md#algorithm-names
 
 ## Rig identifier
 User defined rig identifier. Optional field `rigid` in `login` request. More details: https://github.com/fireice-uk/xmr-stak/issues/849

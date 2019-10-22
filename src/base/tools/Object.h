@@ -22,62 +22,31 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_API_H
-#define XMRIG_API_H
+#ifndef XMRIG_OBJECT_H
+#define XMRIG_OBJECT_H
 
 
-#include <vector>
-#include <stdint.h>
-
-
-#include "base/kernel/interfaces/IBaseListener.h"
+#include <chrono>
 
 
 namespace xmrig {
 
 
-class ApiRouter;
-class Base;
-class Httpd;
-class HttpData;
-class IApiListener;
-class IApiRequest;
-class String;
+#define XMRIG_DISABLE_COPY_MOVE(X) \
+    X(const X &other)            = delete; \
+    X(X &&other)                 = delete; \
+    X &operator=(const X &other) = delete; \
+    X &operator=(X &&other)      = delete;
 
 
-class Api : public IBaseListener
-{
-public:
-    Api(Base *base);
-    ~Api() override;
-
-    inline const char *id() const                   { return m_id; }
-    inline const char *workerId() const             { return m_workerId; }
-    inline void addListener(IApiListener *listener) { m_listeners.push_back(listener); }
-
-    void request(const HttpData &req);
-    void start();
-    void stop();
-
-protected:
-    void onConfigChanged(Config *config, Config *previousConfig) override;
-
-private:
-    void exec(IApiRequest &request);
-    void genId(const String &id);
-    void genWorkerId(const String &id);
-
-    ApiRouter *m_v1;
-    Base *m_base;
-    char m_id[32];
-    char m_workerId[128];
-    const uint64_t m_timestamp;
-    Httpd *m_httpd;
-    std::vector<IApiListener *> m_listeners;
-};
+#define XMRIG_DISABLE_COPY_MOVE_DEFAULT(X) \
+    X()                          = delete; \
+    X(const X &other)            = delete; \
+    X(X &&other)                 = delete; \
+    X &operator=(const X &other) = delete; \
+    X &operator=(X &&other)      = delete;
 
 
-} // namespace xmrig
+} /* namespace xmrig */
 
-
-#endif /* XMRIG_API_H */
+#endif /* XMRIG_OBJECT_H */

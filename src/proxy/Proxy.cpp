@@ -58,7 +58,13 @@
 #endif
 
 
-xmrig::Proxy::Proxy(xmrig::Controller *controller) :
+#ifdef XMRIG_FEATURE_API
+#   include "api/v1/ApiRouter.h"
+#   include "base/api/Api.h"
+#endif
+
+
+xmrig::Proxy::Proxy(Controller *controller) :
     m_controller(controller),
     m_customDiff(controller),
     m_tls(nullptr),
@@ -84,6 +90,11 @@ xmrig::Proxy::Proxy(xmrig::Controller *controller) :
     m_timer = new uv_timer_t;
     m_timer->data = this;
     uv_timer_init(uv_default_loop(), m_timer);
+
+#   ifdef XMRIG_FEATURE_API
+    m_api = new ApiRouter(controller);
+    controller->api()->addListener(m_api);
+#   endif
 
     Events::subscribe(IEvent::ConnectionType, m_miners);
     Events::subscribe(IEvent::ConnectionType, &m_stats);
@@ -126,6 +137,10 @@ xmrig::Proxy::~Proxy()
     for (Server *server : m_servers) {
         delete server;
     }
+
+#   ifdef XMRIG_FEATURE_API
+    delete m_api;
+#   endif
 
     delete m_donate;
     delete m_login;

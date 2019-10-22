@@ -47,8 +47,15 @@
 
 
 #ifdef XMRIG_FEATURE_API
-#   include "api/Api.h"
-#   include "api/interfaces/IApiRequest.h"
+#   include "base/api/Api.h"
+#   include "base/api/interfaces/IApiRequest.h"
+
+namespace xmrig {
+
+static const char *kConfigPathV1 = "/1/config";
+static const char *kConfigPathV2 = "/2/config";
+
+} // namespace xmrig
 #endif
 
 
@@ -177,7 +184,10 @@ int xmrig::Base::init()
     Platform::setProcessPriority(config()->cpu().priority());
 #   endif
 
-    if (!config()->isBackground()) {
+    if (config()->isBackground()) {
+        Log::background = true;
+    }
+    else {
         Log::add(new ConsoleLog());
     }
 
@@ -296,7 +306,7 @@ void xmrig::Base::onFileChanged(const String &fileName)
 void xmrig::Base::onRequest(IApiRequest &request)
 {
     if (request.method() == IApiRequest::METHOD_GET) {
-        if (request.url() == "/1/config") {
+        if (request.url() == kConfigPathV1 || request.url() == kConfigPathV2) {
             if (request.isRestricted()) {
                 return request.done(403);
             }
@@ -306,7 +316,7 @@ void xmrig::Base::onRequest(IApiRequest &request)
         }
     }
     else if (request.method() == IApiRequest::METHOD_PUT || request.method() == IApiRequest::METHOD_POST) {
-        if (request.url() == "/1/config") {
+        if (request.url() == kConfigPathV1 || request.url() == kConfigPathV2) {
             request.accept();
 
             if (!reload(request.json())) {

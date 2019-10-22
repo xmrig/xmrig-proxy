@@ -23,7 +23,6 @@
  */
 
 
-#include "api/Api.h"
 #include "base/net/stratum/SubmitResult.h"
 #include "Counters.h"
 #include "interfaces/ISplitter.h"

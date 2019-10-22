@@ -28,7 +28,7 @@
 #include <thread>
 
 
-#include "api/interfaces/IApiRequest.h"
+#include "base/api/interfaces/IApiRequest.h"
 #include "api/v1/ApiRouter.h"
 #include "base/kernel/Platform.h"
 #include "base/tools/Buffer.h"

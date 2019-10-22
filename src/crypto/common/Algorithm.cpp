@@ -108,11 +108,17 @@ static AlgoName const algorithm_names[] = {
 #   endif
 #   ifdef XMRIG_ALGO_RANDOMX
     { "randomx/0",                 "rx/0",             Algorithm::RX_0            },
+    { "randomx/test",              "rx/test",          Algorithm::RX_0            },
     { "RandomX",                   "rx",               Algorithm::RX_0            },
     { "randomx/wow",               "rx/wow",           Algorithm::RX_WOW          },
     { "RandomWOW",                 nullptr,            Algorithm::RX_WOW          },
     { "randomx/loki",              "rx/loki",          Algorithm::RX_LOKI         },
     { "RandomXL",                  nullptr,            Algorithm::RX_LOKI         },
+#   endif
+#   ifdef XMRIG_ALGO_ARGON2
+    { "argon2/chukwa",             nullptr,            Algorithm::AR2_CHUKWA      },
+    { "chukwa",                    nullptr,            Algorithm::AR2_CHUKWA      },
+    { "argon2/wrkz",               nullptr,            Algorithm::AR2_WRKZ        },
 #   endif
 };
 
@@ -128,8 +134,30 @@ rapidjson::Value xmrig::Algorithm::toJSON() const
 }
 
 
-size_t xmrig::Algorithm::memory() const
+size_t xmrig::Algorithm::l2() const
 {
+#   ifdef XMRIG_ALGO_RANDOMX
+    switch (m_id) {
+    case RX_0:
+    case RX_LOKI:
+        return 0x40000;
+
+    case RX_WOW:
+        return 0x20000;
+
+    default:
+        break;
+    }
+#   endif
+
+    return 0;
+}
+
+
+size_t xmrig::Algorithm::l3() const
+{
+    constexpr size_t oneMiB = 0x100000;
+
     const Family f = family();
     assert(f != UNKNOWN);
 
@@ -139,8 +167,6 @@ size_t xmrig::Algorithm::memory() const
 
 #   ifdef XMRIG_ALGO_RANDOMX
     if (f == RANDOM_X) {
-        constexpr size_t oneMiB = 0x100000;
-
         switch (m_id) {
         case RX_0:
         case RX_LOKI:
@@ -155,7 +181,46 @@ size_t xmrig::Algorithm::memory() const
     }
 #   endif
 
+#   ifdef XMRIG_ALGO_ARGON2
+    if (f == ARGON2) {
+        switch (m_id) {
+        case AR2_CHUKWA:
+            return oneMiB / 2;
+
+        case AR2_WRKZ:
+            return oneMiB / 4;
+
+        default:
+            break;
+        }
+    }
+#   endif
+
     return 0;
+}
+
+
+uint32_t xmrig::Algorithm::maxIntensity() const
+{
+#   ifdef XMRIG_ALGO_RANDOMX
+    if (family() == RANDOM_X) {
+        return 1;
+    }
+#   endif
+
+#   ifdef XMRIG_ALGO_ARGON2
+    if (family() == ARGON2) {
+        return 1;
+    }
+#   endif
+
+#   ifdef XMRIG_ALGO_CN_GPU
+    if (m_id == CN_GPU) {
+        return 1;
+    }
+#   endif
+
+    return 5;
 }
 
 
@@ -204,6 +269,12 @@ xmrig::Algorithm::Family xmrig::Algorithm::family(Id id)
         return RANDOM_X;
 #   endif
 
+#   ifdef XMRIG_ALGO_ARGON2
+    case AR2_CHUKWA:
+    case AR2_WRKZ:
+        return ARGON2;
+#   endif
+
     case INVALID:
     case MAX:
         return UNKNOWN;
@@ -233,7 +304,7 @@ const char *xmrig::Algorithm::name(bool shortName) const
 {
     for (size_t i = 0; i < ARRAY_SIZE(algorithm_names); i++) {
         if (algorithm_names[i].id == m_id) {
-            return shortName ? algorithm_names[i].shortName : algorithm_names[i].name;
+            return (shortName && algorithm_names[i].shortName) ? algorithm_names[i].shortName : algorithm_names[i].name;
         }
     }
 

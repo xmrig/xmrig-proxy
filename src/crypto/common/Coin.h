@@ -5,6 +5,7 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
  * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
  * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
@@ -22,48 +23,53 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef XMRIG_COIN_H
+#define XMRIG_COIN_H
 
-#ifndef XMRIG_HTTPAPIREQUEST_H
-#define XMRIG_HTTPAPIREQUEST_H
 
-
-#include "api/requests/ApiRequest.h"
-#include "base/net/http/HttpApiResponse.h"
-#include "base/tools/String.h"
+#include "crypto/common/Algorithm.h"
+#include "rapidjson/fwd.h"
 
 
 namespace xmrig {
 
 
-class HttpData;
-
-
-class HttpApiRequest : public ApiRequest
+class Coin
 {
 public:
-    HttpApiRequest(const HttpData &req, bool restricted);
+    enum Id : int {
+        INVALID = -1,
+        MONERO,
+    };
 
-protected:
-    inline rapidjson::Document &doc() override           { return m_res.doc(); }
-    inline rapidjson::Value &reply() override            { return m_res.doc(); }
-    inline const String &url() const override            { return m_url; }
 
-    const rapidjson::Value &json() const override;
-    Method method() const override;
-    void accept() override;
-    void done(int status) override;
+    Coin() = default;
+    inline Coin(const char *name) : m_id(parse(name)) {}
+    inline Coin(Id id) : m_id(id)                     {}
+
+
+    inline bool isEqual(const Coin &other) const        { return m_id == other.m_id; }
+    inline bool isValid() const                         { return m_id != INVALID; }
+    inline Id id() const                                { return m_id; }
+
+    Algorithm::Id algorithm(uint8_t blobVersion) const;
+    const char *name() const;
+    rapidjson::Value toJSON() const;
+
+    inline bool operator!=(Coin::Id id) const           { return m_id != id; }
+    inline bool operator!=(const Coin &other) const     { return !isEqual(other); }
+    inline bool operator==(Coin::Id id) const           { return m_id == id; }
+    inline bool operator==(const Coin &other) const     { return isEqual(other); }
+    inline operator Coin::Id() const                    { return m_id; }
+
+    static Id parse(const char *name);
 
 private:
-    bool m_parsed;
-    const HttpData &m_req;
-    HttpApiResponse m_res;
-    rapidjson::Document m_body;
-    String m_url;
+    Id m_id = INVALID;
 };
 
 
-} // namespace xmrig
+} /* namespace xmrig */
 
 
-#endif // XMRIG_HTTPAPIREQUEST_H
-
+#endif /* XMRIG_COIN_H */

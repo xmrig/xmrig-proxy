@@ -33,11 +33,12 @@
 #endif
 
 
-#include "base/kernel/config/BaseTransform.h"
-#include "base/kernel/Process.h"
-#include "base/io/log/Log.h"
-#include "base/kernel/interfaces/IConfig.h"
 #include "base/io/json/JsonChain.h"
+#include "base/io/log/Log.h"
+#include "base/kernel/config/BaseTransform.h"
+#include "base/kernel/interfaces/IConfig.h"
+#include "base/kernel/Process.h"
+#include "base/net/stratum/Pool.h"
 #include "core/config/Config_platform.h"
 
 
@@ -46,6 +47,7 @@ namespace xmrig
 
 static const char *kAlgo  = "algo";
 static const char *kApi   = "api";
+static const char *kCoin  = "coin";
 static const char *kHttp  = "http";
 static const char *kPools = "pools";
 
@@ -106,6 +108,15 @@ void xmrig::BaseTransform::finalize(rapidjson::Document &doc)
             }
         }
     }
+
+    if (m_coin.isValid() && doc.HasMember(kPools)) {
+        auto &pools = doc[kPools];
+        for (Value &pool : pools.GetArray()) {
+            if (!pool.HasMember(kCoin)) {
+                pool.AddMember(StringRef(kCoin), m_coin.toJSON(), allocator);
+            }
+        }
+    }
 }
 
 
@@ -118,6 +129,15 @@ void xmrig::BaseTransform::transform(rapidjson::Document &doc, int key, const ch
         }
         else {
             return add(doc, kPools, kAlgo, arg);
+        }
+        break;
+
+    case IConfig::CoinKey: /* --coin */
+        if (!doc.HasMember(kPools)) {
+            m_coin = arg;
+        }
+        else {
+            return add(doc, kPools, kCoin, arg);
         }
         break;
 
@@ -138,7 +158,19 @@ void xmrig::BaseTransform::transform(rapidjson::Document &doc, int key, const ch
         break;
 
     case IConfig::UrlKey: /* --url */
-        return add(doc, kPools, "url", arg, true);
+    {
+        if (!doc.HasMember(kPools)) {
+            doc.AddMember(rapidjson::StringRef(kPools), rapidjson::kArrayType, doc.GetAllocator());
+        }
+
+        rapidjson::Value &array = doc[kPools];
+        if (array.Size() == 0 || Pool(array[array.Size() - 1]).isValid()) {
+            array.PushBack(rapidjson::kObjectType, doc.GetAllocator());
+        }
+
+        set(doc, array[array.Size() - 1], "url", arg);
+        break;
+    }
 
     case IConfig::UserKey: /* --user */
         return add(doc, kPools, "user", arg);

@@ -61,8 +61,7 @@ namespace xmrig {
 }
 
 
-xmrig::Miner::Miner(const TlsContext *ctx, bool ipv6, uint16_t port) :
-    m_ipv6(ipv6),
+xmrig::Miner::Miner(const TlsContext *ctx, uint16_t port) :
     m_ip(),
     m_routeId(-1),
     m_id(++nextId),

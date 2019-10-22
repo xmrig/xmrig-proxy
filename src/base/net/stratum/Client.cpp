@@ -70,21 +70,15 @@ static const char *states[] = {
     "host-lookup",
     "connecting",
     "connected",
-    "closing"
+    "closing",
+    "reconnecting"
 };
 #endif
 
 
 xmrig::Client::Client(int id, const char *agent, IClientListener *listener) :
     BaseClient(id, listener),
-    m_agent(agent),
-    m_tls(nullptr),
-    m_expire(0),
-    m_jobs(0),
-    m_keepAlive(0),
-    m_key(0),
-    m_stream(nullptr),
-    m_socket(nullptr)
+    m_agent(agent)
 {
     m_key = m_storage.add(this);
     m_dns = new Dns(this);
@@ -234,10 +228,16 @@ void xmrig::Client::tick(uint64_t now)
         else if (m_keepAlive && now > m_keepAlive) {
             ping();
         }
+
+        return;
     }
 
-    if (m_expire && now > m_expire && m_state == ConnectingState) {
-        connect();
+    if (m_state == ReconnectingState && m_expire && now > m_expire) {
+        return connect();
+    }
+
+    if (m_state == ConnectingState && m_expire && now > m_expire) {
+        return reconnect();
     }
 }
 
@@ -334,14 +334,23 @@ bool xmrig::Client::parseJob(const rapidjson::Value &params, int *code)
     if (algo) {
         job.setAlgorithm(algo);
     }
+    else if (m_pool.coin().isValid()) {
+        job.setAlgorithm(m_pool.coin().algorithm(job.blob()[0]));
+    }
 
-    job.setSeedHash(Json::getString(params, "seed_hash"));
     job.setHeight(Json::getUint64(params, "height"));
 
     if (!verifyAlgorithm(job.algorithm(), algo)) {
         *code = 6;
+        return false;
+    }
 
-        close();
+    if (job.algorithm().family() == Algorithm::RANDOM_X && !job.setSeedHash(Json::getString(params, "seed_hash"))) {
+        if (!isQuiet()) {
+            LOG_ERR("[%s] failed to parse field \"seed_hash\" required by RandomX", url(), algo);
+        }
+
+        *code = 7;
         return false;
     }
 
@@ -420,7 +429,12 @@ bool xmrig::Client::verifyAlgorithm(const Algorithm &algorithm, const char *algo
 {
     if (!algorithm.isValid()) {
         if (!isQuiet()) {
-            LOG_ERR("[%s] Unknown/unsupported algorithm \"%s\" detected, reconnect", url(), algo);
+            if (algo == nullptr) {
+                LOG_ERR("[%s] unknown algorithm, make sure you set \"algo\" or \"coin\" option", url(), algo);
+            }
+            else {
+                LOG_ERR("[%s] unsupported algorithm \"%s\" detected, reconnect", url(), algo);
+            }
         }
 
         return false;
@@ -430,7 +444,7 @@ bool xmrig::Client::verifyAlgorithm(const Algorithm &algorithm, const char *algo
     m_listener->onVerifyAlgorithm(this, algorithm, &ok);
 
     if (!ok && !isQuiet()) {
-        LOG_ERR("[%s] Incompatible/disabled algorithm \"%s\" detected, reconnect", url(), algorithm.shortName());
+        LOG_ERR("[%s] incompatible/disabled algorithm \"%s\" detected, reconnect", url(), algorithm.shortName());
     }
 
     return ok;
@@ -441,7 +455,6 @@ int xmrig::Client::resolve(const String &host)
 {
     setState(HostLookupState);
 
-    m_expire = 0;
     m_recvBuf.reset();
 
     if (m_failures == -1) {
@@ -693,6 +706,9 @@ void xmrig::Client::parseNotification(const char *method, const rapidjson::Value
         if (parseJob(params, &code)) {
             m_listener->onJobReceived(this, m_job, params);
         }
+        else {
+            close();
+        }
 
         return;
     }
@@ -745,6 +761,8 @@ void xmrig::Client::parseResponse(int64_t id, const rapidjson::Value &result, co
 void xmrig::Client::ping()
 {
     send(snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"method\":\"keepalived\",\"params\":{\"id\":\"%s\"}}\n", m_sequence, m_rpcId.data()));
+
+    m_keepAlive = 0;
 }
 
 
@@ -801,12 +819,10 @@ void xmrig::Client::reconnect()
         return m_listener->onClose(this, -1);
     }
 
-    setState(ConnectingState);
+    setState(ReconnectingState);
 
     m_failures++;
     m_listener->onClose(this, static_cast<int>(m_failures));
-
-    m_expire = Chrono::steadyMSecs() + m_retryPause;
 }
 
 
@@ -816,6 +832,23 @@ void xmrig::Client::setState(SocketState state)
 
     if (m_state == state) {
         return;
+    }
+
+    switch (state) {
+    case HostLookupState:
+        m_expire = 0;
+        break;
+
+    case ConnectingState:
+        m_expire = Chrono::steadyMSecs() + kConnectTimeout;
+        break;
+
+    case ReconnectingState:
+        m_expire = Chrono::steadyMSecs() + m_retryPause;
+        break;
+
+    default:
+        break;
     }
 
     m_state = state;
@@ -873,6 +906,12 @@ void xmrig::Client::onConnect(uv_connect_t *req, int status)
     if (status < 0) {
         if (!client->isQuiet()) {
             LOG_ERR("[%s] connect error: \"%s\"", client->url(), uv_strerror(status));
+        }
+
+        if (client->state() != ConnectingState) {
+            LOG_ERR("[%s] connect error: \"invalid state: %d\"", client->url(), client->state());
+
+            return;
         }
 
         delete req;

@@ -1,3 +1,6 @@
+# v3.2.1
+- [#349](https://github.com/xmrig/xmrig-proxy/issues/349) Fixed command line option `--coin`.
+
 # v3.2.0
 - Added per pool option `coin` with single possible value `monero` for pools without algorithm negotiation, for upcoming Monero fork.
 - [#1183](https://github.com/xmrig/xmrig/issues/1183) Fixed compatibility with systemd.

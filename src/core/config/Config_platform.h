@@ -46,6 +46,7 @@ static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:A:a:C:m:";
 static struct option const options[] = {
     { "access-log-file",   1, nullptr, IConfig::AccessLogFileKey  },
     { "algo",              1, nullptr, IConfig::AlgorithmKey      },
+    { "coin",              1, nullptr, IConfig::CoinKey           },
     { "api-worker-id",     1, nullptr, IConfig::ApiWorkerIdKey    },
     { "api-id",            1, nullptr, IConfig::ApiIdKey          },
     { "http-enabled",      0, nullptr, IConfig::HttpEnabledKey    },

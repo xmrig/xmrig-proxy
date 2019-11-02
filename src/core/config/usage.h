@@ -36,7 +36,8 @@ static char const usage[] = "\
 Usage: " APP_ID " [OPTIONS]\n\
 Options:\n\
   -b, --bind=ADDR           bind to specified address, example \"0.0.0.0:3333\"\n\
-  -a, --algo=ALGO           cryptonight (default) or cryptonight-lite\n\
+  -a, --algo=ALGO           mining algorithm https://xmrig.com/docs/algorithms\n\
+      --coin=COIN           specify coin instead of algorithm\n\
   -m, --mode=MODE           proxy mode, nicehash (default) or simple\n\
   -o, --url=URL             URL of mining server\n\
   -O, --userpass=U:P        username:password pair for mining server\n\

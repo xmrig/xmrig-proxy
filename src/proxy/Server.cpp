@@ -87,7 +87,7 @@ void xmrig::Server::create(uv_stream_t *server, int status)
         return;
     }
 
-    Miner *miner = new Miner(m_ctx, m_version == 6, m_port);
+    Miner *miner = new Miner(m_ctx, m_port);
     if (!miner) {
         return;
     }

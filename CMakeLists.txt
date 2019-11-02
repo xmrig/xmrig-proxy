@@ -23,6 +23,7 @@ set(HEADERS
     src/core/Controller.h
     src/crypto/cn/CnAlgo.h
     src/crypto/common/Algorithm.h
+    src/crypto/common/Coin.h
     src/crypto/common/keccak.h
     src/donate.h
     src/net/JobResult.h
@@ -76,6 +77,7 @@ set(SOURCES
     src/core/config/ConfigTransform.cpp
     src/core/Controller.cpp
     src/crypto/common/Algorithm.cpp
+    src/crypto/common/Coin.cpp
     src/crypto/common/keccak.cpp
     src/net/JobResult.cpp
     src/net/strategies/DonateStrategy.cpp
@@ -154,6 +156,7 @@ add_definitions(/DXMRIG_ALGO_CN_LITE)
 add_definitions(/DXMRIG_ALGO_CN_HEAVY)
 add_definitions(/DXMRIG_ALGO_CN_PICO)
 add_definitions(/DXMRIG_ALGO_CN_GPU)
+add_definitions(/DXMRIG_ALGO_ARGON2)
 
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$" AND CMAKE_SIZEOF_VOID_P EQUAL 8)
     add_definitions(/DRAPIDJSON_SSE2)
@@ -222,15 +225,6 @@ endif()
 
 if (WITH_HTTP)
     set(HTTP_SOURCES
-        src/api/Api.cpp
-        src/api/Api.h
-        src/api/Httpd.cpp
-        src/api/Httpd.h
-        src/api/interfaces/IApiRequest.h
-        src/api/requests/ApiRequest.cpp
-        src/api/requests/ApiRequest.h
-        src/api/requests/HttpApiRequest.cpp
-        src/api/requests/HttpApiRequest.h
         src/api/v1/ApiRouter.cpp
         src/api/v1/ApiRouter.h
         )

@@ -1,3 +1,24 @@
+# v4.5.0-beta
+- Proxy rebased to latest miner codebase.
+  - [#1068](https://github.com/xmrig/xmrig/pull/1068) Added support for `self-select` stratum protocol extension.
+  - [#1227](https://github.com/xmrig/xmrig/pull/1227) Added new algorithm `rx/arq`, RandomX variant for upcoming ArQmA fork.
+
+# v3.2.1
+- [#349](https://github.com/xmrig/xmrig-proxy/issues/349) Fixed command line option `--coin`.
+
+# v3.2.0
+- Added per pool option `coin` with single possible value `monero` for pools without algorithm negotiation, for upcoming Monero fork.
+- [#1183](https://github.com/xmrig/xmrig/issues/1183) Fixed compatibility with systemd.
+
+# v3.1.1
+- [#1133](https://github.com/xmrig/xmrig/issues/1133) Fixed syslog regression.
+- [#1138](https://github.com/xmrig/xmrig/issues/1138) Fixed multiple network bugs.
+- [#1141](https://github.com/xmrig/xmrig/issues/1141) Fixed log in background mode.
+- Fixed command line options for single pool, free order allowed again.
+
+# v3.1.0
+- [#1107](https://github.com/xmrig/xmrig/issues/1107#issuecomment-522235892) Added Argon2 algorithm family: `argon2/chukwa` and `argon2/wrkz`.
+
 # v3.0.0
 - **[#1111](https://github.com/xmrig/xmrig/pull/1111) Added RandomX (`rx/test`) algorithm for testing and benchmarking.**
 - **[#1036](https://github.com/xmrig/xmrig/pull/1036) Added RandomWOW (`rx/wow`) algorithm for [Wownero](http://wownero.org/).**

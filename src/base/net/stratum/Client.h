@@ -6,6 +6,7 @@
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2019      jtgrassie   <https://github.com/jtgrassie>
  * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -40,10 +41,11 @@
 #include "base/net/stratum/SubmitResult.h"
 #include "base/net/tools/RecvBuf.h"
 #include "base/net/tools/Storage.h"
+#include "base/tools/Object.h"
 #include "crypto/common/Algorithm.h"
 
 
-typedef struct bio_st BIO;
+using BIO = struct bio_st;
 
 
 namespace xmrig {
@@ -56,12 +58,15 @@ class JobResult;
 class Client : public BaseClient, public IDnsListener, public ILineListener
 {
 public:
-    constexpr static int kResponseTimeout = 20 * 1000;
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(Client)
+
+    constexpr static uint64_t kConnectTimeout  = 20 * 1000;
+    constexpr static uint64_t kResponseTimeout = 20 * 1000;
 
 #   ifdef XMRIG_FEATURE_TLS
-    constexpr static int kInputBufferSize = 1024 * 16;
+    constexpr static size_t kInputBufferSize = 1024 * 16;
 #   else
-    constexpr static int kInputBufferSize = 1024 * 2;
+    constexpr static size_t kInputBufferSize = 1024 * 2;
 #   endif
 
     Client(int id, const char *agent, IClientListener *listener);
@@ -72,6 +77,8 @@ protected:
     bool isTLS() const override;
     const char *tlsFingerprint() const override;
     const char *tlsVersion() const override;
+    int64_t send(const rapidjson::Value &obj, Callback callback) override;
+    int64_t send(const rapidjson::Value &obj) override;
     int64_t submit(const JobResult &result) override;
     void connect() override;
     void connect(const Pool &pool) override;
@@ -94,7 +101,6 @@ private:
     bool send(BIO *bio);
     bool verifyAlgorithm(const Algorithm &algorithm, const char *algo) const;
     int resolve(const String &host);
-    int64_t send(const rapidjson::Document &doc);
     int64_t send(size_t size);
     void connect(sockaddr *addr);
     void handshake();
@@ -122,19 +128,19 @@ private:
 
     static inline Client *getClient(void *data) { return m_storage.get(data); }
 
-    char m_sendBuf[2048];
+    char m_sendBuf[2048] = { 0 };
     const char *m_agent;
     Dns *m_dns;
     RecvBuf<kInputBufferSize> m_recvBuf;
     std::bitset<EXT_MAX> m_extensions;
     String m_rpcId;
-    Tls *m_tls;
-    uint64_t m_expire;
-    uint64_t m_jobs;
-    uint64_t m_keepAlive;
-    uintptr_t m_key;
-    uv_stream_t *m_stream;
-    uv_tcp_t *m_socket;
+    Tls *m_tls                  = nullptr;
+    uint64_t m_expire           = 0;
+    uint64_t m_jobs             = 0;
+    uint64_t m_keepAlive        = 0;
+    uintptr_t m_key             = 0;
+    uv_stream_t *m_stream       = nullptr;
+    uv_tcp_t *m_socket          = nullptr;
 
     static Storage<Client> m_storage;
 };

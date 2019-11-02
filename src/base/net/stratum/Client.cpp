@@ -6,6 +6,7 @@
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2019      jtgrassie   <https://github.com/jtgrassie>
  * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -22,11 +23,11 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <assert.h>
-#include <inttypes.h>
+#include <cassert>
+#include <cinttypes>
 #include <iterator>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <utility>
 
 
@@ -70,21 +71,15 @@ static const char *states[] = {
     "host-lookup",
     "connecting",
     "connected",
-    "closing"
+    "closing",
+    "reconnecting"
 };
 #endif
 
 
 xmrig::Client::Client(int id, const char *agent, IClientListener *listener) :
     BaseClient(id, listener),
-    m_agent(agent),
-    m_tls(nullptr),
-    m_expire(0),
-    m_jobs(0),
-    m_keepAlive(0),
-    m_key(0),
-    m_stream(nullptr),
-    m_socket(nullptr)
+    m_agent(agent)
 {
     m_key = m_storage.add(this);
     m_dns = new Dns(this);
@@ -142,6 +137,41 @@ const char *xmrig::Client::tlsVersion() const
 }
 
 
+int64_t xmrig::Client::send(const rapidjson::Value &obj, Callback callback)
+{
+    assert(obj["id"] == sequence());
+
+    m_callbacks.insert({ sequence(), std::move(callback) });
+
+    return send(obj);
+}
+
+
+int64_t xmrig::Client::send(const rapidjson::Value &obj)
+{
+    using namespace rapidjson;
+
+    Value value;
+
+    StringBuffer buffer(nullptr, 512);
+    Writer<StringBuffer> writer(buffer);
+    obj.Accept(writer);
+
+    const size_t size = buffer.GetSize();
+    if (size > (sizeof(m_sendBuf) - 2)) {
+        LOG_ERR("[%s] send failed: \"send buffer overflow: %zu > %zu\"", url(), size, (sizeof(m_sendBuf) - 2));
+        close();
+        return -1;
+    }
+
+    memcpy(m_sendBuf, buffer.GetString(), size);
+    m_sendBuf[size]     = '\n';
+    m_sendBuf[size + 1] = '\0';
+
+    return send(size + 1);
+}
+
+
 int64_t xmrig::Client::submit(const JobResult &result)
 {
 #   ifndef XMRIG_PROXY_PROJECT
@@ -182,9 +212,9 @@ int64_t xmrig::Client::submit(const JobResult &result)
     JsonRequest::create(doc, m_sequence, "submit", params);
 
 #   ifdef XMRIG_PROXY_PROJECT
-    m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff(), result.id);
+    m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff(), result.id, 0);
 #   else
-    m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff());
+    m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff(), 0, result.backend);
 #   endif
 
     return send(doc);
@@ -234,10 +264,16 @@ void xmrig::Client::tick(uint64_t now)
         else if (m_keepAlive && now > m_keepAlive) {
             ping();
         }
+
+        return;
     }
 
-    if (m_expire && now > m_expire && m_state == ConnectingState) {
-        connect();
+    if (m_state == ReconnectingState && m_expire && now > m_expire) {
+        return connect();
+    }
+
+    if (m_state == ConnectingState && m_expire && now > m_expire) {
+        return reconnect();
     }
 }
 
@@ -320,9 +356,23 @@ bool xmrig::Client::parseJob(const rapidjson::Value &params, int *code)
         return false;
     }
 
-    if (!job.setBlob(params["blob"].GetString())) {
-        *code = 4;
-        return false;
+#   ifdef XMRIG_FEATURE_HTTP
+    if (m_pool.mode() == Pool::MODE_SELF_SELECT) {
+        job.setExtraNonce(Json::getString(params, "extra_nonce"));
+        job.setPoolWallet(Json::getString(params, "pool_wallet"));
+
+        if (job.extraNonce().isNull() || job.poolWallet().isNull()) {
+            *code = 4;
+            return false;
+        }
+    }
+    else
+#   endif
+    {
+        if (!job.setBlob(params["blob"].GetString())) {
+            *code = 4;
+            return false;
+        }
     }
 
     if (!job.setTarget(params["target"].GetString())) {
@@ -334,6 +384,9 @@ bool xmrig::Client::parseJob(const rapidjson::Value &params, int *code)
     if (algo) {
         job.setAlgorithm(algo);
     }
+    else if (m_pool.coin().isValid()) {
+        job.setAlgorithm(m_pool.coin().algorithm(job.blob()[0]));
+    }
 
     job.setHeight(Json::getUint64(params, "height"));
 
@@ -342,7 +395,7 @@ bool xmrig::Client::parseJob(const rapidjson::Value &params, int *code)
         return false;
     }
 
-    if (job.algorithm().family() == Algorithm::RANDOM_X && !job.setSeedHash(Json::getString(params, "seed_hash"))) {
+    if (m_pool.mode() != Pool::MODE_SELF_SELECT && job.algorithm().family() == Algorithm::RANDOM_X && !job.setSeedHash(Json::getString(params, "seed_hash"))) {
         if (!isQuiet()) {
             LOG_ERR("[%s] failed to parse field \"seed_hash\" required by RandomX", url(), algo);
         }
@@ -426,7 +479,12 @@ bool xmrig::Client::verifyAlgorithm(const Algorithm &algorithm, const char *algo
 {
     if (!algorithm.isValid()) {
         if (!isQuiet()) {
-            LOG_ERR("[%s] Unknown/unsupported algorithm \"%s\" detected, reconnect", url(), algo);
+            if (algo == nullptr) {
+                LOG_ERR("[%s] unknown algorithm, make sure you set \"algo\" or \"coin\" option", url(), algo);
+            }
+            else {
+                LOG_ERR("[%s] unsupported algorithm \"%s\" detected, reconnect", url(), algo);
+            }
         }
 
         return false;
@@ -436,7 +494,7 @@ bool xmrig::Client::verifyAlgorithm(const Algorithm &algorithm, const char *algo
     m_listener->onVerifyAlgorithm(this, algorithm, &ok);
 
     if (!ok && !isQuiet()) {
-        LOG_ERR("[%s] Incompatible/disabled algorithm \"%s\" detected, reconnect", url(), algorithm.shortName());
+        LOG_ERR("[%s] incompatible/disabled algorithm \"%s\" detected, reconnect", url(), algorithm.shortName());
     }
 
     return ok;
@@ -447,7 +505,6 @@ int xmrig::Client::resolve(const String &host)
 {
     setState(HostLookupState);
 
-    m_expire = 0;
     m_recvBuf.reset();
 
     if (m_failures == -1) {
@@ -463,29 +520,6 @@ int xmrig::Client::resolve(const String &host)
     }
 
     return 0;
-}
-
-
-int64_t xmrig::Client::send(const rapidjson::Document &doc)
-{
-    using namespace rapidjson;
-
-    StringBuffer buffer(nullptr, 512);
-    Writer<StringBuffer> writer(buffer);
-    doc.Accept(writer);
-
-    const size_t size = buffer.GetSize();
-    if (size > (sizeof(m_sendBuf) - 2)) {
-        LOG_ERR("[%s] send failed: \"send buffer overflow: %zu > %zu\"", url(), size, (sizeof(m_sendBuf) - 2));
-        close();
-        return -1;
-    }
-
-    memcpy(m_sendBuf, buffer.GetString(), size);
-    m_sendBuf[size]     = '\n';
-    m_sendBuf[size + 1] = '\0';
-
-    return send(size + 1);
 }
 
 
@@ -712,6 +746,10 @@ void xmrig::Client::parseNotification(const char *method, const rapidjson::Value
 
 void xmrig::Client::parseResponse(int64_t id, const rapidjson::Value &result, const rapidjson::Value &error)
 {
+    if (handleResponse(id, result, error)) {
+        return;
+    }
+
     if (error.IsObject()) {
         const char *message = error["message"].GetString();
 
@@ -754,6 +792,8 @@ void xmrig::Client::parseResponse(int64_t id, const rapidjson::Value &result, co
 void xmrig::Client::ping()
 {
     send(snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"method\":\"keepalived\",\"params\":{\"id\":\"%s\"}}\n", m_sequence, m_rpcId.data()));
+
+    m_keepAlive = 0;
 }
 
 
@@ -810,12 +850,10 @@ void xmrig::Client::reconnect()
         return m_listener->onClose(this, -1);
     }
 
-    setState(ConnectingState);
+    setState(ReconnectingState);
 
     m_failures++;
     m_listener->onClose(this, static_cast<int>(m_failures));
-
-    m_expire = Chrono::steadyMSecs() + m_retryPause;
 }
 
 
@@ -825,6 +863,23 @@ void xmrig::Client::setState(SocketState state)
 
     if (m_state == state) {
         return;
+    }
+
+    switch (state) {
+    case HostLookupState:
+        m_expire = 0;
+        break;
+
+    case ConnectingState:
+        m_expire = Chrono::steadyMSecs() + kConnectTimeout;
+        break;
+
+    case ReconnectingState:
+        m_expire = Chrono::steadyMSecs() + m_retryPause;
+        break;
+
+    default:
+        break;
     }
 
     m_state = state;
@@ -882,6 +937,18 @@ void xmrig::Client::onConnect(uv_connect_t *req, int status)
     if (status < 0) {
         if (!client->isQuiet()) {
             LOG_ERR("[%s] connect error: \"%s\"", client->url(), uv_strerror(status));
+        }
+
+        if (client->state() == ReconnectingState) {
+            return;
+        }
+
+        if (client->state() != ConnectingState) {
+            if (!client->isQuiet()) {
+                LOG_ERR("[%s] connect error: \"invalid state: %d\"", client->url(), client->state());
+            }
+
+            return;
         }
 
         delete req;

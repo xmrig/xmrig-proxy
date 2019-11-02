@@ -6,6 +6,7 @@
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2019      Howard Chu  <https://github.com/hyc>
  * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -22,48 +23,55 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef XMRIG_URL_H
+#define XMRIG_URL_H
 
-#ifndef XMRIG_HTTPAPIREQUEST_H
-#define XMRIG_HTTPAPIREQUEST_H
 
-
-#include "api/requests/ApiRequest.h"
-#include "base/net/http/HttpApiResponse.h"
 #include "base/tools/String.h"
 
 
 namespace xmrig {
 
 
-class HttpData;
-
-
-class HttpApiRequest : public ApiRequest
+class Url
 {
 public:
-    HttpApiRequest(const HttpData &req, bool restricted);
+    enum Scheme {
+        UNSPECIFIED,
+        STRATUM,
+        DAEMON
+    };
 
-protected:
-    inline rapidjson::Document &doc() override           { return m_res.doc(); }
-    inline rapidjson::Value &reply() override            { return m_res.doc(); }
-    inline const String &url() const override            { return m_url; }
+    Url() = default;
+    Url(const char *url);
+    Url(const char *host, uint16_t port, bool tls = false, Scheme scheme = UNSPECIFIED);
 
-    const rapidjson::Value &json() const override;
-    Method method() const override;
-    void accept() override;
-    void done(int status) override;
+    inline bool isTLS() const                           { return m_tls; }
+    inline bool isValid() const                         { return !m_host.isNull() && m_port > 0; }
+    inline const String &host() const                   { return m_host; }
+    inline const String &url() const                    { return m_url; }
+    inline Scheme scheme() const                        { return m_scheme; }
+    inline uint16_t port() const                        { return m_port; }
+
+    inline bool operator!=(const Url &other) const      { return !isEqual(other); }
+    inline bool operator==(const Url &other) const      { return isEqual(other); }
+
+    bool isEqual(const Url &other) const;
+    rapidjson::Value toJSON(rapidjson::Document &doc) const;
 
 private:
-    bool m_parsed;
-    const HttpData &m_req;
-    HttpApiResponse m_res;
-    rapidjson::Document m_body;
+    bool parse(const char *url);
+    bool parseIPv6(const char *addr);
+
+    bool m_tls      = false;
+    Scheme m_scheme = UNSPECIFIED;
+    String m_host;
     String m_url;
+    uint16_t m_port = 3333;
 };
 
 
-} // namespace xmrig
+} /* namespace xmrig */
 
 
-#endif // XMRIG_HTTPAPIREQUEST_H
-
+#endif /* XMRIG_URL_H */

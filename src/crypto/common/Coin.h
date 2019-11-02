@@ -5,6 +5,7 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+ * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
  * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
  * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
@@ -22,61 +23,54 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_IAPIREQUEST_H
-#define XMRIG_IAPIREQUEST_H
+#ifndef XMRIG_COIN_H
+#define XMRIG_COIN_H
 
 
+#include "crypto/common/Algorithm.h"
 #include "rapidjson/fwd.h"
 
 
 namespace xmrig {
 
 
-class String;
-
-
-class IApiRequest
+class Coin
 {
 public:
-    enum Method {
-        METHOD_DELETE,
-        METHOD_GET,
-        METHOD_HEAD,
-        METHOD_POST,
-        METHOD_PUT
+    enum Id : int {
+        INVALID = -1,
+        MONERO,
+        ARQMA
     };
 
 
-    enum Source {
-        SOURCE_HTTP
-    };
+    Coin() = default;
+    inline Coin(const char *name) : m_id(parse(name)) {}
+    inline Coin(Id id) : m_id(id)                     {}
 
 
-    enum RequestType {
-        REQ_UNKNOWN,
-        REQ_SUMMARY
-    };
+    inline bool isEqual(const Coin &other) const        { return m_id == other.m_id; }
+    inline bool isValid() const                         { return m_id != INVALID; }
+    inline Id id() const                                { return m_id; }
 
+    Algorithm::Id algorithm(uint8_t blobVersion) const;
+    const char *name() const;
+    rapidjson::Value toJSON() const;
 
-    virtual ~IApiRequest() = default;
+    inline bool operator!=(Coin::Id id) const           { return m_id != id; }
+    inline bool operator!=(const Coin &other) const     { return !isEqual(other); }
+    inline bool operator==(Coin::Id id) const           { return m_id == id; }
+    inline bool operator==(const Coin &other) const     { return isEqual(other); }
+    inline operator Coin::Id() const                    { return m_id; }
 
-    virtual bool isDone() const                                  = 0;
-    virtual bool isNew() const                                   = 0;
-    virtual bool isRestricted() const                            = 0;
-    virtual const rapidjson::Value &json() const                 = 0;
-    virtual const String &url() const                            = 0;
-    virtual int version() const                                  = 0;
-    virtual Method method() const                                = 0;
-    virtual rapidjson::Document &doc()                           = 0;
-    virtual rapidjson::Value &reply()                            = 0;
-    virtual RequestType type() const                             = 0;
-    virtual Source source() const                                = 0;
-    virtual void accept()                                        = 0;
-    virtual void done(int status)                                = 0;
+    static Id parse(const char *name);
+
+private:
+    Id m_id = INVALID;
 };
 
 
 } /* namespace xmrig */
 
 
-#endif // XMRIG_IAPIREQUEST_H
+#endif /* XMRIG_COIN_H */

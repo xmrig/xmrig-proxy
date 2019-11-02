@@ -29,14 +29,18 @@
 #include "version.h"
 
 
+#include <string>
+
+
 namespace xmrig {
 
 
-static char const usage[] = "\
+static char const usage_raw[] = "\
 Usage: " APP_ID " [OPTIONS]\n\
 Options:\n\
   -b, --bind=ADDR           bind to specified address, example \"0.0.0.0:3333\"\n\
-  -a, --algo=ALGO           cryptonight (default) or cryptonight-lite\n\
+  -a, --algo=ALGO           mining algorithm https://xmrig.com/docs/algorithms\n\
+      --coin=COIN           specify coin instead of algorithm\n\
   -m, --mode=MODE           proxy mode, nicehash (default) or simple\n\
   -o, --url=URL             URL of mining server\n\
   -O, --userpass=U:P        username:password pair for mining server\n\
@@ -88,6 +92,18 @@ Options:\n\
   -h, --help                display this help and exit\n\
   -V, --version             output version information and exit\n\
 ";
+
+
+static inline const std::string &usage()
+{
+    static std::string u;
+
+    if (u.empty()) {
+        u = usage_raw;
+    }
+
+    return u;
+}
 
 
 } /* namespace xmrig */

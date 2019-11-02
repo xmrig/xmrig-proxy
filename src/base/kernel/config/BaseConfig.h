@@ -80,7 +80,8 @@ protected:
     String m_fileName;
     String m_logFile;
     String m_userAgent;
-    uint32_t m_printTime;
+    uint32_t m_printTime = 60;
+    uint32_t m_version   = 0;
 
 private:
     inline void setPrintTime(uint32_t printTime) { if (printTime <= 3600) { m_printTime = printTime; } }

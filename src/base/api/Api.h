@@ -22,51 +22,63 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef XMRIG_API_H
+#define XMRIG_API_H
 
-#ifndef XMRIG_APIREQUEST_H
-#define XMRIG_APIREQUEST_H
+
+#include <vector>
+#include <cstdint>
 
 
-#include "api/interfaces/IApiRequest.h"
+#include "base/kernel/interfaces/IBaseListener.h"
+#include "base/tools/Object.h"
 
 
 namespace xmrig {
 
 
-class ApiRequest : public IApiRequest
+class Base;
+class Httpd;
+class HttpData;
+class IApiListener;
+class IApiRequest;
+class String;
+
+
+class Api : public IBaseListener
 {
 public:
-    ApiRequest(Source source, bool restricted);
-    ~ApiRequest() override;
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(Api)
+
+    Api(Base *base);
+    ~Api() override;
+
+    inline const char *id() const                   { return m_id; }
+    inline const char *workerId() const             { return m_workerId; }
+    inline void addListener(IApiListener *listener) { m_listeners.push_back(listener); }
+
+    void request(const HttpData &req);
+    void start();
+    void stop();
 
 protected:
-    inline bool isDone() const override          { return m_state == STATE_DONE; }
-    inline bool isNew() const override           { return m_state == STATE_NEW; }
-    inline bool isRestricted() const override    { return m_restricted; }
-    inline int version() const override          { return m_version; }
-    inline RequestType type() const override     { return m_type; }
-    inline Source source() const override        { return m_source; }
-    inline void accept() override                { m_state = STATE_ACCEPTED; }
-    inline void done(int) override               { m_state = STATE_DONE; }
-
-    int m_version      = 1;
-    RequestType m_type = REQ_UNKNOWN;
+    void onConfigChanged(Config *config, Config *previousConfig) override;
 
 private:
-    enum State {
-        STATE_NEW,
-        STATE_ACCEPTED,
-        STATE_DONE
-    };
+    void exec(IApiRequest &request);
+    void genId(const String &id);
+    void genWorkerId(const String &id);
 
-    bool m_restricted;
-    Source m_source;
-    State m_state = STATE_NEW;
+    Base *m_base;
+    char m_id[32];
+    char m_workerId[128];
+    const uint64_t m_timestamp;
+    Httpd *m_httpd;
+    std::vector<IApiListener *> m_listeners;
 };
 
 
 } // namespace xmrig
 
 
-#endif // XMRIG_APIREQUEST_H
-
+#endif /* XMRIG_API_H */

@@ -29,10 +29,13 @@
 #include "version.h"
 
 
+#include <string>
+
+
 namespace xmrig {
 
 
-static char const usage[] = "\
+static char const usage_raw[] = "\
 Usage: " APP_ID " [OPTIONS]\n\
 Options:\n\
   -b, --bind=ADDR           bind to specified address, example \"0.0.0.0:3333\"\n\
@@ -89,6 +92,18 @@ Options:\n\
   -h, --help                display this help and exit\n\
   -V, --version             output version information and exit\n\
 ";
+
+
+static inline const std::string &usage()
+{
+    static std::string u;
+
+    if (u.empty()) {
+        u = usage_raw;
+    }
+
+    return u;
+}
 
 
 } /* namespace xmrig */

@@ -28,9 +28,7 @@
 
 #include "base/kernel/interfaces/IConsoleListener.h"
 #include "base/kernel/interfaces/ISignalListener.h"
-
-
-class Proxy;
+#include "base/tools/Object.h"
 
 
 namespace xmrig {
@@ -45,6 +43,8 @@ class Signals;
 class App : public IConsoleListener, public ISignalListener
 {
 public:
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(App)
+
     App(Process *process);
     ~App() override;
 
@@ -55,12 +55,12 @@ protected:
     void onSignal(int signum) override;
 
 private:
-    void background();
+    bool background(int &rc);
     void close();
 
-    Console *m_console;
-    Controller *m_controller;
-    Signals *m_signals;
+    Console *m_console          = nullptr;
+    Controller *m_controller    = nullptr;
+    Signals *m_signals          = nullptr;
 };
 
 

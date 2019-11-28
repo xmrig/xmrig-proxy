@@ -62,7 +62,6 @@ namespace xmrig {
 
 
 xmrig::Miner::Miner(const TlsContext *ctx, uint16_t port) :
-    m_ip(),
     m_routeId(-1),
     m_id(++nextId),
     m_loginId(0),
@@ -102,7 +101,12 @@ xmrig::Miner::Miner(const TlsContext *ctx, uint16_t port) :
 
 xmrig::Miner::~Miner()
 {
-    Handle::close(m_socket);
+    if (uv_is_closing(reinterpret_cast<uv_handle_t *>(m_socket))) {
+        delete m_socket;
+    }
+    else {
+        uv_close(reinterpret_cast<uv_handle_t *>(m_socket), [](uv_handle_t *handle) { delete handle; });
+    }
 
 #   ifdef XMRIG_FEATURE_TLS
     delete m_tls;

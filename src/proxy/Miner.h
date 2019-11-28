@@ -123,9 +123,9 @@ private:
 
     static inline Miner *getMiner(void *data) { return m_storage.get(data); }
 
-    char m_buf[4096];
-    char m_ip[46];
-    char m_rpcId[37];
+    char m_buf[4096]{};
+    char m_ip[46]{};
+    char m_rpcId[37]{};
     int32_t m_routeId;
     int64_t m_id;
     int64_t m_loginId;
@@ -147,7 +147,7 @@ private:
     uint64_t m_tx;
     uint8_t m_fixedByte;
     uintptr_t m_key;
-    uv_buf_t m_recvBuf;
+    uv_buf_t m_recvBuf{};
     uv_tcp_t *m_socket;
 
     static char m_sendBuf[2048];

@@ -1,3 +1,8 @@
+# v5.0.1
+- **Fixed memory leak.**
+- Fixed crash if no valid configuration found.
+- Other minor fixes.
+
 # v5.0.0
 - Proxy rebased to latest miner codebase.
   - [#1068](https://github.com/xmrig/xmrig/pull/1068) Added support for `self-select` stratum protocol extension.

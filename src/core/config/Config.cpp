@@ -22,9 +22,9 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <assert.h>
-#include <limits.h>
-#include <string.h>
+#include <cassert>
+#include <climits>
+#include <cstring>
 #include <uv.h>
 
 
@@ -46,16 +46,7 @@ static const char *modeNames[] = {
 #endif
 
 
-xmrig::Config::Config() :
-    m_algoExt(true),
-    m_debug(false),
-    m_verbose(false),
-    m_mode(NICEHASH_MODE),
-    m_reuseTimeout(0),
-    m_diff(0),
-    m_workersMode(Workers::RigID)
-{
-}
+xmrig::Config::Config() = default;
 
 
 bool xmrig::Config::isTLS() const
@@ -78,13 +69,18 @@ const char *xmrig::Config::modeName() const
 }
 
 
+bool xmrig::Config::isVerbose() const
+{
+    return Log::isVerbose();
+}
+
+
 bool xmrig::Config::read(const IJsonReader &reader, const char *fileName)
 {
     if (!BaseConfig::read(reader, fileName)) {
         return false;
     }
 
-    m_verbose      = reader.getBool("verbose", m_verbose);
     m_debug        = reader.getBool("debug", m_debug);
     m_algoExt      = reader.getBool("algo-ext", m_algoExt);
     m_reuseTimeout = reader.getInt("reuse-timeout", m_reuseTimeout);
@@ -98,7 +94,7 @@ bool xmrig::Config::read(const IJsonReader &reader, const char *fileName)
 #   ifdef XMRIG_FEATURE_TLS
     const rapidjson::Value &tls = reader.getObject("tls");
     if (tls.IsObject()) {
-        m_tls = std::move(TlsConfig(tls));
+        m_tls = TlsConfig(tls);
     }
 #   endif
 
@@ -150,12 +146,12 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("background",   isBackground(), allocator);
 
     Value bind(kArrayType);
-    for (const xmrig::BindHost &host : m_bind) {
+    for (const auto &host : m_bind) {
         bind.PushBack(host.toJSON(doc), allocator);
     }
 
     doc.AddMember("bind",          bind, allocator);
-    doc.AddMember("colors",        Log::colors, allocator);
+    doc.AddMember("colors",        Log::isColors(), allocator);
     doc.AddMember("custom-diff",   diff(), allocator);
     doc.AddMember("donate-level",  m_pools.donateLevel(), allocator);
     doc.AddMember("log-file",      m_logFile.toJSON(), allocator);
@@ -174,6 +170,12 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("verbose",      isVerbose(), allocator);
     doc.AddMember("watch",        m_watch,     allocator);
     doc.AddMember("workers",      Workers::modeToJSON(workersMode()), allocator);
+}
+
+
+void xmrig::Config::toggleVerbose()
+{
+    Log::setVerbose(Log::isVerbose() ? 0 : 1);
 }
 
 

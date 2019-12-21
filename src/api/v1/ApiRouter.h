@@ -27,6 +27,7 @@
 
 
 #include "base/api/interfaces/IApiListener.h"
+#include "base/tools/Object.h"
 #include "proxy/StatsData.h"
 #include "rapidjson/fwd.h"
 
@@ -40,6 +41,8 @@ class Base;
 class ApiRouter : public xmrig::IApiListener
 {
 public:
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(ApiRouter)
+
     ApiRouter(Base *base);
     ~ApiRouter() override;
 
@@ -52,7 +55,6 @@ private:
     void getMiner(rapidjson::Value &reply, rapidjson::Document &doc) const;
     void getMiners(rapidjson::Value &reply, rapidjson::Document &doc) const;
     void getMinersSummary(rapidjson::Value &reply, rapidjson::Document &doc) const;
-    void getResourcesSummary(rapidjson::Value &reply, rapidjson::Document &doc) const;
     void getResults(rapidjson::Value &reply, rapidjson::Document &doc) const;
     void getWorkers(rapidjson::Value &reply, rapidjson::Document &doc) const;
 

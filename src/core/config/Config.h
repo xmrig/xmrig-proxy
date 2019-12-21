@@ -26,7 +26,7 @@
 #define XMRIG_CONFIG_H
 
 
-#include <stdint.h>
+#include <cstdint>
 #include <vector>
 
 
@@ -74,27 +74,26 @@ public:
     bool isTLS() const;
     const char *modeName() const;
 
+    bool isVerbose() const;
     bool read(const IJsonReader &reader, const char *fileName) override;
     void getJSON(rapidjson::Document &doc) const override;
+    void toggleVerbose();
 
     inline bool hasAlgoExt() const                 { return isDonateOverProxy() ? m_algoExt : true; }
     inline bool isDebug() const                    { return m_debug; }
     inline bool isDonateOverProxy() const          { return m_pools.donateLevel() == 0 || m_mode == SIMPLE_MODE; }
     inline bool isShouldSave() const               { return m_upgrade && isAutoSave(); }
-    inline bool isVerbose() const                  { return m_verbose; }
+    inline const BindHosts &bind() const           { return m_bind; }
     inline const String &accessLog() const         { return m_accessLog; }
     inline const String &password() const          { return m_password; }
-    inline const xmrig::BindHosts &bind() const    { return m_bind; }
     inline int mode() const                        { return m_mode; }
     inline int reuseTimeout() const                { return m_reuseTimeout; }
     inline static IConfig *create()                { return new Config(); }
     inline uint64_t diff() const                   { return m_diff; }
-    inline void setVerbose(bool verbose)           { m_verbose = verbose; }
-    inline void toggleVerbose()                    { m_verbose = !m_verbose; }
     inline Workers::Mode workersMode() const       { return m_workersMode; }
 
 #   ifdef XMRIG_FEATURE_TLS
-    inline const xmrig::TlsConfig &tls() const { return m_tls; }
+    inline const TlsConfig &tls() const { return m_tls; }
 #   endif
 
 private:
@@ -103,15 +102,14 @@ private:
     void setWorkersMode(const rapidjson::Value &value);
 
     BindHosts m_bind;
-    bool m_algoExt;
-    bool m_debug;
-    bool m_verbose;
-    int m_mode;
-    int m_reuseTimeout;
+    bool m_algoExt              = true;
+    bool m_debug                = false;
+    int m_mode                  = NICEHASH_MODE;
+    int m_reuseTimeout          = 0;
     String m_accessLog;
     String m_password;
-    uint64_t m_diff;
-    Workers::Mode m_workersMode;
+    uint64_t m_diff             = 0;
+    Workers::Mode m_workersMode = Workers::RigID;
 
 #   ifdef XMRIG_FEATURE_TLS
     TlsConfig m_tls;

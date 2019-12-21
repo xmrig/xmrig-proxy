@@ -31,10 +31,11 @@
 #endif
 
 
-#include "3rdparty/http-parser/http_parser.h"
 #include "base/api/Api.h"
+#include "3rdparty/http-parser/http_parser.h"
 #include "base/api/interfaces/IApiListener.h"
 #include "base/api/requests/HttpApiRequest.h"
+#include "base/io/json/Json.h"
 #include "base/kernel/Base.h"
 #include "base/tools/Buffer.h"
 #include "base/tools/Chrono.h"
@@ -49,12 +50,49 @@
 #endif
 
 
+#include <thread>
+
+
+namespace xmrig {
+
+
+static rapidjson::Value getResources(rapidjson::Document &doc)
+{
+    using namespace rapidjson;
+    auto &allocator = doc.GetAllocator();
+
+    size_t rss = 0;
+    uv_resident_set_memory(&rss);
+
+    Value out(kObjectType);
+    Value memory(kObjectType);
+    Value load_average(kArrayType);
+
+    memory.AddMember("free",                uv_get_free_memory(), allocator);
+    memory.AddMember("total",               uv_get_total_memory(), allocator);
+    memory.AddMember("resident_set_memory", static_cast<uint64_t>(rss), allocator);
+
+    double loadavg[3] = { 0.0 };
+    uv_loadavg(loadavg);
+
+    for (double value : loadavg) {
+        load_average.PushBack(Json::normalize(value, true), allocator);
+    }
+
+    out.AddMember("memory",               memory, allocator);
+    out.AddMember("load_average",         load_average, allocator);
+    out.AddMember("hardware_concurrency", std::thread::hardware_concurrency(), allocator);
+
+    return out;
+}
+
+
+} // namespace xmrig
+
+
 xmrig::Api::Api(Base *base) :
     m_base(base),
-    m_id(),
-    m_workerId(),
-    m_timestamp(Chrono::currentMSecsSinceEpoch()),
-    m_httpd(nullptr)
+    m_timestamp(Chrono::currentMSecsSinceEpoch())
 {
     base->addListener(this);
 
@@ -117,10 +155,13 @@ void xmrig::Api::exec(IApiRequest &request)
         auto &allocator = request.doc().GetAllocator();
 
         request.accept();
-        request.reply().AddMember("id",         StringRef(m_id),       allocator);
-        request.reply().AddMember("worker_id",  StringRef(m_workerId), allocator);
-        request.reply().AddMember("uptime",     (Chrono::currentMSecsSinceEpoch() - m_timestamp) / 1000, allocator);
-        request.reply().AddMember("restricted", request.isRestricted(), allocator);
+
+        auto &reply = request.reply();
+        reply.AddMember("id",         StringRef(m_id),       allocator);
+        reply.AddMember("worker_id",  StringRef(m_workerId), allocator);
+        reply.AddMember("uptime",     (Chrono::currentMSecsSinceEpoch() - m_timestamp) / 1000, allocator);
+        reply.AddMember("restricted", request.isRestricted(), allocator);
+        reply.AddMember("resources",  getResources(request.doc()), allocator);
 
         Value features(kArrayType);
 #       ifdef XMRIG_FEATURE_API
@@ -144,7 +185,10 @@ void xmrig::Api::exec(IApiRequest &request)
 #       ifdef XMRIG_FEATURE_OPENCL
         features.PushBack("opencl", allocator);
 #       endif
-        request.reply().AddMember("features", features, allocator);
+#       ifdef XMRIG_FEATURE_CUDA
+        features.PushBack("cuda", allocator);
+#       endif
+        reply.AddMember("features", features, allocator);
     }
 
     for (IApiListener *listener : m_listeners) {
@@ -180,9 +224,9 @@ void xmrig::Api::genId(const String &id)
             uint8_t hash[200];
             const size_t addrSize = sizeof(interfaces[i].phys_addr);
             const size_t inSize   = (sizeof(APP_KIND) - 1) + addrSize + sizeof(uint16_t);
-            const uint16_t port   = static_cast<uint16_t>(m_base->config()->http().port());
+            const auto port       = static_cast<uint16_t>(m_base->config()->http().port());
 
-            uint8_t *input = new uint8_t[inSize]();
+            auto*input = new uint8_t[inSize]();
             memcpy(input, &port, sizeof(uint16_t));
             memcpy(input + sizeof(uint16_t), interfaces[i].phys_addr, addrSize);
             memcpy(input + sizeof(uint16_t) + addrSize, APP_KIND, (sizeof(APP_KIND) - 1));

@@ -1,3 +1,8 @@
+# v5.4.0
+- [#1434](https://github.com/xmrig/xmrig/pull/1434) Added RandomSFX (`rx/sfx`) algorithm for Safex Cash.
+- [#1445](https://github.com/xmrig/xmrig/pull/1445) Added RandomV (`rx/v`) algorithm for *new* MoneroV.
+- [#367](https://github.com/xmrig/xmrig-proxy/issues/367) Added "cert-key" alias, fixed --tls-cert-key command line option.
+
 # v5.0.1
 - **Fixed memory leak.**
 - Fixed crash if no valid configuration found.

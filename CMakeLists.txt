@@ -9,6 +9,7 @@ option(WITH_TLS             "Enable OpenSSL support"  ON)
 
 
 include (CheckIncludeFile)
+include (cmake/os.cmake)
 include (src/base/base.cmake)
 
 

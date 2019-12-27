@@ -30,6 +30,7 @@
 #include "base/io/json/Json.h"
 #include "base/io/log/Log.h"
 #include "base/net/stratum/Job.h"
+#include "base/net/stratum/SubmitResult.h"
 #include "base/tools/Buffer.h"
 #include "base/tools/Chrono.h"
 #include "base/tools/Handle.h"
@@ -39,6 +40,7 @@
 #include "proxy/Events.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
+#include "proxy/events/AcceptEvent.h"
 #include "proxy/events/SubmitEvent.h"
 #include "proxy/Miner.h"
 #include "proxy/tls/TlsContext.h"
@@ -257,6 +259,10 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
 
         if (event->error() == Error::NoError && m_customDiff && event->request.actualDiff() < m_diff) {
             success(id, "OK");
+
+            SubmitResult result = SubmitResult(1, m_customDiff, event->request.actualDiff(), event->request.id, 0);
+            AcceptEvent::start(m_mapperId, this, result, false, true);
+
             return true;
         }
 

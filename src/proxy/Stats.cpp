@@ -109,6 +109,10 @@ void xmrig::Stats::accept(const AcceptEvent *event)
 {
     m_hashrate.add(event->result.diff);
 
+    if (event->isCustomDiff()) {
+        return;
+    }
+
     m_data.accepted++;
     m_data.hashes += event->result.diff;
 

@@ -77,7 +77,7 @@ void xmrig::ShareLog::onRejectedEvent(IEvent *event)
 
 void xmrig::ShareLog::accept(const AcceptEvent *event)
 {
-    if (!m_controller->config()->isVerbose() || event->isDonate()) {
+    if (!m_controller->config()->isVerbose() || event->isDonate() || event->isCustomDiff()) {
         return;
     }
 

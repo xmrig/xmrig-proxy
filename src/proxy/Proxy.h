@@ -79,7 +79,6 @@ protected:
     void onConfigChanged(Config *config, Config *previousConfig) override;
 
 private:
-    constexpr static int kPrintInterval = 60;
     constexpr static int kGCInterval    = 60;
 
     void bind(const BindHost &host);

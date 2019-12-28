@@ -301,7 +301,7 @@ void xmrig::Workers::accept(const AcceptEvent *event)
 
     Worker &worker = m_workers[index];
     if (!event->isRejected()) {
-        worker.add(event->result);
+        worker.add(event->statsDiff());
     }
     else {
         worker.reject(false);

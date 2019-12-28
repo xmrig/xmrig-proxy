@@ -107,7 +107,7 @@ void xmrig::Stats::onRejectedEvent(IEvent *event)
 
 void xmrig::Stats::accept(const AcceptEvent *event)
 {
-    m_hashrate.add(event->result.diff);
+    m_hashrate.add(event->statsDiff());
 
     if (event->isCustomDiff()) {
         return;

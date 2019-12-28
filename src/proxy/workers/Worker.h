@@ -44,7 +44,7 @@ public:
     Worker();
     Worker(size_t id, const std::string &name, const std::string &ip);
 
-    void add(const SubmitResult &result);
+    void add(uint64_t diff);
     void tick(uint64_t ticks);
 
     inline const char *ip() const             { return m_ip.c_str(); }

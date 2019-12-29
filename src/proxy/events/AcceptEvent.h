@@ -52,7 +52,7 @@ public:
     inline bool isRejected() const override { return m_error != nullptr; }
     inline const char *error() const        { return m_error; }
     inline size_t mapperId() const          { return m_mapperId; }
-    inline uint64_t statsDiff() const       { return (miner()->customDiff() ? std::min(miner()->customDiff(), result.diff) : result.diff); }
+    inline uint64_t statsDiff() const       { return (miner() && miner()->customDiff() ? std::min(miner()->customDiff(), result.diff) : result.diff); }
 
 
 protected:

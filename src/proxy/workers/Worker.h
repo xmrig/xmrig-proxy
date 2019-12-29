@@ -35,9 +35,6 @@
 namespace xmrig {
 
 
-class SubmitResult;
-
-
 class Worker
 {
 public:

@@ -35,7 +35,7 @@
 #include "proxy/Stats.h"
 
 
-xmrig::ShareLog::ShareLog(Controller *controller, const Stats &stats) :
+xmrig::ShareLog::ShareLog(Controller *controller, Stats *stats) :
     m_stats(stats),
     m_controller(controller)
 {
@@ -82,7 +82,7 @@ void xmrig::ShareLog::accept(const AcceptEvent *event)
     }
 
     LOG_INFO("#%03u " GREEN_BOLD("accepted") " (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff " WHITE_BOLD("%" PRIu64) " ip " WHITE_BOLD("%s") " " BLACK_BOLD("(%" PRIu64 " ms)"),
-             event->mapperId(), m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, event->result.diff, event->ip(), event->result.elapsed);
+             event->mapperId(), m_stats->data().accepted, m_stats->data().rejected, m_stats->data().invalid, event->result.diff, event->ip(), event->result.elapsed);
 }
 
 
@@ -93,5 +93,5 @@ void xmrig::ShareLog::reject(const AcceptEvent *event)
     }
 
     LOG_INFO("#%03u " RED_BOLD("rejected") " (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff " WHITE_BOLD("%" PRIu64) " ip " WHITE_BOLD("%s") " " RED("\"%s\"") " " BLACK_BOLD("(%" PRIu64 " ms)"),
-             event->mapperId(), m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, event->result.diff, event->ip(), event->error(), event->result.elapsed);
+             event->mapperId(), m_stats->data().accepted, m_stats->data().rejected, m_stats->data().invalid, event->result.diff, event->ip(), event->error(), event->result.elapsed);
 }

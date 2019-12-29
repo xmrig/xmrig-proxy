@@ -99,7 +99,7 @@ private:
     Miners *m_miners;
     ProxyDebug *m_debug;
     ShareLog *m_shareLog;
-    Stats m_stats;
+    Stats *m_stats;
     std::vector<Server*> m_servers;
     TlsContext *m_tls;
     uint64_t m_ticks;

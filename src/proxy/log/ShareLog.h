@@ -40,7 +40,7 @@ class Stats;
 class ShareLog : public IEventListener
 {
 public:
-    ShareLog(Controller *controller, const Stats &stats);
+    ShareLog(Controller *controller, Stats *stats);
     ~ShareLog() override;
 
 protected:
@@ -51,7 +51,7 @@ private:
     void accept(const AcceptEvent *event);
     void reject(const AcceptEvent *event);
 
-    const Stats &m_stats;
+    Stats *m_stats;
     Controller *m_controller;
 };
 

@@ -80,6 +80,7 @@ public:
     void toggleVerbose();
 
     inline bool hasAlgoExt() const                 { return isDonateOverProxy() ? m_algoExt : true; }
+    inline bool isCustomDiffStats() const          { return m_customDiffStats; }
     inline bool isDebug() const                    { return m_debug; }
     inline bool isDonateOverProxy() const          { return m_pools.donateLevel() == 0 || m_mode == SIMPLE_MODE; }
     inline bool isShouldSave() const               { return m_upgrade && isAutoSave(); }
@@ -103,6 +104,7 @@ private:
 
     BindHosts m_bind;
     bool m_algoExt              = true;
+    bool m_customDiffStats      = false;
     bool m_debug                = false;
     int m_mode                  = NICEHASH_MODE;
     int m_reuseTimeout          = 0;

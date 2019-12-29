@@ -294,6 +294,10 @@ size_t xmrig::Workers::add(const Miner *miner)
 
 void xmrig::Workers::accept(const AcceptEvent *event)
 {
+    if (event->isCustomDiff() && !m_controller->config()->isCustomDiffStats()) {
+        return;
+    }
+
     size_t index = 0;
     if (!indexByMiner(event->miner(), &index)) {
         return;
@@ -301,7 +305,7 @@ void xmrig::Workers::accept(const AcceptEvent *event)
 
     Worker &worker = m_workers[index];
     if (!event->isRejected()) {
-        worker.add(event->result);
+        worker.add(m_controller->config()->isCustomDiffStats() ? event->statsDiff() : event->result.diff);
     }
     else {
         worker.reject(false);

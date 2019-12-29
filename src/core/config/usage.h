@@ -52,6 +52,7 @@ Options:\n\
   -r, --retries=N           number of times to retry before switch to backup server (default: 1)\n\
   -R, --retry-pause=N       time to pause between retries (default: 1 second)\n\
       --custom-diff=N       override pool diff\n\
+      --custom-diff-stats   calculate stats using custom diff shares instead of pool shares\n\
       --reuse-timeout=N     timeout in seconds for reuse pool connections in simple mode\n\
       --verbose             verbose output\n\
       --user-agent=AGENT    set custom user-agent string for pool\n\

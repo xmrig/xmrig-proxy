@@ -58,6 +58,7 @@ static struct option const options[] = {
     { "bind",              1, nullptr, IConfig::BindKey           },
     { "config",            1, nullptr, IConfig::ConfigKey         },
     { "custom-diff",       1, nullptr, IConfig::CustomDiffKey     },
+    { "custom-diff-stats", 0, nullptr, IConfig::CustomDiffStatsKey},
     { "debug",             0, nullptr, IConfig::DebugKey          },
     { "donate-level",      1, nullptr, IConfig::DonateLevelKey    },
     { "keepalive",         2, nullptr, IConfig::KeepAliveKey      },

@@ -115,6 +115,7 @@ public:
         AccessLogFileKey     = 'A',
         BindKey              = 'b',
         CustomDiffKey        = 1102,
+        CustomDiffStatsKey   = 1104,
         DebugKey             = 1101,
         ModeKey              = 'm',
         PoolCoinKey          = 'C',

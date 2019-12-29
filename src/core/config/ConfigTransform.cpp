@@ -66,6 +66,7 @@ void xmrig::ConfigTransform::transform(rapidjson::Document &doc, int key, const 
     case IConfig::ProxyPasswordKey: /* --access-password */
         return set(doc, "access-password", arg);
 
+    case IConfig::CustomDiffStatsKey: /* --custom-diff-stats */
     case IConfig::DebugKey:   /* --debug */
         return transformBoolean(doc, key, true);
 
@@ -109,6 +110,9 @@ void xmrig::ConfigTransform::transform(rapidjson::Document &doc, int key, const 
 void xmrig::ConfigTransform::transformBoolean(rapidjson::Document &doc, int key, bool enable)
 {
     switch (key) {
+    case IConfig::CustomDiffStatsKey: /* --custom-diff-stats */
+            return set(doc, "custom-diff-stats", enable);
+
     case IConfig::DebugKey: /* --debug */
         return set(doc, "debug", enable);
 

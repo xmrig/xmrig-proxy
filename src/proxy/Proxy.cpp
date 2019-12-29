@@ -83,6 +83,7 @@ xmrig::Proxy::Proxy(Controller *controller) :
 
     m_splitter  = splitter;
     m_donate    = new DonateSplitter(controller);
+    m_stats     = new Stats(controller);
     m_shareLog  = new ShareLog(controller, m_stats);
     m_accessLog = new AccessLog(controller);
     m_workers   = new Workers(controller);
@@ -97,12 +98,12 @@ xmrig::Proxy::Proxy(Controller *controller) :
 #   endif
 
     Events::subscribe(IEvent::ConnectionType, m_miners);
-    Events::subscribe(IEvent::ConnectionType, &m_stats);
+    Events::subscribe(IEvent::ConnectionType, m_stats);
 
     Events::subscribe(IEvent::CloseType, m_miners);
     Events::subscribe(IEvent::CloseType, m_donate);
     Events::subscribe(IEvent::CloseType, splitter);
-    Events::subscribe(IEvent::CloseType, &m_stats);
+    Events::subscribe(IEvent::CloseType, m_stats);
     Events::subscribe(IEvent::CloseType, m_accessLog);
     Events::subscribe(IEvent::CloseType, m_workers);
 
@@ -110,16 +111,16 @@ xmrig::Proxy::Proxy(Controller *controller) :
     Events::subscribe(IEvent::LoginType, m_donate);
     Events::subscribe(IEvent::LoginType, &m_customDiff);
     Events::subscribe(IEvent::LoginType, splitter);
-    Events::subscribe(IEvent::LoginType, &m_stats);
+    Events::subscribe(IEvent::LoginType, m_stats);
     Events::subscribe(IEvent::LoginType, m_accessLog);
     Events::subscribe(IEvent::LoginType, m_workers);
 
     Events::subscribe(IEvent::SubmitType, m_donate);
     Events::subscribe(IEvent::SubmitType, splitter);
-    Events::subscribe(IEvent::SubmitType, &m_stats);
+    Events::subscribe(IEvent::SubmitType, m_stats);
     Events::subscribe(IEvent::SubmitType, m_workers);
 
-    Events::subscribe(IEvent::AcceptType, &m_stats);
+    Events::subscribe(IEvent::AcceptType, m_stats);
     Events::subscribe(IEvent::AcceptType, m_shareLog);
     Events::subscribe(IEvent::AcceptType, m_workers);
 
@@ -190,7 +191,7 @@ void xmrig::Proxy::printConnections()
 void xmrig::Proxy::printHashrate()
 {
     LOG_INFO("\x1B[01;32m* \x1B[01;37mspeed\x1B[0m \x1B[01;30m(1m) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(10m) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(1h) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(12h) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(24h) \x1B[01;36m%03.2f kH/s",
-             m_stats.hashrate(60), m_stats.hashrate(600), m_stats.hashrate(3600), m_stats.hashrate(3600 * 12), m_stats.hashrate(3600 * 24));
+             m_stats->hashrate(60), m_stats->hashrate(600), m_stats->hashrate(3600), m_stats->hashrate(3600 * 12), m_stats->hashrate(3600 * 24));
 }
 
 
@@ -208,7 +209,7 @@ void xmrig::Proxy::toggleDebug()
 
 const xmrig::StatsData &xmrig::Proxy::statsData() const
 {
-    return m_stats.data();
+    return m_stats->data();
 }
 
 
@@ -272,7 +273,7 @@ void xmrig::Proxy::gc()
 void xmrig::Proxy::print()
 {
     LOG_INFO("\x1B[01;36m%03.2f kH/s\x1B[0m, shares: \x1B[01;37m%" PRIu64 "\x1B[0m/%s%" PRIu64 "\x1B[0m +%" PRIu64 ", upstreams: \x1B[01;37m%" PRIu64 "\x1B[0m, miners: \x1B[01;37m%" PRIu64 "\x1B[0m (max \x1B[01;37m%" PRIu64 "\x1B[0m) +%u/-%u",
-             m_stats.hashrate(60), m_stats.data().accepted, (m_stats.data().rejected ? "\x1B[0;31m" : "\x1B[1;37m"), m_stats.data().rejected,
+             m_stats->hashrate(m_controller->config()->printTime()), m_stats->data().accepted, (m_stats->data().rejected ? "\x1B[0;31m" : "\x1B[1;37m"), m_stats->data().rejected,
              Counters::accepted, m_splitter->upstreams().active, Counters::miners(), Counters::maxMiners(), Counters::added(), Counters::removed());
 
     Counters::reset();
@@ -281,7 +282,7 @@ void xmrig::Proxy::print()
 
 void xmrig::Proxy::tick()
 {
-    m_stats.tick(m_ticks, m_splitter);
+    m_stats->tick(m_ticks, m_splitter);
 
     m_ticks++;
 
@@ -289,7 +290,8 @@ void xmrig::Proxy::tick()
         gc();
     }
 
-    if ((m_ticks % kPrintInterval) == 0) {
+    auto seconds = m_controller->config()->printTime();
+    if (seconds && (m_ticks % seconds) == 0) {
         print();
     }
 

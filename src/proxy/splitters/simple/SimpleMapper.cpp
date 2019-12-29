@@ -218,7 +218,7 @@ void xmrig::SimpleMapper::onPause(IStrategy *strategy)
 
 void xmrig::SimpleMapper::onResultAccepted(IStrategy *, IClient *client, const SubmitResult &result, const char *error)
 {
-    AcceptEvent::start(m_id, m_miner, result, client->id() == -1, error);
+    AcceptEvent::start(m_id, m_miner, result, client->id() == -1, false, error);
 
     if (!m_miner) {
         return;

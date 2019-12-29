@@ -79,7 +79,6 @@ protected:
     void onConfigChanged(Config *config, Config *previousConfig) override;
 
 private:
-    constexpr static int kPrintInterval = 60;
     constexpr static int kGCInterval    = 60;
 
     void bind(const BindHost &host);
@@ -100,7 +99,7 @@ private:
     Miners *m_miners;
     ProxyDebug *m_debug;
     ShareLog *m_shareLog;
-    Stats m_stats;
+    Stats *m_stats;
     std::vector<Server*> m_servers;
     TlsContext *m_tls;
     uint64_t m_ticks;

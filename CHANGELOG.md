@@ -1,6 +1,9 @@
 # v5.5.0
 - [#179](https://github.com/xmrig/xmrig/issues/179) Added support for [environment variables](https://xmrig.com/docs/miner/environment-variables) in config file.
 - [#375](https://github.com/xmrig/xmrig-proxy/pull/375) Bugfixes: 64bit diff in logs + `"print-time"` config.
+- [#376](https://github.com/xmrig/xmrig-proxy/pull/376) Added support for custom-diff shares for better proxy and worker stats.
+  - Added `"custom-diff-stats"` config option.
+  - Added `--custom-diff-stats` command line option.
 - [#1445](https://github.com/xmrig/xmrig/pull/1445) Removed `rx/v` algorithm.
 - [#1466](https://github.com/xmrig/xmrig/pull/1466) Added `cn-pico/tlo` algorithm.
 - Added console title for Windows with proxy name and version.

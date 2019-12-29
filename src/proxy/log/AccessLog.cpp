@@ -23,21 +23,21 @@
  */
 
 
-#include <inttypes.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <time.h>
-
-
+#include "proxy/log/AccessLog.h"
 #include "base/tools/Chrono.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/Counters.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
-#include "proxy/log/AccessLog.h"
 #include "proxy/Miner.h"
 #include "proxy/Stats.h"
+
+
+#include <cinttypes>
+#include <cstdarg>
+#include <cstdio>
+#include <ctime>
 
 
 xmrig::AccessLog::AccessLog(Controller *controller) :
@@ -54,9 +54,7 @@ xmrig::AccessLog::AccessLog(Controller *controller) :
 }
 
 
-xmrig::AccessLog::~AccessLog()
-{
-}
+xmrig::AccessLog::~AccessLog() = default;
 
 
 void xmrig::AccessLog::onEvent(IEvent *event)
@@ -67,19 +65,22 @@ void xmrig::AccessLog::onEvent(IEvent *event)
 
     switch (event->type())
     {
-    case IEvent::LoginType: {
+    case IEvent::LoginType:
+        {
             auto e = static_cast<LoginEvent*>(event);
-            write("#%" PRId64 " login: %s, \"%s\", ua: \"%s\", count: %" PRIu64, e->miner()->id(), e->miner()->ip(), e->miner()->user().data(), e->miner()->agent().data(), Counters::miners());
+            write("#%" PRId64 " login: %s, \"%s\", flow: \"%s\", ua: \"%s\", count: %" PRIu64,
+                  e->miner()->id(), e->miner()->ip(), e->miner()->user().data(), e->flow.data(), e->miner()->agent().data(), Counters::miners());
         }
         break;
 
-    case IEvent::CloseType: {
+    case IEvent::CloseType:
+        {
             auto e = static_cast<CloseEvent*>(event);
             if (e->miner()->mapperId() == -1) {
                 break;
             }
 
-            const double time = (Chrono::currentMSecsSinceEpoch() - e->miner()->timestamp()) / 1000.0;
+            const double time = static_cast<double>(Chrono::currentMSecsSinceEpoch() - e->miner()->timestamp()) / 1000.0;
 
             write("#%" PRId64 " close: %s, \"%s\", time: %03.1fs, rx/tx: %" PRIu64 "/%" PRIu64 ", count: %" PRIu64,
                   e->miner()->id(), e->miner()->ip(), e->miner()->user().data(), time, e->miner()->rx(), e->miner()->tx(), Counters::miners());
@@ -112,7 +113,7 @@ void xmrig::AccessLog::write(const char *fmt, ...)
     va_start(args, fmt);
 
     time_t now = time(nullptr);
-    tm stime;
+    tm stime{};
 
 #   ifdef _WIN32
     localtime_s(&stime, &now);
@@ -133,7 +134,7 @@ void xmrig::AccessLog::write(const char *fmt, ...)
     buf[size] = '\n';
 
     uv_buf_t ubuf = uv_buf_init(buf, (unsigned int) size + 1);
-    uv_fs_t *req = new uv_fs_t;
+    auto req = new uv_fs_t;
     req->data = ubuf.base;
 
     uv_fs_write(uv_default_loop(), req, m_file, &ubuf, 1, 0, AccessLog::onWrite);

@@ -28,6 +28,7 @@
 #include "base/tools/Buffer.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
+#include "proxy/Counters.h"
 #include "proxy/Miner.h"
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
@@ -186,7 +187,7 @@ void xmrig::ApiRouter::getMinersSummary(rapidjson::Value &reply, rapidjson::Docu
     upstreams.AddMember("sleep",  stats.upstreams.sleep, allocator);
     upstreams.AddMember("error",  stats.upstreams.error, allocator);
     upstreams.AddMember("total",  stats.upstreams.total, allocator);
-    upstreams.AddMember("ratio",  normalize(stats.upstreams.ratio), allocator);
+    upstreams.AddMember("ratio",  normalize(stats.upstreams.ratio(Counters::miners())), allocator);
 
     reply.AddMember("upstreams", upstreams, allocator);
 }

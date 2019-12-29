@@ -29,7 +29,7 @@
 #include "proxy/interfaces/IEventListener.h"
 
 
-typedef struct uv_fs_s uv_fs_t;
+using uv_fs_t = struct uv_fs_s;
 
 
 class Stats;

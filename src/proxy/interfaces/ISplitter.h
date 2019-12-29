@@ -26,7 +26,7 @@
 #define XMRIG_ISPLITTER_H
 
 
-#include <stdint.h>
+#include <cstdint>
 
 
 namespace xmrig {
@@ -35,23 +35,35 @@ namespace xmrig {
 class Upstreams
 {
 public:
-    inline Upstreams() : active(0), sleep(0), total(0), error(0), ratio(0.0) {}
+    Upstreams() = default;
 
 
-    inline Upstreams(uint64_t active, uint64_t sleep, uint64_t total, uint64_t miners) :
+    inline Upstreams(uint64_t active, uint64_t sleep, uint64_t total) :
         active(active),
         sleep(sleep),
         total(total),
-        error(total - active - sleep),
-        ratio(active > 0 ? (static_cast<double>(miners) / active) : 0.0)
+        error(total - active - sleep)
     {}
 
 
-    uint64_t active;
-    uint64_t sleep;
-    uint64_t total;
-    uint64_t error;
-    double ratio;
+    inline double ratio(uint64_t miners) const { return active > 0 ? (static_cast<double>(miners) / active) : 0.0; }
+
+
+    inline Upstreams &operator+=(const Upstreams &other)
+    {
+        active += other.active;
+        sleep  += other.sleep;
+        total  += other.total;
+        error  += other.error;
+
+        return *this;
+    }
+
+
+    uint64_t active = 0;
+    uint64_t sleep  = 0;
+    uint64_t total  = 0;
+    uint64_t error  = 0;
 };
 
 

@@ -143,7 +143,11 @@ else()
     if (CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
         set(EXTRA_LIBS pthread)
     else()
-        set(EXTRA_LIBS pthread uuid.a rt dl)
+        if (NOT UUID_LIBRARY)
+            set(UUID_LIBRARY "uuid.a")
+        endif()
+
+        set(EXTRA_LIBS pthread ${UUID_LIBRARY} rt dl)
     endif()
 endif()
 

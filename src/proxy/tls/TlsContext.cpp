@@ -6,7 +6,8 @@
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,13 +24,14 @@
  */
 
 
+#include "proxy/tls/TlsContext.h"
+#include "base/io/log/Log.h"
+#include "base/kernel/Env.h"
+#include "proxy/tls/TlsConfig.h"
+
+
 #include <openssl/ssl.h>
 #include <openssl/err.h>
-
-
-#include "base/io/log/Log.h"
-#include "proxy/tls/TlsConfig.h"
-#include "proxy/tls/TlsContext.h"
 
 
 xmrig::TlsContext::TlsContext() :
@@ -59,13 +61,15 @@ bool xmrig::TlsContext::load(const TlsConfig &config)
         return false;
     }
 
-    if (SSL_CTX_use_certificate_chain_file(m_ctx, config.cert()) <= 0) {
+    const auto cert = Env::expand(config.cert());
+    if (SSL_CTX_use_certificate_chain_file(m_ctx, cert) <= 0) {
         LOG_ERR("SSL_CTX_use_certificate_chain_file(\"%s\") failed.", config.cert());
 
         return false;
     }
 
-    if (SSL_CTX_use_PrivateKey_file(m_ctx, config.key(), SSL_FILETYPE_PEM) <= 0) {
+    const auto key = Env::expand(config.key());
+    if (SSL_CTX_use_PrivateKey_file(m_ctx, key, SSL_FILETYPE_PEM) <= 0) {
         LOG_ERR("SSL_CTX_use_PrivateKey_file(\"%s\") failed.", config.key());
 
         return false;
@@ -120,7 +124,7 @@ bool xmrig::TlsContext::setDH(const char *dhparam)
         return true;
     }
 
-    BIO *bio = BIO_new_file(dhparam, "r");
+    BIO *bio = BIO_new_file(Env::expand(dhparam), "r");
     if (bio == nullptr) {
         LOG_ERR("BIO_new_file(\"%s\") failed.", dhparam);
 

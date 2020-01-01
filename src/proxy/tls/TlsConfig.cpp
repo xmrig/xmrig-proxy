@@ -6,7 +6,8 @@
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -27,12 +28,6 @@
 #include "rapidjson/document.h"
 
 
-xmrig::TlsConfig::TlsConfig() :
-    m_protocols(0)
-{
-}
-
-
 /**
  * "cert"         load TLS certificate chain from file.
  * "cert_key"     load TLS private key from file.
@@ -40,8 +35,7 @@ xmrig::TlsConfig::TlsConfig() :
  * "ciphersuites" set list of available TLSv1.3 ciphersuites.
  * "dhparam"      load DH parameters for DHE ciphers from file.
  */
-xmrig::TlsConfig::TlsConfig(const rapidjson::Value &object) :
-    m_protocols(0)
+xmrig::TlsConfig::TlsConfig(const rapidjson::Value &object)
 {
     setProtocols(object["protocols"]);
     setCert(object["cert"].GetString());
@@ -56,9 +50,6 @@ xmrig::TlsConfig::TlsConfig(const rapidjson::Value &object) :
 }
 
 
-xmrig::TlsConfig::~TlsConfig() = default;
-
-
 rapidjson::Value xmrig::TlsConfig::toJSON(rapidjson::Document &doc) const
 {
     using namespace rapidjson;
@@ -70,19 +61,19 @@ rapidjson::Value xmrig::TlsConfig::toJSON(rapidjson::Document &doc) const
         std::vector<String> protocols;
 
         if (m_protocols & TLSv1) {
-            protocols.push_back("TLSv1");
+            protocols.emplace_back("TLSv1");
         }
 
         if (m_protocols & TLSv1_1) {
-            protocols.push_back("TLSv1.1");
+            protocols.emplace_back("TLSv1.1");
         }
 
         if (m_protocols & TLSv1_2) {
-            protocols.push_back("TLSv1.2");
+            protocols.emplace_back("TLSv1.2");
         }
 
         if (m_protocols & TLSv1_3) {
-            protocols.push_back("TLSv1.3");
+            protocols.emplace_back("TLSv1.3");
         }
 
         obj.AddMember("protocols", String::join(protocols, ' ').toJSON(doc), allocator);

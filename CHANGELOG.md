@@ -1,3 +1,7 @@
+# v5.5.1
+- [#1469](https://github.com/xmrig/xmrig/issues/1469) Fixed build with gcc 4.8.
+- Added environment variables support for TLS settings: `cert`, `cert_key`, `dhparam`.
+
 # v5.5.0
 - [#179](https://github.com/xmrig/xmrig/issues/179) Added support for [environment variables](https://xmrig.com/docs/miner/environment-variables) in config file.
 - [#375](https://github.com/xmrig/xmrig-proxy/pull/375) Bugfixes: 64bit diff in logs + `"print-time"` config.

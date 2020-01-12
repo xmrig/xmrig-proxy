@@ -6,7 +6,8 @@
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,10 +27,13 @@
 #define XMRIG_TLSCONTEXT_H
 
 
-#include <stdint.h>
+#include "base/tools/Object.h"
 
 
-typedef struct ssl_ctx_st SSL_CTX;
+#include <cstdint>
+
+
+using SSL_CTX = struct ssl_ctx_st;
 
 
 namespace xmrig {
@@ -41,6 +45,8 @@ class TlsConfig;
 class TlsContext
 {
 public:
+    XMRIG_DISABLE_COPY_MOVE(TlsContext)
+
     TlsContext();
     ~TlsContext();
 

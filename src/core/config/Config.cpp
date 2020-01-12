@@ -22,31 +22,32 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "core/config/Config.h"
+#include "base/io/log/Log.h"
+#include "donate.h"
+#include "rapidjson/document.h"
+#include "base/kernel/interfaces/IJsonReader.h"
+
+
+#include <array>
 #include <cassert>
 #include <climits>
 #include <cstring>
 #include <uv.h>
 
 
-#include "base/io/log/Log.h"
-#include "core/config/Config.h"
-#include "donate.h"
-#include "rapidjson/document.h"
-#include "base/kernel/interfaces/IJsonReader.h"
+namespace xmrig {
 
 
-static const char *modeNames[] = {
-    "nicehash",
-    "simple"
-};
+static const std::array<const char *, 2> modeNames = { "nicehash", "simple" };
+
+
+} // namespace xmrig
 
 
 #if defined(_WIN32) && !defined(strncasecmp)
 #   define strncasecmp _strnicmp
 #endif
-
-
-xmrig::Config::Config() = default;
 
 
 bool xmrig::Config::isTLS() const
@@ -196,11 +197,9 @@ void xmrig::Config::setMode(const char *mode)
         return;
     }
 
-    constexpr const size_t size = sizeof(modeNames) / sizeof((modeNames)[0]);
-
-    for (size_t i = 0; i < size; i++) {
+    for (size_t i = 0; i < modeNames.size(); i++) {
         if (modeNames[i] && !strcmp(mode, modeNames[i])) {
-            m_mode = static_cast<int>(i);
+            m_mode = static_cast<Mode>(i);
             break;
         }
     }

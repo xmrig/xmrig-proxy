@@ -44,6 +44,7 @@ public:
     }
 
 
+    bool expired = false;
     JobResult request;
 
 

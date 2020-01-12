@@ -40,7 +40,7 @@
 namespace xmrig {
 
 
-static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:A:a:C:m:";
+static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:A:a:C:m:L:";
 
 
 static struct option const options[] = {
@@ -90,6 +90,7 @@ static struct option const options[] = {
     { "tls-ciphersuites",  1, nullptr, IConfig::TlsCipherSuitesKey},
     { "no-algo-ext",       0, nullptr, IConfig::AlgoExtKey        },
     { "access-password",   1, nullptr, IConfig::ProxyPasswordKey  },
+    { "login-file",        1, nullptr, IConfig::LoginFileKey      },
     { nullptr,             0, nullptr, 0 }
 };
 

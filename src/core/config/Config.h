@@ -26,10 +26,6 @@
 #define XMRIG_CONFIG_H
 
 
-#include <cstdint>
-#include <vector>
-
-
 #include "base/kernel/config/BaseConfig.h"
 #include "base/tools/String.h"
 #include "proxy/BindHost.h"
@@ -42,6 +38,10 @@
 #endif
 
 
+#include <cstdint>
+#include <vector>
+
+
 namespace xmrig {
 
 
@@ -50,17 +50,6 @@ class IConfigListener;
 class Process;
 
 
-/**
- * @brief The Config class
- *
- * Options with dynamic reload:
- *   colors
- *   debug
- *   verbose
- *   custom-diff (only for new connections)
- *   api/worker-id
- *   pools/
- */
 class Config : public BaseConfig
 {
 public:
@@ -69,7 +58,7 @@ public:
         SIMPLE_MODE
     };
 
-    Config();
+    Config() = default;
 
     bool isTLS() const;
     const char *modeName() const;

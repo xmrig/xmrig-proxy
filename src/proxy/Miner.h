@@ -32,11 +32,12 @@
 
 
 #include "base/net/tools/Storage.h"
+#include "base/tools/Object.h"
 #include "base/tools/String.h"
 #include "rapidjson/fwd.h"
 
 
-typedef struct bio_st BIO;
+using BIO = struct bio_st;
 
 
 namespace xmrig {
@@ -49,6 +50,8 @@ class TlsContext;
 class Miner
 {
 public:
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(Miner)
+
     enum State {
         WaitLoginState,
         WaitReadyState,
@@ -126,26 +129,26 @@ private:
     char m_buf[4096]{};
     char m_ip[46]{};
     char m_rpcId[37]{};
-    int32_t m_routeId;
+    int32_t m_routeId       = -1;
     int64_t m_id;
-    int64_t m_loginId;
-    size_t m_recvBufPos;
-    ssize_t m_mapperId;
-    State m_state;
+    int64_t m_loginId       = 0;
+    size_t m_recvBufPos     = 0;
+    ssize_t m_mapperId      = -1;
+    State m_state           = WaitLoginState;
     std::bitset<EXT_MAX> m_extensions;
     String m_agent;
     String m_password;
     String m_rigId;
     String m_user;
-    Tls *m_tls;
+    Tls *m_tls              = nullptr;
     uint16_t m_localPort;
-    uint64_t m_customDiff;
-    uint64_t m_diff;
+    uint64_t m_customDiff   = 0;
+    uint64_t m_diff         = 0;
     uint64_t m_expire;
-    uint64_t m_rx;
+    uint64_t m_rx           = 0;
     uint64_t m_timestamp;
-    uint64_t m_tx;
-    uint8_t m_fixedByte;
+    uint64_t m_tx           = 0;
+    uint8_t m_fixedByte     = 0;
     uintptr_t m_key;
     uv_buf_t m_recvBuf{};
     uv_tcp_t *m_socket;

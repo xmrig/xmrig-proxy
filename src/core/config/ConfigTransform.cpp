@@ -37,9 +37,6 @@ static const char *kTls  = "tls";
 }
 
 
-xmrig::ConfigTransform::ConfigTransform() = default;
-
-
 void xmrig::ConfigTransform::transform(rapidjson::Document &doc, int key, const char *arg)
 {
     BaseTransform::transform(doc, key, arg);
@@ -80,6 +77,9 @@ void xmrig::ConfigTransform::transform(rapidjson::Document &doc, int key, const 
     case IConfig::CustomDiffKey: /* --custom-diff */
     case IConfig::ReuseTimeoutKey: /* --reuse-timeout */
         return transformUint64(doc, key, static_cast<uint64_t>(strtol(arg, nullptr, 10)));
+
+    case IConfig::LoginFileKey: /* --login-file */
+        return set(doc, "login-file", arg);
 
 #   ifdef XMRIG_FEATURE_TLS
     case IConfig::TlsCertKey: /* --tls-cert */

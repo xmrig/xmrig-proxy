@@ -1,4 +1,4 @@
-# v5.x.x
+# v5.5.1
 - [#1469](https://github.com/xmrig/xmrig/issues/1469) Fixed build with gcc 4.8.
 - Added environment variables support for TLS settings: `cert`, `cert_key`, `dhparam`.
 

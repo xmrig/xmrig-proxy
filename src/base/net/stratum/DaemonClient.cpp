@@ -59,6 +59,10 @@ static const char *kHash                    = "hash";
 static const char *kHeight                  = "height";
 static const char *kJsonRPC                 = "/json_rpc";
 
+#   ifdef XMRIG_PROXY_PROJECT
+uint32_t DaemonClient::m_extra_nonce = 0;
+#   endif
+
 }
 
 
@@ -67,6 +71,11 @@ xmrig::DaemonClient::DaemonClient(int id, IClientListener *listener) :
     m_monero(true)
 {
     m_timer = new Timer(this);
+#   ifdef XMRIG_PROXY_PROJECT
+    Buffer::toHex(reinterpret_cast<const uint8_t *>(&m_extra_nonce), 4, m_extra_nonce_hex);
+    m_extra_nonce_hex[8] = '\0';
+    ++m_extra_nonce;
+#   endif
 }
 
 
@@ -285,7 +294,11 @@ int64_t xmrig::DaemonClient::getBlockTemplate()
 
     Value params(kObjectType);
     params.AddMember("wallet_address", m_user.toJSON(), allocator);
+#   ifdef XMRIG_PROXY_PROJECT
+    params.AddMember("extra_nonce",  StringRef(m_extra_nonce_hex), allocator);
+#   else
     params.AddMember("reserve_size",   8,               allocator);
+#   endif
 
     JsonRequest::create(doc, m_sequence, "getblocktemplate", params);
 

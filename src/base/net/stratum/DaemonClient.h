@@ -78,6 +78,10 @@ private:
     String m_prevHash;
     String m_tlsFingerprint;
     String m_tlsVersion;
+#   ifdef XMRIG_PROXY_PROJECT
+    static uint32_t m_extra_nonce;
+    char m_extra_nonce_hex[9];
+#   endif
     Timer *m_timer;
 };
 

@@ -147,6 +147,7 @@ xmrig::Proxy::~Proxy()
     delete m_login;
     delete m_miners;
     delete m_splitter;
+    delete m_stats;
     delete m_shareLog;
     delete m_accessLog;
     delete m_debug;

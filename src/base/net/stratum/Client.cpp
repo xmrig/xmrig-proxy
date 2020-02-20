@@ -5,9 +5,9 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
  * Copyright 2019      jtgrassie   <https://github.com/jtgrassie>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@
 #include "base/kernel/interfaces/IClientListener.h"
 #include "base/net/dns/Dns.h"
 #include "base/net/stratum/Client.h"
+#include "base/net/stratum/Socks5.h"
 #include "base/tools/Buffer.h"
 #include "base/tools/Chrono.h"
 #include "net/JobResult.h"
@@ -181,10 +182,16 @@ int64_t xmrig::Client::send(const rapidjson::Value &obj)
 int64_t xmrig::Client::submit(const JobResult &result)
 {
 #   ifndef XMRIG_PROXY_PROJECT
-    if (result.clientId != m_rpcId) {
+    if (result.clientId != m_rpcId || m_rpcId.isNull() || m_state != ConnectedState) {
         return -1;
     }
 #   endif
+
+    if (result.diff == 0) {
+        close();
+
+        return -1;
+    }
 
     using namespace rapidjson;
 
@@ -229,6 +236,13 @@ int64_t xmrig::Client::submit(const JobResult &result)
 
 void xmrig::Client::connect()
 {
+    if (m_pool.proxy().isValid()) {
+        m_socks5 = new Socks5(this);
+        resolve(m_pool.proxy().host());
+
+        return;
+    }
+
 #   ifdef XMRIG_FEATURE_TLS
     if (m_pool.isTLS()) {
         m_tls = new Tls(this);
@@ -299,10 +313,10 @@ void xmrig::Client::onResolved(const Dns &dns, int status)
         return reconnect();
     }
 
-    const DnsRecord &record = dns.get();
+    const auto &record = dns.get();
     m_ip = record.ip();
 
-    connect(record.addr(m_pool.port()));
+    connect(record.addr(m_socks5 ? m_pool.proxy().port() : m_pool.port()));
 }
 
 
@@ -601,6 +615,10 @@ void xmrig::Client::connect(sockaddr *addr)
 
 void xmrig::Client::handshake()
 {
+    if (m_socks5) {
+        return m_socks5->handshake();
+    }
+
 #   ifdef XMRIG_FEATURE_TLS
     if (isTLS()) {
         m_expire = Chrono::steadyMSecs() + kResponseTimeout;
@@ -842,6 +860,27 @@ void xmrig::Client::read(ssize_t nread)
     }
 
     m_recvBuf.nread(size);
+
+    if (m_socks5) {
+        if (m_socks5->read(m_recvBuf.base(), m_recvBuf.pos())) {
+            m_recvBuf.reset();
+        }
+
+        if (m_socks5->isReady()) {
+            delete m_socks5;
+            m_socks5 = nullptr;
+
+#           ifdef XMRIG_FEATURE_TLS
+            if (m_pool.isTLS() && !m_tls) {
+                m_tls = new Tls(this);
+            }
+#           endif
+
+            handshake();
+        }
+
+        return;
+    }
 
 #   ifdef XMRIG_FEATURE_TLS
     if (isTLS()) {

@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -38,7 +38,6 @@
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"
 #include "proxy/tls/TlsContext.h"
-#include "proxy/Uuid.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
 #include "rapidjson/stringbuffer.h"
@@ -63,14 +62,13 @@ namespace xmrig {
 
 
 xmrig::Miner::Miner(const TlsContext *ctx, uint16_t port) :
+    m_rpcId(Buffer::randomBytes(8).toHex()),
     m_id(++nextId),
     m_localPort(port),
     m_expire(Chrono::currentMSecsSinceEpoch() + kLoginTimeout),
     m_timestamp(Chrono::currentMSecsSinceEpoch())
 {
     m_key = m_storage.add(this);
-
-    Uuid::create(m_rpcId, sizeof(m_rpcId));
 
     m_socket = new uv_tcp_t;
     m_socket->data = m_storage.ptr(m_key);
@@ -236,7 +234,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
         heartbeat();
 
         const char *rpcId = Json::getString(params, "id");
-        if (!rpcId || strncmp(m_rpcId, rpcId, sizeof(m_rpcId)) != 0) {
+        if (!rpcId || m_rpcId != rpcId) {
             replyWithError(id, Error::toString(Error::Unauthenticated));
             return true;
         }
@@ -483,7 +481,7 @@ void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *targ
         doc.AddMember("error", kNullType, allocator);
 
         Value result(kObjectType);
-        result.AddMember("id",  StringRef(m_rpcId), allocator);
+        result.AddMember("id",  m_rpcId.toJSON(), allocator);
         result.AddMember("job", params, allocator);
 
         Value extensions(kArrayType);

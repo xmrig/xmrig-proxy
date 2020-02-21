@@ -64,7 +64,6 @@ set(HEADERS
     src/proxy/Stats.h
     src/proxy/StatsData.h
     src/proxy/TickingCounter.h
-    src/proxy/Uuid.h
     src/proxy/workers/Worker.h
     src/proxy/workers/Workers.h
     src/Summary.h
@@ -119,7 +118,6 @@ if (WIN32)
         "${SOURCES_OS}"
         res/app.rc
         src/App_win.cpp
-        src/proxy/Uuid_win.cpp
         )
 
     add_definitions(/DWIN32)
@@ -128,7 +126,6 @@ elseif (APPLE)
     set(SOURCES_OS
         "${SOURCES_OS}"
         src/App_unix.cpp
-        src/proxy/Uuid_mac.cpp
         )
 
     find_library(CFLIB CoreFoundation)
@@ -137,17 +134,12 @@ else()
     set(SOURCES_OS
         "${SOURCES_OS}"
         src/App_unix.cpp
-        src/proxy/Uuid_unix.cpp
         )
 
     if (CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
         set(EXTRA_LIBS pthread)
     else()
-        if (NOT UUID_LIBRARY)
-            set(UUID_LIBRARY "uuid.a")
-        endif()
-
-        set(EXTRA_LIBS pthread ${UUID_LIBRARY} rt dl)
+        set(EXTRA_LIBS pthread rt dl)
     endif()
 endif()
 

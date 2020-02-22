@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -31,26 +31,21 @@
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/Miner.h"
-#include "proxy/Stats.h"
 
 
+#include <algorithm>
 #include <cinttypes>
 #include <cstdarg>
 #include <cstdio>
 #include <ctime>
 
 
-xmrig::AccessLog::AccessLog(Controller *controller) :
-    m_file(-1)
+xmrig::AccessLog::AccessLog(Controller *controller)
 {
     const char *fileName = controller->config()->accessLog();
-    if (!fileName) {
-        return;
+    if (fileName) {
+        m_writer.open(fileName);
     }
-
-    uv_fs_t req;
-    m_file = uv_fs_open(uv_default_loop(), &req, fileName, O_CREAT | O_APPEND | O_WRONLY, 0644, nullptr);
-    uv_fs_req_cleanup(&req);
 }
 
 
@@ -59,7 +54,7 @@ xmrig::AccessLog::~AccessLog() = default;
 
 void xmrig::AccessLog::onEvent(IEvent *event)
 {
-    if (m_file < 0) {
+    if (!m_writer.isOpen()) {
         return;
     }
 
@@ -98,20 +93,8 @@ void xmrig::AccessLog::onRejectedEvent(IEvent *)
 }
 
 
-void xmrig::AccessLog::onWrite(uv_fs_t *req)
-{
-    delete [] static_cast<char *>(req->data);
-
-    uv_fs_req_cleanup(req);
-    delete req;
-}
-
-
 void xmrig::AccessLog::write(const char *fmt, ...)
 {
-    va_list args;
-    va_start(args, fmt);
-
     time_t now = time(nullptr);
     tm stime{};
 
@@ -121,7 +104,7 @@ void xmrig::AccessLog::write(const char *fmt, ...)
     localtime_r(&now, &stime);
 #   endif
 
-    char *buf = new char[1024];
+    static char buf[4096]{};
     int size = snprintf(buf, 23, "[%d-%02d-%02d %02d:%02d:%02d] ",
                         stime.tm_year + 1900,
                         stime.tm_mon + 1,
@@ -130,14 +113,23 @@ void xmrig::AccessLog::write(const char *fmt, ...)
                         stime.tm_min,
                         stime.tm_sec);
 
-    size = vsnprintf(buf + size, 1024 - size - 1, fmt, args) + size;
-    buf[size] = '\n';
+    if (size < 0) {
+        return;
+    }
 
-    uv_buf_t ubuf = uv_buf_init(buf, (unsigned int) size + 1);
-    auto req = new uv_fs_t;
-    req->data = ubuf.base;
+    va_list args;
+    va_start(args, fmt);
 
-    uv_fs_write(uv_default_loop(), req, m_file, &ubuf, 1, 0, AccessLog::onWrite);
+    const int rc = vsnprintf(buf + size, sizeof(buf) - size, fmt, args);
 
     va_end(args);
+
+    if (rc < 0) {
+        return;
+    }
+
+    size = std::min<int>(sizeof (buf) - 1, size + rc);
+    buf[size] = '\n';
+
+    m_writer.write(buf, static_cast<size_t>(size) + 1);
 }

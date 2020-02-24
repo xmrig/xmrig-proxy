@@ -1,3 +1,9 @@
+# v5.7.0
+- **Added SOCKS5 proxies support for Tor https://xmrig.com/docs/miner/tor.**
+- [#377](https://github.com/xmrig/xmrig-proxy/issues/377) Fixed duplicate jobs in daemon (solo) mining client.
+- Removed `libuuid` dependency on Linux.
+- Fixed possible crashes in HTTP client.
+
 # v5.5.1
 - [#1469](https://github.com/xmrig/xmrig/issues/1469) Fixed build with gcc 4.8.
 - Added environment variables support for TLS settings: `cert`, `cert_key`, `dhparam`.

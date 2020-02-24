@@ -1,11 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,17 +16,31 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __PROXY_UUID_H__
-#define __PROXY_UUID_H__
+#ifndef XMRIG_PROXYURL_H
+#define XMRIG_PROXYURL_H
 
 
-#include <stddef.h>
+#include "base/net/stratum/Url.h"
 
 
-class Uuid
+namespace xmrig {
+
+
+class ProxyUrl : public Url
 {
 public:
-    static void create(char *out, size_t size);
+    inline ProxyUrl() { m_port = 0; }
+
+    ProxyUrl(const rapidjson::Value &value);
+
+    inline bool isValid() const { return m_port > 0 && (m_scheme == UNSPECIFIED || m_scheme == SOCKS5); }
+
+    const String &host() const;
+    rapidjson::Value toJSON(rapidjson::Document &doc) const;
 };
 
-#endif /* __PROXY_UUID_H__ */
+
+} /* namespace xmrig */
+
+
+#endif /* XMRIG_PROXYURL_H */

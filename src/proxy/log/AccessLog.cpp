@@ -128,8 +128,5 @@ void xmrig::AccessLog::write(const char *fmt, ...)
         return;
     }
 
-    size = std::min<int>(sizeof (buf) - 1, size + rc);
-    buf[size] = '\n';
-
-    m_writer.write(buf, static_cast<size_t>(size) + 1);
+    m_writer.writeLine(buf, std::min<size_t>(sizeof(buf), size + rc));
 }

@@ -1,3 +1,6 @@
+# v5.9.0
+- [#1578](https://github.com/xmrig/xmrig/pull/1578) Added new RandomKEVA algorithm for upcoming Kevacoin fork, as `"algo": "rx/keva"` or `"coin": "keva"`.
+
 # v5.8.1
 - [#1575](https://github.com/xmrig/xmrig/pull/1575) Fixed new block detection for DERO solo mining.
 

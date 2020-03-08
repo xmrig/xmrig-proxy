@@ -23,10 +23,6 @@ set(HEADERS
     src/core/config/ConfigTransform.h
     src/core/config/usage.h
     src/core/Controller.h
-    src/crypto/cn/CnAlgo.h
-    src/crypto/common/Algorithm.h
-    src/crypto/common/Coin.h
-    src/crypto/common/keccak.h
     src/donate.h
     src/net/JobResult.h
     src/net/strategies/DonateStrategy.h
@@ -77,9 +73,6 @@ set(SOURCES
     src/core/config/Config.cpp
     src/core/config/ConfigTransform.cpp
     src/core/Controller.cpp
-    src/crypto/common/Algorithm.cpp
-    src/crypto/common/Coin.cpp
-    src/crypto/common/keccak.cpp
     src/net/JobResult.cpp
     src/net/strategies/DonateStrategy.cpp
     src/proxy/BindHost.cpp

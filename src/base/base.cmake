@@ -144,6 +144,7 @@ if (WITH_HTTP)
         src/base/kernel/interfaces/IHttpListener.h
         src/base/kernel/interfaces/IJsonReader.h
         src/base/kernel/interfaces/ITcpServerListener.h
+        src/base/net/http/Fetch.h
         src/base/net/http/HttpApiResponse.h
         src/base/net/http/HttpClient.h
         src/base/net/http/HttpContext.h
@@ -161,9 +162,12 @@ if (WITH_HTTP)
         src/base/api/Httpd.cpp
         src/base/api/requests/ApiRequest.cpp
         src/base/api/requests/HttpApiRequest.cpp
+        src/base/net/http/Fetch.cpp
         src/base/net/http/HttpApiResponse.cpp
         src/base/net/http/HttpClient.cpp
         src/base/net/http/HttpContext.cpp
+        src/base/net/http/HttpData.cpp
+        src/base/net/http/HttpListener.cpp
         src/base/net/http/HttpResponse.cpp
         src/base/net/http/HttpServer.cpp
         src/base/net/stratum/DaemonClient.cpp

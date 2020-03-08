@@ -28,15 +28,15 @@
 #define APP_ID        "xmrig-proxy"
 #define APP_NAME      "xmrig-proxy"
 #define APP_DESC      "XMRig Stratum proxy"
-#define APP_VERSION   "5.8.1"
+#define APP_VERSION   "5.9.0-dev"
 #define APP_DOMAIN    "xmrig.com"
 #define APP_SITE      "www.xmrig.com"
 #define APP_COPYRIGHT "Copyright (C) 2016-2020 xmrig.com"
 #define APP_KIND      "proxy"
 
 #define APP_VER_MAJOR  5
-#define APP_VER_MINOR  8
-#define APP_VER_PATCH  1
+#define APP_VER_MINOR  9
+#define APP_VER_PATCH  0
 
 #ifdef _MSC_VER
 #   if (_MSC_VER >= 1920)

@@ -61,6 +61,7 @@ public:
     inline void setKey(const char *key)              { m_key = key; }
     inline void setProtocols(uint32_t protocols)     { m_protocols = protocols; }
 
+    bool generate(const char *commonName = nullptr);
     rapidjson::Value toJSON(rapidjson::Document &doc) const;
     void setProtocols(const char *protocols);
     void setProtocols(const rapidjson::Value &protocols);

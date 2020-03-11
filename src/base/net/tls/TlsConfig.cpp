@@ -24,8 +24,29 @@
  */
 
 
-#include "proxy/tls/TlsConfig.h"
+#include "base/net/tls/TlsConfig.h"
+#include "base/io/json/Json.h"
+#include "base/io/log/Log.h"
+#include "base/net/tls/TlsGen.h"
 #include "rapidjson/document.h"
+
+
+namespace xmrig {
+
+
+static const char *kCert            = "cert";
+static const char *kCertKey         = "cert_key";
+static const char *kCiphers         = "ciphers";
+static const char *kCipherSuites    = "ciphersuites";
+static const char *kDhparam         = "dhparam";
+static const char *kProtocols       = "protocols";
+static const char *kTLSv1           = "TLSv1";
+static const char *kTLSv1_1         = "TLSv1.1";
+static const char *kTLSv1_2         = "TLSv1.2";
+static const char *kTLSv1_3         = "TLSv1.3";
+
+
+} // namespace xmrig
 
 
 /**
@@ -35,18 +56,46 @@
  * "ciphersuites" set list of available TLSv1.3 ciphersuites.
  * "dhparam"      load DH parameters for DHE ciphers from file.
  */
-xmrig::TlsConfig::TlsConfig(const rapidjson::Value &object)
+xmrig::TlsConfig::TlsConfig(const rapidjson::Value &value)
 {
-    setProtocols(object["protocols"]);
-    setCert(object["cert"].GetString());
-    setKey(object["cert_key"].GetString());
-    setCiphers(object["ciphers"].GetString());
-    setCipherSuites(object["ciphersuites"].GetString());
-    setDH(object["dhparam"].GetString());
+    if (value.IsObject()) {
+        setProtocols(Json::getString(value, kProtocols));
+        setCert(Json::getString(value, kCert));
+        setKey(Json::getString(value, kCertKey));
+        setCiphers(Json::getString(value, kCiphers));
+        setCipherSuites(Json::getString(value, kCipherSuites));
+        setDH(Json::getString(value, kDhparam));
 
-    if (m_key.isNull()) {
-        setKey(object["cert-key"].GetString());
+        if (m_key.isNull()) {
+            setKey(Json::getString(value, "cert-key"));
+        }
     }
+    else if (value.IsBool() && value.GetBool()) {
+        generate();
+    }
+    else if (value.IsString()) {
+        generate(value.GetString());
+    }
+}
+
+
+bool xmrig::TlsConfig::generate(const char *commonName)
+{
+    TlsGen gen;
+
+    try {
+        gen.generate(commonName);
+    }
+    catch (std::exception &ex) {
+        LOG_ERR("%s", ex.what());
+
+        return false;
+    }
+
+    setCert(gen.cert());
+    setKey(gen.certKey());
+
+    return true;
 }
 
 
@@ -61,32 +110,32 @@ rapidjson::Value xmrig::TlsConfig::toJSON(rapidjson::Document &doc) const
         std::vector<String> protocols;
 
         if (m_protocols & TLSv1) {
-            protocols.emplace_back("TLSv1");
+            protocols.emplace_back(kTLSv1);
         }
 
         if (m_protocols & TLSv1_1) {
-            protocols.emplace_back("TLSv1.1");
+            protocols.emplace_back(kTLSv1_1);
         }
 
         if (m_protocols & TLSv1_2) {
-            protocols.emplace_back("TLSv1.2");
+            protocols.emplace_back(kTLSv1_2);
         }
 
         if (m_protocols & TLSv1_3) {
-            protocols.emplace_back("TLSv1.3");
+            protocols.emplace_back(kTLSv1_3);
         }
 
-        obj.AddMember("protocols", String::join(protocols, ' ').toJSON(doc), allocator);
+        obj.AddMember(StringRef(kProtocols), String::join(protocols, ' ').toJSON(doc), allocator);
     }
     else {
-        obj.AddMember("protocols", kNullType, allocator);
+        obj.AddMember(StringRef(kProtocols), kNullType, allocator);
     }
 
-    obj.AddMember("cert",         m_cert.toJSON(), allocator);
-    obj.AddMember("cert_key",     m_key.toJSON(), allocator);
-    obj.AddMember("ciphers",      m_ciphers.toJSON(), allocator);
-    obj.AddMember("ciphersuites", m_cipherSuites.toJSON(), allocator);
-    obj.AddMember("dhparam",      m_dhparam.toJSON(), allocator);
+    obj.AddMember(StringRef(kCert),         m_cert.toJSON(), allocator);
+    obj.AddMember(StringRef(kCertKey),     m_key.toJSON(), allocator);
+    obj.AddMember(StringRef(kCiphers),      m_ciphers.toJSON(), allocator);
+    obj.AddMember(StringRef(kCipherSuites), m_cipherSuites.toJSON(), allocator);
+    obj.AddMember(StringRef(kDhparam),      m_dhparam.toJSON(), allocator);
 
     return obj;
 }
@@ -97,16 +146,16 @@ void xmrig::TlsConfig::setProtocols(const char *protocols)
     const std::vector<String> vec = String(protocols).split(' ');
 
     for (const String &value : vec) {
-        if (value == "TLSv1") {
+        if (value == kTLSv1) {
             m_protocols |= TLSv1;
         }
-        else if (value == "TLSv1.1") {
+        else if (value == kTLSv1_1) {
             m_protocols |= TLSv1_1;
         }
-        else if (value == "TLSv1.2") {
+        else if (value == kTLSv1_2) {
             m_protocols |= TLSv1_2;
         }
-        else if (value == "TLSv1.3") {
+        else if (value == kTLSv1_3) {
             m_protocols |= TLSv1_3;
         }
     }

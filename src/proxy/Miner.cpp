@@ -37,7 +37,6 @@
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"
-#include "proxy/tls/TlsContext.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
 #include "rapidjson/stringbuffer.h"
@@ -46,6 +45,7 @@
 
 #ifdef XMRIG_FEATURE_TLS
 #   include "proxy/tls/Tls.h"
+#   include "base/net/tls/TlsContext.h"
 #endif
 
 

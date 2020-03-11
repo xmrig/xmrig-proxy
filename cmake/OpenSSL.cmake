@@ -18,10 +18,12 @@ if (WITH_TLS)
             src/base/net/stratum/Tls.h
             src/proxy/tls/Tls.cpp
             src/proxy/tls/Tls.h
-            src/proxy/tls/TlsConfig.cpp
-            src/proxy/tls/TlsConfig.h
-            src/proxy/tls/TlsContext.cpp
-            src/proxy/tls/TlsContext.h
+            src/base/net/tls/TlsConfig.cpp
+            src/base/net/tls/TlsConfig.h
+            src/base/net/tls/TlsContext.cpp
+            src/base/net/tls/TlsContext.h
+            src/base/net/tls/TlsGen.cpp
+            src/base/net/tls/TlsGen.h
             )
 
         include_directories(${OPENSSL_INCLUDE_DIR})

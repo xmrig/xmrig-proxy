@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -29,12 +29,15 @@
 #include <openssl/ssl.h>
 
 
+#include "base/tools/Object.h"
 #include "proxy/Miner.h"
 
 
 class xmrig::Miner::Tls
 {
 public:
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(Tls)
+
     Tls(SSL_CTX *ctx, Miner *miner);
     ~Tls();
 
@@ -51,11 +54,11 @@ private:
 
     BIO *m_readBio;
     BIO *m_writeBio;
-    bool m_ready;
-    char m_buf[1024 * 1];
-    char m_fingerprint[32 * 2 + 8];
+    bool m_ready        = false;
+    char m_buf[1024 * 1]{};
+    char m_fingerprint[32 * 2 + 8]{};
     Miner *m_miner;
-    SSL *m_ssl;
+    SSL *m_ssl          = nullptr;
     SSL_CTX *m_ctx;
 };
 

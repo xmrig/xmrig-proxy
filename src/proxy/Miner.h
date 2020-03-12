@@ -153,7 +153,7 @@ private:
     uv_buf_t m_recvBuf{};
     uv_tcp_t *m_socket;
 
-    static char m_sendBuf[2048];
+    static char m_sendBuf[16384];
     static Storage<Miner> m_storage;
 };
 

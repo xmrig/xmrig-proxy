@@ -44,8 +44,8 @@
 
 
 #ifdef XMRIG_FEATURE_TLS
-#   include "proxy/tls/Tls.h"
 #   include "base/net/tls/TlsContext.h"
+#   include "proxy/tls/MinerTls.h"
 #endif
 
 
@@ -56,7 +56,7 @@
 
 namespace xmrig {
     static int64_t nextId = 0;
-    char Miner::m_sendBuf[2048] = { 0 };
+    char Miner::m_sendBuf[16384] = { 0 };
     Storage<Miner> Miner::m_storage;
 }
 

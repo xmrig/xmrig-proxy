@@ -16,14 +16,14 @@ if (WITH_TLS)
         set(TLS_SOURCES
             src/base/net/stratum/Tls.cpp
             src/base/net/stratum/Tls.h
-            src/proxy/tls/Tls.cpp
-            src/proxy/tls/Tls.h
             src/base/net/tls/TlsConfig.cpp
             src/base/net/tls/TlsConfig.h
             src/base/net/tls/TlsContext.cpp
             src/base/net/tls/TlsContext.h
             src/base/net/tls/TlsGen.cpp
             src/base/net/tls/TlsGen.h
+            src/proxy/tls/MinerTls.cpp
+            src/proxy/tls/MinerTls.h
             )
 
         include_directories(${OPENSSL_INCLUDE_DIR})

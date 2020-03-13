@@ -570,8 +570,6 @@ void xmrig::Miner::shutdown(bool)
 
 void xmrig::Miner::startTLS()
 {
-    LOG_WARN("%p %d", m_tlsCtx, m_strictTls); // FIXME
-
 #   ifdef XMRIG_FEATURE_TLS
     if (m_tlsCtx && (m_strictTls || *m_recvBuf.base != '{')) {
         m_tls = new Tls(m_tlsCtx->ctx(), this);

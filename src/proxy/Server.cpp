@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,19 +23,19 @@
  */
 
 
+#include "proxy/Server.h"
 #include "base/io/log/Log.h"
 #include "base/tools/Handle.h"
 #include "proxy/BindHost.h"
 #include "proxy/events/ConnectionEvent.h"
 #include "proxy/Miner.h"
-#include "proxy/Server.h"
 
 
 xmrig::Server::Server(const BindHost &host, const TlsContext *ctx) :
-    m_ctx(host.isTLS() ? ctx : nullptr),
-    m_version(0),
-    m_port(host.port()),
-    m_host(host.host())
+    m_strictTls(host.isTLS()),
+    m_host(host.host()),
+    m_ctx(ctx),
+    m_port(host.port())
 {
     m_server = new uv_tcp_t;
 
@@ -44,12 +44,12 @@ xmrig::Server::Server(const BindHost &host, const TlsContext *ctx) :
 
     uv_tcp_nodelay(m_server, 1);
 
-    if (host.isIPv6() && uv_ip6_addr(m_host.data(), m_port, &m_addr6) == 0) {
+    if (host.isIPv6() && uv_ip6_addr(m_host.data(), m_port, reinterpret_cast<sockaddr_in6 *>(&m_addr)) == 0) {
         m_version = 6;
         return;
     }
 
-    if (uv_ip4_addr(m_host.data(), m_port, &m_addr) == 0) {
+    if (uv_ip4_addr(m_host.data(), m_port, reinterpret_cast<sockaddr_in *>(&m_addr)) == 0) {
         m_version = 4;
     }
 }
@@ -67,8 +67,7 @@ bool xmrig::Server::bind()
         return false;
     }
 
-    const sockaddr *addr = m_version == 6 ? reinterpret_cast<const sockaddr*>(&m_addr6) : reinterpret_cast<const sockaddr*>(&m_addr);
-    uv_tcp_bind(m_server, addr, m_version == 6 ? UV_TCP_IPV6ONLY : 0);
+    uv_tcp_bind(m_server, reinterpret_cast<const sockaddr*>(&m_addr), m_version == 6 ? UV_TCP_IPV6ONLY : 0);
 
     const int r = uv_listen(reinterpret_cast<uv_stream_t*>(m_server), 511, Server::onConnection);
     if (r) {
@@ -87,7 +86,7 @@ void xmrig::Server::create(uv_stream_t *server, int status)
         return;
     }
 
-    Miner *miner = new Miner(m_ctx, m_port);
+    auto miner = new Miner(m_ctx, m_port, m_strictTls);
     if (!miner) {
         return;
     }

@@ -50,20 +50,6 @@ static const std::array<const char *, 2> modeNames = { "nicehash", "simple" };
 #endif
 
 
-bool xmrig::Config::isTLS() const
-{
-#   ifdef XMRIG_FEATURE_TLS
-    for (const BindHost &host : m_bind) {
-        if (host.isTLS()) {
-            return true;
-        }
-    }
-#   endif
-
-    return false;
-}
-
-
 const char *xmrig::Config::modeName() const
 {
     return modeNames[m_mode];

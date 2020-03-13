@@ -66,7 +66,7 @@ public:
         EXT_MAX
     };
 
-    Miner(const TlsContext *ctx, uint16_t port);
+    Miner(const TlsContext *ctx, uint16_t port, bool strictTls);
     ~Miner();
     bool accept(uv_stream_t *server);
     void forwardJob(const Job &job, const char *algo);
@@ -111,12 +111,13 @@ private:
     void heartbeat();
     void parse(char *line, size_t len);
     void read();
-    void readTLS(int nread);
+    void read(ssize_t nread);
     void send(const rapidjson::Document &doc);
     void send(int size);
     void sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height, const String &seedHash);
     void setState(State state);
     void shutdown(bool had_error);
+    void startTLS();
 
     static void onAllocBuffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);
     static void onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
@@ -128,7 +129,9 @@ private:
 
     char m_buf[4096]{};
     char m_ip[46]{};
+    const bool m_strictTls;
     const String m_rpcId;
+    const TlsContext *m_tlsCtx;
     int32_t m_routeId       = -1;
     int64_t m_id;
     int64_t m_loginId       = 0;

@@ -162,7 +162,7 @@ xmrig::Proxy::~Proxy()
 void xmrig::Proxy::connect()
 {
 #   ifdef XMRIG_FEATURE_TLS
-    if (m_controller->config()->isTLS()) {
+    if (m_controller->config()->tls().isValid()) {
         m_tls = new TlsContext();
 
         if (!m_tls->load(m_controller->config()->tls())) {

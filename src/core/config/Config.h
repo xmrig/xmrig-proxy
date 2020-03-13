@@ -60,7 +60,6 @@ public:
 
     Config() = default;
 
-    bool isTLS() const;
     const char *modeName() const;
 
     bool isVerbose() const;

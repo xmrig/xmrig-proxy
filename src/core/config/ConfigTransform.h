@@ -38,6 +38,7 @@ public:
     ConfigTransform() = default;
 
 protected:
+    void finalize(rapidjson::Document &doc) override;
     void transform(rapidjson::Document &doc, int key, const char *arg) override;
 
 private:

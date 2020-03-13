@@ -32,8 +32,23 @@ namespace xmrig
 {
 
 static const char *kBind = "bind";
-static const char *kTls  = "tls";
 
+#ifdef XMRIG_FEATURE_TLS
+static const char *kTls  = "tls";
+#endif
+
+}
+
+
+void xmrig::ConfigTransform::finalize(rapidjson::Document &doc)
+{
+    BaseTransform::finalize(doc);
+
+#   ifdef XMRIG_FEATURE_TLS
+    if (!doc.HasMember(kTls)) {
+        doc.AddMember(rapidjson::StringRef(kTls), true, doc.GetAllocator());
+    }
+#   endif
 }
 
 
@@ -52,7 +67,10 @@ void xmrig::ConfigTransform::transform(rapidjson::Document &doc, int key, const 
             if (host.isValid()) {
                 add(doc, kBind, "host", host.host(), true);
                 add(doc, kBind, "port", host.port());
+
+#               ifdef XMRIG_FEATURE_TLS
                 add(doc, kBind, kTls,  key == IConfig::TlsBindKey);
+#               endif
             }
         }
         break;

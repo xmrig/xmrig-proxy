@@ -40,18 +40,6 @@ static const char *kTls  = "tls";
 }
 
 
-void xmrig::ConfigTransform::finalize(rapidjson::Document &doc)
-{
-    BaseTransform::finalize(doc);
-
-#   ifdef XMRIG_FEATURE_TLS
-    if (!doc.HasMember(kTls)) {
-        doc.AddMember(rapidjson::StringRef(kTls), true, doc.GetAllocator());
-    }
-#   endif
-}
-
-
 void xmrig::ConfigTransform::transform(rapidjson::Document &doc, int key, const char *arg)
 {
     BaseTransform::transform(doc, key, arg);

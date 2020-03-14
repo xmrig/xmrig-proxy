@@ -69,8 +69,12 @@ xmrig::TlsConfig::TlsConfig(const rapidjson::Value &value)
         if (m_key.isNull()) {
             setKey(Json::getString(value, "cert-key"));
         }
+
+        if (!isValid()) {
+            generate();
+        }
     }
-    else if (value.IsBool() && value.GetBool()) {
+    else if ((value.IsBool() && value.GetBool()) || value.IsNull()) {
         generate();
     }
     else if (value.IsString()) {

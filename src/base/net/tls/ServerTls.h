@@ -1,10 +1,4 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
  * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
@@ -22,27 +16,53 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_MINER_TLS_H
-#define XMRIG_MINER_TLS_H
+
+#ifndef XMRIG_SERVERTLS_H
+#define XMRIG_SERVERTLS_H
 
 
-#include "base/net/tls/ServerTls.h"
-#include "proxy/Miner.h"
+using BIO       = struct bio_st;
+using SSL       = struct ssl_st;
+using SSL_CTX   = struct ssl_ctx_st;
 
 
-class xmrig::Miner::Tls : public ServerTls
+
+#include "base/tools/Object.h"
+
+
+namespace xmrig {
+
+
+class ServerTls
 {
 public:
-    Tls(SSL_CTX *ctx, Miner *miner);
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(ServerTls)
+
+    ServerTls(SSL_CTX *ctx);
+    virtual ~ServerTls();
+
+    static bool isTLS(const char *data, size_t size);
+
+    bool send(const char *data, size_t size);
+    void read(const char *data, size_t size);
 
 protected:
-    bool write(BIO *bio) override;
-    void parse(char *data, size_t size) override;
-    void shutdown() override;
+    virtual bool write(BIO *bio)                = 0;
+    virtual void parse(char *data, size_t size) = 0;
+    virtual void shutdown()                     = 0;
 
 private:
-    Miner *m_miner;
+    void read();
+
+    BIO *m_read     = nullptr;
+    BIO *m_write    = nullptr;
+    bool m_ready    = false;
+    SSL *m_ssl      = nullptr;
+    SSL_CTX *m_ctx;
 };
 
 
-#endif /* XMRIG_MINER_TLS_H */
+} // namespace xmrig
+
+
+#endif /* XMRIG_SERVERTLS_H */

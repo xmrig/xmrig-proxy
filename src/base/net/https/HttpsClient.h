@@ -55,17 +55,17 @@ public:
 protected:
     void handshake() override;
     void read(const char *data, size_t size) override;
-    void write(const std::string &header) override;
 
 private:
+    void end(std::string &&data) override;
+
     bool verify(X509 *cert);
     bool verifyFingerprint(X509 *cert);
     void flush();
 
-    BIO *m_readBio                      = nullptr;
-    BIO *m_writeBio                     = nullptr;
+    BIO *m_read                         = nullptr;
+    BIO *m_write                        = nullptr;
     bool m_ready                        = false;
-    char m_buf[1024 * 2]{};
     char m_fingerprint[32 * 2 + 8]{};
     SSL *m_ssl                          = nullptr;
     SSL_CTX *m_ctx                      = nullptr;

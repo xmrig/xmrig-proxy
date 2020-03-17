@@ -1,10 +1,4 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
  * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
@@ -22,27 +16,57 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_MINER_TLS_H
-#define XMRIG_MINER_TLS_H
+
+#ifndef XMRIG_HTTPSCONTEXT_H
+#define XMRIG_HTTPSCONTEXT_H
 
 
+using BIO = struct bio_st;
+using SSL = struct ssl_st;
+
+
+#include "base/net/http/HttpContext.h"
 #include "base/net/tls/ServerTls.h"
-#include "proxy/Miner.h"
 
 
-class xmrig::Miner::Tls : public ServerTls
+namespace xmrig {
+
+
+class TlsContext;
+
+
+class HttpsContext : public HttpContext, public ServerTls
 {
 public:
-    Tls(SSL_CTX *ctx, Miner *miner);
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(HttpsContext)
+
+    HttpsContext(TlsContext *tls, const std::weak_ptr<IHttpListener> &listener);
+    ~HttpsContext() override;
+
+    void append(char *data, size_t size);
 
 protected:
+    // ServerTls
     bool write(BIO *bio) override;
     void parse(char *data, size_t size) override;
     void shutdown() override;
 
+    // HttpContext
+    void end(std::string &&data) override;
+
 private:
-    Miner *m_miner;
+    enum TlsMode : uint32_t {
+      TLS_AUTO,
+      TLS_OFF,
+      TLS_ON
+    };
+
+    TlsMode m_mode = TLS_AUTO;
 };
 
 
-#endif /* XMRIG_MINER_TLS_H */
+} // namespace xmrig
+
+
+#endif // XMRIG_HTTPSCONTEXT_H
+

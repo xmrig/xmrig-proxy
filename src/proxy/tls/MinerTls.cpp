@@ -24,100 +24,29 @@
  */
 
 
-#include <cassert>
-
-
 #include "proxy/tls/MinerTls.h"
 
 
 xmrig::Miner::Tls::Tls(SSL_CTX *ctx, Miner *miner) :
-    m_miner(miner),
-    m_ctx(ctx)
+    ServerTls(ctx),
+    m_miner(miner)
 {
-    m_writeBio = BIO_new(BIO_s_mem());
-    m_readBio  = BIO_new(BIO_s_mem());
 }
 
 
-xmrig::Miner::Tls::~Tls()
+bool xmrig::Miner::Tls::write(BIO *bio)
 {
-    if (m_ssl) {
-        SSL_free(m_ssl);
-    }
+    return m_miner->send(bio);
 }
 
 
-bool xmrig::Miner::Tls::accept()
+void xmrig::Miner::Tls::parse(char *data, size_t size)
 {
-    m_ssl = SSL_new(m_ctx);
-    assert(m_ssl != nullptr);
-
-    if (!m_ssl) {
-        return false;
-    }
-
-    SSL_set_accept_state(m_ssl);
-    SSL_set_bio(m_ssl, m_readBio, m_writeBio);
-
-    return send();
+    m_miner->parse(data, size);
 }
 
 
-bool xmrig::Miner::Tls::send(const char *data, size_t size)
+void xmrig::Miner::Tls::shutdown()
 {
-    SSL_write(m_ssl, data, size);
-
-    return send();
-}
-
-
-const char *xmrig::Miner::Tls::fingerprint() const
-{
-    return m_ready ? m_fingerprint : nullptr;
-}
-
-
-const char *xmrig::Miner::Tls::version() const
-{
-    return m_ready ? SSL_get_version(m_ssl) : nullptr;
-}
-
-
-void xmrig::Miner::Tls::read(const char *data, size_t size)
-{
-    BIO_write(m_readBio, data, size);
-
-    if (!SSL_is_init_finished(m_ssl)) {
-        const int rc = SSL_do_handshake(m_ssl);
-
-        if (rc < 0 && SSL_get_error(m_ssl, rc) == SSL_ERROR_WANT_READ) {
-            send();
-        } else if (rc == 1) {
-            m_ready = true;
-            send();
-            read();
-        }
-        else {
-            m_miner->close();
-        }
-
-      return;
-    }
-
-    read();
-}
-
-
-bool xmrig::Miner::Tls::send()
-{
-    return m_miner->send(m_writeBio);
-}
-
-
-void xmrig::Miner::Tls::read()
-{
-    int bytes_read = 0;
-    while ((bytes_read = SSL_read(m_ssl, m_buf, sizeof(m_buf))) > 0) {
-        m_miner->parse(m_buf, bytes_read);
-    }
+    m_miner->close();
 }

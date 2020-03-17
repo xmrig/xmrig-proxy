@@ -29,10 +29,16 @@
 #include "base/io/log/Log.h"
 #include "base/net/http/HttpApiResponse.h"
 #include "base/net/http/HttpData.h"
-#include "base/net/http/HttpServer.h"
 #include "base/net/tools/TcpServer.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
+
+
+#ifdef XMRIG_FEATURE_TLS
+#   include "base/net/https/HttpsServer.h"
+#else
+#   include "base/net/http/HttpServer.h"
+#endif
 
 
 namespace xmrig {
@@ -48,10 +54,7 @@ static size_t faviconSize  = 0;
 
 
 xmrig::Httpd::Httpd(Base *base) :
-    m_base(base),
-    m_http(nullptr),
-    m_server(nullptr),
-    m_port(0)
+    m_base(base)
 {
     m_httpListener = std::make_shared<HttpListener>(this);
 
@@ -64,13 +67,19 @@ xmrig::Httpd::~Httpd() = default;
 
 bool xmrig::Httpd::start()
 {
-    const Http &config = m_base->config()->http();
+    const auto &config = m_base->config()->http();
 
     if (!config.isEnabled()) {
         return true;
     }
 
-    m_http   = new HttpServer(m_httpListener);
+#   ifdef XMRIG_FEATURE_TLS
+    m_http = new HttpsServer(m_httpListener);
+    m_http->setTls(m_base->config()->tls());
+#   else
+    m_http = new HttpServer(m_httpListener);
+#   endif
+
     m_server = new TcpServer(config.host(), config.port(), m_http);
 
     const int rc = m_server->bind();
@@ -143,7 +152,7 @@ void xmrig::Httpd::onHttpData(const HttpData &data)
         }
 #       endif
 
-        return HttpResponse(data.id(), 404).end();
+        return HttpResponse(data.id(), HTTP_STATUS_NOT_FOUND).end();
     }
 
     if (data.method > 4) {

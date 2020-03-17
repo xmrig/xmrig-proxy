@@ -46,6 +46,7 @@
 #ifdef XMRIG_FEATURE_TLS
 #   include "base/net/tls/TlsContext.h"
 #   include "proxy/tls/MinerTls.h"
+#   include <openssl/bio.h>
 #endif
 
 
@@ -573,7 +574,6 @@ void xmrig::Miner::startTLS()
 #   ifdef XMRIG_FEATURE_TLS
     if (m_tlsCtx && (m_strictTls || *m_recvBuf.base != '{')) {
         m_tls = new Tls(m_tlsCtx->ctx(), this);
-        m_tls->accept();
     }
 #   endif
 }

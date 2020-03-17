@@ -59,6 +59,7 @@ public:
     virtual const char *tlsVersion() const      = 0;
     virtual std::string ip() const              = 0;
     virtual uint16_t port() const               = 0;
+    virtual void end(std::string &&data)        = 0;
 
     int method      = 0;
     int status      = 0;

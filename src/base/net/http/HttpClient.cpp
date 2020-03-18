@@ -112,7 +112,7 @@ void xmrig::HttpClient::handshake()
     headers.clear();
 
     body.insert(0, ss.str());
-    end(std::move(body));
+    write(std::move(body), false);
 }
 
 

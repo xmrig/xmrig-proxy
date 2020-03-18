@@ -66,7 +66,7 @@ bool xmrig::HttpsContext::write(BIO *bio)
 
     (void) BIO_reset(bio);
 
-    HttpContext::end(std::move(body));
+    HttpContext::write(std::move(body), m_close);
 
     return true;
 }
@@ -86,12 +86,14 @@ void xmrig::HttpsContext::shutdown()
 }
 
 
-void xmrig::HttpsContext::end(std::string &&data)
+void xmrig::HttpsContext::write(std::string &&data, bool close)
 {
+    m_close = close;
+
     if (m_mode == TLS_ON) {
         send(data.data(), data.size());
     }
     else {
-        HttpContext::end(std::move(data));
+        HttpContext::write(std::move(data), close);
     }
 }

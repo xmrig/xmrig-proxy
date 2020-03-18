@@ -57,11 +57,11 @@ protected:
     void read(const char *data, size_t size) override;
 
 private:
-    void end(std::string &&data) override;
+    void write(std::string &&data, bool close) override;
 
     bool verify(X509 *cert);
     bool verifyFingerprint(X509 *cert);
-    void flush();
+    void flush(bool close);
 
     BIO *m_read                         = nullptr;
     BIO *m_write                        = nullptr;

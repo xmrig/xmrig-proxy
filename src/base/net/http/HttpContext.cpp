@@ -46,10 +46,20 @@ static uint64_t SEQUENCE = 0;
 class HttpWriteBaton : public Baton<uv_write_t>
 {
 public:
-    inline HttpWriteBaton(std::string &&body) :
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(HttpWriteBaton)
+
+    inline HttpWriteBaton(std::string &&body, HttpContext *ctx) :
+        m_ctx(ctx),
         m_body(std::move(body))
     {
         m_buf = uv_buf_init(const_cast<char *>(m_body.c_str()), m_body.size());
+    }
+
+    inline ~HttpWriteBaton()
+    {
+        if (m_ctx) {
+            m_ctx->close();
+        }
     }
 
     void write(uv_stream_t *stream)
@@ -58,6 +68,7 @@ public:
     }
 
 private:
+    HttpContext *m_ctx;
     std::string m_body;
     uv_buf_t m_buf{};
 };
@@ -96,13 +107,13 @@ xmrig::HttpContext::~HttpContext()
 }
 
 
-void xmrig::HttpContext::end(std::string &&data)
+void xmrig::HttpContext::write(std::string &&data, bool close)
 {
     if (uv_is_writable(stream()) != 1) {
         return;
     }
 
-    auto baton = new HttpWriteBaton(std::move(data));
+    auto baton = new HttpWriteBaton(std::move(data), close ? this : nullptr);
     baton->write(stream());
 }
 

@@ -94,7 +94,7 @@ void xmrig::HttpsClient::handshake()
 
     SSL_do_handshake(m_ssl);
 
-    flush();
+    flush(false);
 }
 
 
@@ -106,7 +106,7 @@ void xmrig::HttpsClient::read(const char *data, size_t size)
         const int rc = SSL_connect(m_ssl);
 
         if (rc < 0 && SSL_get_error(m_ssl, rc) == SSL_ERROR_WANT_READ) {
-            flush();
+            flush(false);
         } else if (rc == 1) {
             X509 *cert = SSL_get_peer_certificate(m_ssl);
             if (!verify(cert)) {
@@ -136,12 +136,12 @@ void xmrig::HttpsClient::read(const char *data, size_t size)
 }
 
 
-void xmrig::HttpsClient::end(std::string &&data)
+void xmrig::HttpsClient::write(std::string &&data, bool close)
 {
     const std::string body = std::move(data);
     SSL_write(m_ssl, body.data(), body.size());
 
-    flush();
+    flush(close);
 }
 
 
@@ -188,7 +188,7 @@ bool xmrig::HttpsClient::verifyFingerprint(X509 *cert)
 }
 
 
-void xmrig::HttpsClient::flush()
+void xmrig::HttpsClient::flush(bool close)
 {
     if (uv_is_writable(stream()) != 1) {
         return;
@@ -200,5 +200,5 @@ void xmrig::HttpsClient::flush()
 
     (void) BIO_reset(m_write);
 
-    HttpContext::end(std::move(body));
+    HttpContext::write(std::move(body), close);
 }

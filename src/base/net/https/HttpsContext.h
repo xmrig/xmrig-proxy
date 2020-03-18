@@ -52,7 +52,7 @@ protected:
     void shutdown() override;
 
     // HttpContext
-    void end(std::string &&data) override;
+    void write(std::string &&data, bool close) override;
 
 private:
     enum TlsMode : uint32_t {
@@ -61,7 +61,8 @@ private:
       TLS_ON
     };
 
-    TlsMode m_mode = TLS_AUTO;
+    bool m_close    = false;
+    TlsMode m_mode  = TLS_AUTO;
 };
 
 

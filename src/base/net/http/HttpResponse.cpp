@@ -107,5 +107,5 @@ void xmrig::HttpResponse::end(const char *data, size_t size)
                    );
     }
 
-    ctx->end(std::move(body));
+    ctx->write(std::move(body), true);
 }

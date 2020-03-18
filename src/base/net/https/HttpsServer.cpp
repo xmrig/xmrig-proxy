@@ -46,20 +46,9 @@ xmrig::HttpsServer::~HttpsServer()
 
 bool xmrig::HttpsServer::setTls(const TlsConfig &config)
 {
-    if (!config.isValid()) {
-        return false;
-    }
+    m_tls = TlsContext::create(config);
 
-    auto tls = new TlsContext();
-    if (!tls->load(config)) {
-        delete tls;
-
-        return false;
-    }
-
-    m_tls = tls;
-
-    return true;
+    return m_tls != nullptr;
 }
 
 

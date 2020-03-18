@@ -79,10 +79,6 @@ bool xmrig::Config::read(const IJsonReader &reader, const char *fileName)
     setMode(reader.getString("mode"));
     setWorkersMode(reader.getValue("workers"));
 
-#   ifdef XMRIG_FEATURE_TLS
-    m_tls = reader.getValue("tls");
-#   endif
-
     const rapidjson::Value &bind = reader.getArray("bind");
     if (bind.IsArray()) {
         for (const rapidjson::Value &value : bind.GetArray()) {
@@ -118,44 +114,44 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
 
     auto &allocator = doc.GetAllocator();
 
-    doc.AddMember("access-log-file", m_accessLog.toJSON(), allocator);
-    doc.AddMember("access-password", m_password.toJSON(), allocator);
-    doc.AddMember("algo-ext",        m_algoExt, allocator);
+    doc.AddMember("access-log-file",                m_accessLog.toJSON(), allocator);
+    doc.AddMember("access-password",                m_password.toJSON(), allocator);
+    doc.AddMember("algo-ext",                       m_algoExt, allocator);
 
     Value api(kObjectType);
-    api.AddMember("id",           m_apiId.toJSON(), allocator);
-    api.AddMember("worker-id",    m_apiWorkerId.toJSON(), allocator);
-    doc.AddMember("api",          api, allocator);
-    doc.AddMember("http",         m_http.toJSON(doc), allocator);
+    api.AddMember(StringRef(kApiId),                m_apiId.toJSON(), allocator);
+    api.AddMember(StringRef(kApiWorkerId),          m_apiWorkerId.toJSON(), allocator);
+    doc.AddMember(StringRef(kApi),                  api, allocator);
+    doc.AddMember(StringRef(kHttp),                 m_http.toJSON(doc), allocator);
 
-    doc.AddMember("background",   isBackground(), allocator);
+    doc.AddMember(StringRef(kBackground),           isBackground(), allocator);
 
     Value bind(kArrayType);
     for (const auto &host : m_bind) {
         bind.PushBack(host.toJSON(doc), allocator);
     }
 
-    doc.AddMember("bind",          bind, allocator);
-    doc.AddMember("colors",        Log::isColors(), allocator);
-    doc.AddMember("custom-diff",   diff(), allocator);
-    doc.AddMember("custom-diff-stats", m_customDiffStats, allocator);
-    doc.AddMember("donate-level",  m_pools.donateLevel(), allocator);
-    doc.AddMember("log-file",      m_logFile.toJSON(), allocator);
-    doc.AddMember("mode",          StringRef(modeName()), allocator);
-    doc.AddMember("pools",         m_pools.toJSON(doc), allocator);
-    doc.AddMember("retries",       m_pools.retries(), allocator);
-    doc.AddMember("retry-pause",   m_pools.retryPause(), allocator);
-    doc.AddMember("reuse-timeout", reuseTimeout(), allocator);
+    doc.AddMember("bind",                           bind, allocator);
+    doc.AddMember(StringRef(kColors),               Log::isColors(), allocator);
+    doc.AddMember("custom-diff",                    diff(), allocator);
+    doc.AddMember("custom-diff-stats",              m_customDiffStats, allocator);
+    doc.AddMember(StringRef(Pools::kDonateLevel),   m_pools.donateLevel(), allocator);
+    doc.AddMember(StringRef(kLogFile),              m_logFile.toJSON(), allocator);
+    doc.AddMember("mode",                           StringRef(modeName()), allocator);
+    doc.AddMember(StringRef(Pools::kPools),         m_pools.toJSON(doc), allocator);
+    doc.AddMember(StringRef(Pools::kRetries),       m_pools.retries(), allocator);
+    doc.AddMember(StringRef(Pools::kRetryPause),    m_pools.retryPause(), allocator);
+    doc.AddMember("reuse-timeout",                  reuseTimeout(), allocator);
 
 #   ifdef XMRIG_FEATURE_TLS
-    doc.AddMember("tls", m_tls.toJSON(doc), allocator);
+    doc.AddMember(StringRef(kTls),                  m_tls.toJSON(doc), allocator);
 #   endif
 
-    doc.AddMember("user-agent",   m_userAgent.toJSON(), allocator);
-    doc.AddMember("syslog",       isSyslog(), allocator);
-    doc.AddMember("verbose",      isVerbose(), allocator);
-    doc.AddMember("watch",        m_watch,     allocator);
-    doc.AddMember("workers",      Workers::modeToJSON(workersMode()), allocator);
+    doc.AddMember(StringRef(kUserAgent),            m_userAgent.toJSON(), allocator);
+    doc.AddMember(StringRef(kSyslog),               isSyslog(), allocator);
+    doc.AddMember(StringRef(kVerbose),              isVerbose(), allocator);
+    doc.AddMember(StringRef(kWatch),                m_watch,     allocator);
+    doc.AddMember("workers",                        Workers::modeToJSON(workersMode()), allocator);
 }
 
 

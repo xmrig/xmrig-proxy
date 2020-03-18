@@ -73,9 +73,11 @@ bool xmrig::Httpd::start()
         return true;
     }
 
+    bool tls = false;
+
 #   ifdef XMRIG_FEATURE_TLS
     m_http = new HttpsServer(m_httpListener);
-    m_http->setTls(m_base->config()->tls());
+    tls = m_http->setTls(m_base->config()->tls());
 #   else
     m_http = new HttpServer(m_httpListener);
 #   endif
@@ -83,8 +85,9 @@ bool xmrig::Httpd::start()
     m_server = new TcpServer(config.host(), config.port(), m_http);
 
     const int rc = m_server->bind();
-    Log::print(GREEN_BOLD(" * ") WHITE_BOLD("%-13s") BLUE_BOLD("%s:%d") " " RED_BOLD("%s"),
+    Log::print(GREEN_BOLD(" * ") WHITE_BOLD("%-13s") CSI "1;%dm%s:%d" " " RED_BOLD("%s"),
                "HTTP API",
+               tls ? 32 : 36,
                config.host().data(),
                rc < 0 ? config.port() : rc,
                rc < 0 ? uv_strerror(rc) : ""

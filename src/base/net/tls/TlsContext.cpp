@@ -93,29 +93,34 @@ static DH *get_dh2048()
 } // namespace xmrig
 
 
-xmrig::TlsContext::TlsContext() :
-    m_ctx(nullptr)
-{
-    m_ctx = SSL_CTX_new(SSLv23_server_method());
-}
-
-
 xmrig::TlsContext::~TlsContext()
 {
     SSL_CTX_free(m_ctx);
 }
 
 
-bool xmrig::TlsContext::load(const TlsConfig &config)
+xmrig::TlsContext *xmrig::TlsContext::create(const TlsConfig &config)
 {
-    if (m_ctx == nullptr) {
-        LOG_ERR("Unable to create SSL context");
-
-        return false;
+    if (!config.isEnabled()) {
+        return nullptr;
     }
 
-    if (!config.isValid()) {
-        LOG_ERR("No valid TLS configuration provided");
+    auto tls = new TlsContext();
+    if (!tls->load(config)) {
+        delete tls;
+
+        return nullptr;
+    }
+
+    return tls;
+}
+
+
+bool xmrig::TlsContext::load(const TlsConfig &config)
+{
+    m_ctx = SSL_CTX_new(SSLv23_server_method());
+    if (m_ctx == nullptr) {
+        LOG_ERR("Unable to create SSL context");
 
         return false;
     }

@@ -87,26 +87,6 @@ void xmrig::ConfigTransform::transform(rapidjson::Document &doc, int key, const 
     case IConfig::LoginFileKey: /* --login-file */
         return set(doc, "login-file", arg);
 
-#   ifdef XMRIG_FEATURE_TLS
-    case IConfig::TlsCertKey: /* --tls-cert */
-        return set(doc, kTls, "cert", arg);
-
-    case IConfig::TlsCertKeyKey: /* --tls-cert-key */
-        return set(doc, kTls, "cert-key", arg);
-
-    case IConfig::TlsDHparamKey: /* --tls-dhparam */
-        return set(doc, kTls, "dhparam", arg);
-
-    case IConfig::TlsCiphersKey: /* --tls-ciphers */
-        return set(doc, kTls, "ciphers", arg);
-
-    case IConfig::TlsCipherSuitesKey: /* --tls-ciphersuites */
-        return set(doc, kTls, "ciphersuites", arg);
-
-    case IConfig::TlsProtocolsKey: /* --tls-protocols */
-        return set(doc, kTls, "protocols", arg);
-#   endif
-
     default:
         break;
     }
@@ -117,7 +97,7 @@ void xmrig::ConfigTransform::transformBoolean(rapidjson::Document &doc, int key,
 {
     switch (key) {
     case IConfig::CustomDiffStatsKey: /* --custom-diff-stats */
-            return set(doc, "custom-diff-stats", enable);
+        return set(doc, "custom-diff-stats", enable);
 
     case IConfig::DebugKey: /* --debug */
         return set(doc, "debug", enable);

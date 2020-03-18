@@ -34,16 +34,19 @@
 namespace xmrig {
 
 
-static const char *kCert            = "cert";
-static const char *kCertKey         = "cert_key";
-static const char *kCiphers         = "ciphers";
-static const char *kCipherSuites    = "ciphersuites";
-static const char *kDhparam         = "dhparam";
-static const char *kProtocols       = "protocols";
-static const char *kTLSv1           = "TLSv1";
-static const char *kTLSv1_1         = "TLSv1.1";
-static const char *kTLSv1_2         = "TLSv1.2";
-static const char *kTLSv1_3         = "TLSv1.3";
+const char *TlsConfig::kCert            = "cert";
+const char *TlsConfig::kEnabled         = "enabled";
+const char *TlsConfig::kCertKey         = "cert_key";
+const char *TlsConfig::kCiphers         = "ciphers";
+const char *TlsConfig::kCipherSuites    = "ciphersuites";
+const char *TlsConfig::kDhparam         = "dhparam";
+const char *TlsConfig::kGen             = "gen";
+const char *TlsConfig::kProtocols       = "protocols";
+
+static const char *kTLSv1               = "TLSv1";
+static const char *kTLSv1_1             = "TLSv1.1";
+static const char *kTLSv1_2             = "TLSv1.2";
+static const char *kTLSv1_3             = "TLSv1.3";
 
 
 } // namespace xmrig
@@ -59,6 +62,8 @@ static const char *kTLSv1_3         = "TLSv1.3";
 xmrig::TlsConfig::TlsConfig(const rapidjson::Value &value)
 {
     if (value.IsObject()) {
+        m_enabled = Json::getBool(value, kEnabled, m_enabled);
+
         setProtocols(Json::getString(value, kProtocols));
         setCert(Json::getString(value, kCert));
         setKey(Json::getString(value, kCertKey));
@@ -70,15 +75,27 @@ xmrig::TlsConfig::TlsConfig(const rapidjson::Value &value)
             setKey(Json::getString(value, "cert-key"));
         }
 
-        if (!isValid()) {
+        if (m_enabled && !isValid()) {
+            generate(Json::getString(value, kGen));
+        }
+    }
+    else if (value.IsBool()) {
+        m_enabled = value.GetBool();
+
+        if (m_enabled) {
             generate();
         }
     }
-    else if ((value.IsBool() && value.GetBool()) || value.IsNull()) {
+#   ifdef XMRIG_PROXY_PROJECT
+    else if (value.IsNull()) {
         generate();
     }
+#   endif
     else if (value.IsString()) {
         generate(value.GetString());
+    }
+    else {
+        m_enabled = false;
     }
 }
 
@@ -99,6 +116,8 @@ bool xmrig::TlsConfig::generate(const char *commonName)
     setCert(gen.cert());
     setKey(gen.certKey());
 
+    m_enabled = true;
+
     return true;
 }
 
@@ -109,6 +128,7 @@ rapidjson::Value xmrig::TlsConfig::toJSON(rapidjson::Document &doc) const
 
     auto &allocator = doc.GetAllocator();
     Value obj(kObjectType);
+    obj.AddMember(StringRef(kEnabled), m_enabled, allocator);
 
     if (m_protocols > 0) {
         std::vector<String> protocols;
@@ -136,7 +156,7 @@ rapidjson::Value xmrig::TlsConfig::toJSON(rapidjson::Document &doc) const
     }
 
     obj.AddMember(StringRef(kCert),         m_cert.toJSON(), allocator);
-    obj.AddMember(StringRef(kCertKey),     m_key.toJSON(), allocator);
+    obj.AddMember(StringRef(kCertKey),      m_key.toJSON(), allocator);
     obj.AddMember(StringRef(kCiphers),      m_ciphers.toJSON(), allocator);
     obj.AddMember(StringRef(kCipherSuites), m_cipherSuites.toJSON(), allocator);
     obj.AddMember(StringRef(kDhparam),      m_dhparam.toJSON(), allocator);

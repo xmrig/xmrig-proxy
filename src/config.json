@@ -50,7 +50,15 @@
     "retries": 2,
     "retry-pause": 1,
     "reuse-timeout": 0,
-    "tls": true,
+    "tls": {
+        "enabled": true,
+        "protocols": null,
+        "cert": null,
+        "cert_key": null,
+        "ciphers": null,
+        "ciphersuites": null,
+        "dhparam": null
+    },
     "user-agent": null,
     "syslog": false,
     "verbose": false,

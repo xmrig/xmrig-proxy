@@ -33,11 +33,6 @@
 #include "rapidjson/fwd.h"
 
 
-#ifdef XMRIG_FEATURE_TLS
-#   include "base/net/tls/TlsConfig.h"
-#endif
-
-
 #include <cstdint>
 #include <vector>
 
@@ -81,10 +76,6 @@ public:
     inline uint64_t diff() const                   { return m_diff; }
     inline Workers::Mode workersMode() const       { return m_workersMode; }
 
-#   ifdef XMRIG_FEATURE_TLS
-    inline const TlsConfig &tls() const { return m_tls; }
-#   endif
-
 private:
     void setCustomDiff(uint64_t diff);
     void setMode(const char *mode);
@@ -100,10 +91,6 @@ private:
     String m_password;
     uint64_t m_diff             = 0;
     Workers::Mode m_workersMode = Workers::RigID;
-
-#   ifdef XMRIG_FEATURE_TLS
-    TlsConfig m_tls;
-#   endif
 };
 
 

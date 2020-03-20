@@ -42,7 +42,7 @@ bool xmrig::Miner::Tls::write(BIO *bio)
 
 void xmrig::Miner::Tls::parse(char *data, size_t size)
 {
-    m_miner->parse(data, size);
+    m_miner->m_reader.parse(data, size);
 }
 
 

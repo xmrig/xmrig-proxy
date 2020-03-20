@@ -31,6 +31,8 @@
 #include <uv.h>
 
 
+#include "base/kernel/interfaces/ILineListener.h"
+#include "base/net/tools/LineReader.h"
 #include "base/net/tools/Storage.h"
 #include "base/tools/Object.h"
 #include "base/tools/String.h"
@@ -47,7 +49,7 @@ class Job;
 class TlsContext;
 
 
-class Miner
+class Miner : public ILineListener
 {
 public:
     XMRIG_DISABLE_COPY_MOVE_DEFAULT(Miner)
@@ -67,7 +69,8 @@ public:
     };
 
     Miner(const TlsContext *ctx, uint16_t port, bool strictTls);
-    ~Miner();
+    ~Miner() override;
+
     bool accept(uv_stream_t *server);
     void forwardJob(const Job &job, const char *algo);
     void replyWithError(int64_t id, const char *message);
@@ -99,6 +102,9 @@ public:
     inline void setMapperId(ssize_t mapperId)                     { m_mapperId = mapperId; }
     inline void setRouteId(int32_t id)                            { m_routeId = id; }
 
+protected:
+    inline void onLine(char *line, size_t size) override          { parse(line, size); }
+
 private:
     class Tls;
 
@@ -110,16 +116,14 @@ private:
     bool send(BIO *bio);
     void heartbeat();
     void parse(char *line, size_t len);
-    void read();
-    void read(ssize_t nread);
+    void read(ssize_t nread, const uv_buf_t *buf);
     void send(const rapidjson::Document &doc);
     void send(int size);
     void sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height, const String &seedHash);
     void setState(State state);
     void shutdown(bool had_error);
-    void startTLS();
+    void startTLS(const char *data);
 
-    static void onAllocBuffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);
     static void onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
     static void onTimeout(uv_timer_t *handle);
 
@@ -127,7 +131,6 @@ private:
 
     static inline Miner *getMiner(void *data) { return m_storage.get(data); }
 
-    char m_buf[4096]{};
     char m_ip[46]{};
     const bool m_strictTls;
     const String m_rpcId;
@@ -135,7 +138,7 @@ private:
     int32_t m_routeId       = -1;
     int64_t m_id;
     int64_t m_loginId       = 0;
-    size_t m_recvBufPos     = 0;
+    LineReader m_reader;
     ssize_t m_mapperId      = -1;
     State m_state           = WaitLoginState;
     std::bitset<EXT_MAX> m_extensions;
@@ -153,7 +156,6 @@ private:
     uint64_t m_tx           = 0;
     uint8_t m_fixedByte     = 0;
     uintptr_t m_key;
-    uv_buf_t m_recvBuf{};
     uv_tcp_t *m_socket;
 
     static char m_sendBuf[16384];

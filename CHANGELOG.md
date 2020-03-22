@@ -1,3 +1,9 @@
+# v5.10.0
+- [#1596](https://github.com/xmrig/xmrig/issues/1596) Major TLS (Transport Layer Security) subsystem update.
+- Reduced memory consumption by 4 kB per connection.
+- Added command line option `--tls-gen`.
+- Added command line option `--data-dir`.
+
 # v5.9.0
 - [#1578](https://github.com/xmrig/xmrig/pull/1578) Added new RandomKEVA algorithm for upcoming Kevacoin fork, as `"algo": "rx/keva"` or `"coin": "keva"`.
 

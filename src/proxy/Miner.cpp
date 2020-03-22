@@ -26,6 +26,7 @@
 #include "base/io/json/Json.h"
 #include "base/io/log/Log.h"
 #include "base/net/stratum/Job.h"
+#include "base/net/tools/NetBuffer.h"
 #include "base/tools/Buffer.h"
 #include "base/tools/Chrono.h"
 #include "base/tools/Handle.h"
@@ -37,7 +38,6 @@
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"
-#include "proxy/tls/TlsContext.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
 #include "rapidjson/stringbuffer.h"
@@ -45,7 +45,9 @@
 
 
 #ifdef XMRIG_FEATURE_TLS
-#   include "proxy/tls/Tls.h"
+#   include "base/net/tls/TlsContext.h"
+#   include "proxy/tls/MinerTls.h"
+#   include <openssl/bio.h>
 #endif
 
 
@@ -56,32 +58,26 @@
 
 namespace xmrig {
     static int64_t nextId = 0;
-    char Miner::m_sendBuf[2048] = { 0 };
+    char Miner::m_sendBuf[16384] = { 0 };
     Storage<Miner> Miner::m_storage;
 }
 
 
-xmrig::Miner::Miner(const TlsContext *ctx, uint16_t port) :
+xmrig::Miner::Miner(const TlsContext *ctx, uint16_t port, bool strictTls) :
+    m_strictTls(strictTls),
     m_rpcId(Buffer::randomBytes(8).toHex()),
+    m_tlsCtx(ctx),
     m_id(++nextId),
     m_localPort(port),
     m_expire(Chrono::currentMSecsSinceEpoch() + kLoginTimeout),
     m_timestamp(Chrono::currentMSecsSinceEpoch())
 {
+    m_reader.setListener(this);
     m_key = m_storage.add(this);
 
     m_socket = new uv_tcp_t;
     m_socket->data = m_storage.ptr(m_key);
     uv_tcp_init(uv_default_loop(), m_socket);
-
-    m_recvBuf.base = m_buf;
-    m_recvBuf.len  = sizeof(m_buf);
-
-#   ifdef XMRIG_FEATURE_TLS
-    if (ctx != nullptr) {
-        m_tls = new Tls(ctx->ctx(), this);
-    }
-#   endif
 
     Counters::connections++;
 }
@@ -123,13 +119,7 @@ bool xmrig::Miner::accept(uv_stream_t *server)
         uv_ip4_name(reinterpret_cast<sockaddr_in*>(&addr), m_ip, 16);
     }
 
-    uv_read_start(reinterpret_cast<uv_stream_t*>(m_socket), Miner::onAllocBuffer, Miner::onRead);
-
-#   ifdef XMRIG_FEATURE_TLS
-    if (isTLS()) {
-        return m_tls->accept();
-    }
-#   endif
+    uv_read_start(reinterpret_cast<uv_stream_t*>(m_socket), NetBuffer::onAlloc, Miner::onRead);
 
     return true;
 }
@@ -323,8 +313,6 @@ void xmrig::Miner::parse(char *line, size_t len)
         return;
     }
 
-    line[len - 1] = '\0';
-
     LOG_DEBUG("[%s] received (%d bytes): \"%s\"", m_ip, len, line);
 
     if (len < 32 || line[0] != '{') {
@@ -351,50 +339,32 @@ void xmrig::Miner::parse(char *line, size_t len)
 }
 
 
-void xmrig::Miner::read()
+void xmrig::Miner::read(ssize_t nread, const uv_buf_t *buf)
 {
-    char* end;
-    char* start = m_recvBuf.base;
-    size_t remaining = m_recvBufPos;
+    const auto size = static_cast<size_t>(nread);
 
-    while ((end = static_cast<char*>(memchr(start, '\n', remaining))) != nullptr) {
-        end++;
-        size_t len = end - start;
-        parse(start, len);
-
-        remaining -= len;
-        start = end;
+    if (nread < 0) {
+        return shutdown(nread != UV_EOF);;
     }
 
-    if (remaining == 0) {
-        m_recvBufPos = 0;
-        return;
+    if (size && m_rx == 0) {
+        startTLS(buf->base);
     }
 
-    if (start == m_recvBuf.base) {
-        return;
-    }
+    m_rx += size;
 
-    memcpy(m_recvBuf.base, start, remaining);
-    m_recvBufPos = remaining;
-}
-
-
-void xmrig::Miner::readTLS(int nread)
-{
 #   ifdef XMRIG_FEATURE_TLS
     if (isTLS()) {
         LOG_DEBUG("[%s] TLS received (%d bytes)", m_ip, nread);
 
-        m_tls->read(m_recvBuf.base, m_recvBufPos);
-        m_recvBufPos = 0;
+        m_tls->read(buf->base, size);
     }
     else
     {
-        read();
+        m_reader.parse(buf->base, size);
     }
 #   else
-    read();
+    m_reader.parse(buf->base, size);
 #   endif
 }
 
@@ -565,33 +535,24 @@ void xmrig::Miner::shutdown(bool)
 }
 
 
-void xmrig::Miner::onAllocBuffer(uv_handle_t *handle, size_t, uv_buf_t *buf)
+void xmrig::Miner::startTLS(const char *data)
 {
-    auto miner = getMiner(handle->data);
-    if (!miner) {
-        return;
+#   ifdef XMRIG_FEATURE_TLS
+    if (m_tlsCtx && (m_strictTls || *data != '{')) {
+        m_tls = new Tls(m_tlsCtx->ctx(), this);
     }
-
-    buf->base = &miner->m_recvBuf.base[miner->m_recvBufPos];
-    buf->len  = miner->m_recvBuf.len - miner->m_recvBufPos;
+#   endif
 }
 
 
-void xmrig::Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *)
+void xmrig::Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
 {
-    Miner *miner = getMiner(stream->data);
-    if (!miner) {
-        return;
+    auto miner = getMiner(stream->data);
+    if (miner) {
+        miner->read(nread, buf);
     }
 
-    if (nread < 0 || (size_t) nread > (sizeof(m_buf) - 8 - miner->m_recvBufPos)) {
-        return miner->shutdown(nread != UV_EOF);;
-    }
-
-    miner->m_rx += nread;
-    miner->m_recvBufPos += nread;
-
-    miner->readTLS(static_cast<int>(nread));
+    NetBuffer::release(buf);
 }
 
 
@@ -601,8 +562,6 @@ void xmrig::Miner::onTimeout(uv_timer_t *handle)
     if (!miner) {
         return;
     }
-
-    miner->m_recvBuf.base[sizeof(m_buf) - 1] = '\0';
 
     miner->shutdown(true);
 }

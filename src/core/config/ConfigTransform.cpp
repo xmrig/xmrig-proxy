@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -32,7 +32,10 @@ namespace xmrig
 {
 
 static const char *kBind = "bind";
+
+#ifdef XMRIG_FEATURE_TLS
 static const char *kTls  = "tls";
+#endif
 
 }
 
@@ -52,7 +55,10 @@ void xmrig::ConfigTransform::transform(rapidjson::Document &doc, int key, const 
             if (host.isValid()) {
                 add(doc, kBind, "host", host.host(), true);
                 add(doc, kBind, "port", host.port());
-                add(doc, kBind, "tls",  key == IConfig::TlsBindKey);
+
+#               ifdef XMRIG_FEATURE_TLS
+                add(doc, kBind, kTls,  key == IConfig::TlsBindKey);
+#               endif
             }
         }
         break;
@@ -81,26 +87,6 @@ void xmrig::ConfigTransform::transform(rapidjson::Document &doc, int key, const 
     case IConfig::LoginFileKey: /* --login-file */
         return set(doc, "login-file", arg);
 
-#   ifdef XMRIG_FEATURE_TLS
-    case IConfig::TlsCertKey: /* --tls-cert */
-        return set(doc, kTls, "cert", arg);
-
-    case IConfig::TlsCertKeyKey: /* --tls-cert-key */
-        return set(doc, kTls, "cert-key", arg);
-
-    case IConfig::TlsDHparamKey: /* --tls-dhparam */
-        return set(doc, kTls, "dhparam", arg);
-
-    case IConfig::TlsCiphersKey: /* --tls-ciphers */
-        return set(doc, kTls, "ciphers", arg);
-
-    case IConfig::TlsCipherSuitesKey: /* --tls-ciphersuites */
-        return set(doc, kTls, "ciphersuites", arg);
-
-    case IConfig::TlsProtocolsKey: /* --tls-protocols */
-        return set(doc, kTls, "protocols", arg);
-#   endif
-
     default:
         break;
     }
@@ -111,7 +97,7 @@ void xmrig::ConfigTransform::transformBoolean(rapidjson::Document &doc, int key,
 {
     switch (key) {
     case IConfig::CustomDiffStatsKey: /* --custom-diff-stats */
-            return set(doc, "custom-diff-stats", enable);
+        return set(doc, "custom-diff-stats", enable);
 
     case IConfig::DebugKey: /* --debug */
         return set(doc, "debug", enable);

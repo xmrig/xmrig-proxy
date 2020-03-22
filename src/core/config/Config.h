@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -33,11 +33,6 @@
 #include "rapidjson/fwd.h"
 
 
-#ifdef XMRIG_FEATURE_TLS
-#   include "proxy/tls/TlsConfig.h"
-#endif
-
-
 #include <cstdint>
 #include <vector>
 
@@ -60,7 +55,6 @@ public:
 
     Config() = default;
 
-    bool isTLS() const;
     const char *modeName() const;
 
     bool isVerbose() const;
@@ -82,10 +76,6 @@ public:
     inline uint64_t diff() const                   { return m_diff; }
     inline Workers::Mode workersMode() const       { return m_workersMode; }
 
-#   ifdef XMRIG_FEATURE_TLS
-    inline const TlsConfig &tls() const { return m_tls; }
-#   endif
-
 private:
     void setCustomDiff(uint64_t diff);
     void setMode(const char *mode);
@@ -101,10 +91,6 @@ private:
     String m_password;
     uint64_t m_diff             = 0;
     Workers::Mode m_workersMode = Workers::RigID;
-
-#   ifdef XMRIG_FEATURE_TLS
-    TlsConfig m_tls;
-#   endif
 };
 
 

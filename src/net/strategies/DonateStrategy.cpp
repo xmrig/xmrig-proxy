@@ -23,15 +23,15 @@
  */
 
 
+#include "net/strategies/DonateStrategy.h"
+#include "base/crypto/keccak.h"
 #include "base/kernel/interfaces/IStrategyListener.h"
 #include "base/kernel/Platform.h"
 #include "base/net/stratum/Client.h"
 #include "base/tools/Buffer.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
-#include "crypto/common/keccak.h"
 #include "donate.h"
-#include "net/strategies/DonateStrategy.h"
 #include "proxy/Counters.h"
 #include "proxy/StatsData.h"
 #include "rapidjson/document.h"

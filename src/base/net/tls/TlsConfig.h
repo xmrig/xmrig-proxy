@@ -37,6 +37,15 @@ namespace xmrig {
 class TlsConfig
 {
 public:
+    static const char *kCert;
+    static const char *kCertKey;
+    static const char *kCiphers;
+    static const char *kCipherSuites;
+    static const char *kDhparam;
+    static const char *kEnabled;
+    static const char *kGen;
+    static const char *kProtocols;
+
     enum Versions {
         TLSv1   = 1,
         TLSv1_1 = 2,
@@ -47,6 +56,7 @@ public:
     TlsConfig() = default;
     TlsConfig(const rapidjson::Value &object);
 
+    inline bool isEnabled() const                    { return m_enabled && isValid(); }
     inline bool isValid() const                      { return !m_cert.isEmpty() && !m_key.isEmpty(); }
     inline const char *cert() const                  { return m_cert.data(); }
     inline const char *ciphers() const               { return m_ciphers.isEmpty() ? nullptr : m_ciphers.data(); }
@@ -61,11 +71,13 @@ public:
     inline void setKey(const char *key)              { m_key = key; }
     inline void setProtocols(uint32_t protocols)     { m_protocols = protocols; }
 
+    bool generate(const char *commonName = nullptr);
     rapidjson::Value toJSON(rapidjson::Document &doc) const;
     void setProtocols(const char *protocols);
     void setProtocols(const rapidjson::Value &protocols);
 
 private:
+    bool m_enabled       = true;
     uint32_t m_protocols = 0;
     String m_cert;
     String m_ciphers;

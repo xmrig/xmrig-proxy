@@ -81,6 +81,7 @@ Options:\n\
 #ifdef XMRIG_FEATURE_TLS
 "\
       --tls                 enable SSL/TLS support for pool connection (needs pool support)\n\
+      --tls-gen=HOSTNAME    generate TLS certificate for specific hostname\n\
       --tls-bind=ADDR       bind to specified address with enabled TLS\n\
       --tls-cert=FILE       load TLS certificate chain from a file in the PEM format\n\
       --tls-cert-key=FILE   load TLS certificate private key from a file in the PEM format\n\

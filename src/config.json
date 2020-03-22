@@ -51,6 +51,7 @@
     "retry-pause": 1,
     "reuse-timeout": 0,
     "tls": {
+        "enabled": true,
         "protocols": null,
         "cert": null,
         "cert_key": null,

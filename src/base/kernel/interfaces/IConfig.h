@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 #define XMRIG_ICONFIG_H
 
 
-#include "crypto/common/Algorithm.h"
 #include "rapidjson/fwd.h"
 
 
@@ -43,6 +42,7 @@ public:
     enum Keys {
         // common
         AlgorithmKey         = 'a',
+        CoinKey              = 1025,
         ApiWorkerIdKey       = 4002,
         ApiIdKey             = 4005,
         HttpPort             = 4100,
@@ -65,12 +65,15 @@ public:
         UserAgentKey         = 1008,
         UserKey              = 'u',
         UserpassKey          = 'O',
+        ProxyKey             = 'x',
         VerboseKey           = 1100,
         TlsKey               = 1013,
         FingerprintKey       = 1014,
         ProxyDonateKey       = 1017,
         DaemonKey            = 1018,
         DaemonPollKey        = 1019,
+        SelfSelectKey        = 1028,
+        DataDirKey           = 1035,
 
         // xmrig common
         CPUPriorityKey       = 1021,
@@ -78,6 +81,7 @@ public:
         PrintTimeKey         = 1007,
 
         // xmrig cpu
+        CPUKey               = 1024,
         AVKey                = 'v',
         CPUAffinityKey       = 1020,
         DryRunKey            = 5000,
@@ -86,6 +90,15 @@ public:
         AssemblyKey          = 1015,
         RandomXInitKey       = 1022,
         RandomXNumaKey       = 1023,
+        RandomXModeKey       = 1029,
+        RandomX1GbPagesKey   = 1031,
+        RandomXWrmsrKey      = 1032,
+        RandomXRdmsrKey      = 1033,
+        CPUMaxThreadsKey     = 1026,
+        MemoryPoolKey        = 1027,
+        YieldKey             = 1030,
+        AstroBWTMaxSizeKey   = 1034,
+        AstroBWTAVX2Key      = 1036,
 
         // xmrig amd
         OclPlatformKey       = 1400,
@@ -99,11 +112,13 @@ public:
         OclMemChunkKey       = 1408,
         OclUnrollKey         = 1409,
         OclCompModeKey       = 1410,
+        OclKey               = 1411,
 
         // xmrig-proxy
         AccessLogFileKey     = 'A',
         BindKey              = 'b',
         CustomDiffKey        = 1102,
+        CustomDiffStatsKey   = 1104,
         DebugKey             = 1101,
         ModeKey              = 'm',
         PoolCoinKey          = 'C',
@@ -117,8 +132,10 @@ public:
         TlsCiphersKey        = 1112,
         TlsCipherSuitesKey   = 1113,
         TlsProtocolsKey      = 1114,
+        TlsGenKey            = 1117,
         AlgoExtKey           = 1115,
         ProxyPasswordKey     = 1116,
+        LoginFileKey         = 'L',
 
         // xmrig nvidia
         CudaMaxThreadsKey    = 1200,
@@ -128,6 +145,10 @@ public:
         CudaLaunchKey        = 1204,
         CudaAffinityKey      = 1205,
         CudaMaxUsageKey      = 1206,
+        CudaKey              = 1207,
+        CudaLoaderKey        = 1208,
+        NvmlKey              = 1209,
+        HealthPrintTimeKey   = 1210,
     };
 
     virtual ~IConfig() = default;

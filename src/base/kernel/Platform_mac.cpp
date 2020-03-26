@@ -4,8 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -28,9 +28,10 @@
 #include <stdlib.h>
 #include <sys/resource.h>
 #include <uv.h>
+#include <thread>
 
 
-#include "Platform.h"
+#include "base/kernel/Platform.h"
 #include "version.h"
 
 #ifdef XMRIG_NVIDIA_PROJECT
@@ -38,7 +39,7 @@
 #endif
 
 
-char *Platform::createUserAgent()
+char *xmrig::Platform::createUserAgent()
 {
     constexpr const size_t max = 256;
 
@@ -60,33 +61,37 @@ char *Platform::createUserAgent()
 }
 
 
-bool Platform::setThreadAffinity(uint64_t cpu_id)
+#ifndef XMRIG_FEATURE_HWLOC
+bool xmrig::Platform::setThreadAffinity(uint64_t cpu_id)
 {
     thread_port_t mach_thread;
     thread_affinity_policy_data_t policy = { static_cast<integer_t>(cpu_id) };
     mach_thread = pthread_mach_thread_np(pthread_self());
 
-    return thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1) == KERN_SUCCESS;
+    const bool result = (thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1) == KERN_SUCCESS);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    return result;
 }
+#endif
 
 
-uint32_t Platform::setTimerResolution(uint32_t resolution)
+uint32_t xmrig::Platform::setTimerResolution(uint32_t resolution)
 {
     return resolution;
 }
 
 
-void Platform::restoreTimerResolution()
+void xmrig::Platform::restoreTimerResolution()
 {
 }
 
 
-void Platform::setProcessPriority(int priority)
+void xmrig::Platform::setProcessPriority(int)
 {
 }
 
 
-void Platform::setThreadPriority(int priority)
+void xmrig::Platform::setThreadPriority(int priority)
 {
     if (priority == -1) {
         return;

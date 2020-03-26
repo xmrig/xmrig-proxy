@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
 #include <uv.h>
 
 
+#include "base/tools/Object.h"
 #include "base/tools/String.h"
 
 
@@ -42,8 +43,11 @@ class TlsContext;
 class Server
 {
 public:
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(Server)
+
     Server(const BindHost &host, const TlsContext *ctx);
     ~Server();
+
     bool bind();
 
 private:
@@ -51,13 +55,13 @@ private:
 
     static void onConnection(uv_stream_t *server, int status);
 
+    const bool m_strictTls;
+    const String m_host;
     const TlsContext *m_ctx;
-    int m_version;
-    sockaddr_in m_addr;
-    sockaddr_in6 m_addr6;
-    uint16_t m_port;
+    const uint16_t m_port;
+    int m_version           = 0;
+    sockaddr_storage m_addr{};
     uv_tcp_t *m_server;
-    String m_host;
 };
 
 

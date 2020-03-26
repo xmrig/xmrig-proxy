@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 #define XMRIG_BASETRANSFORM_H
 
 
+#include "base/crypto/Coin.h"
 #include "base/kernel/interfaces/IConfigTransform.h"
 #include "rapidjson/document.h"
 
@@ -44,8 +45,6 @@ class Process;
 class BaseTransform : public IConfigTransform
 {
 public:
-    BaseTransform();
-
     static void load(JsonChain &chain, Process *process, IConfigTransform &transform);
 
 protected:
@@ -99,11 +98,14 @@ protected:
 
 protected:
     Algorithm m_algorithm;
+    Coin m_coin;
 
 
 private:
     void transformBoolean(rapidjson::Document &doc, int key, bool enable);
     void transformUint64(rapidjson::Document &doc, int key, uint64_t arg);
+
+    bool m_http = false;
 };
 
 

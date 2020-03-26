@@ -245,7 +245,7 @@ void xmrig::NonceMapper::onResultAccepted(IStrategy *, IClient *client, const Su
 {
     const SubmitCtx ctx = submitCtx(result.seq);
 
-    AcceptEvent::start(m_id, ctx.miner, result, client->id() == -1, error);
+    AcceptEvent::start(m_id, ctx.miner, result, client->id() == -1, false, error);
 
     if (!ctx.miner) {
         return;

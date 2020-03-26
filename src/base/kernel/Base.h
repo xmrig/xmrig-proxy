@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,9 +26,10 @@
 #define XMRIG_BASE_H
 
 
-#include "api/interfaces/IApiListener.h"
+#include "base/api/interfaces/IApiListener.h"
 #include "base/kernel/interfaces/IConfigListener.h"
 #include "base/kernel/interfaces/IWatcherListener.h"
+#include "base/tools/Object.h"
 #include "rapidjson/fwd.h"
 
 
@@ -45,6 +46,8 @@ class Process;
 class Base : public IWatcherListener, public IApiListener
 {
 public:
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(Base)
+
     Base(Process *process);
     ~Base() override;
 
@@ -54,6 +57,7 @@ public:
     virtual void stop();
 
     Api *api() const;
+    bool isBackground() const;
     bool reload(const rapidjson::Value &json);
     Config *config() const;
     void addListener(IBaseListener *listener);

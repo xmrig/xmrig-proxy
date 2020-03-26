@@ -4,9 +4,8 @@
  * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018      SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -29,8 +28,8 @@
 #include <uv.h>
 
 
+#include "base/kernel/Platform.h"
 #include "base/io/log/Log.h"
-#include "Platform.h"
 #include "version.h"
 
 
@@ -51,10 +50,10 @@ static inline OSVERSIONINFOEX winOsVersion()
 
     HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
     if (ntdll ) {
-        RtlGetVersionFunction pRtlGetVersion = reinterpret_cast<RtlGetVersionFunction>(GetProcAddress(ntdll, "RtlGetVersion"));
+        auto pRtlGetVersion = reinterpret_cast<RtlGetVersionFunction>(GetProcAddress(ntdll, "RtlGetVersion"));
 
         if (pRtlGetVersion) {
-            pRtlGetVersion((LPOSVERSIONINFO) &result);
+            pRtlGetVersion(reinterpret_cast<LPOSVERSIONINFO>(&result));
         }
     }
 
@@ -62,7 +61,7 @@ static inline OSVERSIONINFOEX winOsVersion()
 }
 
 
-char *Platform::createUserAgent()
+char *xmrig::Platform::createUserAgent()
 {
     const auto osver = winOsVersion();
     constexpr const size_t max = 256;
@@ -91,17 +90,21 @@ char *Platform::createUserAgent()
 }
 
 
-bool Platform::setThreadAffinity(uint64_t cpu_id)
+#ifndef XMRIG_FEATURE_HWLOC
+bool xmrig::Platform::setThreadAffinity(uint64_t cpu_id)
 {
     if (cpu_id >= 64) {
         LOG_ERR("Unable to set affinity. Windows supports only affinity up to 63.");
     }
 
-    return SetThreadAffinityMask(GetCurrentThread(), 1ULL << cpu_id) != 0;
+    const bool result = (SetThreadAffinityMask(GetCurrentThread(), 1ULL << cpu_id) != 0);
+    Sleep(1);
+    return result;
 }
+#endif
 
 
-uint32_t Platform::setTimerResolution(uint32_t resolution)
+uint32_t xmrig::Platform::setTimerResolution(uint32_t resolution)
 {
 #   ifdef XMRIG_AMD_PROJECT
     TIMECAPS tc;
@@ -119,7 +122,7 @@ uint32_t Platform::setTimerResolution(uint32_t resolution)
 }
 
 
-void Platform::restoreTimerResolution()
+void xmrig::Platform::restoreTimerResolution()
 {
 #   ifdef XMRIG_AMD_PROJECT
     if (timerResolution) {
@@ -129,7 +132,7 @@ void Platform::restoreTimerResolution()
 }
 
 
-void Platform::setProcessPriority(int priority)
+void xmrig::Platform::setProcessPriority(int priority)
 {
     if (priority == -1) {
         return;
@@ -166,7 +169,7 @@ void Platform::setProcessPriority(int priority)
 }
 
 
-void Platform::setThreadPriority(int priority)
+void xmrig::Platform::setThreadPriority(int priority)
 {
     if (priority == -1) {
         return;

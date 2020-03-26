@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,33 +23,18 @@
  */
 
 
+#include "base/net/stratum/strategies/SinglePoolStrategy.h"
+#include "base/kernel/interfaces/IClient.h"
 #include "base/kernel/interfaces/IStrategyListener.h"
 #include "base/kernel/Platform.h"
-#include "base/net/stratum/Client.h"
-#include "base/net/stratum/strategies/SinglePoolStrategy.h"
-
-
-#ifdef XMRIG_FEATURE_HTTP
-#   include "base/net/stratum/DaemonClient.h"
-#endif
+#include "base/net/stratum/Pool.h"
 
 
 xmrig::SinglePoolStrategy::SinglePoolStrategy(const Pool &pool, int retryPause, int retries, IStrategyListener *listener, bool quiet) :
     m_active(false),
     m_listener(listener)
 {
-#   ifdef XMRIG_FEATURE_HTTP
-    if (!pool.isDaemon()) {
-        m_client = new Client(0, Platform::userAgent(), this);
-    }
-    else {
-        m_client = new DaemonClient(0, this);
-    }
-#   else
-    m_client = new Client(0, Platform::userAgent(), this);
-#   endif
-
-    m_client->setPool(pool);
+    m_client = pool.createClient(0, this);
     m_client->setRetries(retries);
     m_client->setRetryPause(retryPause * 1000);
     m_client->setQuiet(quiet);
@@ -87,6 +72,12 @@ void xmrig::SinglePoolStrategy::resume()
 void xmrig::SinglePoolStrategy::setAlgo(const Algorithm &algo)
 {
     m_client->setAlgo(algo);
+}
+
+
+void xmrig::SinglePoolStrategy::setProxy(const ProxyUrl &proxy)
+{
+    m_client->setProxy(proxy);
 }
 
 

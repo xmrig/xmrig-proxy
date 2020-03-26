@@ -5,8 +5,9 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2019      jtgrassie   <https://github.com/jtgrassie>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -38,12 +39,12 @@
 #include "base/net/stratum/Job.h"
 #include "base/net/stratum/Pool.h"
 #include "base/net/stratum/SubmitResult.h"
-#include "base/net/tools/RecvBuf.h"
+#include "base/net/tools/LineReader.h"
 #include "base/net/tools/Storage.h"
-#include "crypto/common/Algorithm.h"
+#include "base/tools/Object.h"
 
 
-typedef struct bio_st BIO;
+using BIO = struct bio_st;
 
 
 namespace xmrig {
@@ -56,13 +57,11 @@ class JobResult;
 class Client : public BaseClient, public IDnsListener, public ILineListener
 {
 public:
-    constexpr static int kResponseTimeout = 20 * 1000;
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(Client)
 
-#   ifdef XMRIG_FEATURE_TLS
-    constexpr static int kInputBufferSize = 1024 * 16;
-#   else
-    constexpr static int kInputBufferSize = 1024 * 2;
-#   endif
+    constexpr static uint64_t kConnectTimeout   = 20 * 1000;
+    constexpr static uint64_t kResponseTimeout  = 20 * 1000;
+    constexpr static size_t kMaxSendBufferSize  = 1024 * 16;
 
     Client(int id, const char *agent, IClientListener *listener);
     ~Client() override;
@@ -72,6 +71,8 @@ protected:
     bool isTLS() const override;
     const char *tlsFingerprint() const override;
     const char *tlsVersion() const override;
+    int64_t send(const rapidjson::Value &obj, Callback callback) override;
+    int64_t send(const rapidjson::Value &obj) override;
     int64_t submit(const JobResult &result) override;
     void connect() override;
     void connect(const Pool &pool) override;
@@ -85,6 +86,7 @@ protected:
     inline void onLine(char *line, size_t size) override                  { parse(line, size); }
 
 private:
+    class Socks5;
     class Tls;
 
     bool close();
@@ -93,8 +95,8 @@ private:
     bool parseLogin(const rapidjson::Value &result, int *code);
     bool send(BIO *bio);
     bool verifyAlgorithm(const Algorithm &algorithm, const char *algo) const;
+    bool write(const uv_buf_t &buf);
     int resolve(const String &host);
-    int64_t send(const rapidjson::Document &doc);
     int64_t send(size_t size);
     void connect(sockaddr *addr);
     void handshake();
@@ -105,7 +107,7 @@ private:
     void parseNotification(const char *method, const rapidjson::Value &params, const rapidjson::Value &error);
     void parseResponse(int64_t id, const rapidjson::Value &result, const rapidjson::Value &error);
     void ping();
-    void read(ssize_t nread);
+    void read(ssize_t nread, const uv_buf_t *buf);
     void reconnect();
     void setState(SocketState state);
     void startTimeout();
@@ -115,26 +117,26 @@ private:
     inline void setExtension(Extension ext, bool enable) noexcept { m_extensions.set(ext, enable); }
     template<Extension ext> inline bool has() const noexcept      { return m_extensions.test(ext); }
 
-    static void onAllocBuffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);
     static void onClose(uv_handle_t *handle);
     static void onConnect(uv_connect_t *req, int status);
     static void onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
 
     static inline Client *getClient(void *data) { return m_storage.get(data); }
 
-    char m_sendBuf[2048];
     const char *m_agent;
     Dns *m_dns;
-    RecvBuf<kInputBufferSize> m_recvBuf;
+    LineReader m_reader;
+    Socks5 *m_socks5            = nullptr;
     std::bitset<EXT_MAX> m_extensions;
+    std::vector<char> m_sendBuf;
     String m_rpcId;
-    Tls *m_tls;
-    uint64_t m_expire;
-    uint64_t m_jobs;
-    uint64_t m_keepAlive;
-    uintptr_t m_key;
-    uv_stream_t *m_stream;
-    uv_tcp_t *m_socket;
+    Tls *m_tls                  = nullptr;
+    uint64_t m_expire           = 0;
+    uint64_t m_jobs             = 0;
+    uint64_t m_keepAlive        = 0;
+    uintptr_t m_key             = 0;
+    uv_stream_t *m_stream       = nullptr;
+    uv_tcp_t *m_socket          = nullptr;
 
     static Storage<Client> m_storage;
 };

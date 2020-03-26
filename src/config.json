@@ -28,12 +28,14 @@
     ],
     "colors": true,
     "custom-diff": 0,
+    "custom-diff-stats": false,
     "donate-level": 0,
     "log-file": null,
     "mode": "nicehash",
     "pools": [
         {
             "algo": null,
+            "coin": null,
             "url": "donate.v2.xmrig.com:5555",
             "user": "YOUR_WALLET",
             "pass": "x",
@@ -49,6 +51,7 @@
     "retry-pause": 1,
     "reuse-timeout": 0,
     "tls": {
+        "enabled": true,
         "protocols": null,
         "cert": null,
         "cert_key": null,

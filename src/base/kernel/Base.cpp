@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,20 +23,21 @@
  */
 
 
-#include <assert.h>
+#include <cassert>
 #include <memory>
 
 
+#include "base/kernel/Base.h"
 #include "base/io/json/Json.h"
 #include "base/io/json/JsonChain.h"
 #include "base/io/log/backends/ConsoleLog.h"
 #include "base/io/log/backends/FileLog.h"
 #include "base/io/log/Log.h"
 #include "base/io/Watcher.h"
-#include "base/kernel/Base.h"
 #include "base/kernel/interfaces/IBaseListener.h"
 #include "base/kernel/Platform.h"
 #include "base/kernel/Process.h"
+#include "base/net/tools/NetBuffer.h"
 #include "core/config/Config.h"
 #include "core/config/ConfigTransform.h"
 
@@ -47,8 +48,15 @@
 
 
 #ifdef XMRIG_FEATURE_API
-#   include "api/Api.h"
-#   include "api/interfaces/IApiRequest.h"
+#   include "base/api/Api.h"
+#   include "base/api/interfaces/IApiRequest.h"
+
+namespace xmrig {
+
+static const char *kConfigPathV1 = "/1/config";
+static const char *kConfigPathV2 = "/2/config";
+
+} // namespace xmrig
 #endif
 
 
@@ -57,15 +65,16 @@
 #endif
 
 
-class xmrig::BasePrivate
+namespace xmrig {
+
+
+class BasePrivate
 {
 public:
-    inline BasePrivate(Process *process) :
-        api(nullptr),
-        config(nullptr),
-        process(process),
-        watcher(nullptr)
-    {}
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(BasePrivate)
+
+
+    inline BasePrivate(Process *process) : config(load(process)) {}
 
 
     inline ~BasePrivate()
@@ -76,6 +85,8 @@ public:
 
         delete config;
         delete watcher;
+
+        NetBuffer::destroy();
     }
 
 
@@ -84,36 +95,6 @@ public:
         config = std::unique_ptr<Config>(new Config());
 
         return config->read(chain, chain.fileName());
-    }
-
-
-    inline Config *load()
-    {
-        JsonChain chain;
-        ConfigTransform transform;
-        std::unique_ptr<Config> config;
-
-        transform.load(chain, process, transform);
-
-        if (read(chain, config)) {
-            return config.release();
-        }
-
-        chain.addFile(process->location(Process::ExeLocation, "config.json"));
-
-        if (read(chain, config)) {
-            return config.release();
-        }
-
-#       ifdef XMRIG_FEATURE_EMBEDDED_CONFIG
-        chain.addRaw(default_config);
-
-        if (read(chain, config)) {
-            return config.release();
-        }
-#       endif
-
-        return nullptr;
     }
 
 
@@ -130,12 +111,45 @@ public:
     }
 
 
-    Api *api;
-    Config *config;
-    Process *process;
+    Api *api            = nullptr;
+    Config *config      = nullptr;
     std::vector<IBaseListener *> listeners;
-    Watcher *watcher;
+    Watcher *watcher    = nullptr;
+
+
+private:
+    inline Config *load(Process *process)
+    {
+        JsonChain chain;
+        ConfigTransform transform;
+        std::unique_ptr<Config> config;
+
+        ConfigTransform::load(chain, process, transform);
+
+        if (read(chain, config)) {
+            return config.release();
+        }
+
+        chain.addFile(Process::location(Process::DataLocation, "config.json"));
+
+        if (read(chain, config)) {
+            return config.release();
+        }
+
+#       ifdef XMRIG_FEATURE_EMBEDDED_CONFIG
+        chain.addRaw(default_config);
+
+        if (read(chain, config)) {
+            return config.release();
+        }
+#       endif
+
+        return nullptr;
+    }
 };
+
+
+} // namespace xmrig
 
 
 xmrig::Base::Base(Process *process)
@@ -158,14 +172,6 @@ bool xmrig::Base::isReady() const
 
 int xmrig::Base::init()
 {
-    d_ptr->config = d_ptr->load();
-
-    if (!d_ptr->config) {
-        LOG_EMERG("No valid configuration found. Exiting.");
-
-        return 1;
-    }
-
 #   ifdef XMRIG_FEATURE_API
     d_ptr->api = new Api(this);
     d_ptr->api->addListener(this);
@@ -173,11 +179,10 @@ int xmrig::Base::init()
 
     Platform::init(config()->userAgent());
 
-#   ifndef XMRIG_PROXY_PROJECT
-    Platform::setProcessPriority(config()->cpu().priority());
-#   endif
-
-    if (!config()->isBackground()) {
+    if (isBackground()) {
+        Log::setBackground(true);
+    }
+    else {
         Log::add(new ConsoleLog());
     }
 
@@ -230,6 +235,12 @@ xmrig::Api *xmrig::Base::api() const
 }
 
 
+bool xmrig::Base::isBackground() const
+{
+    return d_ptr->config && d_ptr->config->isBackground();
+}
+
+
 bool xmrig::Base::reload(const rapidjson::Value &json)
 {
     JsonReader reader(json);
@@ -237,7 +248,7 @@ bool xmrig::Base::reload(const rapidjson::Value &json)
         return false;
     }
 
-    Config *config = new Config();
+    auto config = new Config();
     if (!config->read(reader, d_ptr->config->fileName())) {
         delete config;
 
@@ -279,7 +290,7 @@ void xmrig::Base::onFileChanged(const String &fileName)
     JsonChain chain;
     chain.addFile(fileName);
 
-    Config *config = new Config();
+    auto config = new Config();
 
     if (!config->read(chain, chain.fileName())) {
         LOG_ERR("reloading failed");
@@ -296,7 +307,7 @@ void xmrig::Base::onFileChanged(const String &fileName)
 void xmrig::Base::onRequest(IApiRequest &request)
 {
     if (request.method() == IApiRequest::METHOD_GET) {
-        if (request.url() == "/1/config") {
+        if (request.url() == kConfigPathV1 || request.url() == kConfigPathV2) {
             if (request.isRestricted()) {
                 return request.done(403);
             }
@@ -306,7 +317,7 @@ void xmrig::Base::onRequest(IApiRequest &request)
         }
     }
     else if (request.method() == IApiRequest::METHOD_PUT || request.method() == IApiRequest::METHOD_POST) {
-        if (request.url() == "/1/config") {
+        if (request.url() == kConfigPathV1 || request.url() == kConfigPathV2) {
             request.accept();
 
             if (!reload(request.json())) {

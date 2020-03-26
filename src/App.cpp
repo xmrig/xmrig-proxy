@@ -22,41 +22,25 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <uv.h>
 
 
-#include "api/Api.h"
 #include "App.h"
 #include "base/io/Console.h"
+#include "base/io/log/Log.h"
 #include "base/kernel/Signals.h"
-#include "common/log/Log.h"
-#include "common/Platform.h"
-#include "core/Config.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/Proxy.h"
 #include "Summary.h"
 #include "version.h"
 
-#ifndef XMRIG_NO_HTTPD
-#   include "common/api/Httpd.h"
-#endif
 
-
-xmrig::App::App(Process *process) :
-    m_console(nullptr),
-    m_httpd(nullptr),
-    m_signals(nullptr)
+xmrig::App::App(Process *process)
 {
     m_controller = new Controller(process);
-    if (m_controller->init() != 0) {
-        return;
-    }
-
-    if (!m_controller->config()->isBackground()) {
-        m_console = new Console(this);
-    }
 }
 
 
@@ -65,46 +49,44 @@ xmrig::App::~App()
     delete m_signals;
     delete m_console;
     delete m_controller;
-
-#   ifndef XMRIG_NO_HTTPD
-    delete m_httpd;
-#   endif
-
-    Log::release();
 }
 
 
 int xmrig::App::exec()
 {
-    if (!m_controller->config()) {
+    if (!m_controller->isReady()) {
+        LOG_EMERG("no valid configuration found.");
+
         return 2;
     }
 
     m_signals = new Signals(this);
 
-    background();
+    int rc = 0;
+    if (background(rc)) {
+        return rc;
+    }
+
+    rc = m_controller->init();
+    if (rc != 0) {
+        return rc;
+    }
+
+    if (!m_controller->isBackground()) {
+        m_console = new Console(this);
+    }
 
     Summary::print(m_controller);
 
-#   ifndef XMRIG_NO_API
-    Api::start(m_controller);
-#   endif
+    if (m_controller->config()->isDryRun()) {
+        LOG_NOTICE("OK");
 
-#   ifndef XMRIG_NO_HTTPD
-    m_httpd = new Httpd(
-                m_controller->config()->apiPort(),
-                m_controller->config()->apiToken(),
-                m_controller->config()->isApiIPv6(),
-                m_controller->config()->isApiRestricted()
-                );
+        return 0;
+    }
 
-    m_httpd->start();
-#   endif
+    m_controller->start();
 
-    m_controller->watch();
-    m_controller->proxy()->connect();
-
-    const int rc = uv_run(uv_default_loop(), UV_RUN_DEFAULT);
+    rc = uv_run(uv_default_loop(), UV_RUN_DEFAULT);
     uv_loop_close(uv_default_loop());
 
     return rc;
@@ -184,13 +166,13 @@ void xmrig::App::onSignal(int signum)
 
 void xmrig::App::close()
 {
-#   ifndef XMRIG_NO_HTTPD
-    m_httpd->stop();
-#   endif
-
     m_signals->stop();
-    m_console->stop();
+
+    if (m_console) {
+        m_console->stop();
+    }
+
     m_controller->stop();
 
-    Log::release();
+    Log::destroy();
 }

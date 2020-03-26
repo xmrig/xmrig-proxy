@@ -23,10 +23,11 @@
  */
 
 
+#include "base/io/log/Log.h"
+#include "base/kernel/interfaces/IJsonReader.h"
 #include "base/net/stratum/Pools.h"
 #include "base/net/stratum/strategies/FailoverStrategy.h"
 #include "base/net/stratum/strategies/SinglePoolStrategy.h"
-#include "common/log/Log.h"
 #include "donate.h"
 #include "rapidjson/document.h"
 
@@ -44,16 +45,6 @@ xmrig::Pools::Pools() :
 }
 
 
-xmrig::Pool &xmrig::Pools::current()
-{
-    if (m_data.empty()) {
-        m_data.push_back(Pool());
-    }
-
-    return m_data.back();
-}
-
-
 bool xmrig::Pools::isEqual(const Pools &other) const
 {
     if (m_data.size() != other.m_data.size() || m_retries != other.m_retries || m_retryPause != other.m_retryPause) {
@@ -61,25 +52,6 @@ bool xmrig::Pools::isEqual(const Pools &other) const
     }
 
     return std::equal(m_data.begin(), m_data.end(), other.m_data.begin());
-}
-
-
-bool xmrig::Pools::setUrl(const char *url)
-{
-    if (m_data.empty() || m_data.back().isValid()) {
-        Pool pool(url);
-
-        if (pool.isValid()) {
-            m_data.push_back(std::move(pool));
-            return true;
-        }
-
-        return false;
-    }
-
-    current().parse(url);
-
-    return m_data.back().isValid();
 }
 
 
@@ -93,7 +65,7 @@ xmrig::IStrategy *xmrig::Pools::createStrategy(IStrategyListener *listener) cons
         }
     }
 
-    FailoverStrategy *strategy = new FailoverStrategy(retryPause(), retries(), listener);
+    auto strategy = new FailoverStrategy(retryPause(), retries(), listener);
     for (const Pool &pool : m_data) {
         if (pool.isEnabled()) {
             strategy->add(pool);
@@ -132,17 +104,14 @@ size_t xmrig::Pools::active() const
 }
 
 
-void xmrig::Pools::adjust(const Algorithm &algorithm)
-{
-    for (Pool &pool : m_data) {
-        pool.adjust(algorithm);
-    }
-}
-
-
-void xmrig::Pools::load(const rapidjson::Value &pools)
+void xmrig::Pools::load(const IJsonReader &reader)
 {
     m_data.clear();
+
+    const rapidjson::Value &pools = reader.getArray("pools");
+    if (!pools.IsArray()) {
+        return;
+    }
 
     for (const rapidjson::Value &value : pools.GetArray()) {
         if (!value.IsObject()) {
@@ -154,6 +123,11 @@ void xmrig::Pools::load(const rapidjson::Value &pools)
             m_data.push_back(std::move(pool));
         }
     }
+
+    setDonateLevel(reader.getInt("donate-level", kDefaultDonateLevel));
+    setProxyDonate(reader.getInt("donate-over-proxy", PROXY_DONATE_AUTO));
+    setRetries(reader.getInt("retries"));
+    setRetryPause(reader.getInt("retry-pause"));
 }
 
 
@@ -161,25 +135,7 @@ void xmrig::Pools::print() const
 {
     size_t i = 1;
     for (const Pool &pool : m_data) {
-        if (Log::colors) {
-            const int color = pool.isEnabled() ? (pool.isTLS() ? 32 : 36) : 31;
-
-            Log::i()->text(GREEN_BOLD(" * ") WHITE_BOLD("POOL #%-7zu") "\x1B[1;%dm%s\x1B[0m variant " WHITE_BOLD("%s"),
-                           i,
-                           color,
-                           pool.url().data(),
-                           pool.algorithm().variantName()
-                           );
-        }
-        else {
-            Log::i()->text(" * POOL #%-7zu%s%s variant=%s %s",
-                           i,
-                           pool.isEnabled() ? "" : "-",
-                           pool.url().data(),
-                           pool.algorithm().variantName(),
-                           pool.isTLS() ? "TLS" : ""
-                           );
-        }
+        Log::print(GREEN_BOLD(" * ") WHITE_BOLD("POOL #%-7zu") "%s", i, pool.printableName().c_str());
 
         i++;
     }

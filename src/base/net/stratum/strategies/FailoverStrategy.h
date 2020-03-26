@@ -32,6 +32,7 @@
 #include "base/kernel/interfaces/IClientListener.h"
 #include "base/kernel/interfaces/IStrategy.h"
 #include "base/net/stratum/Pool.h"
+#include "base/tools/Object.h"
 
 
 namespace xmrig {
@@ -44,6 +45,8 @@ class IStrategyListener;
 class FailoverStrategy : public IStrategy, public IClientListener
 {
 public:
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(FailoverStrategy)
+
     FailoverStrategy(const std::vector<Pool> &pool, int retryPause, int retries, IStrategyListener *listener, bool quiet = false);
     FailoverStrategy(int retryPause, int retries, IStrategyListener *listener, bool quiet = false);
     ~FailoverStrategy() override;
@@ -51,9 +54,8 @@ public:
     void add(const Pool &pool);
 
 protected:
-    inline bool isActive() const override                                             { return m_active >= 0; }
-    inline Client *client() const override                                            { return active(); }
-    inline void onLogin(Client *, rapidjson::Document &, rapidjson::Value &) override {}
+    inline bool isActive() const override           { return m_active >= 0; }
+    inline IClient *client() const override         { return isActive() ? active() : m_pools[m_index]; }
 
     int64_t submit(const JobResult &result) override;
     void connect() override;
@@ -62,13 +64,15 @@ protected:
     void stop() override;
     void tick(uint64_t now) override;
 
-    void onClose(Client *client, int failures) override;
-    void onJobReceived(Client *client, const Job &job, const rapidjson::Value &params) override;
-    void onLoginSuccess(Client *client) override;
-    void onResultAccepted(Client *client, const SubmitResult &result, const char *error) override;
+    void onClose(IClient *client, int failures) override;
+    void onJobReceived(IClient *client, const Job &job, const rapidjson::Value &params) override;
+    void onLogin(IClient *client, rapidjson::Document &doc, rapidjson::Value &params) override;
+    void onLoginSuccess(IClient *client) override;
+    void onResultAccepted(IClient *client, const SubmitResult &result, const char *error) override;
+    void onVerifyAlgorithm(const IClient *client, const Algorithm &algorithm, bool *ok) override;
 
 private:
-    inline Client *active() const { return m_pools[static_cast<size_t>(m_active)]; }
+    inline IClient *active() const { return m_pools[static_cast<size_t>(m_active)]; }
 
     const bool m_quiet;
     const int m_retries;
@@ -76,7 +80,7 @@ private:
     int m_active;
     IStrategyListener *m_listener;
     size_t m_index;
-    std::vector<Client*> m_pools;
+    std::vector<IClient*> m_pools;
 };
 
 

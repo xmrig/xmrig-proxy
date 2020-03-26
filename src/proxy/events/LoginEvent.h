@@ -26,10 +26,11 @@
 #define XMRIG_LOGINEVENT_H
 
 
-#include <stdint.h>
+#include <cstdint>
 
 
-#include "common/crypto/Algorithm.h"
+#include "base/tools/String.h"
+#include "crypto/common/Algorithm.h"
 #include "proxy/events/MinerEvent.h"
 #include "rapidjson/fwd.h"
 
@@ -49,6 +50,8 @@ public:
     const Algorithms &algorithms;
     const int64_t loginId;
     const rapidjson::Value &params;
+    int error = -1;
+    String flow;
 
 
 protected:

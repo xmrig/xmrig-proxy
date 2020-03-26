@@ -30,7 +30,7 @@
 #include <map>
 
 
-#include "interfaces/IEventListener.h"
+#include "proxy/interfaces/IEventListener.h"
 
 
 namespace xmrig {

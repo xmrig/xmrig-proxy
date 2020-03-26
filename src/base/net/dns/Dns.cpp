@@ -37,7 +37,8 @@ namespace xmrig {
 xmrig::Dns::Dns(IDnsListener *listener) :
     m_hints(),
     m_listener(listener),
-    m_status(0)
+    m_status(0),
+    m_resolver(nullptr)
 {
     m_key = m_storage.add(this);
 
@@ -54,7 +55,7 @@ xmrig::Dns::~Dns()
 {
     m_storage.release(m_key);
 
-    Handle::close(m_resolver);
+    delete m_resolver;
 }
 
 
@@ -143,7 +144,11 @@ void xmrig::Dns::onResolved(int status, addrinfo *res)
         ptr = ptr->ai_next;
     }
 
-    m_listener->onResolved(*this, status);
+    if (isEmpty()) {
+        m_status = UV_EAI_NONAME;
+    }
+
+    m_listener->onResolved(*this, m_status);
 }
 
 

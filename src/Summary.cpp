@@ -23,84 +23,65 @@
  */
 
 
-#include <stdio.h>
+#include <cstdio>
 #include <uv.h>
 
 
-#include "common/log/Log.h"
-#include "core/Config.h"
+#include "base/io/log/Log.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/BindHost.h"
 #include "Summary.h"
 #include "version.h"
 
 
+namespace xmrig {
+
+
 static void print_mode(xmrig::Controller *controller)
 {
-    xmrig::Log::i()->text(controller->config()->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-13s") MAGENTA_BOLD("%s")
-                                                    : " * %-13s%s",
-                   "MODE", controller->config()->modeName());
-}
-
-
-static void print_algo(xmrig::Controller *controller)
-{
-    xmrig::Log::i()->text(controller->config()->isColors() ? GREEN_BOLD(" * ") WHITE_BOLD("%-13s") MAGENTA_BOLD("%s")
-                                                    : " * %-13s%s",
-                   "ALGO", controller->config()->algorithm().name());
+    Log::print(GREEN_BOLD(" * ") WHITE_BOLD("%-13s") MAGENTA_BOLD("%s"), "MODE", controller->config()->modeName());
 }
 
 
 static void print_bind(xmrig::Controller *controller)
 {
-    const xmrig::BindHosts &bind = controller->config()->bind();
+    const BindHosts &bind = controller->config()->bind();
 
-    if (controller->config()->isColors()) {
-        for (size_t i = 0; i < bind.size(); ++i) {
-            xmrig::Log::i()->text(GREEN_BOLD(" * ") WHITE_BOLD("BIND #%-7zu") CYAN("%s%s%s:") "\x1B[1;%dm%d\x1B[0m",
-                           i + 1,
-                           bind[i].isIPv6() ? "[" : "",
-                           bind[i].host(),
-                           bind[i].isIPv6() ? "]" : "",
-                           bind[i].isTLS() ? 32 : 36,
-                           bind[i].port());
-        }
-    }
-    else {
-        for (size_t i = 0; i < bind.size(); ++i) {
-            xmrig::Log::i()->text(" * BIND #%-7zu%s%s%s:%d TLS=%d",
-                           i + 1,
-                           bind[i].isIPv6() ? "[" : "",
-                           bind[i].host(),
-                           bind[i].isIPv6() ? "]" : "",
-                           bind[i].port(),
-                           static_cast<int>(bind[i].isTLS()));
-        }
+    for (size_t i = 0; i < bind.size(); ++i) {
+        Log::print(GREEN_BOLD(" * ") WHITE_BOLD("BIND #%-7zu") CYAN("%s%s%s:") "\x1B[1;%dm%d\x1B[0m",
+                          i + 1,
+                          bind[i].isIPv6() ? "[" : "",
+                          bind[i].host(),
+                          bind[i].isIPv6() ? "]" : "",
+                          bind[i].isTLS() ? 32 : 36,
+                          bind[i].port());
     }
 }
 
 
-static void print_commands(xmrig::Controller *controller)
+static void print_commands(xmrig::Controller *)
 {
-    if (controller->config()->isColors()) {
-        xmrig::Log::i()->text(GREEN_BOLD(" * ") WHITE_BOLD("COMMANDS     ") MAGENTA_BOLD("h") WHITE_BOLD("ashrate, ")
-                                                                     MAGENTA_BOLD("c") WHITE_BOLD("onnections, ")
-                                                                     MAGENTA_BOLD("v") WHITE_BOLD("erbose, ")
-                                                                     MAGENTA_BOLD("w") WHITE_BOLD("orkers"));
+    if (Log::isColors()) {
+        Log::print(GREEN_BOLD(" * ") WHITE_BOLD("COMMANDS     ") MAGENTA_BOLD("h") WHITE_BOLD("ashrate, ")
+                                                                        MAGENTA_BOLD("c") WHITE_BOLD("onnections, ")
+                                                                        MAGENTA_BOLD("v") WHITE_BOLD("erbose, ")
+                                                                        MAGENTA_BOLD("w") WHITE_BOLD("orkers"));
     }
     else {
-        xmrig::Log::i()->text(" * COMMANDS    'h' hashrate, 'c' connections, 'v' verbose, 'w' workers");
+        Log::print(" * COMMANDS    'h' hashrate, 'c' connections, 'v' verbose, 'w' workers");
     }
 }
+
+
+} // namespace xmrig
 
 
 void Summary::print(xmrig::Controller *controller)
 {
     controller->config()->printVersions();
     print_mode(controller);
-    print_algo(controller);
-    controller->config()->printPools();
+    controller->config()->pools().print();
     print_bind(controller);
-    controller->config()->printAPI();
     print_commands(controller);
 }

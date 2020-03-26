@@ -23,15 +23,18 @@
  */
 
 
+#include <ctime>
 #include <uv.h>
-#include <time.h>
 
 
 #include "base/kernel/Process.h"
 #include "base/tools/Chrono.h"
 
 
-static size_t location(xmrig::Process::Location location, char *buf, size_t max)
+namespace xmrig {
+
+
+static size_t getLocation(Process::Location location, char *buf, size_t max)
 {
     using namespace xmrig;
 
@@ -48,6 +51,9 @@ static size_t location(xmrig::Process::Location location, char *buf, size_t max)
 }
 
 
+} // namespace xmrig
+
+
 xmrig::Process::Process(int argc, char **argv) :
     m_arguments(argc, argv)
 {
@@ -55,17 +61,12 @@ xmrig::Process::Process(int argc, char **argv) :
 }
 
 
-xmrig::Process::~Process()
-{
-}
-
-
-xmrig::String xmrig::Process::location(Location location, const char *fileName) const
+xmrig::String xmrig::Process::location(Location location, const char *fileName)
 {
     constexpr const size_t max = 520;
 
     char *buf   = new char[max]();
-    size_t size = ::location(location, buf, max);
+    size_t size = getLocation(location, buf, max);
 
     if (size == 0) {
         delete [] buf;

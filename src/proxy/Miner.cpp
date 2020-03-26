@@ -22,25 +22,21 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
-#include <stdio.h>
-#include <string.h>
-
-
-#include "base/io/Json.h"
+#include "proxy/Miner.h"
+#include "base/io/json/Json.h"
+#include "base/io/log/Log.h"
 #include "base/net/stratum/Job.h"
 #include "base/tools/Buffer.h"
 #include "base/tools/Chrono.h"
 #include "base/tools/Handle.h"
-#include "common/log/Log.h"
 #include "net/JobResult.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"
 #include "proxy/Events.h"
+#include "proxy/events/AcceptEvent.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"
-#include "proxy/Miner.h"
 #include "proxy/tls/TlsContext.h"
 #include "proxy/Uuid.h"
 #include "rapidjson/document.h"
@@ -49,9 +45,14 @@
 #include "rapidjson/writer.h"
 
 
-#ifndef XMRIG_NO_TLS
+#ifdef XMRIG_FEATURE_TLS
 #   include "proxy/tls/Tls.h"
 #endif
+
+
+#include <cinttypes>
+#include <cstdio>
+#include <cstring>
 
 
 namespace xmrig {
@@ -61,24 +62,11 @@ namespace xmrig {
 }
 
 
-xmrig::Miner::Miner(const TlsContext *ctx, bool ipv6, uint16_t port) :
-    m_ipv6(ipv6),
-    m_ip(),
-    m_routeId(-1),
+xmrig::Miner::Miner(const TlsContext *ctx, uint16_t port) :
     m_id(++nextId),
-    m_loginId(0),
-    m_recvBufPos(0),
-    m_mapperId(-1),
-    m_state(WaitLoginState),
-    m_tls(nullptr),
     m_localPort(port),
-    m_customDiff(0),
-    m_diff(0),
-    m_expire(Chrono::steadyMSecs() + kLoginTimeout),
-    m_rx(0),
-    m_timestamp(Chrono::currentMSecsSinceEpoch()),
-    m_tx(0),
-    m_fixedByte(0)
+    m_expire(Chrono::currentMSecsSinceEpoch() + kLoginTimeout),
+    m_timestamp(Chrono::currentMSecsSinceEpoch())
 {
     m_key = m_storage.add(this);
 
@@ -91,7 +79,7 @@ xmrig::Miner::Miner(const TlsContext *ctx, bool ipv6, uint16_t port) :
     m_recvBuf.base = m_buf;
     m_recvBuf.len  = sizeof(m_buf);
 
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     if (ctx != nullptr) {
         m_tls = new Tls(ctx->ctx(), this);
     }
@@ -103,9 +91,14 @@ xmrig::Miner::Miner(const TlsContext *ctx, bool ipv6, uint16_t port) :
 
 xmrig::Miner::~Miner()
 {
-    Handle::close(m_socket);
+    if (uv_is_closing(reinterpret_cast<uv_handle_t *>(m_socket))) {
+        delete m_socket;
+    }
+    else {
+        uv_close(reinterpret_cast<uv_handle_t *>(m_socket), [](uv_handle_t *handle) { delete handle; });
+    }
 
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     delete m_tls;
 #   endif
 
@@ -126,7 +119,7 @@ bool xmrig::Miner::accept(uv_stream_t *server)
 
     uv_tcp_getpeername(m_socket, reinterpret_cast<sockaddr*>(&addr), &size);
 
-    if (m_ipv6) {
+    if (reinterpret_cast<sockaddr_in *>(&addr)->sin_family == AF_INET6) {
         uv_ip6_name(reinterpret_cast<sockaddr_in6*>(&addr), m_ip, 45);
     } else {
         uv_ip4_name(reinterpret_cast<sockaddr_in*>(&addr), m_ip, 16);
@@ -134,7 +127,7 @@ bool xmrig::Miner::accept(uv_stream_t *server)
 
     uv_read_start(reinterpret_cast<uv_stream_t*>(m_socket), Miner::onAllocBuffer, Miner::onRead);
 
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     if (isTLS()) {
         return m_tls->accept();
     }
@@ -149,7 +142,7 @@ void xmrig::Miner::forwardJob(const Job &job, const char *algo)
     m_diff = job.diff();
     setFixedByte(job.fixedByte());
 
-    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().shortName(), job.height());
+    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().shortName(), job.height(), job.rawSeedHash());
 }
 
 
@@ -178,7 +171,7 @@ void xmrig::Miner::setJob(Job &job)
         customDiff = true;
     }
 
-    sendJob(job.rawBlob(), job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height());
+    sendJob(job.rawBlob(), job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height(), job.rawSeedHash());
 }
 
 
@@ -210,8 +203,15 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
                 const rapidjson::Value &value = params["algo"];
 
                 if (value.IsArray()) {
-                    for (const rapidjson::Value &algo : value.GetArray()) {
-                        algorithms.push_back(algo.GetString());
+                    algorithms.reserve(value.Size());
+
+                    for (const auto &i : value.GetArray()) {
+                        Algorithm algo(i.GetString());
+                        if (!algo.isValid()) {
+                            continue;
+                        }
+
+                        algorithms.emplace_back(algo);
                     }
                 }
             }
@@ -241,15 +241,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
             return true;
         }
 
-        Algorithm algorithm;
-        if (params.HasMember("algo")) {
-            const char *algo = Json::getString(params, "algo");
-
-            algorithm.parseAlgorithm(algo);
-            if (!algorithm.isValid()) {
-                algorithm.parseXmrStakAlgorithm(algo);
-            }
-        }
+        Algorithm algorithm(Json::getString(params, "algo"));
 
         SubmitEvent *event = SubmitEvent::create(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm);
 
@@ -262,6 +254,10 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
 
         if (event->error() == Error::NoError && m_customDiff && event->request.actualDiff() < m_diff) {
             success(id, "OK");
+
+            SubmitResult result = SubmitResult(1, m_customDiff, event->request.actualDiff(), event->request.id, 0);
+            AcceptEvent::start(m_mapperId, this, result, false, true);
+
             return true;
         }
 
@@ -285,7 +281,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
 
 bool xmrig::Miner::send(BIO *bio)
 {
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     uv_buf_t buf;
     buf.len = BIO_get_mem_data(bio, &buf.base);
 
@@ -319,7 +315,7 @@ bool xmrig::Miner::send(BIO *bio)
 
 void xmrig::Miner::heartbeat()
 {
-    m_expire = Chrono::steadyMSecs() + kSocketTimeout;
+    m_expire = Chrono::currentMSecsSinceEpoch() + kSocketTimeout;
 }
 
 
@@ -388,7 +384,7 @@ void xmrig::Miner::read()
 
 void xmrig::Miner::readTLS(int nread)
 {
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     if (isTLS()) {
         LOG_DEBUG("[%s] TLS received (%d bytes)", m_ip, nread);
 
@@ -438,7 +434,7 @@ void xmrig::Miner::send(int size)
     }
 
     int rc = -1;
-#   ifndef XMRIG_NO_TLS
+#   ifdef XMRIG_FEATURE_TLS
     if (isTLS()) {
         rc = m_tls->send(m_sendBuf, size) ? 0 : -1;
     }
@@ -457,7 +453,7 @@ void xmrig::Miner::send(int size)
 }
 
 
-void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height)
+void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height, const String &seedHash)
 {
     using namespace rapidjson;
 
@@ -472,6 +468,10 @@ void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *targ
 
     if (height) {
         params.AddMember("height", height, allocator);
+    }
+
+    if (!seedHash.isNull()) {
+        params.AddMember("seed_hash", seedHash.toJSON(), allocator);
     }
 
     doc.AddMember("jsonrpc", "2.0", allocator);
@@ -567,7 +567,7 @@ void xmrig::Miner::shutdown(bool)
 }
 
 
-void xmrig::Miner::onAllocBuffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
+void xmrig::Miner::onAllocBuffer(uv_handle_t *handle, size_t, uv_buf_t *buf)
 {
     auto miner = getMiner(handle->data);
     if (!miner) {
@@ -579,7 +579,7 @@ void xmrig::Miner::onAllocBuffer(uv_handle_t *handle, size_t suggested_size, uv_
 }
 
 
-void xmrig::Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
+void xmrig::Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *)
 {
     Miner *miner = getMiner(stream->data);
     if (!miner) {

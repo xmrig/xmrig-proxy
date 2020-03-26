@@ -55,18 +55,19 @@ public:
     void submit(SubmitEvent *event);
 
 protected:
-    void onClose(Client *client, int failures) override;
-    void onJobReceived(Client *client, const Job &job, const rapidjson::Value &params) override;
-    void onLogin(Client *client, rapidjson::Document &doc, rapidjson::Value &params) override;
-    void onLoginSuccess(Client *client) override;
-    void onResultAccepted(Client *client, const SubmitResult &result, const char *error) override;
+    void onClose(IClient *client, int failures) override;
+    void onJobReceived(IClient *client, const Job &job, const rapidjson::Value &params) override;
+    void onLogin(IClient *client, rapidjson::Document &doc, rapidjson::Value &params) override;
+    void onLoginSuccess(IClient *client) override;
+    void onResultAccepted(IClient *client, const SubmitResult &result, const char *error) override;
+    void onVerifyAlgorithm(const IClient *client, const Algorithm &algorithm, bool *ok) override;
 
 private:
     bool m_active;
-    Client *m_client;
+    IClient *m_client;
     Miner *m_miner;
     std::vector<String> m_algorithms;
-    uint32_t m_diff;
+    uint64_t m_diff;
     uint64_t m_id;
 };
 

@@ -47,9 +47,8 @@ public:
 #   endif
 
     Process(int argc, char **argv);
-    ~Process();
 
-    String location(Location location, const char *fileName = nullptr) const;
+    static String location(Location location, const char *fileName = nullptr);
 
     inline const Arguments &arguments() const { return m_arguments; }
 

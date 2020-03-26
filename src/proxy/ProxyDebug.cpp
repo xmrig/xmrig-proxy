@@ -26,8 +26,8 @@
 #include <inttypes.h>
 
 
+#include "base/io/log/Log.h"
 #include "base/net/stratum/SubmitResult.h"
-#include "common/log/Log.h"
 #include "net/JobResult.h"
 #include "proxy/Events.h"
 #include "proxy/events/AcceptEvent.h"
@@ -89,7 +89,7 @@ void xmrig::ProxyDebug::onEvent(IEvent *event)
 
     case IEvent::AcceptType: {
             auto e = static_cast<AcceptEvent*>(event);
-            LOG_INFO("[debug] accepted <Miner id=%" PRId64 ", ip=%s>, <Result diff=%u, actualDiff=%" PRIu64 ", elapsed=%" PRIu64 ">",
+            LOG_INFO("[debug] accepted <Miner id=%" PRId64 ", ip=%s>, <Result diff=%" PRIu64 ", actualDiff=%" PRIu64 ", elapsed=%" PRIu64 ">",
                      e->miner() ? e->miner()->id() : -1, e->miner() ? e->miner()->ip() : "?.?.?.?", e->result.diff, e->result.actualDiff, e->result.elapsed);
         }
         break;
@@ -135,7 +135,7 @@ void xmrig::ProxyDebug::onRejectedEvent(IEvent *event)
 
     case IEvent::AcceptType: {
             auto e = static_cast<AcceptEvent*>(event);
-            LOG_ERR("[error] rejected <Miner id=%" PRId64 ", ip=%s>, <Result diff=%u, elapsed=%" PRIu64 ">, error=%s",
+            LOG_ERR("[error] rejected <Miner id=%" PRId64 ", ip=%s>, <Result diff=%" PRIu64 ", elapsed=%" PRIu64 ">, error=%s",
                      e->miner() ? e->miner()->id() : -1, e->miner() ? e->miner()->ip() : "?.?.?.?", e->result.diff, e->result.elapsed, e->error());
         }
         break;

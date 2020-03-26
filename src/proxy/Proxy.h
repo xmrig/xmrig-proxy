@@ -30,7 +30,7 @@
 #include <uv.h>
 
 
-#include "common/interfaces/IControllerListener.h"
+#include "base/kernel/interfaces/IBaseListener.h"
 #include "proxy/CustomDiff.h"
 #include "proxy/Stats.h"
 #include "proxy/workers/Worker.h"
@@ -40,6 +40,7 @@ namespace xmrig {
 
 
 class AccessLog;
+class ApiRouter;
 class BindHost;
 class Controller;
 class DonateSplitter;
@@ -54,7 +55,7 @@ class TlsContext;
 class Workers;
 
 
-class Proxy : public IControllerListener
+class Proxy : public IBaseListener
 {
 public:
     Proxy(Controller *controller);
@@ -78,10 +79,8 @@ protected:
     void onConfigChanged(Config *config, Config *previousConfig) override;
 
 private:
-    constexpr static int kPrintInterval = 60;
     constexpr static int kGCInterval    = 60;
 
-    bool isColors() const;
     void bind(const BindHost &host);
     void gc();
     void print();
@@ -91,6 +90,7 @@ private:
     static void onTimer(uv_timer_t *handle);
 
     AccessLog *m_accessLog;
+    ApiRouter *m_api = nullptr;
     Controller *m_controller;
     CustomDiff m_customDiff;
     DonateSplitter *m_donate;
@@ -99,7 +99,7 @@ private:
     Miners *m_miners;
     ProxyDebug *m_debug;
     ShareLog *m_shareLog;
-    Stats m_stats;
+    Stats *m_stats;
     std::vector<Server*> m_servers;
     TlsContext *m_tls;
     uint64_t m_ticks;

@@ -28,10 +28,10 @@
 #include <string.h>
 
 
+#include "base/io/log/Log.h"
 #include "base/net/stratum/Client.h"
 #include "base/net/stratum/Pools.h"
-#include "common/log/Log.h"
-#include "core/Config.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "net/JobResult.h"
 #include "net/strategies/DonateStrategy.h"
@@ -54,7 +54,7 @@ xmrig::NonceMapper::NonceMapper(size_t id, Controller *controller) :
     m_storage  = new NonceStorage();
     m_strategy = controller->config()->pools().createStrategy(this);
 
-    if (controller->config()->donateLevel() > 0) {
+    if (controller->config()->pools().donateLevel() > 0) {
         m_donate = new DonateStrategy(controller, this);
     }
 }
@@ -181,7 +181,7 @@ void xmrig::NonceMapper::printState()
 #endif
 
 
-void xmrig::NonceMapper::onActive(IStrategy *strategy, Client *client)
+void xmrig::NonceMapper::onActive(IStrategy *strategy, IClient *client)
 {
     m_storage->setActive(true);
 
@@ -199,9 +199,8 @@ void xmrig::NonceMapper::onActive(IStrategy *strategy, Client *client)
     if (m_controller->config()->isVerbose()) {
         const char *tlsVersion = client->tlsVersion();
 
-        LOG_INFO(isColors() ? "#%03u " WHITE_BOLD("use pool ") CYAN_BOLD("%s:%d ") GREEN_BOLD("%s") " \x1B[1;30m%s "
-                            : "#%03u use pool %s:%d %s %s",
-                 m_id, client->host(), client->port(), tlsVersion ? tlsVersion : "", client->ip());
+        LOG_INFO("#%03u " WHITE_BOLD("use %s ") CYAN_BOLD("%s:%d ") GREEN_BOLD("%s") " \x1B[1;30m%s ",
+                 m_id, client->mode(), client->pool().host().data(), client->pool().port(), tlsVersion ? tlsVersion : "", client->ip().data());
 
         const char *fingerprint = client->tlsFingerprint();
         if (fingerprint != nullptr) {
@@ -211,7 +210,7 @@ void xmrig::NonceMapper::onActive(IStrategy *strategy, Client *client)
 }
 
 
-void xmrig::NonceMapper::onJob(IStrategy *, Client *client, const Job &job)
+void xmrig::NonceMapper::onJob(IStrategy *, IClient *client, const Job &job)
 {
     if (m_donate) {
         if (m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {
@@ -222,7 +221,13 @@ void xmrig::NonceMapper::onJob(IStrategy *, Client *client, const Job &job)
         m_donate->setAlgo(job.algorithm());
     }
 
-    setJob(client->host(), client->port(), job);
+    setJob(client->pool().host(), client->pool().port(), job);
+}
+
+
+void xmrig::NonceMapper::onLogin(IStrategy *strategy, IClient *client, rapidjson::Document &doc, rapidjson::Value &params)
+{
+
 }
 
 
@@ -236,11 +241,11 @@ void xmrig::NonceMapper::onPause(IStrategy *)
 }
 
 
-void xmrig::NonceMapper::onResultAccepted(IStrategy *, Client *client, const SubmitResult &result, const char *error)
+void xmrig::NonceMapper::onResultAccepted(IStrategy *, IClient *client, const SubmitResult &result, const char *error)
 {
     const SubmitCtx ctx = submitCtx(result.seq);
 
-    AcceptEvent::start(m_id, ctx.miner, result, client->id() == -1, error);
+    AcceptEvent::start(m_id, ctx.miner, result, client->id() == -1, false, error);
 
     if (!ctx.miner) {
         return;
@@ -255,9 +260,9 @@ void xmrig::NonceMapper::onResultAccepted(IStrategy *, Client *client, const Sub
 }
 
 
-bool xmrig::NonceMapper::isColors() const
+void xmrig::NonceMapper::onVerifyAlgorithm(IStrategy *strategy, const IClient *client, const Algorithm &algorithm, bool *ok)
 {
-    return m_controller->config()->isColors();
+
 }
 
 
@@ -294,13 +299,11 @@ void xmrig::NonceMapper::setJob(const char *host, int port, const Job &job)
 {
     if (m_controller->config()->isVerbose()) {
         if (job.height()) {
-            LOG_INFO(isColors() ? "#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s") " height " WHITE_BOLD("%" PRIu64)
-                                : "#%03u new job from %s:%d diff %d algo %s height %" PRIu64,
+            LOG_INFO("#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%" PRIu64) " algo " WHITE_BOLD("%s") " height " WHITE_BOLD("%" PRIu64),
                      m_id, host, port, job.diff(), job.algorithm().shortName(), job.height());
         }
         else {
-            LOG_INFO(isColors() ? "#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s")
-                                : "#%03u new job from %s:%d diff %d algo %s",
+            LOG_INFO("#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%" PRIu64) " algo " WHITE_BOLD("%s"),
                      m_id, host, port, job.diff(), job.algorithm().shortName());
         }
     }

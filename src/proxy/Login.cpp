@@ -28,8 +28,8 @@
 #include <string.h>
 
 
-#include "common/log/Log.h"
-#include "core/Config.h"
+#include "base/io/log/Log.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/Login.h"
@@ -62,36 +62,11 @@ void xmrig::Login::onEvent(IEvent *event)
 }
 
 
-bool xmrig::Login::verifyAlgorithms(LoginEvent *event)
-{
-    if (event->algorithms.empty()) {
-        return true;
-    }
-
-    const xmrig::Algo baseAlgo = m_controller->config()->algorithm().algo();
-    for (const xmrig::Algorithm &algo : event->algorithms) {
-        if (algo.algo() == baseAlgo) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-
 void xmrig::Login::login(LoginEvent *event)
 {
     const String &password = m_controller->config()->password();
     if (!password.isNull() && event->miner()->password() != password) {
         return reject(event, Error::toString(Error::Forbidden));
-    }
-
-    if (event->algorithms.empty()) {
-        return;
-    }
-
-    if (!verifyAlgorithms(event)) {
-        return reject(event, Error::toString(Error::IncompatibleAlgorithm));
     }
 }
 
@@ -106,7 +81,6 @@ void xmrig::Login::reject(LoginEvent *event, const char *message)
         return;
     }
 
-    LOG_INFO(m_controller->config()->isColors() ? RED_BOLD("deny") " " WHITE_BOLD("\"%s\"") " from " CYAN_BOLD("%s") WHITE_BOLD(" (%s)") " reason " RED("\"%s\"")
-                                                : "deny \"%s\" from %s (%s) reason \"%s\"",
+    LOG_INFO(RED_BOLD("deny") " " WHITE_BOLD("\"%s\"") " from " CYAN_BOLD("%s") WHITE_BOLD(" (%s)") " reason " RED("\"%s\""),
              event->miner()->rigId(true).data(), event->miner()->ip(), event->miner()->agent().data(), message);
 }

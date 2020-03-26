@@ -23,8 +23,8 @@
  */
 
 
+#include "base/io/log/Log.h"
 #include "base/tools/Handle.h"
-#include "common/log/Log.h"
 #include "proxy/BindHost.h"
 #include "proxy/events/ConnectionEvent.h"
 #include "proxy/Miner.h"
@@ -87,7 +87,7 @@ void xmrig::Server::create(uv_stream_t *server, int status)
         return;
     }
 
-    Miner *miner = new Miner(m_ctx, m_version == 6, m_port);
+    Miner *miner = new Miner(m_ctx, m_port);
     if (!miner) {
         return;
     }

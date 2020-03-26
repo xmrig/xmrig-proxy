@@ -23,7 +23,7 @@
  */
 
 
-#include "base/io/Json.h"
+#include "base/io/json/Json.h"
 #include "base/net/stratum/Client.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/events/LoginEvent.h"
@@ -75,7 +75,7 @@ void xmrig::DonateMapper::submit(SubmitEvent *event)
 }
 
 
-void xmrig::DonateMapper::onClose(Client *client, int)
+void xmrig::DonateMapper::onClose(IClient *client, int)
 {
     m_active = false;
 
@@ -84,7 +84,7 @@ void xmrig::DonateMapper::onClose(Client *client, int)
 }
 
 
-void xmrig::DonateMapper::onJobReceived(Client *, const Job &job, const rapidjson::Value &params)
+void xmrig::DonateMapper::onJobReceived(IClient *, const Job &job, const rapidjson::Value &params)
 {
     if (!isActive()) {
         return;
@@ -95,7 +95,7 @@ void xmrig::DonateMapper::onJobReceived(Client *, const Job &job, const rapidjso
 }
 
 
-void xmrig::DonateMapper::onLogin(Client *, rapidjson::Document &doc, rapidjson::Value &params)
+void xmrig::DonateMapper::onLogin(IClient *, rapidjson::Document &doc, rapidjson::Value &params)
 {
     using namespace rapidjson;
     auto &allocator = doc.GetAllocator();
@@ -110,14 +110,14 @@ void xmrig::DonateMapper::onLogin(Client *, rapidjson::Document &doc, rapidjson:
 }
 
 
-void xmrig::DonateMapper::onLoginSuccess(Client *)
+void xmrig::DonateMapper::onLoginSuccess(IClient *)
 {
 }
 
 
-void xmrig::DonateMapper::onResultAccepted(Client *, const SubmitResult &result, const char *error)
+void xmrig::DonateMapper::onResultAccepted(IClient *, const SubmitResult &result, const char *error)
 {
-    AcceptEvent::start(m_id, m_miner, result, true, error);
+    AcceptEvent::start(m_id, m_miner, result, true, false, error);
 
     if (error) {
         m_miner->replyWithError(result.reqId, error);
@@ -125,4 +125,10 @@ void xmrig::DonateMapper::onResultAccepted(Client *, const SubmitResult &result,
     else {
         m_miner->success(result.reqId, "OK");
     }
+}
+
+
+void xmrig::DonateMapper::onVerifyAlgorithm(const IClient *client, const Algorithm &algorithm, bool *ok)
+{
+
 }

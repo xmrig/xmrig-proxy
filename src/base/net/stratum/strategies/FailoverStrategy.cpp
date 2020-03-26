@@ -23,10 +23,10 @@
  */
 
 
-#include "base/kernel/interfaces/IStrategyListener.h"
-#include "base/net/stratum/Client.h"
 #include "base/net/stratum/strategies/FailoverStrategy.h"
-#include "common/Platform.h"
+#include "base/kernel/interfaces/IClient.h"
+#include "base/kernel/interfaces/IStrategyListener.h"
+#include "base/kernel/Platform.h"
 
 
 xmrig::FailoverStrategy::FailoverStrategy(const std::vector<Pool> &pools, int retryPause, int retries, IStrategyListener *listener, bool quiet) :
@@ -56,7 +56,7 @@ xmrig::FailoverStrategy::FailoverStrategy(int retryPause, int retries, IStrategy
 
 xmrig::FailoverStrategy::~FailoverStrategy()
 {
-    for (Client *client : m_pools) {
+    for (IClient *client : m_pools) {
         client->deleteLater();
     }
 }
@@ -64,8 +64,8 @@ xmrig::FailoverStrategy::~FailoverStrategy()
 
 void xmrig::FailoverStrategy::add(const Pool &pool)
 {
-    Client *client = new Client(static_cast<int>(m_pools.size()), Platform::userAgent(), this);
-    client->setPool(pool);
+    IClient *client = pool.createClient(static_cast<int>(m_pools.size()), this);
+
     client->setRetries(m_retries);
     client->setRetryPause(m_retryPause * 1000);
     client->setQuiet(m_quiet);
@@ -76,7 +76,7 @@ void xmrig::FailoverStrategy::add(const Pool &pool)
 
 int64_t xmrig::FailoverStrategy::submit(const JobResult &result)
 {
-    if (m_active == -1) {
+    if (!isActive()) {
         return -1;
     }
 
@@ -100,9 +100,9 @@ void xmrig::FailoverStrategy::resume()
 }
 
 
-void xmrig::FailoverStrategy::setAlgo(const xmrig::Algorithm &algo)
+void xmrig::FailoverStrategy::setAlgo(const Algorithm &algo)
 {
-    for (Client *client : m_pools) {
+    for (IClient *client : m_pools) {
         client->setAlgo(algo);
     }
 }
@@ -110,8 +110,8 @@ void xmrig::FailoverStrategy::setAlgo(const xmrig::Algorithm &algo)
 
 void xmrig::FailoverStrategy::stop()
 {
-    for (size_t i = 0; i < m_pools.size(); ++i) {
-        m_pools[i]->disconnect();
+    for (auto &pool : m_pools) {
+        pool->disconnect();
     }
 
     m_index  = 0;
@@ -123,13 +123,13 @@ void xmrig::FailoverStrategy::stop()
 
 void xmrig::FailoverStrategy::tick(uint64_t now)
 {
-    for (Client *client : m_pools) {
+    for (IClient *client : m_pools) {
         client->tick(now);
     }
 }
 
 
-void xmrig::FailoverStrategy::onClose(Client *client, int failures)
+void xmrig::FailoverStrategy::onClose(IClient *client, int failures)
 {
     if (failures == -1) {
         return;
@@ -150,7 +150,13 @@ void xmrig::FailoverStrategy::onClose(Client *client, int failures)
 }
 
 
-void xmrig::FailoverStrategy::onJobReceived(Client *client, const Job &job, const rapidjson::Value &)
+void xmrig::FailoverStrategy::onLogin(IClient *client, rapidjson::Document &doc, rapidjson::Value &params)
+{
+    m_listener->onLogin(this, client, doc, params);
+}
+
+
+void xmrig::FailoverStrategy::onJobReceived(IClient *client, const Job &job, const rapidjson::Value &)
 {
     if (m_active == client->id()) {
         m_listener->onJob(this, client, job);
@@ -158,7 +164,7 @@ void xmrig::FailoverStrategy::onJobReceived(Client *client, const Job &job, cons
 }
 
 
-void xmrig::FailoverStrategy::onLoginSuccess(Client *client)
+void xmrig::FailoverStrategy::onLoginSuccess(IClient *client)
 {
     int active = m_active;
 
@@ -179,7 +185,13 @@ void xmrig::FailoverStrategy::onLoginSuccess(Client *client)
 }
 
 
-void xmrig::FailoverStrategy::onResultAccepted(Client *client, const SubmitResult &result, const char *error)
+void xmrig::FailoverStrategy::onResultAccepted(IClient *client, const SubmitResult &result, const char *error)
 {
     m_listener->onResultAccepted(this, client, result, error);
+}
+
+
+void xmrig::FailoverStrategy::onVerifyAlgorithm(const IClient *client, const Algorithm &algorithm, bool *ok)
+{
+    m_listener->onVerifyAlgorithm(this, client, algorithm, ok);
 }

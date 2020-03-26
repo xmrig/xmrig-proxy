@@ -31,10 +31,12 @@ static inline uint8_t hf_hex2bin(uint8_t c, bool &err)
     if (c >= '0' && c <= '9') {
         return c - '0';
     }
-    else if (c >= 'a' && c <= 'f') {
+
+    if (c >= 'a' && c <= 'f') {
         return c - 'a' + 0xA;
     }
-    else if (c >= 'A' && c <= 'F') {
+
+    if (c >= 'A' && c <= 'F') {
         return c - 'A' + 0xA;
     }
 
@@ -53,14 +55,7 @@ static inline uint8_t hf_bin2hex(uint8_t c)
 }
 
 
-xmrig::Buffer::Buffer() :
-    m_data(nullptr),
-    m_size(0)
-{
-}
-
-
-xmrig::Buffer::Buffer(Buffer &&other) :
+xmrig::Buffer::Buffer(Buffer &&other) noexcept :
     m_data(other.m_data),
     m_size(other.m_size)
 {
@@ -84,7 +79,9 @@ xmrig::Buffer::Buffer(const char *data, size_t size)
 xmrig::Buffer::Buffer(size_t size) :
     m_size(size)
 {
-    m_data = new char[size]();
+    if (size > 0) {
+        m_data = new char[size]();
+    }
 }
 
 
@@ -112,6 +109,10 @@ void xmrig::Buffer::from(const char *data, size_t size)
 
 xmrig::Buffer xmrig::Buffer::allocUnsafe(size_t size)
 {
+    if (size == 0) {
+        return {};
+    }
+
     Buffer buf;
     buf.m_size = size;
     buf.m_data = new char[size];
@@ -138,11 +139,13 @@ bool xmrig::Buffer::fromHex(const uint8_t *in, size_t size, uint8_t *out)
 xmrig::Buffer xmrig::Buffer::fromHex(const char *data, size_t size)
 {
     if (data == nullptr || size % 2 != 0) {
-        return Buffer();
+        return {};
     }
 
     Buffer buf(size / 2);
-    fromHex(data, size, buf.data());
+    if (!fromHex(data, size, buf.data())) {
+        return {};
+    }
 
     return buf;
 }
@@ -154,12 +157,6 @@ void xmrig::Buffer::toHex(const uint8_t *in, size_t size, uint8_t *out)
         out[i * 2]     = hf_bin2hex((in[i] & 0xF0) >> 4);
         out[i * 2 + 1] = hf_bin2hex(in[i] & 0x0F);
     }
-}
-
-
-xmrig::String xmrig::Buffer::toHex(const uint8_t *in, size_t size)
-{
-    return Buffer(reinterpret_cast<const char *>(in), size).toHex();
 }
 
 
@@ -180,6 +177,13 @@ xmrig::String xmrig::Buffer::toHex() const
 
 void xmrig::Buffer::copy(const char *data, size_t size)
 {
+    if (size == 0) {
+        m_data = nullptr;
+        m_size = 0;
+
+        return;
+    }
+
     m_data = new char[size];
     m_size = size;
 

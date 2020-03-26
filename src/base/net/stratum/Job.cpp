@@ -7,6 +7,7 @@
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
  * Copyright 2018      SChernykh   <https://github.com/SChernykh>
+ * Copyright 2019      Howard Chu  <https://github.com/hyc>
  * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -24,45 +25,18 @@
  */
 
 
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
 
 
 #include "base/net/stratum/Job.h"
 #include "base/tools/Buffer.h"
 
 
-xmrig::Job::Job() :
-    m_autoVariant(false),
-    m_nicehash(false),
-    m_poolId(-2),
-    m_threadId(-1),
-    m_size(0),
-    m_diff(0),
-    m_height(0),
-    m_target(0),
-    m_blob()
-{
-}
-
-
-xmrig::Job::Job(int poolId, bool nicehash, const Algorithm &algorithm, const String &clientId) :
+xmrig::Job::Job(bool nicehash, const Algorithm &algorithm, const String &clientId) :
     m_algorithm(algorithm),
-    m_autoVariant(algorithm.variant() == VARIANT_AUTO),
     m_nicehash(nicehash),
-    m_poolId(poolId),
-    m_threadId(-1),
-    m_size(0),
-    m_clientId(clientId),
-    m_diff(0),
-    m_height(0),
-    m_target(0),
-    m_blob()
-{
-}
-
-
-xmrig::Job::~Job()
+    m_clientId(clientId)
 {
 }
 
@@ -97,34 +71,28 @@ bool xmrig::Job::setBlob(const char *blob)
         m_nicehash = true;
     }
 
-    if (m_autoVariant) {
-        m_algorithm.setVariant(variant());
-    }
-
-    if (!m_algorithm.isForced()) {
-        if (m_algorithm.variant() == VARIANT_XTL && m_blob[0] >= 9) {
-            m_algorithm.setVariant(VARIANT_HALF);
-        }
-        else if (m_algorithm.variant() == VARIANT_MSR && m_blob[0] >= 8) {
-            m_algorithm.setVariant(VARIANT_HALF);
-        }
-        else if (m_algorithm.variant() == VARIANT_WOW && m_blob[0] < 11) {
-            m_algorithm.setVariant(VARIANT_2);
-        }
-        else if (m_algorithm.variant() == VARIANT_RWZ && m_blob[0] < 12) {
-            m_algorithm.setVariant(VARIANT_2);
-        }
-        else if (m_algorithm.variant() == VARIANT_ZLS && m_blob[0] < 8) {
-            m_algorithm.setVariant(VARIANT_2);
-        }
-    }
-
 #   ifdef XMRIG_PROXY_PROJECT
     memset(m_rawBlob, 0, sizeof(m_rawBlob));
     memcpy(m_rawBlob, blob, m_size * 2);
 #   endif
 
     return true;
+}
+
+
+bool xmrig::Job::setSeedHash(const char *hash)
+{
+    if (!hash || (strlen(hash) != kMaxSeedSize * 2)) {
+        return false;
+    }
+
+#   ifdef XMRIG_PROXY_PROJECT
+    m_rawSeedHash = hash;
+#   endif
+
+    m_seed = Buffer::fromHex(hash, kMaxSeedSize * 2);
+
+    return !m_seed.isEmpty();
 }
 
 
@@ -170,37 +138,71 @@ bool xmrig::Job::setTarget(const char *target)
 }
 
 
-void xmrig::Job::setAlgorithm(const char *algo)
+void xmrig::Job::setDiff(uint64_t diff)
 {
-    m_algorithm.parseAlgorithm(algo);
+    m_diff   = diff;
+    m_target = toDiff(diff);
 
-    if (m_algorithm.variant() == xmrig::VARIANT_AUTO) {
-        m_algorithm.setVariant(variant());
-    }
+#   ifdef XMRIG_PROXY_PROJECT
+    Buffer::toHex(reinterpret_cast<uint8_t *>(&m_target), 8, m_rawTarget);
+    m_rawTarget[16] = '\0';
+#   endif
 }
 
 
-void xmrig::Job::setHeight(uint64_t height)
+void xmrig::Job::copy(const Job &other)
 {
-    m_height = height;
+    m_algorithm  = other.m_algorithm;
+    m_nicehash   = other.m_nicehash;
+    m_size       = other.m_size;
+    m_clientId   = other.m_clientId;
+    m_id         = other.m_id;
+    m_backend    = other.m_backend;
+    m_diff       = other.m_diff;
+    m_height     = other.m_height;
+    m_target     = other.m_target;
+    m_index      = other.m_index;
+    m_seed       = other.m_seed;
+    m_extraNonce = other.m_extraNonce;
+    m_poolWallet = other.m_poolWallet;
+
+    memcpy(m_blob, other.m_blob, sizeof(m_blob));
+
+#   ifdef XMRIG_PROXY_PROJECT
+    m_rawSeedHash = other.m_rawSeedHash;
+
+    memcpy(m_rawBlob, other.m_rawBlob, sizeof(m_rawBlob));
+    memcpy(m_rawTarget, other.m_rawTarget, sizeof(m_rawTarget));
+#   endif
 }
 
 
-xmrig::Variant xmrig::Job::variant() const
+void xmrig::Job::move(Job &&other)
 {
-    switch (m_algorithm.algo()) {
-    case CRYPTONIGHT:
-        return (m_blob[0] >= 10) ? VARIANT_4 : ((m_blob[0] >= 8) ? VARIANT_2 : VARIANT_1);
+    m_algorithm  = other.m_algorithm;
+    m_nicehash   = other.m_nicehash;
+    m_size       = other.m_size;
+    m_clientId   = std::move(other.m_clientId);
+    m_id         = std::move(other.m_id);
+    m_backend    = other.m_backend;
+    m_diff       = other.m_diff;
+    m_height     = other.m_height;
+    m_target     = other.m_target;
+    m_index      = other.m_index;
+    m_seed       = std::move(other.m_seed);
+    m_extraNonce = std::move(other.m_extraNonce);
+    m_poolWallet = std::move(other.m_poolWallet);
 
-    case CRYPTONIGHT_LITE:
-        return VARIANT_1;
+    memcpy(m_blob, other.m_blob, sizeof(m_blob));
 
-    case CRYPTONIGHT_HEAVY:
-        return VARIANT_0;
+    other.m_size        = 0;
+    other.m_diff        = 0;
+    other.m_algorithm   = Algorithm::INVALID;
 
-    default:
-        break;
-    }
+#   ifdef XMRIG_PROXY_PROJECT
+    m_rawSeedHash = std::move(other.m_rawSeedHash);
 
-    return m_algorithm.variant();
+    memcpy(m_rawBlob, other.m_rawBlob, sizeof(m_rawBlob));
+    memcpy(m_rawTarget, other.m_rawTarget, sizeof(m_rawTarget));
+#   endif
 }

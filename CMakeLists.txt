@@ -4,43 +4,30 @@ project(xmrig-proxy)
 
 option(WITH_GOOGLE_BREAKPAD "Use Google Breakpad"     OFF)
 option(WITH_DEBUG_LOG       "Enable debug log output" OFF)
-option(WITH_HTTPD           "HTTP REST API"           ON)
+option(WITH_HTTP            "HTTP protocol support (client/server)" ON)
 option(WITH_TLS             "Enable OpenSSL support"  ON)
+option(WITH_ENV_VARS        "Enable environment variables support in config file" ON)
 
 
 include (CheckIncludeFile)
+include (cmake/os.cmake)
 include (src/base/base.cmake)
 
 
 set(HEADERS
     "${HEADERS_BASE}"
-    src/3rdparty/align.h
+    "${HEADERS_BASE_HTTP}"
     src/App.h
-    src/common/config/CommonConfig.h
-    src/common/config/ConfigLoader.h
-    src/common/config/ConfigWatcher.h
-    src/common/crypto/Algorithm.h
-    src/common/crypto/keccak.h
-    src/common/interfaces/IConfig.h
-    src/common/interfaces/IConfigCreator.h
-    src/common/interfaces/IControllerListener.h
-    src/common/interfaces/ILogBackend.h
-    src/common/log/BasicLog.h
-    src/common/log/ConsoleLog.h
-    src/common/log/FileLog.h
-    src/common/log/Log.h
-    src/common/Platform.h
-    src/common/xmrig.h
-    src/core/Config.h
-    src/core/ConfigLoader_platform.h
+    src/core/config/Config_platform.h
+    src/core/config/Config.h
+    src/core/config/ConfigTransform.h
+    src/core/config/usage.h
     src/core/Controller.h
-    src/core/usage.h
+    src/crypto/cn/CnAlgo.h
+    src/crypto/common/Algorithm.h
+    src/crypto/common/Coin.h
+    src/crypto/common/keccak.h
     src/donate.h
-    src/interfaces/IEvent.h
-    src/interfaces/IEventListener.h
-    src/interfaces/ISplitter.h
-    src/log/AccessLog.h
-    src/log/ShareLog.h
     src/net/JobResult.h
     src/net/strategies/DonateStrategy.h
     src/proxy/BindHost.h
@@ -55,6 +42,11 @@ set(HEADERS
     src/proxy/events/LoginEvent.h
     src/proxy/events/MinerEvent.h
     src/proxy/events/SubmitEvent.h
+    src/proxy/interfaces/IEvent.h
+    src/proxy/interfaces/IEventListener.h
+    src/proxy/interfaces/ISplitter.h
+    src/proxy/log/AccessLog.h
+    src/proxy/log/ShareLog.h
     src/proxy/Login.h
     src/proxy/Miner.h
     src/proxy/Miners.h
@@ -81,21 +73,14 @@ set(HEADERS
 
 set(SOURCES
     "${SOURCES_BASE}"
+    "${SOURCES_BASE_HTTP}"
     src/App.cpp
-    src/common/config/CommonConfig.cpp
-    src/common/config/ConfigLoader.cpp
-    src/common/config/ConfigWatcher.cpp
-    src/common/crypto/Algorithm.cpp
-    src/common/crypto/keccak.cpp
-    src/common/log/BasicLog.cpp
-    src/common/log/ConsoleLog.cpp
-    src/common/log/FileLog.cpp
-    src/common/log/Log.cpp
-    src/common/Platform.cpp
-    src/core/Config.cpp
+    src/core/config/Config.cpp
+    src/core/config/ConfigTransform.cpp
     src/core/Controller.cpp
-    src/log/AccessLog.cpp
-    src/log/ShareLog.cpp
+    src/crypto/common/Algorithm.cpp
+    src/crypto/common/Coin.cpp
+    src/crypto/common/keccak.cpp
     src/net/JobResult.cpp
     src/net/strategies/DonateStrategy.cpp
     src/proxy/BindHost.cpp
@@ -106,6 +91,8 @@ set(SOURCES
     src/proxy/events/ConnectionEvent.h
     src/proxy/events/Event.cpp
     src/proxy/events/MinerEvent.cpp
+    src/proxy/log/AccessLog.cpp
+    src/proxy/log/ShareLog.cpp
     src/proxy/Login.cpp
     src/proxy/Miner.cpp
     src/proxy/Miners.cpp
@@ -129,10 +116,9 @@ set(SOURCES
 
 if (WIN32)
     set(SOURCES_OS
+        "${SOURCES_OS}"
         res/app.rc
         src/App_win.cpp
-        src/base/io/Json_win.cpp
-        src/common/Platform_win.cpp
         src/proxy/Uuid_win.cpp
         )
 
@@ -140,9 +126,8 @@ if (WIN32)
     set(EXTRA_LIBS ws2_32 psapi iphlpapi userenv)
 elseif (APPLE)
     set(SOURCES_OS
+        "${SOURCES_OS}"
         src/App_unix.cpp
-        src/base/io/Json_unix.cpp
-        src/common/Platform_mac.cpp
         src/proxy/Uuid_mac.cpp
         )
 
@@ -150,16 +135,19 @@ elseif (APPLE)
     set(EXTRA_LIBS ${CFLIB})
 else()
     set(SOURCES_OS
+        "${SOURCES_OS}"
         src/App_unix.cpp
-        src/base/io/Json_unix.cpp
-        src/common/Platform_unix.cpp
         src/proxy/Uuid_unix.cpp
         )
 
     if (CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
         set(EXTRA_LIBS pthread)
     else()
-        set(EXTRA_LIBS pthread uuid.a rt dl)
+        if (NOT UUID_LIBRARY)
+            set(UUID_LIBRARY "uuid.a")
+        endif()
+
+        set(EXTRA_LIBS pthread ${UUID_LIBRARY} rt dl)
     endif()
 endif()
 
@@ -169,6 +157,13 @@ add_definitions(/D__STDC_FORMAT_MACROS)
 add_definitions(/DAPP_DEVEL)
 add_definitions(/DXMRIG_NO_ASM)
 
+add_definitions(/DXMRIG_ALGO_RANDOMX)
+add_definitions(/DXMRIG_ALGO_CN_LITE)
+add_definitions(/DXMRIG_ALGO_CN_HEAVY)
+add_definitions(/DXMRIG_ALGO_CN_PICO)
+add_definitions(/DXMRIG_ALGO_CN_GPU)
+add_definitions(/DXMRIG_ALGO_ARGON2)
+
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$" AND CMAKE_SIZEOF_VOID_P EQUAL 8)
     add_definitions(/DRAPIDJSON_SSE2)
 endif()
@@ -177,61 +172,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 find_package(UV REQUIRED)
 
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
-    set(CMAKE_BUILD_TYPE Release)
-endif()
-
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_STANDARD 11)
-
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
-    add_definitions(/DNDEBUG)
-endif()
-
-# https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_COMPILER_ID.html
-if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
-
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-class-memaccess")
-
-    if (WIN32)
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
-    else()
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
-    endif()
-
-    add_definitions(/D_GNU_SOURCE)
-
-    #set(CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -gdwarf-2")
-
-    if (WITH_GOOGLE_BREAKPAD)
-        set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -g")
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g")
-    endif()
-
-elseif (CMAKE_CXX_COMPILER_ID MATCHES MSVC)
-
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT /GL")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT /GL")
-    add_definitions(/D_CRT_SECURE_NO_WARNINGS)
-    add_definitions(/D_CRT_NONSTDC_NO_WARNINGS)
-    add_definitions(/DNOMINMAX)
-
-elseif (CMAKE_CXX_COMPILER_ID MATCHES Clang)
-
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-overloaded-virtual")
-
-endif()
-
+include(cmake/flags.cmake)
 include(cmake/OpenSSL.cmake)
-
-CHECK_INCLUDE_FILE (syslog.h HAVE_SYSLOG_H)
-if (HAVE_SYSLOG_H)
-    add_definitions(/DHAVE_SYSLOG_H)
-    set(SOURCES_SYSLOG src/common/log/SysLog.h src/common/log/SysLog.cpp)
-endif()
 
 if (WITH_GOOGLE_BREAKPAD)
     include_directories(/usr/local/include/breakpad)
@@ -240,31 +182,13 @@ else()
     add_definitions(/DXMRIG_NO_GOOGLE_BREAKPAD)
 endif()
 
-if (WITH_HTTPD)
-    find_package(MHD)
-
-    if (MHD_FOUND)
-        include_directories(${MHD_INCLUDE_DIRS})
-        set(HTTPD_SOURCES
-            src/api/Api.h
-            src/api/ApiRouter.h
-            src/common/api/HttpBody.h
-            src/common/api/Httpd.h
-            src/common/api/HttpReply.h
-            src/common/api/HttpRequest.h
-            src/api/Api.cpp
-            src/api/ApiRouter.cpp
-            src/common/api/Httpd.cpp
-            src/common/api/HttpRequest.cpp
-            )
-    else()
-        message(FATAL_ERROR "microhttpd NOT found: use `-DWITH_HTTPD=OFF` to build without http deamon support")
-    endif()
+if (WITH_HTTP)
+    set(HTTP_SOURCES
+        src/api/v1/ApiRouter.cpp
+        src/api/v1/ApiRouter.h
+        )
 else()
-    set(HTTPD_SOURCES "")
-    set(MHD_LIBRARY "")
-    add_definitions(/DXMRIG_NO_HTTPD)
-    add_definitions(/DXMRIG_NO_API)
+    set(HTTP_SOURCES "")
 endif()
 
 if (WITH_DEBUG_LOG)
@@ -275,5 +199,5 @@ include_directories(src)
 include_directories(src/3rdparty)
 include_directories(${UV_INCLUDE_DIR})
 
-add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_SYSLOG} ${HTTPD_SOURCES} ${TLS_SOURCES})
-target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENSSL_LIBRARIES} ${UV_LIBRARIES} ${MHD_LIBRARY} ${EXTRA_LIBS} ${GOOGLE_BREAKPAD_LIBS})
+add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_SYSLOG} ${HTTP_SOURCES} ${TLS_SOURCES})
+target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENSSL_LIBRARIES} ${UV_LIBRARIES} ${EXTRA_LIBS} ${GOOGLE_BREAKPAD_LIBS})

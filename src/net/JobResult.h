@@ -31,7 +31,7 @@
 
 
 #include "base/tools/String.h"
-#include "common/crypto/Algorithm.h"
+#include "crypto/common/Algorithm.h"
 
 
 namespace xmrig {
@@ -60,7 +60,7 @@ public:
     const char *result;
     const int64_t id;
     String jobId;
-    uint32_t diff;
+    uint64_t diff;
 
 private:
     uint64_t m_actualDiff;

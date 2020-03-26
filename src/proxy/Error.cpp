@@ -38,11 +38,12 @@ static const char *kUnknownError          = "Unknown error";
 static const char *kIncompatibleAlgorithm = "No compatible algorithm found, change algo option in your miner.";
 static const char *kIncorrectAlgorithm    = "Incorrect algorithm";
 static const char *kForbidden             = "Permission denied";
+static const char *kRouteNotFound         = "Algorithm negotiation failed";
 
 } /* namespace xmrig */
 
 
-const char *xmrig::Error::toString(Code code)
+const char *xmrig::Error::toString(int code)
 {
     switch (code)
     {
@@ -72,6 +73,9 @@ const char *xmrig::Error::toString(Code code)
 
     case Forbidden:
         return kForbidden;
+
+    case RouteNotFound:
+        return kRouteNotFound;
 
     default:
         break;

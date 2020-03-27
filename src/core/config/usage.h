@@ -52,6 +52,7 @@ Options:\n\
   -r, --retries=N           number of times to retry before switch to backup server (default: 1)\n\
   -R, --retry-pause=N       time to pause between retries (default: 1 second)\n\
       --custom-diff=N       override pool diff\n\
+      --custom-diff-stats   calculate stats using custom diff shares instead of pool shares\n\
       --reuse-timeout=N     timeout in seconds for reuse pool connections in simple mode\n\
       --verbose             verbose output\n\
       --user-agent=AGENT    set custom user-agent string for pool\n\
@@ -80,6 +81,7 @@ Options:\n\
 #ifdef XMRIG_FEATURE_TLS
 "\
       --tls                 enable SSL/TLS support for pool connection (needs pool support)\n\
+      --tls-gen=HOSTNAME    generate TLS certificate for specific hostname\n\
       --tls-bind=ADDR       bind to specified address with enabled TLS\n\
       --tls-cert=FILE       load TLS certificate chain from a file in the PEM format\n\
       --tls-cert-key=FILE   load TLS certificate private key from a file in the PEM format\n\

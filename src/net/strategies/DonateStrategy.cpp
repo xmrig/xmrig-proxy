@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,15 +23,15 @@
  */
 
 
+#include "net/strategies/DonateStrategy.h"
+#include "base/crypto/keccak.h"
 #include "base/kernel/interfaces/IStrategyListener.h"
 #include "base/kernel/Platform.h"
 #include "base/net/stratum/Client.h"
 #include "base/tools/Buffer.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
-#include "crypto/common/keccak.h"
 #include "donate.h"
-#include "net/strategies/DonateStrategy.h"
 #include "proxy/Counters.h"
 #include "proxy/StatsData.h"
 #include "rapidjson/document.h"
@@ -191,7 +191,13 @@ void xmrig::DonateStrategy::onResultAccepted(IClient *client, const SubmitResult
 }
 
 
-void xmrig::DonateStrategy::onVerifyAlgorithm(const IClient *client, const Algorithm &algorithm, bool *ok)
+void xmrig::DonateStrategy::onVerifyAlgorithm(const IClient *, const Algorithm &, bool *)
 {
 
+}
+
+
+void xmrig::DonateStrategy::setProxy(const ProxyUrl &proxy)
+{
+    m_client->setProxy(proxy);
 }

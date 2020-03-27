@@ -71,7 +71,7 @@ xmrig::Upstreams xmrig::NonceSplitter::upstreams() const
         }
     }
 
-    return Upstreams(active, sleep, m_upstreams.size(), Counters::miners());
+    return Upstreams(active, sleep, m_upstreams.size());
 }
 
 
@@ -100,13 +100,14 @@ void xmrig::NonceSplitter::gc()
 
 void xmrig::NonceSplitter::printConnections()
 {
-    const Upstreams info = upstreams();
+    const auto info  = upstreams();
+    const auto ratio = info.ratio(Counters::miners());
 
     LOG_INFO("\x1B[01;32m* \x1B[01;37mupstreams\x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("sleep") "\x1B[01;37m%" PRIu64 "\x1B[0m" LABEL("error") "%s%" PRIu64 "\x1B[0m" LABEL("total") "\x1B[01;37m%" PRIu64,
              info.active ? "\x1B[01;32m" : "\x1B[01;31m", info.active, info.sleep, info.error ? "\x1B[01;31m" : "\x1B[01;37m", info.error, info.total);
 
     LOG_INFO("\x1B[01;32m* \x1B[01;37mminers   \x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("max") "\x1B[01;37m%" PRIu64 "\x1B[0m" LABEL("ratio") "%s1:%3.1f",
-             Counters::miners() ? "\x1B[01;32m" : "\x1B[01;31m", Counters::miners(), Counters::maxMiners(), (info.ratio > 200 ? "\x1B[01;32m" : "\x1B[01;33m"), info.ratio);
+             Counters::miners() ? "\x1B[01;32m" : "\x1B[01;31m", Counters::miners(), Counters::maxMiners(), (ratio > 200 ? "\x1B[01;32m" : "\x1B[01;33m"), ratio);
 }
 
 

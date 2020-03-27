@@ -22,8 +22,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <uv.h>
 
 
@@ -38,18 +38,9 @@
 #include "version.h"
 
 
-xmrig::App::App(Process *process) :
-    m_console(nullptr),
-    m_signals(nullptr)
+xmrig::App::App(Process *process)
 {
     m_controller = new Controller(process);
-    if (m_controller->init() != 0) {
-        return;
-    }
-
-    if (!m_controller->config()->isBackground()) {
-        m_console = new Console(this);
-    }
 }
 
 
@@ -63,19 +54,39 @@ xmrig::App::~App()
 
 int xmrig::App::exec()
 {
-    if (!m_controller->config()) {
+    if (!m_controller->isReady()) {
+        LOG_EMERG("no valid configuration found.");
+
         return 2;
     }
 
     m_signals = new Signals(this);
 
-    background();
+    int rc = 0;
+    if (background(rc)) {
+        return rc;
+    }
+
+    rc = m_controller->init();
+    if (rc != 0) {
+        return rc;
+    }
+
+    if (!m_controller->isBackground()) {
+        m_console = new Console(this);
+    }
 
     Summary::print(m_controller);
 
+    if (m_controller->config()->isDryRun()) {
+        LOG_NOTICE("OK");
+
+        return 0;
+    }
+
     m_controller->start();
 
-    const int rc = uv_run(uv_default_loop(), UV_RUN_DEFAULT);
+    rc = uv_run(uv_default_loop(), UV_RUN_DEFAULT);
     uv_loop_close(uv_default_loop());
 
     return rc;

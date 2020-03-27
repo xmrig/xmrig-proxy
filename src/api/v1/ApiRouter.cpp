@@ -22,23 +22,23 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cmath>
-#include <string.h>
-#include <uv.h>
-#include <thread>
-
-
-#include "base/api/interfaces/IApiRequest.h"
 #include "api/v1/ApiRouter.h"
+#include "base/api/interfaces/IApiRequest.h"
 #include "base/kernel/Platform.h"
 #include "base/tools/Buffer.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
+#include "proxy/Counters.h"
 #include "proxy/Miner.h"
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/stringbuffer.h"
 #include "version.h"
+
+
+#include <cmath>
+#include <cstring>
+#include <uv.h>
 
 
 static inline double normalize(double d)
@@ -57,9 +57,7 @@ xmrig::ApiRouter::ApiRouter(Base *base) :
 }
 
 
-xmrig::ApiRouter::~ApiRouter()
-{
-}
+xmrig::ApiRouter::~ApiRouter() = default;
 
 
 void xmrig::ApiRouter::onRequest(IApiRequest &request)
@@ -69,7 +67,6 @@ void xmrig::ApiRouter::onRequest(IApiRequest &request)
             request.accept();
             getMiner(request.reply(), request.doc());
             getHashrate(request.reply(), request.doc());
-            getResourcesSummary(request.reply(), request.doc());
             getMinersSummary(request.reply(), request.doc());
             getResults(request.reply(), request.doc());
         }
@@ -190,39 +187,9 @@ void xmrig::ApiRouter::getMinersSummary(rapidjson::Value &reply, rapidjson::Docu
     upstreams.AddMember("sleep",  stats.upstreams.sleep, allocator);
     upstreams.AddMember("error",  stats.upstreams.error, allocator);
     upstreams.AddMember("total",  stats.upstreams.total, allocator);
-    upstreams.AddMember("ratio",  normalize(stats.upstreams.ratio), allocator);
+    upstreams.AddMember("ratio",  normalize(stats.upstreams.ratio(Counters::miners())), allocator);
 
     reply.AddMember("upstreams", upstreams, allocator);
-}
-
-
-
-void xmrig::ApiRouter::getResourcesSummary(rapidjson::Value &reply, rapidjson::Document &doc) const
-{
-    using namespace rapidjson;
-    auto &allocator = doc.GetAllocator();
-
-    size_t rss = 0;
-    uv_resident_set_memory(&rss);
-
-    Value resources(kObjectType);
-    Value memory(kObjectType);
-    Value load_average(kArrayType);
-
-    memory.AddMember("total",               uv_get_total_memory(), allocator);
-    memory.AddMember("resident_set_memory", static_cast<uint64_t>(rss), allocator);
-
-    double loadavg[3] = { 1.0 };
-    uv_loadavg(loadavg);
-    load_average.PushBack(loadavg[0], allocator);
-    load_average.PushBack(loadavg[1], allocator);
-    load_average.PushBack(loadavg[2], allocator);
-
-    resources.AddMember("memory", memory, allocator);
-    resources.AddMember("load_average", load_average, allocator);
-    resources.AddMember("hardware_concurrency", std::thread::hardware_concurrency(), allocator);
-
-    reply.AddMember("resources", resources, allocator);
 }
 
 
@@ -243,8 +210,8 @@ void xmrig::ApiRouter::getResults(rapidjson::Value &reply, rapidjson::Document &
     results.AddMember("hashes_donate", stats.donateHashes, allocator);
 
     rapidjson::Value best(rapidjson::kArrayType);
-    for (size_t i = 0; i < stats.topDiff.size(); ++i) {
-        best.PushBack(stats.topDiff[i], allocator);
+    for (uint64_t i : stats.topDiff) {
+        best.PushBack(i, allocator);
     }
 
     results.AddMember("best", best, allocator);

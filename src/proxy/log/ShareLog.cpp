@@ -35,7 +35,7 @@
 #include "proxy/Stats.h"
 
 
-xmrig::ShareLog::ShareLog(Controller *controller, const Stats &stats) :
+xmrig::ShareLog::ShareLog(Controller *controller, Stats *stats) :
     m_stats(stats),
     m_controller(controller)
 {
@@ -77,12 +77,12 @@ void xmrig::ShareLog::onRejectedEvent(IEvent *event)
 
 void xmrig::ShareLog::accept(const AcceptEvent *event)
 {
-    if (!m_controller->config()->isVerbose() || event->isDonate()) {
+    if (!m_controller->config()->isVerbose() || event->isDonate() || event->isCustomDiff()) {
         return;
     }
 
-    LOG_INFO("#%03u \x1B[01;32maccepted\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m ip \x1B[01;37m%s \x1B[01;30m(%" PRIu64 " ms)",
-             event->mapperId(), m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, event->result.diff, event->ip(), event->result.elapsed);
+    LOG_INFO("#%03u " GREEN_BOLD("accepted") " (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff " WHITE_BOLD("%" PRIu64) " ip " WHITE_BOLD("%s") " " BLACK_BOLD("(%" PRIu64 " ms)"),
+             event->mapperId(), m_stats->data().accepted, m_stats->data().rejected, m_stats->data().invalid, event->result.diff, event->ip(), event->result.elapsed);
 }
 
 
@@ -92,6 +92,6 @@ void xmrig::ShareLog::reject(const AcceptEvent *event)
         return;
     }
 
-    LOG_INFO("#%03u \x1B[01;31mrejected\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m ip \x1B[01;37m%s \x1B[31m\"%s\"\x1B[0m \x1B[01;30m(%" PRId64 " ms)",
-             event->mapperId(), m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, event->result.diff, event->ip(), event->error(), event->result.elapsed);
+    LOG_INFO("#%03u " RED_BOLD("rejected") " (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff " WHITE_BOLD("%" PRIu64) " ip " WHITE_BOLD("%s") " " RED("\"%s\"") " " BLACK_BOLD("(%" PRIu64 " ms)"),
+             event->mapperId(), m_stats->data().accepted, m_stats->data().rejected, m_stats->data().invalid, event->result.diff, event->ip(), event->error(), event->result.elapsed);
 }

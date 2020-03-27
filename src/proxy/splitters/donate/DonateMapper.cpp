@@ -117,7 +117,7 @@ void xmrig::DonateMapper::onLoginSuccess(IClient *)
 
 void xmrig::DonateMapper::onResultAccepted(IClient *, const SubmitResult &result, const char *error)
 {
-    AcceptEvent::start(m_id, m_miner, result, true, error);
+    AcceptEvent::start(m_id, m_miner, result, true, false, error);
 
     if (error) {
         m_miner->replyWithError(result.reqId, error);

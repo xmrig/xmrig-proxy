@@ -26,7 +26,7 @@
 #define XMRIG_SPLITTER_H
 
 
-#include "common/interfaces/IControllerListener.h"
+#include "base/kernel/interfaces/IControllerListener.h"
 #include "interfaces/IEventListener.h"
 #include "interfaces/ISplitter.h"
 

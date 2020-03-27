@@ -88,7 +88,6 @@ protected:
     void onResultAccepted(IStrategy *strategy, Client *client, const SubmitResult &result, const char *error) override;
 
 private:
-    bool isColors() const;
     SubmitCtx submitCtx(int64_t seq);
     void connect();
     void setJob(const char *host, int port, const Job &job);

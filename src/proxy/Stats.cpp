@@ -50,7 +50,7 @@ void xmrig::Stats::tick(uint64_t ticks, const ISplitter *splitter)
     if ((ticks % m_hashrate.tickTime()) == 0) {
         m_hashrate.tick();
 
-#       ifndef XMRIG_NO_API
+#       ifdef XMRIG_FEATURE_API
         m_data.hashrate[0] = hashrate(60);
         m_data.hashrate[1] = hashrate(600);
         m_data.hashrate[2] = hashrate(3600);

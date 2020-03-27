@@ -27,10 +27,10 @@
 #include <string.h>
 
 
+#include "base/io/log/Log.h"
 #include "base/net/stratum/Client.h"
 #include "base/net/stratum/Pools.h"
-#include "common/log/Log.h"
-#include "core/Config.h"
+#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "net/JobResult.h"
 #include "net/strategies/DonateStrategy.h"
@@ -170,8 +170,7 @@ void xmrig::SimpleMapper::onActive(IStrategy *strategy, Client *client)
     if (m_controller->config()->isVerbose()) {
         const char *tlsVersion = client->tlsVersion();
 
-        LOG_INFO(isColors() ? "#%03u " WHITE_BOLD("use pool ") CYAN_BOLD("%s:%d ") GREEN_BOLD("%s") " \x1B[1;30m%s "
-                            : "#%03u use pool %s:%d %s %s",
+        LOG_INFO("#%03u " WHITE_BOLD("use pool ") CYAN_BOLD("%s:%d ") GREEN_BOLD("%s") " \x1B[1;30m%s ",
                  m_id, client->host(), client->port(), tlsVersion ? tlsVersion : "", client->ip());
 
         const char *fingerprint = client->tlsFingerprint();
@@ -186,13 +185,11 @@ void xmrig::SimpleMapper::onJob(IStrategy *, Client *client, const Job &job)
 {
     if (m_controller->config()->isVerbose()) {
         if (job.height()) {
-            LOG_INFO(isColors() ? "#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s") " height " WHITE_BOLD("%" PRIu64)
-                                : "#%03u new job from %s:%d diff %d algo %s height %" PRIu64,
+            LOG_INFO("#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s") " height " WHITE_BOLD("%" PRIu64),
                      m_id, client->host(), client->port(), job.diff(), job.algorithm().shortName(), job.height());
         }
         else {
-            LOG_INFO(isColors() ? "#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s")
-                                : "#%03u new job from %s:%d diff %d algo %s",
+            LOG_INFO("#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s"),
                      m_id, client->host(), client->port(), job.diff(), job.algorithm().shortName());
         }
     }
@@ -227,12 +224,6 @@ void xmrig::SimpleMapper::onResultAccepted(IStrategy *, Client *client, const Su
     else {
         m_miner->success(result.reqId, "OK");
     }
-}
-
-
-bool xmrig::SimpleMapper::isColors() const
-{
-    return m_controller->config()->isColors();
 }
 
 

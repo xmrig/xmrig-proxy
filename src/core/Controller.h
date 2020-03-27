@@ -33,6 +33,7 @@
 namespace xmrig {
 
 
+class Api;
 class Config;
 class ControllerPrivate;
 class IControllerListener;
@@ -48,6 +49,7 @@ public:
     Controller(Process *process);
     ~Controller() override;
 
+    Api *api() const;
     Config *config() const;
     const StatsData &statsData() const;
     const std::vector<Worker> &workers() const;
@@ -55,8 +57,9 @@ public:
     Proxy *proxy() const;
     std::vector<Miner*> miners() const;
     void addListener(IControllerListener *listener);
+    void save();
+    void start();
     void stop();
-    void watch();
 
 protected:
     void onNewConfig(IConfig *config) override;
@@ -65,6 +68,8 @@ private:
     ControllerPrivate *d_ptr;
 };
 
+
 } /* namespace xmrig */
+
 
 #endif /* XMRIG_CONTROLLER_H */

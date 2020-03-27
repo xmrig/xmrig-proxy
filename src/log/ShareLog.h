@@ -48,7 +48,6 @@ protected:
     void onRejectedEvent(IEvent *event) override;
 
 private:
-    bool isColors() const;
     void accept(const AcceptEvent *event);
     void reject(const AcceptEvent *event);
 

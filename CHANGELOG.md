@@ -1,3 +1,7 @@
+# v5.10.1
+- [#1306](https://github.com/xmrig/xmrig/issues/1306) Fixed possible double connection to a pool.
+- [#1654](https://github.com/xmrig/xmrig/issues/1654) Fixed build with LibreSSL.
+
 # v5.10.0
 - [#1596](https://github.com/xmrig/xmrig/issues/1596) Major TLS (Transport Layer Security) subsystem update.
 - Reduced memory consumption by 4 kB per connection.

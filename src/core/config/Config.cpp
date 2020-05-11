@@ -23,10 +23,10 @@
  */
 
 #include "core/config/Config.h"
+#include "3rdparty/rapidjson/document.h"
 #include "base/io/log/Log.h"
-#include "donate.h"
-#include "rapidjson/document.h"
 #include "base/kernel/interfaces/IJsonReader.h"
+#include "donate.h"
 
 
 #include <array>

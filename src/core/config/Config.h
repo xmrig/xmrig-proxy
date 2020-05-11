@@ -26,11 +26,11 @@
 #define XMRIG_CONFIG_H
 
 
+#include "3rdparty/rapidjson/fwd.h"
 #include "base/kernel/config/BaseConfig.h"
 #include "base/tools/String.h"
 #include "proxy/BindHost.h"
 #include "proxy/workers/Workers.h"
-#include "rapidjson/fwd.h"
 
 
 #include <cstdint>

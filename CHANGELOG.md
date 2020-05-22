@@ -1,3 +1,7 @@
+# v5.10.2
+- [#1664](https://github.com/xmrig/xmrig/pull/1664) Improved JSON config error reporting.
+- Fixed memory leak in HTTP client.
+
 # v5.10.1
 - [#1306](https://github.com/xmrig/xmrig/issues/1306) Fixed possible double connection to a pool.
 - [#1654](https://github.com/xmrig/xmrig/issues/1654) Fixed build with LibreSSL.

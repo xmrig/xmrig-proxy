@@ -24,6 +24,7 @@
 
 
 #include "net/strategies/DonateStrategy.h"
+#include "3rdparty/rapidjson/document.h"
 #include "base/crypto/keccak.h"
 #include "base/kernel/interfaces/IStrategyListener.h"
 #include "base/kernel/Platform.h"
@@ -34,7 +35,6 @@
 #include "donate.h"
 #include "proxy/Counters.h"
 #include "proxy/StatsData.h"
-#include "rapidjson/document.h"
 
 
 namespace xmrig {

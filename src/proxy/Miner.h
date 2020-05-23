@@ -31,12 +31,12 @@
 #include <uv.h>
 
 
+#include "3rdparty/rapidjson/fwd.h"
 #include "base/kernel/interfaces/ILineListener.h"
 #include "base/net/tools/LineReader.h"
 #include "base/net/tools/Storage.h"
 #include "base/tools/Object.h"
 #include "base/tools/String.h"
-#include "rapidjson/fwd.h"
 
 
 using BIO = struct bio_st;

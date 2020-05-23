@@ -136,7 +136,7 @@ else()
     endif()
 endif()
 
-add_definitions(/DXMRIG_PROXY_PROJECT)
+add_definitions(/DXMRIG_PROXY_PROJECT /DXMRIG_FORCE_TLS)
 add_definitions(/DUNICODE)
 add_definitions(/D__STDC_FORMAT_MACROS)
 add_definitions(/DAPP_DEVEL)

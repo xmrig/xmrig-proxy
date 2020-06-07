@@ -1,3 +1,7 @@
+# v5.11.0
+- Added new algorithm `cn/ccx` for Conceal.
+- Removed previously deprecated `cn/gpu` algorithm.
+
 # v5.10.2
 - [#1664](https://github.com/xmrig/xmrig/pull/1664) Improved JSON config error reporting.
 - Fixed memory leak in HTTP client.

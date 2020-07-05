@@ -35,6 +35,7 @@
 #include "proxy/Miner.h"
 #include "proxy/splitters/nicehash/NonceMapper.h"
 #include "proxy/splitters/nicehash/NonceSplitter.h"
+#include "base/kernel/interfaces/IClient.h"
 #include "Summary.h"
 
 

@@ -22,7 +22,7 @@
 
 namespace xmrig {
 
-Algorithms AlgoSwitch::intersection(Algorithms a1, Algorithms a2) {
+Algorithms AlgoSwitch::intersection(Algorithms a1, Algorithms a2) const {
   Algorithms r;
   std::sort(a1.begin(), a1.end());
   std::sort(a2.begin(), a2.end());
@@ -30,7 +30,7 @@ Algorithms AlgoSwitch::intersection(Algorithms a1, Algorithms a2) {
   return r;
 }
 
-algo_perfs AlgoSwitch::intersection(const algo_perfs& a1, const algo_perfs& a2) {
+algo_perfs AlgoSwitch::intersection(const algo_perfs& a1, const algo_perfs& a2) const {
   algo_perfs r;
   algo_perfs::const_iterator i1 = a1.begin();
   algo_perfs::const_iterator i2 = a2.begin();

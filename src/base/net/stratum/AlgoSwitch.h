@@ -32,8 +32,8 @@ class AlgoSwitch {
   Algorithms m_algos, m_default_algos;
   algo_perfs m_algo_perfs, m_default_algo_perfs;
 
-  Algorithms intersection(Algorithms, Algorithms);
-  algo_perfs intersection(const algo_perfs&, const algo_perfs&);
+  Algorithms intersection(Algorithms, Algorithms) const;
+  algo_perfs intersection(const algo_perfs&, const algo_perfs&) const;
 
   void compute_common_miner_algo_perfs();
 

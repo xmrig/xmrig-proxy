@@ -681,6 +681,8 @@ void xmrig::Client::getjob()
     using namespace rapidjson;
 
     if (!m_rpcId) return;
+    if (m_getjob && m_getjob + 30*1000 < Chrono::steadyMSecs()) return;
+    m_getjob = Chrono::steadyMSecs();
 
     Document doc(kObjectType);
     auto &allocator = doc.GetAllocator();

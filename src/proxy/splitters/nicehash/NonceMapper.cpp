@@ -173,6 +173,11 @@ void xmrig::NonceMapper::tick(uint64_t, uint64_t now)
 }
 
 
+IClient* xmrig::NonceMapper::client() const {
+  return m_strategy->client();
+}
+
+
 #ifdef APP_DEVEL
 void xmrig::NonceMapper::printState()
 {

@@ -210,7 +210,7 @@ void xmrig::NonceMapper::onActive(IStrategy *strategy, IClient *client)
 }
 
 
-void xmrig::NonceMapper::onJob(IStrategy *, IClient *client, const Job &job)
+void xmrig::NonceMapper::onJob(IStrategy *, IClient *client, const Job &job, const rapidjson::Value &)
 {
     if (m_donate) {
         if (m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {

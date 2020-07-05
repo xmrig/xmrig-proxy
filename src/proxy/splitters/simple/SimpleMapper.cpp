@@ -181,7 +181,7 @@ void xmrig::SimpleMapper::onActive(IStrategy *strategy, IClient *client)
 }
 
 
-void xmrig::SimpleMapper::onJob(IStrategy *, IClient *client, const Job &job)
+void xmrig::SimpleMapper::onJob(IStrategy *, IClient *client, const Job &job, const rapidjson::Value &)
 {
     if (m_controller->config()->isVerbose()) {
         if (job.height()) {

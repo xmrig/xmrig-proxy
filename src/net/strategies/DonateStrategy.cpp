@@ -64,9 +64,9 @@ xmrig::DonateStrategy::DonateStrategy(Controller *controller, IStrategyListener 
     m_client = new Client(-1, Platform::userAgent(), this);
 
 #   ifdef XMRIG_FEATURE_TLS
-    m_client->setPool(Pool("donate.ssl.xmrig.com", 8443, userId, nullptr, Pool::kKeepAliveTimeout, false, true));
+    m_client->setPool(Pool("donate.ssl.xmrig.com", 8443, userId, nullptr, Pool::kKeepAliveTimeout, false, true, Pool::MODE_DAEMON));
 #   else
-    m_client->setPool(Pool("donate.v2.xmrig.com", 5555, userId, nullptr));
+    m_client->setPool(Pool("donate.v2.xmrig.com", 5555, userId, nullptr, Pool::kKeepAliveTimeout, false, false, Pool::MODE_DAEMON));
 #   endif
 
     m_client->setRetryPause(5000);
@@ -157,14 +157,14 @@ void xmrig::DonateStrategy::onClose(IClient *, int)
 }
 
 
-void xmrig::DonateStrategy::onJobReceived(IClient *client, const Job &job, const rapidjson::Value &)
+void xmrig::DonateStrategy::onJobReceived(IClient *client, const Job &job, const rapidjson::Value &params)
 {
     if (!isActive()) {
         m_active = true;
         m_listener->onActive(this, client);
     }
 
-    m_listener->onJob(this, client, job);
+    m_listener->onJob(this, client, job, params);
 }
 
 

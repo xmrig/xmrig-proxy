@@ -85,6 +85,8 @@ bool xmrig::NonceMapper::add(Miner *miner)
     }
 
     miner->setMapperId(static_cast<ssize_t>(m_id));
+    m_strategy->client()->add_miner(miner);
+    if (m_donate) m_donate->client()->add_miner(miner);
     return true;
 }
 
@@ -122,6 +124,8 @@ void xmrig::NonceMapper::reload(const Pools &pools)
 void xmrig::NonceMapper::remove(const Miner *miner)
 {
     m_storage->remove(miner);
+    m_strategy->client()->del_miner(miner);
+    if (m_donate) m_donate->client()->del_miner(miner);
 }
 
 

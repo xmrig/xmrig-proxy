@@ -60,6 +60,9 @@ protected:
     inline void setQuiet(bool quiet) override                  { m_quiet = quiet; }
     inline void setRetries(int retries) override               { m_retries = retries; }
     inline void setRetryPause(uint64_t ms) override            { m_retryPause = ms; }
+    void add_miner(const Miner*) override                      {}
+    void del_miner(const Miner*) override                      {}
+
 
     void setPool(const Pool &pool) override;
 

@@ -28,6 +28,7 @@
 
 
 #include <vector>
+#include <map>
 
 
 #include "3rdparty/rapidjson/fwd.h"
@@ -123,6 +124,8 @@ private:
 
 
 using Algorithms = std::vector<Algorithm>;
+typedef std::pair<Algorithm::Id, float> algo_perf;
+typedef std::map<Algorithm::Id, float> algo_perfs;
 
 
 } /* namespace xmrig */

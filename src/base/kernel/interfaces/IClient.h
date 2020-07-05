@@ -41,6 +41,7 @@ class JobResult;
 class Pool;
 class ProxyUrl;
 class String;
+class Miner;
 
 
 class IClient
@@ -85,6 +86,8 @@ public:
     virtual void setRetries(int retries)                                    = 0;
     virtual void setRetryPause(uint64_t ms)                                 = 0;
     virtual void tick(uint64_t now)                                         = 0;
+    virtual void add_miner(const Miner*)                                    = 0;
+    virtual void del_miner(const Miner*)                                    = 0;
 };
 
 

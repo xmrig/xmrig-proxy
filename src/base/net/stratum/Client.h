@@ -42,6 +42,7 @@
 #include "base/net/tools/LineReader.h"
 #include "base/net/tools/Storage.h"
 #include "base/tools/Object.h"
+#include "base/net/stratum/AlgoSwitch.h"
 
 
 using BIO = struct bio_st;
@@ -54,7 +55,7 @@ class IClientListener;
 class JobResult;
 
 
-class Client : public BaseClient, public IDnsListener, public ILineListener
+class Client : public BaseClient, public IDnsListener, public ILineListener, public AlgoSwitch
 {
 public:
     XMRIG_DISABLE_COPY_MOVE_DEFAULT(Client)
@@ -78,6 +79,9 @@ protected:
     void connect(const Pool &pool) override;
     void deleteLater() override;
     void tick(uint64_t now) override;
+    void add_miner(const Miner* miner) override { AlgoSwitch::add_miner(miner); getjob(); }
+    void del_miner(const Miner* miner) override { AlgoSwitch::del_miner(miner); getjob(); }
+    void setPool(const Pool &pool) override { BaseClient::setPool(pool); setDefaultAlgoSwitchAlgo(pool.algorithm()); }
 
     void onResolved(const Dns &dns, int status) override;
 
@@ -93,6 +97,7 @@ private:
     bool isCriticalError(const char *message);
     bool parseJob(const rapidjson::Value &params, int *code);
     bool parseLogin(const rapidjson::Value &result, int *code);
+    bool parseGetjob(const rapidjson::Value &result, int *code);
     bool send(BIO *bio);
     bool verifyAlgorithm(const Algorithm &algorithm, const char *algo) const;
     bool write(const uv_buf_t &buf);
@@ -101,6 +106,7 @@ private:
     void connect(sockaddr *addr);
     void handshake();
     void login();
+    void getjob();
     void onClose();
     void parse(char *line, size_t len);
     void parseExtensions(const rapidjson::Value &result);

@@ -37,6 +37,7 @@
 #include "base/net/tools/Storage.h"
 #include "base/tools/Object.h"
 #include "base/tools/String.h"
+#include "base/crypto/Algorithm.h"
 
 
 using BIO = struct bio_st;
@@ -85,6 +86,8 @@ public:
     inline const String &user() const                             { return m_user; }
     inline int32_t routeId() const                                { return m_routeId; }
     inline int64_t id() const                                     { return m_id; }
+    inline const Algorithms& get_algos() const                    { return m_algos; }
+    inline const algo_perfs& get_algo_perfs() const               { return m_algo_perfs; }
     inline ssize_t mapperId() const                               { return m_mapperId; }
     inline State state() const                                    { return m_state; }
     inline uint16_t localPort() const                             { return m_localPort; }
@@ -157,6 +160,8 @@ private:
     uint8_t m_fixedByte     = 0;
     uintptr_t m_key;
     uv_tcp_t *m_socket;
+    Algorithms m_algos;
+    algo_perfs m_algo_perfs;
 
     static char m_sendBuf[16384];
     static Storage<Miner> m_storage;

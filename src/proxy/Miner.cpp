@@ -209,6 +209,22 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
             m_agent    = Json::getString(params, "agent");
             m_rigId    = Json::getString(params, "rigid");
 
+            m_algos    = algorithms;
+            m_algo_perfs.clear();
+            if (params.HasMember("algo-perf")) {
+                const rapidjson::Value &value = params["algo-perf"];
+                if (value.IsObject()) for (auto &member : value.GetObject()) {
+                    if (member.value.IsArray() || member.value.IsObject()) continue;
+                    const Algorithm algo(member.name.GetString());
+                    if (!algo.isValid()) continue;
+                    float perf;
+                    if (member.value.IsFloat()) perf = member.value.GetFloat();
+                    else if (member.value.IsInt()) perf = member.value.GetInt();
+                    else continue;
+                    m_algo_perfs.insert(algo_perf(algo.id(), perf));
+                }
+            }
+
             LoginEvent::create(this, id, algorithms, params)->start();
             return true;
         }

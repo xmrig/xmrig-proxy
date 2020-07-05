@@ -73,6 +73,7 @@ public:
     void start();
     void submit(SubmitEvent *event);
     void tick(uint64_t ticks, uint64_t now);
+    IClient* client() const { return m_strategy->client(); }
 
     inline bool isSuspended() const { return m_suspended > 0; }
     inline int suspended() const    { return m_suspended; }

@@ -731,7 +731,7 @@ void xmrig::Client::parse(char *line, size_t len)
     rapidjson::Document doc;
     if (doc.ParseInsitu(line).HasParseError()) {
         if (!isQuiet()) {
-            LOG_ERR("[%s] JSON decode failed: \"%s\"", url(), rapidjson::GetParseError_En(doc.GetParseError()));
+            LOG_ERR("[%s] JSON decode failed: \"%s\": %s", url(), rapidjson::GetParseError_En(doc.GetParseError()), line);
         }
 
         return;

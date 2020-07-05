@@ -90,8 +90,8 @@ rapidjson::Value AlgoSwitch::algo_perfs_toJSON(rapidjson::Document& doc) const {
 
 bool AlgoSwitch::try_miner(const Miner* miner) const {
   if (m_miner_algo_perfs.empty()) return true;
-  if (miner->get_algos().size() < m_algos.size()) return false;
-  if (miner->get_algo_perfs().size() < m_algo_perfs.size()) return false;
+  if (intersection(m_algos, miner->get_algos()).size() < m_algos.size()) return false;
+  if (intersection(m_algo_perfs, miner->get_algo_perfs()).size() < m_algo_perfs.size()) return false;
   return true;
 }
 

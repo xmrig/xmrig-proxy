@@ -70,7 +70,7 @@ void AlgoSwitch::setDefaultAlgoSwitchAlgo(const Algorithm& algo) {
   }
 }
 
-rapidjson::Value AlgoSwitch::algos_toJSON(rapidjson::Document& doc) {
+rapidjson::Value AlgoSwitch::algos_toJSON(rapidjson::Document& doc) const {
   auto &allocator = doc.GetAllocator();
   rapidjson::Value algos(rapidjson::kArrayType);
   for (const auto& algo: m_algos.empty() ? m_default_algos : m_algos) {
@@ -79,13 +79,21 @@ rapidjson::Value AlgoSwitch::algos_toJSON(rapidjson::Document& doc) {
   return algos;
 }
 
-rapidjson::Value AlgoSwitch::algo_perfs_toJSON(rapidjson::Document& doc) {
+rapidjson::Value AlgoSwitch::algo_perfs_toJSON(rapidjson::Document& doc) const {
   auto &allocator = doc.GetAllocator();
   rapidjson::Value algo_perfs(rapidjson::kObjectType);
   for (const auto& algo_perf: m_algo_perfs.empty() ? m_default_algo_perfs : m_algo_perfs) {
     algo_perfs.AddMember(rapidjson::StringRef(Algorithm(algo_perf.first).shortName()), algo_perf.second, allocator);
   }
   return algo_perfs;
+}
+
+bool AlgoSwitch::try_miner(const Miner* miner) const {
+  const Algorithms algos      = m_miner_algo_perfs.empty() ? miner->get_algos()      : intersection(m_algos, miner->get_algos());
+  if (algos.size() < m_algos.size()) return false;
+  const algo_perfs algo_perfs = m_miner_algo_perfs.empty() ? miner->get_algo_perfs() : intersection(m_algo_perfs, miner->get_algo_perfs());
+  if (algo_perfs.size() < m_algo_perfs.size()) return false;
+  return true;
 }
 
 void AlgoSwitch::add_miner(const Miner* miner) {

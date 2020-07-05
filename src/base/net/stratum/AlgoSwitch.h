@@ -40,8 +40,9 @@ class AlgoSwitch {
   public:
     AlgoSwitch() { setDefaultAlgoSwitchAlgo(Algorithm(Algorithm::RX_0)); }
     void setDefaultAlgoSwitchAlgo(const Algorithm&);
-    rapidjson::Value algos_toJSON(rapidjson::Document&);
-    rapidjson::Value algo_perfs_toJSON(rapidjson::Document&);
+    rapidjson::Value algos_toJSON(rapidjson::Document&) const;
+    rapidjson::Value algo_perfs_toJSON(rapidjson::Document&) const;
+    bool try_miner(const Miner*) const;
     void add_miner(const Miner*);
     void del_miner(const Miner*);
 };

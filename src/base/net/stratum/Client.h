@@ -79,6 +79,7 @@ protected:
     void connect(const Pool &pool) override;
     void deleteLater() override;
     void tick(uint64_t now) override;
+    bool try_miner(const Miner* miner) override { return AlgoSwitch::try_miner(miner); }
     void add_miner(const Miner* miner) override { AlgoSwitch::add_miner(miner); getjob(); }
     void del_miner(const Miner* miner) override { AlgoSwitch::del_miner(miner); getjob(); }
     void setPool(const Pool &pool) override { BaseClient::setPool(pool); setDefaultAlgoSwitchAlgo(pool.algorithm()); }

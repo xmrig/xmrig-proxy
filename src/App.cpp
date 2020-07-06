@@ -30,10 +30,10 @@
 #include "App.h"
 #include "base/io/Console.h"
 #include "base/io/log/Log.h"
+#include "base/io/log/Tags.h"
 #include "base/io/Signals.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
-#include "proxy/Proxy.h"
 #include "Summary.h"
 #include "version.h"
 
@@ -79,7 +79,7 @@ int xmrig::App::exec()
     Summary::print(m_controller);
 
     if (m_controller->config()->isDryRun()) {
-        LOG_NOTICE("OK");
+        LOG_NOTICE("%s " WHITE_BOLD("OK"), Tags::config());
 
         return 0;
     }
@@ -95,47 +95,12 @@ int xmrig::App::exec()
 
 void xmrig::App::onConsoleCommand(char command)
 {
-    switch (command) {
-#   ifdef APP_DEVEL
-    case 's':
-    case 'S':
-        m_controller->proxy()->printState();
-        break;
-#   endif
-
-    case 'v':
-    case 'V':
-        m_controller->config()->toggleVerbose();
-        LOG_NOTICE("verbose: %d", m_controller->config()->isVerbose());
-        break;
-
-    case 'h':
-    case 'H':
-        m_controller->proxy()->printHashrate();
-        break;
-
-    case 'c':
-    case 'C':
-        m_controller->proxy()->printConnections();
-        break;
-
-    case 'd':
-    case 'D':
-        m_controller->proxy()->toggleDebug();
-        break;
-
-    case 'w':
-    case 'W':
-        m_controller->proxy()->printWorkers();
-        break;
-
-    case 3:
-        LOG_WARN("Ctrl+C received, exiting");
+    if (command == 3) {
+        LOG_WARN("%s " YELLOW("Ctrl+C received, exiting"), Tags::signal());
         close();
-        break;
-
-    default:
-        break;
+    }
+    else {
+        m_controller->execCommand(command);
     }
 }
 
@@ -145,15 +110,15 @@ void xmrig::App::onSignal(int signum)
     switch (signum)
     {
     case SIGHUP:
-        LOG_WARN("SIGHUP received, exiting");
+        LOG_WARN("%s " YELLOW("SIGHUP received, exiting"), Tags::signal());
         break;
 
     case SIGTERM:
-        LOG_WARN("SIGTERM received, exiting");
+        LOG_WARN("%s " YELLOW("SIGTERM received, exiting"), Tags::signal());
         break;
 
     case SIGINT:
-        LOG_WARN("SIGINT received, exiting");
+        LOG_WARN("%s " YELLOW("SIGINT received, exiting"), Tags::signal());
         break;
 
     default:

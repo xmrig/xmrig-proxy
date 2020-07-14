@@ -130,7 +130,7 @@ jobs:
         with:
           name: macos_build
       - name: Download CentOS 6 build artifacts
-        uses: actions/download-arti+fact@v1
+        uses: actions/download-artifact@v1
         with:
           name: centos6_build
       - name: Upload Windows build release asset

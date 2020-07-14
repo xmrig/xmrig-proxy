@@ -88,7 +88,7 @@ jobs:
           git checkout ${GITHUB_REF:10}
       - name: Build project on CentOS 6
         run: |
-          scl enable devtoolset-7 "cmake . -DWITH_TLS=OFF"
+          scl enable devtoolset-7 "cmake . -DWITH_TLS=OFF -DWITH_HWLOC=OFF"
           scl enable devtoolset-7 "make -j$(nproc)"
           cp src/config.json .
           mv xmrig-proxy-notls xmrig-proxy

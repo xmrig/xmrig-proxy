@@ -91,7 +91,7 @@ jobs:
           scl enable devtoolset-7 "cmake . -DWITH_TLS=OFF -DWITH_HWLOC=OFF"
           scl enable devtoolset-7 "make -j$(nproc)"
           cp src/config.json .
-          mv xmrig-proxy-notls xmrig-proxy
+          mv xmrig-notls xmrig-proxy
           tar cfz centos6_build.tar.gz xmrig-proxy config.json
       - name: Upload CentOS 6 build artifacts
         uses: actions/upload-artifact@v1

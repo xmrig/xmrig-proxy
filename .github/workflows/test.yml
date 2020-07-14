@@ -9,9 +9,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@master
+      - name: Checkout deps
+        run:  git clone https://github.com/xmrig/xmrig-deps.git
       - name: Build project on Windows
         run: |
-          cmake . -G "Visual Studio 16 2019"
+          cmake . -G "Visual Studio 16 2019" -DXMRIG_DEPS=xmrig-deps\msvc2019\x64
           cd "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin"
           .\MSBuild.exe /p:Configuration=Release $Env:GITHUB_WORKSPACE\xmrig-proxy.sln
 

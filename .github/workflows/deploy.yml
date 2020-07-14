@@ -84,14 +84,14 @@ jobs:
           rpm -i https://github.com/sipcapture/captagent/raw/master/dependency/centos/6/libuv-devel-1.8.0-1.el6.x86_64.rpm
       - name: Checkout code
         run: |
-          git clone https://github.com/MoneroOcean/xmrig.git .
+          git clone https://github.com/MoneroOcean/xmrig-proxy.git .
           git checkout ${GITHUB_REF:10}
       - name: Build project on CentOS 6
         run: |
-          scl enable devtoolset-7 "cmake . -DWITH_TLS=OFF -DWITH_HWLOC=OFF"
+          scl enable devtoolset-7 "cmake . -DWITH_TLS=OFF"
           scl enable devtoolset-7 "make -j$(nproc)"
           cp src/config.json .
-          mv xmrig-notls xmrig-proxy
+          mv xmrig-proxy-notls xmrig-proxy
           tar cfz centos6_build.tar.gz xmrig-proxy config.json
       - name: Upload CentOS 6 build artifacts
         uses: actions/upload-artifact@v1
@@ -130,7 +130,7 @@ jobs:
         with:
           name: macos_build
       - name: Download CentOS 6 build artifacts
-        uses: actions/download-artifact@v1
+        uses: actions/download-arti+fact@v1
         with:
           name: centos6_build
       - name: Upload Windows build release asset

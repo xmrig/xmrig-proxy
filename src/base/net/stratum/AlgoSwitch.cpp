@@ -103,7 +103,7 @@ bool AlgoSwitch::try_miner(const Miner* miner) const {
     assert(i1->first == i2->first);
     ratio += i1->second / m_miner_algo_perfs.size() / i2->second;
   }
-  ratio /= m_algo_perfs.begin();
+  ratio /= m_algo_perfs.size();
   LOG("Miner ratio: %f", ratio);
   return true;
 }

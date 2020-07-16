@@ -1,3 +1,10 @@
+# v6.3.0
+- Sync changes with the miner.
+  - Added support for upcoming Haven fork.
+  - Added tags to log records.
+  - [#1708](https://github.com/xmrig/xmrig/issues/1708) Added `title` option.
+  - [#1728](https://github.com/xmrig/xmrig/issues/1728) Fixed, 32 bit Windows builds was crash on start.
+
 # v5.11.0
 - Added new algorithm `cn/ccx` for Conceal.
 - Removed previously deprecated `cn/gpu` algorithm.

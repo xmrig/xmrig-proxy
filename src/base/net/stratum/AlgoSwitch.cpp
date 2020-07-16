@@ -95,16 +95,15 @@ bool AlgoSwitch::try_miner(const Miner* miner) const {
   if (m_algos.size() != miner->get_algos().size() || intersection(m_algos, miner->get_algos()).size() < m_algos.size()) return false;
   // make sure algo_perfs has the same keys, if not return false
   if (m_algo_perfs.size() != miner->get_algo_perfs().size() || intersection(m_algo_perfs, miner->get_algo_perfs()).size() < m_algo_perfs.size()) return false;
-  // compute n-space ratio between m_algo_perfs and miner->get_algo_perfs() vectors
+  // if any hashrate ratio of more than 20% then we do not place miners in the same group
   algo_perfs::const_iterator i1 = m_algo_perfs.begin();
   algo_perfs::const_iterator i2 = miner->get_algo_perfs().begin();
-  float ratio = 0;
   for (; i1 != m_algo_perfs.end(); ++ i1, ++ i2) {
     assert(i1->first == i2->first);
-    ratio += i1->second / m_miner_algo_perfs.size() / i2->second;
+    if (i2->second == 0.0f) return false;
+    const float ratio = i1->second / m_miner_algo_perfs.size() / i2->second;
+    if (ratio > 1.2f || ratio < 0.8f) return false;
   }
-  ratio /= m_algo_perfs.size();
-  LOG_WARN("Miner ratio: %f", ratio);
   return true;
 }
 

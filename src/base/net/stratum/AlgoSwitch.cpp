@@ -99,7 +99,7 @@ bool AlgoSwitch::try_miner(const Miner* miner) const {
   algo_perfs::const_iterator i1 = m_algo_perfs.begin();
   algo_perfs::const_iterator i2 = miner->get_algo_perfs().begin();
   float ratio = 0;
-  for (; i1 != a1.end(); ++ i1, ++ i2) {
+  for (; i1 != m_algo_perfs.end(); ++ i1, ++ i2) {
     assert(i1->first == i2->first);
     ratio += i1->second / m_miner_algo_perfs.size() / i2->second;
   }

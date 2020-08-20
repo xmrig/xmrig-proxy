@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@
 
 #include "base/kernel/interfaces/IStrategyListener.h"
 #include "base/net/stratum/Job.h"
+#include "base/tools/Object.h"
 
 
 namespace xmrig {
@@ -51,6 +52,8 @@ class SubmitEvent;
 class SimpleMapper : public IStrategyListener
 {
 public:
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(SimpleMapper)
+
     SimpleMapper(uint64_t id, Controller *controller);
     ~SimpleMapper() override;
 
@@ -69,7 +72,7 @@ public:
 
 protected:
     void onActive(IStrategy *strategy, IClient *client) override;
-    void onJob(IStrategy *strategy, IClient *client, const Job &job) override;
+    void onJob(IStrategy *strategy, IClient *client, const Job &job, const rapidjson::Value &params) override;
     void onLogin(IStrategy *strategy, IClient *client, rapidjson::Document &doc, rapidjson::Value &params) override;
     void onPause(IStrategy *strategy) override;
     void onResultAccepted(IStrategy *strategy, IClient *client, const SubmitResult &result, const char *error) override;
@@ -80,17 +83,17 @@ private:
     void connect();
     void setJob(const Job &job);
 
-    bool m_active;
-    bool m_dirty;
+    bool m_active               = false;
+    bool m_dirty                = false;
     Controller *m_controller;
-    DonateStrategy *m_donate;
-    IStrategy *m_pending;
+    DonateStrategy *m_donate    = nullptr;
+    IStrategy *m_pending        = nullptr;
     IStrategy *m_strategy;
     Job m_job;
     Job m_prevJob;
-    Miner *m_miner;
+    Miner *m_miner              = nullptr;
     uint64_t m_id;
-    uint64_t m_idleTime;
+    uint64_t m_idleTime         = 0;
 };
 
 

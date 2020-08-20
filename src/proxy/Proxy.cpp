@@ -31,8 +31,11 @@
 #include <ctime>
 
 
+#include "proxy/Proxy.h"
 #include "base/io/log/Log.h"
+#include "base/io/log/Tags.h"
 #include "base/tools/Handle.h"
+#include "base/tools/Timer.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
 #include "Counters.h"
@@ -43,7 +46,6 @@
 #include "proxy/Login.h"
 #include "proxy/Miner.h"
 #include "proxy/Miners.h"
-#include "proxy/Proxy.h"
 #include "proxy/ProxyDebug.h"
 #include "proxy/Server.h"
 #include "proxy/splitters/donate/DonateSplitter.h"
@@ -66,9 +68,7 @@
 
 xmrig::Proxy::Proxy(Controller *controller) :
     m_controller(controller),
-    m_customDiff(controller),
-    m_tls(nullptr),
-    m_ticks(0)
+    m_customDiff(controller)
 {
     m_miners = new Miners();
     m_login  = new Login(controller);
@@ -88,9 +88,7 @@ xmrig::Proxy::Proxy(Controller *controller) :
     m_accessLog = new AccessLog(controller);
     m_workers   = new Workers(controller);
 
-    m_timer = new uv_timer_t;
-    m_timer->data = this;
-    uv_timer_init(uv_default_loop(), m_timer);
+    m_timer = new Timer(this);
 
 #   ifdef XMRIG_FEATURE_API
     m_api = new ApiRouter(controller);
@@ -133,7 +131,8 @@ xmrig::Proxy::Proxy(Controller *controller) :
 xmrig::Proxy::~Proxy()
 {
     Events::stop();
-    Handle::close(m_timer);
+
+    delete m_timer;
 
     for (Server *server : m_servers) {
         delete server;
@@ -172,7 +171,7 @@ void xmrig::Proxy::connect()
         this->bind(host);
     }
 
-    uv_timer_start(m_timer, Proxy::onTick, 1000, 1000);
+    m_timer->start(1000, 1000);
 }
 
 
@@ -184,8 +183,8 @@ void xmrig::Proxy::printConnections()
 
 void xmrig::Proxy::printHashrate()
 {
-    LOG_INFO("\x1B[01;32m* \x1B[01;37mspeed\x1B[0m \x1B[01;30m(1m) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(10m) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(1h) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(12h) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(24h) \x1B[01;36m%03.2f kH/s",
-             m_stats->hashrate(60), m_stats->hashrate(600), m_stats->hashrate(3600), m_stats->hashrate(3600 * 12), m_stats->hashrate(3600 * 24));
+    LOG_INFO("%s \x1B[01;37mspeed\x1B[0m \x1B[01;30m(1m) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(10m) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(1h) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(12h) \x1B[01;36m%03.2f\x1B[0m, \x1B[01;30m(24h) \x1B[01;36m%03.2f kH/s",
+             Tags::proxy(), m_stats->hashrate(60), m_stats->hashrate(600), m_stats->hashrate(3600), m_stats->hashrate(3600 * 12), m_stats->hashrate(3600 * 24));
 }
 
 
@@ -266,8 +265,8 @@ void xmrig::Proxy::gc()
 
 void xmrig::Proxy::print()
 {
-    LOG_INFO("\x1B[01;36m%03.2f kH/s\x1B[0m, shares: \x1B[01;37m%" PRIu64 "\x1B[0m/%s%" PRIu64 "\x1B[0m +%" PRIu64 ", upstreams: \x1B[01;37m%" PRIu64 "\x1B[0m, miners: \x1B[01;37m%" PRIu64 "\x1B[0m (max \x1B[01;37m%" PRIu64 "\x1B[0m) +%u/-%u",
-             m_stats->hashrate(m_controller->config()->printTime()), m_stats->data().accepted, (m_stats->data().rejected ? "\x1B[0;31m" : "\x1B[1;37m"), m_stats->data().rejected,
+    LOG_INFO("%s \x1B[01;36m%03.2f kH/s\x1B[0m, shares: \x1B[01;37m%" PRIu64 "\x1B[0m/%s%" PRIu64 "\x1B[0m +%" PRIu64 ", upstreams: \x1B[01;37m%" PRIu64 "\x1B[0m, miners: \x1B[01;37m%" PRIu64 "\x1B[0m (max \x1B[01;37m%" PRIu64 "\x1B[0m) +%u/-%u",
+             Tags::proxy(), m_stats->hashrate(m_controller->config()->printTime()), m_stats->data().accepted, (m_stats->data().rejected ? "\x1B[0;31m" : "\x1B[1;37m"), m_stats->data().rejected,
              Counters::accepted, m_splitter->upstreams().active, Counters::miners(), Counters::maxMiners(), Counters::added(), Counters::removed());
 
     Counters::reset();
@@ -291,10 +290,4 @@ void xmrig::Proxy::tick()
 
     m_splitter->tick(m_ticks);
     m_workers->tick(m_ticks);
-}
-
-
-void xmrig::Proxy::onTick(uv_timer_t *handle)
-{
-    static_cast<Proxy*>(handle->data)->tick();
 }

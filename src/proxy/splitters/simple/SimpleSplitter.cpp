@@ -70,7 +70,7 @@ xmrig::Upstreams xmrig::SimpleSplitter::upstreams() const
         }
     }
 
-    return Upstreams(active, m_idles.size(), m_upstreams.size());
+    return { active, m_idles.size(), m_upstreams.size() };
 }
 
 

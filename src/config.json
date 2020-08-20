@@ -27,6 +27,7 @@
         }
     ],
     "colors": true,
+    "title": true,
     "custom-diff": 0,
     "custom-diff-stats": false,
     "donate-level": 0,

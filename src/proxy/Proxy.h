@@ -27,10 +27,11 @@
 
 
 #include <vector>
-#include <uv.h>
 
 
 #include "base/kernel/interfaces/IBaseListener.h"
+#include "base/kernel/interfaces/ITimerListener.h"
+#include "base/tools/Object.h"
 #include "proxy/CustomDiff.h"
 #include "proxy/Stats.h"
 #include "proxy/workers/Worker.h"
@@ -55,9 +56,11 @@ class TlsContext;
 class Workers;
 
 
-class Proxy : public IBaseListener
+class Proxy : public IBaseListener, public ITimerListener
 {
 public:
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(Proxy)
+
     Proxy(Controller *controller);
     ~Proxy() override;
 
@@ -76,6 +79,8 @@ public:
 #   endif
 
 protected:
+    inline void onTimer(const Timer *) override { tick(); }
+
     void onConfigChanged(Config *config, Config *previousConfig) override;
 
 private:
@@ -86,11 +91,8 @@ private:
     void print();
     void tick();
 
-    static void onTick(uv_timer_t *handle);
-    static void onTimer(uv_timer_t *handle);
-
     AccessLog *m_accessLog;
-    ApiRouter *m_api = nullptr;
+    ApiRouter *m_api    = nullptr;
     Controller *m_controller;
     CustomDiff m_customDiff;
     DonateSplitter *m_donate;
@@ -101,9 +103,9 @@ private:
     ShareLog *m_shareLog;
     Stats *m_stats;
     std::vector<Server*> m_servers;
-    TlsContext *m_tls;
-    uint64_t m_ticks;
-    uv_timer_t *m_timer;
+    Timer *m_timer      = nullptr;
+    TlsContext *m_tls   = nullptr;
+    uint64_t m_ticks    = 0;
     Workers *m_workers;
 };
 

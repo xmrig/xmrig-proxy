@@ -32,6 +32,7 @@
 #include "proxy/events/SubmitEvent.h"
 #include "proxy/Miner.h"
 #include "proxy/splitters/nicehash/NonceMapper.h"
+#include "base/kernel/interfaces/IClient.h"
 #include "Summary.h"
 
 

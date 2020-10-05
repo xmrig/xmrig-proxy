@@ -1,18 +1,28 @@
 # XMRig Proxy
-[![Github All Releases](https://img.shields.io/github/downloads/xmrig/xmrig-proxy/total.svg)](https://github.com/xmrig/xmrig-proxy/releases)
-[![GitHub release](https://img.shields.io/github/release/xmrig/xmrig-proxy/all.svg)](https://github.com/xmrig/xmrig-proxy/releases)
-[![GitHub Release Date](https://img.shields.io/github/release-date-pre/xmrig/xmrig-proxy.svg)](https://github.com/xmrig/xmrig-proxy/releases)
-[![GitHub license](https://img.shields.io/github/license/xmrig/xmrig-proxy.svg)](https://github.com/xmrig/xmrig-proxy/blob/master/LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/xmrig/xmrig-proxy.svg)](https://github.com/xmrig/xmrig-proxy/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/xmrig/xmrig-proxy.svg)](https://github.com/xmrig/xmrig-proxy/network)
+[![Github All Releases](https://img.shields.io/github/downloads/xmrig/xmrig-proxy/total.svg)](../../releases)
+[![GitHub release](https://img.shields.io/github/release/xmrig/xmrig-proxy/all.svg)](../../releases/latest)
+[![GitHub Release Date](https://img.shields.io/github/release-date-pre/xmrig/xmrig-proxy.svg)](../../releases/latest)
+[![GitHub license](https://img.shields.io/github/license/xmrig/xmrig-proxy.svg)](./LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/xmrig/xmrig-proxy.svg)](../../stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/xmrig/xmrig-proxy.svg)](../../network)
 
-Extremely high performance Monero (XMR) Stratum protocol proxy, can easily handle over 100K connections on cheap $5 (1024 MB) virtual machine. Reduce number of pool connections up to 256 times, 100K workers become just 391 worker on pool side. Written on C++/libuv same as [XMRig](https://github.com/xmrig/xmrig) miner.
+Extremely high performance Monero (XMR) Stratum protocol proxy, can easily handle over 100K connections on cheap $5 (1024 MB) virtual machine. Reduce number of pool connections up to 256 times, 100K workers become just 391 worker on pool side. Written on C++/libuv same as [XMRig](../../../xmrig) miner.
+
+## Table of Contents
+
+ - [Compatibility](#compatibility)
+ - [Why?](#why)
+ - [Download](#download)
+ - [Usage](#usage)
+ - [Options](#options)
+ - [Donations](#donations)
+ - [Contacts](#contacts)
 
 ## Compatibility
 :warning: :warning: :warning: **Nicehash support must be enabled on miner side, it mandatory.** :warning: :warning: :warning:
 
 * Compatible with any Monero, Electroneum, Sumokoin and AEON pools, except **nicehash.com**.
-* Any miner with nicehash support, `--nicehash` option for [XMRig](https://github.com/xmrig/xmrig), `"nicehash_nonce": true,` for xmr-stak-cpu.
+* Any miner with nicehash support, `--nicehash` option for [XMRig](../../../xmrig), `"nicehash_nonce": true,` for xmr-stak-cpu.
 * [Comparison](https://github.com/xmrig/xmrig-proxy/wiki/Comparison) with other proxies.
 
 ## Why?

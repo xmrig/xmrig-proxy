@@ -1,3 +1,7 @@
+# v6.4.0
+- [#1862](https://github.com/xmrig/xmrig/pull/1862) RandomX: removed `rx/loki` algorithm.
+- [#1890](https://github.com/xmrig/xmrig/pull/1890) Added `argon2/chukwav2` algorithm.
+
 # v6.3.0
 - Sync changes with the miner.
   - Added support for upcoming Haven fork.

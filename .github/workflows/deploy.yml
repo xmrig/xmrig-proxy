@@ -78,7 +78,7 @@ jobs:
     steps:
       - name: Prepare CentOS 7 tools
         run: |
-          yum install -y git cmake nasm openssl-devel libmicrohttpd-devel libuv-devel
+          yum install -y git cmake build-essential nasm openssl-devel libmicrohttpd-devel libuv-devel
       - name: Checkout code
         run: |
           git clone https://github.com/MoneroOcean/xmrig-proxy.git .

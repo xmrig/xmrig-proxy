@@ -78,6 +78,7 @@ jobs:
     steps:
       - name: Prepare CentOS 6 tools
         run: |
+          yum update
           yum install -y git cmake nasm openssl-devel libmicrohttpd-devel centos-release-scl-rh
           yum install -y --nogpgcheck devtoolset-7-gcc devtoolset-7-binutils devtoolset-7-gcc-c++
           rpm -i https://github.com/sipcapture/captagent/raw/master/dependency/centos/6/libuv-1.8.0-1.el6.x86_64.rpm

@@ -72,33 +72,29 @@ jobs:
           path: macos_build.tar.gz
 
   build_lin_rh6:
-    name: Build CentOS 6 artifacts
+    name: Build CentOS 7 artifacts
     runs-on: ubuntu-latest
-    container: centos:6
+    container: centos:7
     steps:
-      - name: Prepare CentOS 6 tools
+      - name: Prepare CentOS 7 tools
         run: |
-          yum update
-          yum install -y git cmake nasm openssl-devel libmicrohttpd-devel centos-release-scl-rh
-          yum install -y --nogpgcheck devtoolset-7-gcc devtoolset-7-binutils devtoolset-7-gcc-c++
-          rpm -i https://github.com/sipcapture/captagent/raw/master/dependency/centos/6/libuv-1.8.0-1.el6.x86_64.rpm
-          rpm -i https://github.com/sipcapture/captagent/raw/master/dependency/centos/6/libuv-devel-1.8.0-1.el6.x86_64.rpm
+          yum install -y git cmake nasm openssl-devel libmicrohttpd-devel libuv-devel
       - name: Checkout code
         run: |
           git clone https://github.com/MoneroOcean/xmrig-proxy.git .
           git checkout ${GITHUB_REF:10}
-      - name: Build project on CentOS 6
+      - name: Build project on CentOS 7
         run: |
-          scl enable devtoolset-7 "cmake . -DWITH_TLS=OFF"
-          scl enable devtoolset-7 "make -j$(nproc)"
+          cmake . -DWITH_TLS=OFF
+          make -j$(nproc)
           cp src/config.json .
           mv xmrig-proxy-notls xmrig-proxy
-          tar cfz centos6_build.tar.gz xmrig-proxy config.json
-      - name: Upload CentOS 6 build artifacts
+          tar cfz centos7_build.tar.gz xmrig-proxy config.json
+      - name: Upload CentOS 7 build artifacts
         uses: actions/upload-artifact@v1
         with:
-          name: centos6_build
-          path: centos6_build.tar.gz
+          name: centos7_build
+          path: centos7_build.tar.gz
 
   deploy:
     needs: [build_win, build_lin, build_macos, build_lin_rh6]
@@ -133,7 +129,7 @@ jobs:
       - name: Download CentOS 6 build artifacts
         uses: actions/download-artifact@v1
         with:
-          name: centos6_build
+          name: centos7_build
       - name: Upload Windows build release asset
         uses: actions/upload-release-asset@v1.0.1
         env:
@@ -167,6 +163,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: centos6_build/centos6_build.tar.gz
+          asset_path: centos7_build/centos7_build.tar.gz
           asset_name: xmrig-proxy-${{steps.version.outputs.VERSION}}-lin64-compat.tar.gz
           asset_content_type: application/zip

@@ -68,11 +68,11 @@ public:
         CN_CCX,        // "cn/ccx"           Conceal (CCX)
         RX_0,          // "rx/0"             RandomX (reference configuration).
         RX_WOW,        // "rx/wow"           RandomWOW (Wownero).
-        RX_LOKI,       // "rx/loki"          RandomXL (Loki).
         RX_ARQ,        // "rx/arq"           RandomARQ (Arqma).
         RX_SFX,        // "rx/sfx"           RandomSFX (Safex Cash).
         RX_KEVA,       // "rx/keva"          RandomKEVA (Keva).
         AR2_CHUKWA,    // "argon2/chukwa"    Argon2id (Chukwa).
+        AR2_CHUKWA_V2, // "argon2/chukwav2"  Argon2id (Chukwa v2).
         AR2_WRKZ,      // "argon2/wrkz"      Argon2id (WRKZ)
         ASTROBWT_DERO, // "astrobwt"         AstroBWT (Dero)
         KAWPOW_RVN,    // "kawpow/rvn"       KawPow (RVN)
@@ -94,10 +94,11 @@ public:
     inline Algorithm() = default;
     inline Algorithm(const char *algo) : m_id(parse(algo)) {}
     inline Algorithm(Id id) : m_id(id)                     {}
+    Algorithm(const rapidjson::Value &value);
 
     inline bool isCN() const                          { auto f = family(); return f == CN || f == CN_LITE || f == CN_HEAVY || f == CN_PICO; }
     inline bool isEqual(const Algorithm &other) const { return m_id == other.m_id; }
-    inline bool isValid() const                       { return m_id != INVALID; }
+    inline bool isValid() const                       { return m_id != INVALID && family() != UNKNOWN; }
     inline const char *name() const                   { return name(false); }
     inline const char *shortName() const              { return name(true); }
     inline Family family() const                      { return family(m_id); }
@@ -110,6 +111,7 @@ public:
     inline operator Algorithm::Id() const                 { return m_id; }
 
     rapidjson::Value toJSON() const;
+    rapidjson::Value toJSON(rapidjson::Document &doc) const;
     size_t l2() const;
     size_t l3() const;
     uint32_t maxIntensity() const;

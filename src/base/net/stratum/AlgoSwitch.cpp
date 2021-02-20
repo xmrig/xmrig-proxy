@@ -53,8 +53,8 @@ void AlgoSwitch::compute_common_miner_algo_perfs() {
   for (const auto& miner_algo_perf: m_miner_algo_perfs) {
     const Algorithms& algos = miner_algo_perf.second.first;
     const algo_perfs& algo_perfs = miner_algo_perf.second.second;
-    m_algos = intersection(m_algos, algos);
-    m_algo_perfs = intersection(m_algo_perfs, algo_perfs);
+    m_algos      = m_algos.empty()      ? algos      : intersection(m_algos, algos);
+    m_algo_perfs = m_algo_perfs.empty() ? algo_perfs : intersection(m_algo_perfs, algo_perfs);
   }
 }
 

@@ -41,7 +41,7 @@
             "user": "YOUR_XMR_WALLET",
             "pass": "x",
             "rig-id": null,
-            "keepalive": false,
+            "keepalive": true,
             "enabled": true,
             "tls": false,
             "tls-fingerprint": null,

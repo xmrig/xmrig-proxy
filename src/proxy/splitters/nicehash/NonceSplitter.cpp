@@ -79,6 +79,7 @@ xmrig::Upstreams xmrig::NonceSplitter::upstreams() const
 void xmrig::NonceSplitter::connect()
 {
     auto upstream = new NonceMapper(m_upstreams.size(), m_controller);
+    upstream->client()->set_algo_perf_same_threshold(m_controller->config()->algoPerfSameThreshold());
     m_upstreams.push_back(upstream);
 
     upstream->start();

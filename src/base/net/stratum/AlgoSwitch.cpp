@@ -88,6 +88,10 @@ rapidjson::Value AlgoSwitch::algo_perfs_toJSON(rapidjson::Document& doc) const {
   return algo_perfs;
 }
 
+void AlgoSwitch::set_algo_perf_same_threshold(uint64_t percent) {
+  m_percent = percent;
+}
+
 bool AlgoSwitch::try_miner(const Miner* miner) const {
   if (m_miner_algo_perfs.empty()) return true;
   // make sure algos are the same, if not return false
@@ -104,7 +108,7 @@ bool AlgoSwitch::try_miner(const Miner* miner) const {
       return false;
     }
     const float ratio = i1->second / m_miner_algo_perfs.size() / i2->second;
-    if (ratio > 1.2f || ratio < 0.8f) return false;
+    if (ratio > (1.0f + (float)(m_percent) / 100) || ratio < (1.0f - (float)(m_percent) / 100)) return false;
   }
   return true;
 }

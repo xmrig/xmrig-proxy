@@ -77,6 +77,7 @@ static struct option const options[] = {
     { "userpass",          1, nullptr, IConfig::UserpassKey       },
     { "verbose",           0, nullptr, IConfig::VerboseKey        },
     { "reuse-timeout",     1, nullptr, IConfig::ReuseTimeoutKey   },
+    { "algo-perf-same-threshold",     1, nullptr, IConfig::AlgoPerfSameThresholdKey   },
     { "mode",              1, nullptr, IConfig::ModeKey           },
     { "rig-id",            1, nullptr, IConfig::RigIdKey          },
     { "tls",               0, nullptr, IConfig::TlsKey            },

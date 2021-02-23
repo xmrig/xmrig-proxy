@@ -125,6 +125,7 @@ public:
         ModeKey              = 'm',
         PoolCoinKey          = 'C',
         ReuseTimeoutKey      = 1106,
+	AlgoPerfSameThresholdKey      = 1196,
         WorkersKey           = 1103,
         WorkersAdvKey        = 1107,
         TlsBindKey           = 1108,

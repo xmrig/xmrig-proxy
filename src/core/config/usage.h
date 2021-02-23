@@ -54,6 +54,7 @@ Options:\n\
       --custom-diff=N       override pool diff\n\
       --custom-diff-stats   calculate stats using custom diff shares instead of pool shares\n\
       --reuse-timeout=N     timeout in seconds for reuse pool connections in simple mode\n\
+      --algo-perf-same-threshold=N     algo perf threshold in percent that proxy uses to group miners into one upstream\n\
       --verbose             verbose output\n\
       --user-agent=AGENT    set custom user-agent string for pool\n\
       --no-color            disable colored output\n\

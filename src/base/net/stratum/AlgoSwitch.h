@@ -28,6 +28,7 @@ class AlgoSwitch {
   typedef std::pair<Algorithms, algo_perfs> miner_algo_perf_data;
   typedef std::pair<int64_t, miner_algo_perf_data> miner_algo_perf;
   typedef std::map<int64_t, miner_algo_perf_data> miner_algo_perfs;
+  uint64_t m_percent = 20;
   miner_algo_perfs m_miner_algo_perfs;
   Algorithms m_algos, m_default_algos;
   algo_perfs m_algo_perfs, m_default_algo_perfs;
@@ -42,6 +43,7 @@ class AlgoSwitch {
     void setDefaultAlgoSwitchAlgo(const Algorithm&);
     rapidjson::Value algos_toJSON(rapidjson::Document&) const;
     rapidjson::Value algo_perfs_toJSON(rapidjson::Document&) const;
+    void set_algo_perf_same_threshold(uint64_t);
     bool try_miner(const Miner*) const;
     void add_miner(const Miner*);
     void del_miner(const Miner*);

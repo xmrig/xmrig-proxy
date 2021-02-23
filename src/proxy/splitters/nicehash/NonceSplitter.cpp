@@ -139,9 +139,9 @@ void xmrig::NonceSplitter::onConfigChanged(Config *config, Config *previousConfi
 
         for (NonceMapper *mapper : m_upstreams) {
             mapper->reload(config->pools());
+            mapper->client()->set_algo_perf_same_threshold(config->algoPerfSameThreshold());
         }
     }
-    mapper->client()->set_algo_perf_same_threshold(config->algoPerfSameThreshold());
 }
 
 

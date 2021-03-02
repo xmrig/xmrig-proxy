@@ -38,7 +38,6 @@ xmrig::JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, co
 
         if (target > 0) {
             m_actualDiff = Job::toDiff(target);
-            printf(">>>>> %zu\n", m_actualDiff);
         }
     }
 }

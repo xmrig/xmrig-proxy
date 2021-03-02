@@ -121,8 +121,9 @@ elseif (APPLE)
         src/App_unix.cpp
         )
 
-    find_library(CFLIB CoreFoundation)
-    set(EXTRA_LIBS ${CFLIB})
+    find_library(IOKIT_LIBRARY IOKit)
+    find_library(CORESERVICES_LIBRARY CoreServices)
+    set(EXTRA_LIBS ${IOKIT_LIBRARY} ${CORESERVICES_LIBRARY})
 else()
     set(SOURCES_OS
         "${SOURCES_OS}"

@@ -108,7 +108,7 @@ void xmrig::ApiRouter::getMiner(rapidjson::Value &reply, rapidjson::Document &do
     reply.AddMember("kind",         APP_KIND, allocator);
     reply.AddMember("algo",         "invalid", allocator);
     reply.AddMember("mode",         rapidjson::StringRef(m_base->config()->modeName()), allocator);
-    reply.AddMember("ua",           rapidjson::StringRef(Platform::userAgent()), allocator);
+    reply.AddMember("ua",           Platform::userAgent().toJSON(), allocator);
     reply.AddMember("donate_level", m_base->config()->pools().donateLevel(), allocator);
 
     if (stats.hashes && stats.donateHashes) {

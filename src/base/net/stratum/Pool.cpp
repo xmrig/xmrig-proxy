@@ -1,13 +1,7 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2019 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2019      Howard Chu  <https://github.com/hyc>
- * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2019      Howard Chu  <https://github.com/hyc>
+ * Copyright (c) 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -50,6 +44,17 @@
 #endif
 
 
+#ifdef XMRIG_FEATURE_BENCHMARK
+#   include "base/net/stratum/benchmark/BenchClient.h"
+#   include "base/net/stratum/benchmark/BenchConfig.h"
+#endif
+
+
+#ifdef _MSC_VER
+#   define strcasecmp  _stricmp
+#endif
+
+
 namespace xmrig {
 
 
@@ -69,12 +74,11 @@ const char *Pool::kPass                   = "pass";
 const char *Pool::kRigId                  = "rig-id";
 const char *Pool::kSelfSelect             = "self-select";
 const char *Pool::kSOCKS5                 = "socks5";
+const char *Pool::kSubmitToOrigin         = "submit-to-origin";
 const char *Pool::kTls                    = "tls";
 const char *Pool::kUrl                    = "url";
 const char *Pool::kUser                   = "user";
-
-
-const char *Pool::kNicehashHost = "nicehash.com";
+const char *Pool::kNicehashHost           = "nicehash.com";
 
 
 }
@@ -125,21 +129,41 @@ xmrig::Pool::Pool(const rapidjson::Value &object) :
     m_flags.set(FLAG_NICEHASH, Json::getBool(object, kNicehash) || m_url.host().contains(kNicehashHost));
     m_flags.set(FLAG_TLS,      Json::getBool(object, kTls) || m_url.isTLS());
 
+    setKeepAlive(Json::getValue(object, kKeepalive));
+
     if (m_daemon.isValid()) {
-        m_mode = MODE_SELF_SELECT;
+        m_mode           = MODE_SELF_SELECT;
+        m_submitToOrigin = Json::getBool(object, kSubmitToOrigin, m_submitToOrigin);
     }
     else if (Json::getBool(object, kDaemon)) {
         m_mode = MODE_DAEMON;
     }
-
-    const rapidjson::Value &keepalive = Json::getValue(object, kKeepalive);
-    if (keepalive.IsInt()) {
-        setKeepAlive(keepalive.GetInt());
-    }
-    else if (keepalive.IsBool()) {
-        setKeepAlive(keepalive.GetBool());
-    }
 }
+
+
+#ifdef XMRIG_FEATURE_BENCHMARK
+xmrig::Pool::Pool(const std::shared_ptr<BenchConfig> &benchmark) :
+    m_mode(MODE_BENCHMARK),
+    m_flags(1 << FLAG_ENABLED),
+    m_url(BenchConfig::kBenchmark),
+    m_benchmark(benchmark)
+{
+}
+
+
+xmrig::BenchConfig *xmrig::Pool::benchmark() const
+{
+    assert(m_mode == MODE_BENCHMARK && m_benchmark);
+
+    return m_benchmark.get();
+}
+
+
+uint32_t xmrig::Pool::benchSize() const
+{
+    return benchmark()->size();
+}
+#endif
 
 
 bool xmrig::Pool::isEnabled() const
@@ -209,12 +233,17 @@ xmrig::IClient *xmrig::Pool::createClient(int id, IClientListener *listener) con
         client = new DaemonClient(id, listener);
     }
     else if (m_mode == MODE_SELF_SELECT) {
-        client = new SelfSelectClient(id, Platform::userAgent(), listener);
+        client = new SelfSelectClient(id, Platform::userAgent(), listener, m_submitToOrigin);
     }
 #   endif
 #   ifdef XMRIG_ALGO_KAWPOW
     else if (m_mode == MODE_AUTO_ETH) {
         client = new AutoClient(id, Platform::userAgent(), listener);
+    }
+#   endif
+#   ifdef XMRIG_FEATURE_BENCHMARK
+    else if (m_mode == MODE_BENCHMARK) {
+        client = new BenchClient(m_benchmark, listener);
     }
 #   endif
 
@@ -267,7 +296,8 @@ rapidjson::Value xmrig::Pool::toJSON(rapidjson::Document &doc) const
         obj.AddMember(StringRef(kDaemonPollInterval), m_pollInterval, allocator);
     }
     else {
-        obj.AddMember(StringRef(kSelfSelect), m_daemon.url().toJSON(), allocator);
+        obj.AddMember(StringRef(kSelfSelect),     m_daemon.url().toJSON(), allocator);
+        obj.AddMember(StringRef(kSubmitToOrigin), m_submitToOrigin, allocator);
     }
 
     return obj;
@@ -286,7 +316,7 @@ std::string xmrig::Pool::printableName() const
     }
 
     if (m_mode == MODE_SELF_SELECT) {
-        out += std::string(" self-select ") + CSI "1;" + std::to_string(m_daemon.isTLS() ? 32 : 36) + "m" + m_daemon.url().data() + CLEAR;
+        out += std::string(" self-select ") + CSI "1;" + std::to_string(m_daemon.isTLS() ? 32 : 36) + "m" + m_daemon.url().data() + WHITE_BOLD_S + (m_submitToOrigin ? " submit-to-origin" : "") + CLEAR;
     }
 
     return out;
@@ -307,3 +337,14 @@ void xmrig::Pool::print() const
     LOG_DEBUG ("keepAlive: %d", m_keepAlive);
 }
 #endif
+
+
+void xmrig::Pool::setKeepAlive(const rapidjson::Value &value)
+{
+    if (value.IsInt()) {
+        setKeepAlive(value.GetInt());
+    }
+    else if (value.IsBool()) {
+        setKeepAlive(value.GetBool());
+    }
+}

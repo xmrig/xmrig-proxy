@@ -147,7 +147,6 @@ private:
     String m_rpcId;
     Tls *m_tls                  = nullptr;
     uint64_t m_expire           = 0;
-    uint64_t m_getjob           = 0;
     uint64_t m_jobs             = 0;
     uint64_t m_keepAlive        = 0;
     uintptr_t m_key             = 0;

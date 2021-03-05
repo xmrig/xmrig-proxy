@@ -135,8 +135,6 @@ void xmrig::Job::setDiff(uint64_t diff)
     m_diff   = diff;
     m_target = toDiff(diff);
 
-    memset(m_rawTarget, 0x44, sizeof(m_rawTarget));
-
 #   ifdef XMRIG_PROXY_PROJECT
     Cvt::toHex(m_rawTarget, sizeof(m_rawTarget), reinterpret_cast<uint8_t *>(&m_target), sizeof(m_target));
 #   endif

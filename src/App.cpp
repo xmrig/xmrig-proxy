@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -40,16 +34,11 @@
 
 xmrig::App::App(Process *process)
 {
-    m_controller = new Controller(process);
+    m_controller = std::make_shared<Controller>(process);
 }
 
 
-xmrig::App::~App()
-{
-    delete m_signals;
-    delete m_console;
-    delete m_controller;
-}
+xmrig::App::~App() = default;
 
 
 int xmrig::App::exec()
@@ -60,7 +49,7 @@ int xmrig::App::exec()
         return 2;
     }
 
-    m_signals = new Signals(this);
+    m_signals = std::make_shared<Signals>(this);
 
     int rc = 0;
     if (background(rc)) {
@@ -73,10 +62,10 @@ int xmrig::App::exec()
     }
 
     if (!m_controller->isBackground()) {
-        m_console = new Console(this);
+        m_console = std::make_shared<Console>(this);
     }
 
-    Summary::print(m_controller);
+    Summary::print(m_controller.get());
 
     if (m_controller->config()->isDryRun()) {
         LOG_NOTICE("%s " WHITE_BOLD("OK"), Tags::config());
@@ -131,11 +120,8 @@ void xmrig::App::onSignal(int signum)
 
 void xmrig::App::close()
 {
-    m_signals->stop();
-
-    if (m_console) {
-        m_console->stop();
-    }
+    m_signals.reset();
+    m_console.reset();
 
     m_controller->stop();
 

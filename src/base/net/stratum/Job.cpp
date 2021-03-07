@@ -6,9 +6,9 @@
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
- * Copyright 2018      SChernykh   <https://github.com/SChernykh>
  * Copyright 2019      Howard Chu  <https://github.com/hyc>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 
 #include "base/net/stratum/Job.h"
 #include "base/tools/Buffer.h"
+#include "base/tools/Cvt.h"
 
 
 xmrig::Job::Job(bool nicehash, const Algorithm &algorithm, const String &clientId) :
@@ -59,11 +60,13 @@ bool xmrig::Job::setBlob(const char *blob)
     }
 
     m_size /= 2;
-    if (m_size < 76 || m_size >= sizeof(m_blob)) {
+
+    const size_t minSize = nonceOffset() + nonceSize();
+    if (m_size < minSize || m_size >= sizeof(m_blob)) {
         return false;
     }
 
-    if (!Buffer::fromHex(blob, m_size * 2, m_blob)) {
+    if (!Cvt::fromHex(m_blob, sizeof(m_blob), blob, m_size * 2)) {
         return false;
     }
 
@@ -90,9 +93,9 @@ bool xmrig::Job::setSeedHash(const char *hash)
     m_rawSeedHash = hash;
 #   endif
 
-    m_seed = Buffer::fromHex(hash, kMaxSeedSize * 2);
+    m_seed = Cvt::fromHex(hash, kMaxSeedSize * 2);
 
-    return !m_seed.isEmpty();
+    return !m_seed.empty();
 }
 
 
@@ -102,35 +105,24 @@ bool xmrig::Job::setTarget(const char *target)
         return false;
     }
 
-    const size_t len = strlen(target);
+    const auto raw    = Cvt::fromHex(target, strlen(target));
+    const size_t size = raw.size();
 
-    if (len <= 8) {
-        uint32_t tmp = 0;
-        char str[8];
-        memcpy(str, target, len);
-
-        if (!Buffer::fromHex(str, 8, reinterpret_cast<uint8_t *>(&tmp)) || tmp == 0) {
-            return false;
-        }
-
-        m_target = 0xFFFFFFFFFFFFFFFFULL / (0xFFFFFFFFULL / static_cast<uint64_t>(tmp));
+    if (size == 4) {
+        m_target = 0xFFFFFFFFFFFFFFFFULL / (0xFFFFFFFFULL / uint64_t(*reinterpret_cast<const uint32_t *>(raw.data())));
     }
-    else if (len <= 16) {
-        m_target = 0;
-        char str[16];
-        memcpy(str, target, len);
-
-        if (!Buffer::fromHex(str, 16, reinterpret_cast<uint8_t *>(&m_target)) || m_target == 0) {
-            return false;
-        }
+    else if (size == 8) {
+        m_target = *reinterpret_cast<const uint64_t *>(raw.data());
     }
     else {
         return false;
     }
 
 #   ifdef XMRIG_PROXY_PROJECT
+    assert(sizeof(m_rawTarget) > (size * 2));
+
     memset(m_rawTarget, 0, sizeof(m_rawTarget));
-    memcpy(m_rawTarget, target, len);
+    memcpy(m_rawTarget, target, std::min(size * 2, sizeof(m_rawTarget)));
 #   endif
 
     m_diff = toDiff(m_target);
@@ -144,8 +136,7 @@ void xmrig::Job::setDiff(uint64_t diff)
     m_target = toDiff(diff);
 
 #   ifdef XMRIG_PROXY_PROJECT
-    Buffer::toHex(reinterpret_cast<uint8_t *>(&m_target), 8, m_rawTarget);
-    m_rawTarget[16] = '\0';
+    Cvt::toHex(m_rawTarget, sizeof(m_rawTarget), reinterpret_cast<uint8_t *>(&m_target), sizeof(m_target));
 #   endif
 }
 
@@ -173,6 +164,10 @@ void xmrig::Job::copy(const Job &other)
 
     memcpy(m_rawBlob, other.m_rawBlob, sizeof(m_rawBlob));
     memcpy(m_rawTarget, other.m_rawTarget, sizeof(m_rawTarget));
+#   endif
+
+#   ifdef XMRIG_FEATURE_BENCHMARK
+    m_benchSize = other.m_benchSize;
 #   endif
 }
 
@@ -204,5 +199,9 @@ void xmrig::Job::move(Job &&other)
 
     memcpy(m_rawBlob, other.m_rawBlob, sizeof(m_rawBlob));
     memcpy(m_rawTarget, other.m_rawTarget, sizeof(m_rawTarget));
+#   endif
+
+#   ifdef XMRIG_FEATURE_BENCHMARK
+    m_benchSize = other.m_benchSize;
 #   endif
 }

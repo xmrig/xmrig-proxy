@@ -1,3 +1,6 @@
+# v6.10.1
+- [#441](https://github.com/xmrig/xmrig-proxy/issues/441) Fixed send buffer overflow with custom diff.
+
 # v6.10.0
 - Sync changes with XMRig 6.10.0.
 

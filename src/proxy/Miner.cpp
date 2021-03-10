@@ -154,7 +154,7 @@ void xmrig::Miner::setJob(Job &job)
 
     if (m_customDiff && m_customDiff < m_diff) {
         const uint64_t t = 0xFFFFFFFFFFFFFFFFULL / m_customDiff;
-        Cvt::toHex(m_sendBuf, 8, reinterpret_cast<const uint8_t *>(&t) + 4, 4);
+        Cvt::toHex(m_sendBuf, 9, reinterpret_cast<const uint8_t *>(&t) + 4, 4);
         customDiff = true;
     }
 

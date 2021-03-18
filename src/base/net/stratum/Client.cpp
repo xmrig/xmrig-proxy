@@ -830,7 +830,15 @@ void xmrig::Client::parseResponse(int64_t id, const rapidjson::Value &result, co
         const char *message = error["message"].GetString();
 
         if (!handleSubmitResponse(id, message) && !isQuiet()) {
-            LOG_ERR("%s " RED("error: ") RED_BOLD("\"%s\"") RED(", code: ") RED_BOLD("%d"), tag(), message, Json::getInt(error, "code"));
+            using namespace rapidjson;
+            Document doc(kObjectType);
+            StringBuffer buffer1(nullptr, 512), buffer2(nullptr, 512);
+            Writer<StringBuffer> writer1(buffer1), writer2(buffer2);
+            algos_toJSON(doc).Accept(writer1);
+            algo_perfs_toJSON(doc).Accept(writer2);
+
+            LOG_ERR("%s " RED("error: ") RED_BOLD("\"%s\"") RED(", code: ") RED_BOLD("%d") " with %s algo and %s algo_perf",
+                    tag(), message, Json::getInt(error, "code"), buffer1.GetString(), buffer2.GetString());
         }
 
         if (m_id == 1 || isCriticalError(message)) {

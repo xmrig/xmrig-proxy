@@ -66,6 +66,7 @@ public:
         CN_PICO_0,     // "cn-pico"          CryptoNight-Pico
         CN_PICO_TLO,   // "cn-pico/tlo"      CryptoNight-Pico (TLO)
         CN_CCX,        // "cn/ccx"           Conceal (CCX)
+        CN_GPU,        // "cn/gpu"           CryptoNight-GPU (Ryo).
         RX_0,          // "rx/0"             RandomX (reference configuration).
         RX_WOW,        // "rx/wow"           RandomWOW (Wownero).
         RX_ARQ,        // "rx/arq"           RandomARQ (Arqma).
@@ -76,6 +77,7 @@ public:
         AR2_WRKZ,      // "argon2/wrkz"      Argon2id (WRKZ)
         ASTROBWT_DERO, // "astrobwt"         AstroBWT (Dero)
         KAWPOW_RVN,    // "kawpow/rvn"       KawPow (RVN)
+        RX_XLA,        // "panthera"         Panthera (Scala2).
         MAX
     };
 

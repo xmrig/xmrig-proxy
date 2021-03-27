@@ -1,3 +1,9 @@
+# v6.10.1
+- [#441](https://github.com/xmrig/xmrig-proxy/issues/441) Fixed send buffer overflow with custom diff.
+
+# v6.10.0
+- Sync changes with XMRig 6.10.0.
+
 # v6.4.0
 - [#1862](https://github.com/xmrig/xmrig/pull/1862) RandomX: removed `rx/loki` algorithm.
 - [#1890](https://github.com/xmrig/xmrig/pull/1890) Added `argon2/chukwav2` algorithm.

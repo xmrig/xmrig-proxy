@@ -41,6 +41,7 @@
 #include "base/net/tools/NetBuffer.h"
 #include "core/config/Config.h"
 #include "core/config/ConfigTransform.h"
+#include "version.h"
 
 
 #ifdef HAVE_SYSLOG_H
@@ -75,7 +76,12 @@ public:
     XMRIG_DISABLE_COPY_MOVE_DEFAULT(BasePrivate)
 
 
-    inline BasePrivate(Process *process) : config(load(process)) {}
+    inline BasePrivate(Process *process)
+    {
+        Log::init();
+
+        config = load(process);
+    }
 
 
     inline ~BasePrivate()
@@ -132,7 +138,16 @@ private:
         }
 
         chain.addFile(Process::location(Process::DataLocation, "config.json"));
-
+        if (read(chain, config)) {
+            return config.release();
+        }
+        
+        chain.addFile(Process::location(Process::HomeLocation,  "." APP_ID ".json"));
+        if (read(chain, config)) {
+            return config.release();
+        }
+        
+        chain.addFile(Process::location(Process::HomeLocation, ".config" XMRIG_DIR_SEPARATOR APP_ID ".json"));
         if (read(chain, config)) {
             return config.release();
         }
@@ -156,6 +171,7 @@ private:
 xmrig::Base::Base(Process *process)
     : d_ptr(new BasePrivate(process))
 {
+
 }
 
 

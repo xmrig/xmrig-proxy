@@ -63,15 +63,15 @@ void AlgoSwitch::setDefaultAlgoSwitchAlgo(const Algorithm& algo) {
   m_default_algo_perfs.clear();
   if (algo.isValid()) {
     m_default_algos.push_back(algo.id());
-    m_default_algo_perfs.insert(algo_perf(algo.id(), 100));
-    m_default_algos.push_back(Algorithm::CN_HEAVY_XHV);
-    m_default_algo_perfs.insert(algo_perf(Algorithm::CN_HEAVY_XHV, 1));
+    m_default_algo_perfs.insert(algo_perf(algo.id(), 1000));
   } else {
     m_default_algos.push_back(Algorithm::RX_0);
-    m_default_algo_perfs.insert(algo_perf(Algorithm::RX_0, 100));
-    m_default_algos.push_back(Algorithm::CN_HEAVY_XHV);
-    m_default_algo_perfs.insert(algo_perf(Algorithm::CN_HEAVY_XHV, 1));
+    m_default_algo_perfs.insert(algo_perf(Algorithm::RX_0, 1000));
   }
+  m_default_algos.push_back(Algorithm::CN_HEAVY_XHV);
+  m_default_algo_perfs.insert(algo_perf(Algorithm::CN_HEAVY_XHV, 10));
+  m_default_algos.push_back(Algorithm::CN_HALF);
+  m_default_algo_perfs.insert(algo_perf(Algorithm::CN_HALF, 1));
 }
 
 rapidjson::Value AlgoSwitch::algos_toJSON(rapidjson::Document& doc) const {

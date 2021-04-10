@@ -378,6 +378,19 @@ bool xmrig::Client::parseJob(const rapidjson::Value &params, int *code)
         return false;
     }
 
+    const char *algo = Json::getString(params, "algo");
+    const char *blobData = Json::getString(params, "blob");
+    if (algo) {
+        job.setAlgorithm(algo);
+    }
+    else if (m_pool.coin().isValid()) {
+        uint8_t blobVersion = 0;
+        if (blobData) {
+            Cvt::fromHex(&blobVersion, 1, blobData, 2);
+        }
+        job.setAlgorithm(m_pool.coin().algorithm(blobVersion));
+    }
+
 #   ifdef XMRIG_FEATURE_HTTP
     if (m_pool.mode() == Pool::MODE_SELF_SELECT) {
         job.setExtraNonce(Json::getString(params, "extra_nonce"));
@@ -391,7 +404,7 @@ bool xmrig::Client::parseJob(const rapidjson::Value &params, int *code)
     else
 #   endif
     {
-        if (!job.setBlob(params["blob"].GetString())) {
+        if (!job.setBlob(blobData)) {
             *code = 4;
             return false;
         }
@@ -400,14 +413,6 @@ bool xmrig::Client::parseJob(const rapidjson::Value &params, int *code)
     if (!job.setTarget(params["target"].GetString())) {
         *code = 5;
         return false;
-    }
-
-    const char *algo = Json::getString(params, "algo");
-    if (algo) {
-        job.setAlgorithm(algo);
-    }
-    else if (m_pool.coin().isValid()) {
-        job.setAlgorithm(m_pool.coin().algorithm(job.blob()[0]));
     }
 
     job.setHeight(Json::getUint64(params, "height"));

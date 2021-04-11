@@ -1,3 +1,7 @@
+# v6.11.0
+- [#2196](https://github.com/xmrig/xmrig/pull/2196) Improved DNS subsystem and added new DNS specific options.
+- [#2207](https://github.com/xmrig/xmrig/issues/2207) Fixed regression in HTTP parser and llhttp updated to v5.1.0.
+ 
 # v6.10.1
 - [#441](https://github.com/xmrig/xmrig-proxy/issues/441) Fixed send buffer overflow with custom diff.
 

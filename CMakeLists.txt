@@ -148,6 +148,7 @@ add_definitions(/DXMRIG_ALGO_CN_LITE)
 add_definitions(/DXMRIG_ALGO_CN_HEAVY)
 add_definitions(/DXMRIG_ALGO_CN_PICO)
 add_definitions(/DXMRIG_ALGO_CN_GPU)
+add_definitions(/DXMRIG_ALGO_CN_FEMTO)
 add_definitions(/DXMRIG_ALGO_ARGON2)
 add_definitions(/DXMRIG_ALGO_ASTROBWT)
 

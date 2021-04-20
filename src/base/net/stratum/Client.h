@@ -51,6 +51,7 @@ using BIO = struct bio_st;
 namespace xmrig {
 
 
+class DnsRequest;
 class IClientListener;
 class JobResult;
 
@@ -85,7 +86,7 @@ protected:
     void del_miner(const Miner* miner) override { AlgoSwitch::del_miner(miner); getjob(); }
     void setPool(const Pool &pool) override { BaseClient::setPool(pool); setDefaultAlgoSwitchAlgo(pool.algorithm()); }
 
-    void onResolved(const Dns &dns, int status) override;
+    void onResolved(const DnsRecords &records, int status, const char *error) override;
 
     inline bool hasExtension(Extension extension) const noexcept override   { return m_extensions.test(extension); }
     inline const char *mode() const override                                { return "pool"; }
@@ -116,7 +117,7 @@ private:
     bool write(const uv_buf_t &buf);
     int resolve(const String &host);
     int64_t send(size_t size);
-    void connect(sockaddr *addr);
+    void connect(const sockaddr *addr);
     void handshake();
     void parse(char *line, size_t len);
     void parseExtensions(const rapidjson::Value &result);
@@ -139,10 +140,10 @@ private:
     static inline Client *getClient(void *data) { return m_storage.get(data); }
 
     const char *m_agent;
-    Dns *m_dns;
     LineReader m_reader;
     Socks5 *m_socks5            = nullptr;
     std::bitset<EXT_MAX> m_extensions;
+    std::shared_ptr<DnsRequest> m_dns;
     std::vector<char> m_sendBuf;
     String m_rpcId;
     Tls *m_tls                  = nullptr;

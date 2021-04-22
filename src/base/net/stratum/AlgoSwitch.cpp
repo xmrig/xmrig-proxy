@@ -112,7 +112,7 @@ bool AlgoSwitch::try_miner(const Miner* miner, const int upstream_count) const {
       return false;
     }
     const float ratio = i1->second / m_miner_algo_perfs.size() / i2->second;
-    if (ratio > (1.0f + (float)(m_percent) / 100.0f) || ratio < (1.0f - (float)(m_percent) / 100.0f)) return false;
+    if (ratio > (1.0f + (float)(m_percent + upstream_count) / 100.0f) || ratio < (1.0f - (float)(m_percent + upstream_count) / 100.0f)) return false;
   }
   return true;
 }

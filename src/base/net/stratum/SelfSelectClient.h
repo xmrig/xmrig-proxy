@@ -71,7 +71,7 @@ protected:
     inline void setRetries(int retries) override                                    { m_client->setRetries(retries); m_retries = retries; }
     inline void setRetryPause(uint64_t ms) override                                 { m_client->setRetryPause(ms); m_retryPause = ms; }
     void set_algo_perf_same_threshold(uint64_t)                                     {}
-    bool try_miner(const Miner*) override                                           { return true; }
+    bool try_miner(const Miner*, int upstream_count) override                       { return true; }
     void add_miner(const Miner*) override                                           {}
     void del_miner(const Miner*) override                                           {}
 

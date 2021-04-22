@@ -81,7 +81,7 @@ protected:
     void deleteLater() override;
     void tick(uint64_t now) override;
     void set_algo_perf_same_threshold(uint64_t percent) { AlgoSwitch::set_algo_perf_same_threshold(percent); }
-    bool try_miner(const Miner* miner) override { return AlgoSwitch::try_miner(miner); }
+    bool try_miner(const Miner* miner, int upstream_count) override { return AlgoSwitch::try_miner(miner, upstream_count); }
     void add_miner(const Miner* miner) override { AlgoSwitch::add_miner(miner); getjob(); }
     void del_miner(const Miner* miner) override { AlgoSwitch::del_miner(miner); getjob(); }
     void setPool(const Pool &pool) override { BaseClient::setPool(pool); setDefaultAlgoSwitchAlgo(pool.algorithm()); }

@@ -51,7 +51,7 @@
     "retries": 2,
     "retry-pause": 1,
     "reuse-timeout": 0,
-    "algo-perf-same-threshold": 20,
+    "algo-perf-same-threshold": 50,
     "tls": {
         "enabled": true,
         "protocols": null,

@@ -176,14 +176,14 @@ void xmrig::NonceSplitter::login(LoginEvent *event)
 
     // try reuse active upstreams.
     for (NonceMapper *mapper : m_upstreams) {
-        if (mapper->client()->try_miner(event->miner()) && !mapper->isSuspended() && mapper->add(event->miner())) {
+        if (mapper->client()->try_miner(event->miner(), m_upstreams.size()) && !mapper->isSuspended() && mapper->add(event->miner())) {
             return;
         }
     }
 
     // try reuse suspended upstreams.
     for (NonceMapper *mapper : m_upstreams) {
-        if (mapper->client()->try_miner(event->miner()) && mapper->isSuspended() && mapper->add(event->miner())) {
+        if (mapper->client()->try_miner(event->miner(), m_upstreams.size()) && mapper->isSuspended() && mapper->add(event->miner())) {
             return;
         }
     }

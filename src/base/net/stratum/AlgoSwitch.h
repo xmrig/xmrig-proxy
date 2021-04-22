@@ -44,7 +44,7 @@ class AlgoSwitch {
     rapidjson::Value algos_toJSON(rapidjson::Document&) const;
     rapidjson::Value algo_perfs_toJSON(rapidjson::Document&) const;
     void set_algo_perf_same_threshold(uint64_t);
-    bool try_miner(const Miner*) const;
+    bool try_miner(const Miner*, int upstream_count) const;
     void add_miner(const Miner*);
     void del_miner(const Miner*);
 };

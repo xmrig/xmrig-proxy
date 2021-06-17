@@ -125,12 +125,24 @@ bool xmrig::Miner::accept(uv_stream_t *server)
 }
 
 
-void xmrig::Miner::forwardJob(const Job &job, const char *algo)
+void xmrig::Miner::forwardJob(const Job &job, const char *algo, const char* sig_key)
 {
     m_diff = job.diff();
     setFixedByte(job.fixedByte());
 
-    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().shortName(), job.height(), job.rawSeedHash(), String());
+    String signatureKey;
+
+    if (sig_key && (strlen(sig_key) == 64 * 2)) {
+        char buf[64 * 3 + 1];
+
+        memset(buf, '0', 64);
+        memcpy(buf + 64, sig_key, 64 * 2);
+        buf[64 * 3] = '\0';
+
+        signatureKey = const_cast<const char*>(buf);
+    }
+
+    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().shortName(), job.height(), job.rawSeedHash(), signatureKey);
 }
 
 

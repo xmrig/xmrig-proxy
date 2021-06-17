@@ -130,7 +130,7 @@ void xmrig::Miner::forwardJob(const Job &job, const char *algo)
     m_diff = job.diff();
     setFixedByte(job.fixedByte());
 
-    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().shortName(), job.height(), job.rawSeedHash());
+    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().shortName(), job.height(), job.rawSeedHash(), String());
 }
 
 
@@ -158,7 +158,16 @@ void xmrig::Miner::setJob(Job &job)
         customDiff = true;
     }
 
-    sendJob(job.rawBlob(), job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height(), job.rawSeedHash());
+    const char* blob = job.rawBlob();
+
+    String tmp_blob;
+
+    if (job.hasMinerSignature()) {
+        job.generateHashingBlob(tmp_blob, m_signatureData);
+        blob = tmp_blob;
+    }
+
+    sendJob(blob, job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height(), job.rawSeedHash(), m_signatureData);
 }
 
 
@@ -230,7 +239,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
 
         Algorithm algorithm(Json::getString(params, "algo"));
 
-        SubmitEvent *event = SubmitEvent::create(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm);
+        SubmitEvent *event = SubmitEvent::create(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm, Json::getString(params, "sig"), m_signatureData);
 
         if (!event->request.isValid() || event->request.actualDiff() < diff()) {
             event->reject(Error::LowDifficulty);
@@ -420,7 +429,7 @@ void xmrig::Miner::send(int size)
 }
 
 
-void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height, const String &seedHash)
+void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height, const String &seedHash, const String &signatureKey)
 {
     using namespace rapidjson;
 
@@ -439,6 +448,11 @@ void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *targ
 
     if (!seedHash.isNull()) {
         params.AddMember("seed_hash", seedHash.toJSON(), allocator);
+    }
+
+    if (signatureKey.size() > 32 * 2) {
+        // Skip tx_pubkey (first 32 bytes) because client doesn't need it for signing
+        params.AddMember("sig_key", StringRef(signatureKey.data() + 32 * 2), allocator);
     }
 
     doc.AddMember("jsonrpc", "2.0", allocator);

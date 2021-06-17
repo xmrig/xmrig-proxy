@@ -37,9 +37,9 @@ namespace xmrig {
 class SubmitEvent : public MinerEvent
 {
 public:
-    static inline SubmitEvent *create(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, const Algorithm &algorithm)
+    static inline SubmitEvent *create(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, const Algorithm &algorithm, const char* sig, const char* sig_data)
     {
-        return new (m_buf) SubmitEvent(miner, id, jobId, nonce, result, algorithm);
+        return new (m_buf) SubmitEvent(miner, id, jobId, nonce, result, algorithm, sig, sig_data);
     }
 
 
@@ -54,9 +54,9 @@ public:
 
 
 protected:
-    inline SubmitEvent(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, const Algorithm &algorithm)
+    inline SubmitEvent(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, const Algorithm &algorithm, const char* sig, const char* sig_data)
         : MinerEvent(SubmitType, miner),
-          request(id, jobId, nonce, result, algorithm),
+          request(id, jobId, nonce, result, algorithm, sig, sig_data),
           m_error(Error::NoError)
     {}
 

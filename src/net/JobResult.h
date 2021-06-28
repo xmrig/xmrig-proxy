@@ -37,7 +37,7 @@ public:
     static constexpr uint32_t backend = 0;
 
     JobResult() = default;
-    JobResult(int64_t id, const char *jobId, const char *nonce, const char *result, const xmrig::Algorithm &algorithm);
+    JobResult(int64_t id, const char *jobId, const char *nonce, const char *result, const xmrig::Algorithm &algorithm, const char* sig, const char* sig_data);
 
     bool isCompatible(uint8_t fixedByte) const;
     bool isValid() const;
@@ -47,6 +47,8 @@ public:
     Algorithm algorithm;
     const char *nonce       = nullptr;
     const char *result      = nullptr;
+    const char *sig         = nullptr;
+    const char *sig_data    = nullptr;
     const int64_t id        = 0;
     String jobId;
     uint64_t diff           = 0;

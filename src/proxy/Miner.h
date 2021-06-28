@@ -72,7 +72,7 @@ public:
     ~Miner() override;
 
     bool accept(uv_stream_t *server);
-    void forwardJob(const Job &job, const char *algo);
+    void forwardJob(const Job &job, const char *algo, const char *sig_key);
     void replyWithError(int64_t id, const char *message);
     void setJob(Job &job);
     void success(int64_t id, const char *status);
@@ -119,7 +119,7 @@ private:
     void read(ssize_t nread, const uv_buf_t *buf);
     void send(const rapidjson::Document &doc);
     void send(int size);
-    void sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height, const String &seedHash);
+    void sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height, const String &seedHash, const String &signatureKey);
     void setState(State state);
     void shutdown(bool had_error);
     void startTLS(const char *data);
@@ -146,6 +146,7 @@ private:
     String m_password;
     String m_rigId;
     String m_user;
+    String m_signatureData;
     Tls *m_tls              = nullptr;
     uint16_t m_localPort;
     uint64_t m_customDiff   = 0;

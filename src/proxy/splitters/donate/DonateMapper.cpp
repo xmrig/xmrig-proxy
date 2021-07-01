@@ -91,7 +91,7 @@ void xmrig::DonateMapper::onJobReceived(IClient *, const Job &job, const rapidjs
     }
 
     m_diff = job.diff();
-    m_miner->forwardJob(job, Json::getString(params, "algo"));
+    m_miner->forwardJob(job, Json::getString(params, "algo"), Json::getString(params, "sig_key"));
 }
 
 

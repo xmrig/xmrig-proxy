@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -125,24 +125,12 @@ bool xmrig::Miner::accept(uv_stream_t *server)
 }
 
 
-void xmrig::Miner::forwardJob(const Job &job, const char *algo, const char* sig_key)
+void xmrig::Miner::forwardJob(const Job &job, const char *algo, const char *sig_key)
 {
     m_diff = job.diff();
     setFixedByte(job.fixedByte());
 
-    String signatureKey;
-
-    if (sig_key && (strlen(sig_key) == 64 * 2)) {
-        char buf[64 * 3 + 1];
-
-        memset(buf, '0', 64);
-        memcpy(buf + 64, sig_key, 64 * 2);
-        buf[64 * 3] = '\0';
-
-        signatureKey = const_cast<const char*>(buf);
-    }
-
-    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().shortName(), job.height(), job.rawSeedHash(), signatureKey);
+    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().shortName(), job.height(), job.rawSeedHash(), sig_key);
 }
 
 
@@ -170,16 +158,14 @@ void xmrig::Miner::setJob(Job &job)
         customDiff = true;
     }
 
-    const char* blob = job.rawBlob();
-
-    String tmp_blob;
-
     if (job.hasMinerSignature()) {
-        job.generateHashingBlob(tmp_blob, m_signatureData);
-        blob = tmp_blob;
+        job.generateHashingBlob(m_signatureData);
+    }
+    else if (!job.rawSigKey().isNull()) {
+        m_signatureData = job.rawSigKey();
     }
 
-    sendJob(blob, job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height(), job.rawSeedHash(), m_signatureData);
+    sendJob(job.rawBlob(), job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height(), job.rawSeedHash(), m_signatureData);
 }
 
 
@@ -462,9 +448,10 @@ void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *targ
         params.AddMember("seed_hash", seedHash.toJSON(), allocator);
     }
 
-    if (signatureKey.size() > 32 * 2) {
+    if (!signatureKey.isNull()) {
         // Skip tx_pubkey (first 32 bytes) because client doesn't need it for signing
-        params.AddMember("sig_key", StringRef(signatureKey.data() + 32 * 2), allocator);
+        const char *key = signatureKey.size() == 192 ? (signatureKey.data() + 64) : signatureKey.data();
+        params.AddMember("sig_key", Value(key, allocator), allocator);
     }
 
     doc.AddMember("jsonrpc", "2.0", allocator);

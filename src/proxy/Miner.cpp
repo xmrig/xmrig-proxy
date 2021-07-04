@@ -158,6 +158,9 @@ void xmrig::Miner::setJob(Job &job, int64_t extra_nonce)
         customDiff = true;
     }
 
+    const char* blob = job.rawBlob();
+    String tmp_blob;
+
     if (job.hasMinerSignature()) {
         job.generateSignatureData(m_signatureData);
     }
@@ -175,7 +178,7 @@ void xmrig::Miner::setJob(Job &job, int64_t extra_nonce)
         blob = tmp_blob;
     }
 
-    sendJob(job.rawBlob(), job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height(), job.rawSeedHash(), m_signatureData);
+    sendJob(blob, job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height(), job.rawSeedHash(), m_signatureData);
 }
 
 

@@ -74,7 +74,7 @@ public:
     bool accept(uv_stream_t *server);
     void forwardJob(const Job &job, const char *algo, const char *sig_key);
     void replyWithError(int64_t id, const char *message);
-    void setJob(Job &job);
+    void setJob(Job &job, int64_t extra_nonce = -1);
     void success(int64_t id, const char *status);
 
     inline bool hasExtension(Extension ext) const noexcept        { return m_extensions.test(ext); }
@@ -156,6 +156,7 @@ private:
     uint64_t m_timestamp;
     uint64_t m_tx           = 0;
     uint8_t m_fixedByte     = 0;
+    int64_t m_extraNonce    = -1;
     uintptr_t m_key;
     uv_tcp_t *m_socket;
 

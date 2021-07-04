@@ -181,6 +181,8 @@ void xmrig::Job::copy(const Job &other)
     m_minerTxPrefix = other.m_minerTxPrefix;
     m_minerTxEphPubKeyOffset = other.m_minerTxEphPubKeyOffset;
     m_minerTxPubKeyOffset = other.m_minerTxPubKeyOffset;
+    m_minerTxExtraNonceOffset = other.m_minerTxExtraNonceOffset;
+    m_minerTxExtraNonceSize = other.m_minerTxExtraNonceSize;
     m_minerTxMerkleTreeBranch = other.m_minerTxMerkleTreeBranch;
 #   else
     memcpy(m_ephPublicKey, other.m_ephPublicKey, sizeof(m_ephPublicKey));
@@ -232,6 +234,8 @@ void xmrig::Job::move(Job &&other)
     m_minerTxPrefix = std::move(other.m_minerTxPrefix);
     m_minerTxEphPubKeyOffset = other.m_minerTxEphPubKeyOffset;
     m_minerTxPubKeyOffset = other.m_minerTxPubKeyOffset;
+    m_minerTxExtraNonceOffset = other.m_minerTxExtraNonceOffset;
+    m_minerTxExtraNonceSize = other.m_minerTxExtraNonceSize;
     m_minerTxMerkleTreeBranch = std::move(other.m_minerTxMerkleTreeBranch);
 #   else
     memcpy(m_ephPublicKey, other.m_ephPublicKey, sizeof(m_ephPublicKey));
@@ -255,16 +259,24 @@ void xmrig::Job::setSpendSecretKey(uint8_t* key)
 }
 
 
-void xmrig::Job::setMinerTx(const uint8_t* begin, const uint8_t* end, size_t minerTxEphPubKeyOffset, size_t minerTxPubKeyOffset, const Buffer& minerTxMerkleTreeBranch)
+void xmrig::Job::setMinerTx(const uint8_t* begin, const uint8_t* end, size_t minerTxEphPubKeyOffset, size_t minerTxPubKeyOffset, size_t minerTxExtraNonceOffset, size_t minerTxExtraNonceSize, const Buffer& minerTxMerkleTreeBranch)
 {
     m_minerTxPrefix.assign(begin, end);
     m_minerTxEphPubKeyOffset = minerTxEphPubKeyOffset;
     m_minerTxPubKeyOffset = minerTxPubKeyOffset;
+    m_minerTxExtraNonceOffset = minerTxExtraNonceOffset;
+    m_minerTxExtraNonceSize = minerTxExtraNonceSize;
     m_minerTxMerkleTreeBranch = minerTxMerkleTreeBranch;
 }
 
 
-void xmrig::Job::generateHashingBlob(String& blob, String& signatureData) const
+void xmrig::Job::setExtraNonceInMinerTx(uint32_t extra_nonce)
+{
+    memcpy(m_minerTxPrefix.data() + m_minerTxExtraNonceOffset, &extra_nonce, std::min(m_minerTxExtraNonceSize, sizeof(uint32_t)));
+}
+
+
+void xmrig::Job::generateSignatureData(String& signatureData) const
 {
     uint8_t* eph_public_key = m_minerTxPrefix.data() + m_minerTxEphPubKeyOffset;
     uint8_t* txkey_pub = m_minerTxPrefix.data() + m_minerTxPubKeyOffset;
@@ -286,14 +298,23 @@ void xmrig::Job::generateHashingBlob(String& blob, String& signatureData) const
     derive_secret_key(derivation, 0, m_spendSecretKey, buf + 64);
 
     signatureData = xmrig::Cvt::toHex(buf, sizeof(buf));
+}
 
+
+void xmrig::Job::generateHashingBlob(String& blob) const
+{
     uint8_t root_hash[32];
     const uint8_t* p = m_minerTxPrefix.data();
     xmrig::BlockTemplate::CalculateRootHash(p, p + m_minerTxPrefix.size(), m_minerTxMerkleTreeBranch, root_hash);
 
+    uint64_t root_hash_offset = nonceOffset() + nonceSize();
+
+    if (m_hasMinerSignature) {
+        root_hash_offset += BlockTemplate::SIGNATURE_SIZE + 2 /* vote */;
+    }
+
     blob = rawBlob();
-    const uint64_t offset = nonceOffset() + nonceSize() + BlockTemplate::SIGNATURE_SIZE + 2 /* vote */;
-    xmrig::Cvt::toHex(blob.data() + offset * 2, 64, root_hash, 32);
+    xmrig::Cvt::toHex(blob.data() + root_hash_offset * 2, 64, root_hash, BlockTemplate::HASH_SIZE);
 }
 
 

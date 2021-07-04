@@ -152,7 +152,7 @@ void xmrig::Miner::replyWithError(int64_t id, const char *message)
 }
 
 
-void xmrig::Miner::setJob(Job &job)
+void xmrig::Miner::setJob(Job &job, int64_t extra_nonce)
 {
     using namespace rapidjson;
 
@@ -175,7 +175,16 @@ void xmrig::Miner::setJob(Job &job)
     String tmp_blob;
 
     if (job.hasMinerSignature()) {
-        job.generateHashingBlob(tmp_blob, m_signatureData);
+        job.generateSignatureData(m_signatureData);
+    }
+
+    if (extra_nonce >= 0) {
+        m_extraNonce = extra_nonce;
+        job.setExtraNonceInMinerTx(static_cast<uint32_t>(m_extraNonce));
+    }
+
+    if (job.hasMinerSignature() || (extra_nonce >= 0)) {
+        job.generateHashingBlob(tmp_blob);
         blob = tmp_blob;
     }
 
@@ -251,7 +260,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
 
         Algorithm algorithm(Json::getString(params, "algo"));
 
-        SubmitEvent *event = SubmitEvent::create(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm, Json::getString(params, "sig"), m_signatureData);
+        SubmitEvent *event = SubmitEvent::create(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm, Json::getString(params, "sig"), m_signatureData, m_extraNonce);
 
         if (!event->request.isValid() || event->request.actualDiff() < diff()) {
             event->reject(Error::LowDifficulty);

@@ -49,6 +49,7 @@
 #include "proxy/ProxyDebug.h"
 #include "proxy/Server.h"
 #include "proxy/splitters/donate/DonateSplitter.h"
+#include "proxy/splitters/extra_nonce/ExtraNonceSplitter.h"
 #include "proxy/splitters/nicehash/NonceSplitter.h"
 #include "proxy/splitters/simple/SimpleSplitter.h"
 #include "proxy/Stats.h"
@@ -76,6 +77,9 @@ xmrig::Proxy::Proxy(Controller *controller) :
     Splitter *splitter = nullptr;
     if (controller->config()->mode() == Config::NICEHASH_MODE) {
         splitter = new NonceSplitter(controller);
+    }
+    else if (controller->config()->mode() == Config::EXTRA_NONCE_MODE) {
+        splitter = new ExtraNonceSplitter(controller);
     }
     else {
         splitter = new SimpleSplitter(controller);

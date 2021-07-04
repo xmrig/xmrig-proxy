@@ -22,50 +22,58 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_SUBMITEVENT_H
-#define XMRIG_SUBMITEVENT_H
+#ifndef XMRIG_EXTRANONCESPLITTER_H
+#define XMRIG_EXTRANONCESPLITTER_H
 
 
-#include "net/JobResult.h"
-#include "proxy/Error.h"
-#include "proxy/events/MinerEvent.h"
+#include "base/tools/Object.h"
+#include "proxy/splitters/Splitter.h"
 
 
 namespace xmrig {
 
 
-class SubmitEvent : public MinerEvent
+class Controller;
+class LoginEvent;
+class Miner;
+class ExtraNonceMapper;
+class Stats;
+class SubmitEvent;
+
+
+class ExtraNonceSplitter : public Splitter
 {
 public:
-    static inline SubmitEvent *create(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, const Algorithm &algorithm, const char* sig, const char* sig_data, int64_t extra_nonce)
-    {
-        return new (m_buf) SubmitEvent(miner, id, jobId, nonce, result, algorithm, sig, sig_data, extra_nonce);
-    }
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(ExtraNonceSplitter)
 
-
-    bool expired = false;
-    JobResult request;
-
-
-    inline bool isRejected() const override { return m_error != Error::NoError; }
-    inline const char *message() const      { return Error::toString(m_error); }
-    inline Error::Code error() const        { return m_error; }
-    inline void reject(Error::Code error)   { m_error  = error; }
-
+    ExtraNonceSplitter(Controller *controller);
+    ~ExtraNonceSplitter() override;
 
 protected:
-    inline SubmitEvent(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, const Algorithm &algorithm, const char* sig, const char* sig_data, int64_t extra_nonce)
-        : MinerEvent(SubmitType, miner),
-          request(id, jobId, nonce, result, algorithm, sig, sig_data, extra_nonce),
-          m_error(Error::NoError)
-    {}
+    Upstreams upstreams() const override;
+    void connect() override;
+    void gc() override;
+    void printConnections() override;
+    void tick(uint64_t ticks) override;
+
+#   ifdef APP_DEVEL
+    void printState() override;
+#   endif
+
+    inline void onRejectedEvent(IEvent *) override {}
+    void onConfigChanged(Config *config, Config *previousConfig) override;
+    void onEvent(IEvent *event) override;
 
 private:
-    Error::Code m_error;
+    void login(LoginEvent *event);
+    void remove(Miner *miner);
+    void submit(SubmitEvent *event);
+
+    ExtraNonceMapper* m_upstream = nullptr;
 };
 
 
 } /* namespace xmrig */
 
 
-#endif /* XMRIG_SUBMITEVENT_H */
+#endif /* XMRIG_EXTRANONCESPLITTER_H */

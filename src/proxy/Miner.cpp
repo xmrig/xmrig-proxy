@@ -125,12 +125,12 @@ bool xmrig::Miner::accept(uv_stream_t *server)
 }
 
 
-void xmrig::Miner::forwardJob(const Job &job, const char *algo, const char *sig_key)
+void xmrig::Miner::forwardJob(const Job &job, const char *algo)
 {
     m_diff = job.diff();
     setFixedByte(job.fixedByte());
 
-    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().shortName(), job.height(), job.rawSeedHash(), sig_key);
+    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().shortName(), job.height(), job.rawSeedHash(), job.rawSigKey());
 }
 
 

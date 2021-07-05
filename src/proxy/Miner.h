@@ -72,7 +72,7 @@ public:
     ~Miner() override;
 
     bool accept(uv_stream_t *server);
-    void forwardJob(const Job &job, const char *algo, const char *sig_key);
+    void forwardJob(const Job &job, const char *algo);
     void replyWithError(int64_t id, const char *message);
     void setJob(Job &job, int64_t extra_nonce = -1);
     void success(int64_t id, const char *status);

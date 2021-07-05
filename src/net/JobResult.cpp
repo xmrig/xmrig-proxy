@@ -32,8 +32,8 @@ xmrig::JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, co
     sig(sig),
     sig_data(sig_data),
     id(id),
-    jobId(jobId),
-    extra_nonce(extra_nonce)
+    extra_nonce(extra_nonce),
+    jobId(jobId)
 {
     if (result && strlen(result) == 64) {
         uint64_t target = 0;

@@ -38,6 +38,18 @@
 #define LABEL(x) " \x1B[01;30m" x ":\x1B[0m "
 
 
+xmrig::ExtraNonceSplitter* xmrig::ExtraNonceSplitter::Create(Controller* controller)
+{
+    for (const xmrig::Pool& pool : controller->config()->pools().data()) {
+        if ((pool.algorithm() == xmrig::Algorithm::ASTROBWT_DERO) || (pool.coin() == xmrig::Coin::DERO)) {
+            LOG_ERR("extra_nonce mode is incompatible with Dero mining");
+            return nullptr;
+        }
+    }
+    return new ExtraNonceSplitter(controller);
+}
+
+
 xmrig::ExtraNonceSplitter::ExtraNonceSplitter(Controller *controller) : Splitter(controller)
 {
 }

@@ -46,10 +46,12 @@ class ExtraNonceSplitter : public Splitter
 public:
     XMRIG_DISABLE_COPY_MOVE_DEFAULT(ExtraNonceSplitter)
 
-    ExtraNonceSplitter(Controller *controller);
+    static ExtraNonceSplitter* Create(Controller* controller);
     ~ExtraNonceSplitter() override;
 
 protected:
+    ExtraNonceSplitter(Controller* controller);
+
     Upstreams upstreams() const override;
     void connect() override;
     void gc() override;

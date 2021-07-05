@@ -79,7 +79,11 @@ xmrig::Proxy::Proxy(Controller *controller) :
         splitter = new NonceSplitter(controller);
     }
     else if (controller->config()->mode() == Config::EXTRA_NONCE_MODE) {
-        splitter = new ExtraNonceSplitter(controller);
+        splitter = ExtraNonceSplitter::Create(controller);
+        if (!splitter) {
+            LOG_WARN("Switching to nicehash mode");
+            splitter = new NonceSplitter(controller);
+        }
     }
     else {
         splitter = new SimpleSplitter(controller);

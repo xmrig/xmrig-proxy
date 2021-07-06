@@ -66,6 +66,7 @@ private:
     Job m_job;
     Job m_prevJob;
     std::map<int64_t, Miner*> m_miners;
+    int64_t m_extraNonce = 0;
 };
 
 

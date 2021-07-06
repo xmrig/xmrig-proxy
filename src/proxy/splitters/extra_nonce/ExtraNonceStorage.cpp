@@ -33,7 +33,8 @@ bool xmrig::ExtraNonceStorage::add(Miner *miner)
     m_miners[miner->id()] = miner;
 
     if (isActive()) {
-        miner->setJob(m_job, m_miners.size() - 1);
+        miner->setJob(m_job, m_extraNonce);
+        ++m_extraNonce;
     }
 
     return true;
@@ -91,11 +92,11 @@ void xmrig::ExtraNonceStorage::setJob(const Job &job)
 
     m_job = job;
 
-    int64_t extra_nonce = 0;
+    m_extraNonce = 0;
 
     for (const auto& m : m_miners) {
-        m.second->setJob(m_job, extra_nonce);
-        ++extra_nonce;
+        m.second->setJob(m_job, m_extraNonce);
+        ++m_extraNonce;
     }
 }
 

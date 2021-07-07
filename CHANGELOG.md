@@ -1,3 +1,7 @@
+# v6.14.0
+- [#460](https://github.com/xmrig/xmrig-proxy/pull/460) Added new mode: `extra_nonce` for solo mining.
+- Fixed `simple` mode for Wownero.
+
 # v6.13.0
 - [#458](https://github.com/xmrig/xmrig-proxy/pull/458) Added support for solo mining with miner signatures for the upcoming Wownero fork.
 

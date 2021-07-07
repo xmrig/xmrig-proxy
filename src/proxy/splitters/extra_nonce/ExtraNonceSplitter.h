@@ -22,60 +22,60 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_DONATEMAPPER_H
-#define XMRIG_DONATEMAPPER_H
+#ifndef XMRIG_EXTRANONCESPLITTER_H
+#define XMRIG_EXTRANONCESPLITTER_H
 
 
-#include <cstdint>
-#include <vector>
-
-
-#include "base/kernel/interfaces/IClientListener.h"
 #include "base/tools/Object.h"
-#include "base/tools/String.h"
+#include "proxy/splitters/Splitter.h"
 
 
 namespace xmrig {
 
 
+class Controller;
 class LoginEvent;
 class Miner;
-class Pool;
+class ExtraNonceMapper;
+class Stats;
 class SubmitEvent;
 
 
-class DonateMapper : public IClientListener
+class ExtraNonceSplitter : public Splitter
 {
 public:
-    XMRIG_DISABLE_COPY_MOVE_DEFAULT(DonateMapper)
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(ExtraNonceSplitter)
 
-    DonateMapper(uint64_t id, LoginEvent *event, const Pool &pool);
-    ~DonateMapper() override;
-
-    inline bool isActive() const { return m_active; }
-    inline uint64_t id() const   { return m_id; }
-
-    void submit(SubmitEvent *event);
+    static ExtraNonceSplitter* Create(Controller* controller);
+    ~ExtraNonceSplitter() override;
 
 protected:
-    void onClose(IClient *client, int failures) override;
-    void onJobReceived(IClient *client, const Job &job, const rapidjson::Value &params) override;
-    void onLogin(IClient *client, rapidjson::Document &doc, rapidjson::Value &params) override;
-    void onLoginSuccess(IClient *client) override;
-    void onResultAccepted(IClient *client, const SubmitResult &result, const char *error) override;
-    void onVerifyAlgorithm(const IClient *client, const Algorithm &algorithm, bool *ok) override;
+    ExtraNonceSplitter(Controller* controller);
+
+    Upstreams upstreams() const override;
+    void connect() override;
+    void gc() override;
+    void printConnections() override;
+    void tick(uint64_t ticks) override;
+
+#   ifdef APP_DEVEL
+    void printState() override;
+#   endif
+
+    inline void onRejectedEvent(IEvent *) override {}
+    void onConfigChanged(Config *config, Config *previousConfig) override;
+    void onEvent(IEvent *event) override;
 
 private:
-    bool m_active = true;
-    IClient *m_client;
-    Miner *m_miner;
-    std::vector<String> m_algorithms;
-    uint64_t m_diff = 0;
-    uint64_t m_id;
+    void login(LoginEvent *event);
+    void remove(Miner *miner);
+    void submit(SubmitEvent *event);
+
+    ExtraNonceMapper* m_upstream = nullptr;
 };
 
 
 } /* namespace xmrig */
 
 
-#endif /* XMRIG_DONATEMAPPER_H */
+#endif /* XMRIG_EXTRANONCESPLITTER_H */

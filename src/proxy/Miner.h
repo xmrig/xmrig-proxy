@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -72,9 +72,9 @@ public:
     ~Miner() override;
 
     bool accept(uv_stream_t *server);
-    void forwardJob(const Job &job, const char *algo, const char *sig_key);
+    void forwardJob(const Job &job, const char *algo);
     void replyWithError(int64_t id, const char *message);
-    void setJob(Job &job);
+    void setJob(Job &job, int64_t extra_nonce = -1);
     void success(int64_t id, const char *status);
 
     inline bool hasExtension(Extension ext) const noexcept        { return m_extensions.test(ext); }
@@ -156,6 +156,7 @@ private:
     uint64_t m_timestamp;
     uint64_t m_tx           = 0;
     uint8_t m_fixedByte     = 0;
+    int64_t m_extraNonce    = -1;
     uintptr_t m_key;
     uv_tcp_t *m_socket;
 

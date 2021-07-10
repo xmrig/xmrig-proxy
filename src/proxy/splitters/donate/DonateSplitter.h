@@ -26,6 +26,7 @@
 #define XMRIG_DONATESPLITTER_H
 
 
+#include <cstddef>
 #include <cstdint>
 #include <map>
 

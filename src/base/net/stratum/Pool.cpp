@@ -1,12 +1,7 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2019 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2019      Howard Chu  <https://github.com/hyc>
+ * Copyright (c) 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,157 +18,155 @@
  */
 
 
-#include <assert.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cassert>
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
+#include <string>
 
 
-#include "base/io/Json.h"
 #include "base/net/stratum/Pool.h"
-#include "rapidjson/document.h"
+#include "3rdparty/rapidjson/document.h"
+#include "base/io/json/Json.h"
+#include "base/io/log/Log.h"
+#include "base/kernel/Platform.h"
+#include "base/net/stratum/Client.h"
+
+#ifdef XMRIG_ALGO_KAWPOW
+#   include "base/net/stratum/AutoClient.h"
+#   include "base/net/stratum/EthStratumClient.h"
+#endif
 
 
-#ifdef APP_DEBUG
-#   include "base/io/log/Log.h"
+#ifdef XMRIG_FEATURE_HTTP
+#   include "base/net/stratum/DaemonClient.h"
+#   include "base/net/stratum/SelfSelectClient.h"
+#endif
+
+
+#ifdef XMRIG_FEATURE_BENCHMARK
+#   include "base/net/stratum/benchmark/BenchClient.h"
+#   include "base/net/stratum/benchmark/BenchConfig.h"
 #endif
 
 
 #ifdef _MSC_VER
-#   define strncasecmp _strnicmp
 #   define strcasecmp  _stricmp
 #endif
 
 
 namespace xmrig {
 
-static const char *kEnabled         = "enabled";
-static const char *kFingerprint     = "tls-fingerprint";
-static const char *kKeepalive       = "keepalive";
-static const char *kNicehash        = "nicehash";
-static const char *kPass            = "pass";
-static const char *kRigId           = "rig-id";
-static const char *kTls             = "tls";
-static const char *kUrl             = "url";
-static const char *kUser            = "user";
-static const char *kVariant         = "variant";
 
-const String Pool::kDefaultPassword = "x";
-const String Pool::kDefaultUser     = "x";
+const String Pool::kDefaultPassword       = "x";
+const String Pool::kDefaultUser           = "x";
+
+
+const char *Pool::kAlgo                   = "algo";
+const char *Pool::kCoin                   = "coin";
+const char *Pool::kDaemon                 = "daemon";
+const char *Pool::kDaemonPollInterval     = "daemon-poll-interval";
+const char *Pool::kEnabled                = "enabled";
+const char *Pool::kFingerprint            = "tls-fingerprint";
+const char *Pool::kKeepalive              = "keepalive";
+const char *Pool::kNicehash               = "nicehash";
+const char *Pool::kPass                   = "pass";
+const char *Pool::kRigId                  = "rig-id";
+const char *Pool::kSelfSelect             = "self-select";
+const char *Pool::kSOCKS5                 = "socks5";
+const char *Pool::kSubmitToOrigin         = "submit-to-origin";
+const char *Pool::kTls                    = "tls";
+const char *Pool::kUrl                    = "url";
+const char *Pool::kUser                   = "user";
+const char *Pool::kSpendSecretKey         = "spend-secret-key";
+const char *Pool::kNicehashHost           = "nicehash.com";
+
 
 }
 
 
-xmrig::Pool::Pool() :
-    m_enabled(true),
-    m_nicehash(false),
-    m_tls(false),
-    m_keepAlive(0),
-    m_port(kDefaultPort)
-{
-}
-
-
-/**
- * @brief Parse url.
- *
- * Valid urls:
- * example.com
- * example.com:3333
- * stratum+tcp://example.com
- * stratum+tcp://example.com:3333
- *
- * @param url
- */
 xmrig::Pool::Pool(const char *url) :
-    m_enabled(true),
-    m_nicehash(false),
-    m_tls(false),
-    m_keepAlive(0),
-    m_port(kDefaultPort)
+    m_flags(1 << FLAG_ENABLED),
+    m_pollInterval(kDefaultPollInterval),
+    m_url(url)
 {
-    parse(url);
+}
+
+
+xmrig::Pool::Pool(const char *host, uint16_t port, const char *user, const char *password, const char* spendSecretKey, int keepAlive, bool nicehash, bool tls, Mode mode) :
+    m_keepAlive(keepAlive),
+    m_mode(mode),
+    m_flags(1 << FLAG_ENABLED),
+    m_password(password),
+    m_user(user),
+    m_spendSecretKey(spendSecretKey),
+    m_pollInterval(kDefaultPollInterval),
+    m_url(host, port, tls)
+{
+    m_flags.set(FLAG_NICEHASH, nicehash || strstr(host, kNicehashHost));
+    m_flags.set(FLAG_TLS,      tls);
 }
 
 
 xmrig::Pool::Pool(const rapidjson::Value &object) :
-    m_enabled(true),
-    m_nicehash(false),
-    m_tls(false),
-    m_keepAlive(0),
-    m_port(kDefaultPort)
+    m_flags(1 << FLAG_ENABLED),
+    m_pollInterval(kDefaultPollInterval),
+    m_url(Json::getString(object, kUrl))
 {
-    if (!parse(Json::getString(object, kUrl))) {
+    if (!m_url.isValid()) {
         return;
     }
 
-    setUser(Json::getString(object, kUser));
-    setPassword(Json::getString(object, kPass));
-    setRigId(Json::getString(object, kRigId));
-    setNicehash(Json::getBool(object, kNicehash));
+    m_user           = Json::getString(object, kUser);
+    m_spendSecretKey = Json::getString(object, kSpendSecretKey);
+    m_password       = Json::getString(object, kPass);
+    m_rigId          = Json::getString(object, kRigId);
+    m_fingerprint    = Json::getString(object, kFingerprint);
+    m_pollInterval   = Json::getUint64(object, kDaemonPollInterval, kDefaultPollInterval);
+    m_algorithm      = Json::getString(object, kAlgo);
+    m_coin           = Json::getString(object, kCoin);
+    m_daemon         = Json::getString(object, kSelfSelect);
+    m_proxy          = Json::getValue(object, kSOCKS5);
 
-    const rapidjson::Value &keepalive = object[kKeepalive];
-    if (keepalive.IsInt()) {
-        setKeepAlive(keepalive.GetInt());
-    }
-    else if (keepalive.IsBool()) {
-        setKeepAlive(keepalive.GetBool());
-    }
+    m_flags.set(FLAG_ENABLED,  Json::getBool(object, kEnabled, true));
+    m_flags.set(FLAG_NICEHASH, Json::getBool(object, kNicehash) || m_url.host().contains(kNicehashHost));
+    m_flags.set(FLAG_TLS,      Json::getBool(object, kTls) || m_url.isTLS());
 
-    const rapidjson::Value &variant = object[kVariant];
-    if (variant.IsString()) {
-        algorithm().parseVariant(variant.GetString());
-    }
-    else if (variant.IsInt()) {
-        algorithm().parseVariant(variant.GetInt());
-    }
+    setKeepAlive(Json::getValue(object, kKeepalive));
 
-    m_enabled     = Json::getBool(object, kEnabled, true);
-    m_tls         = Json::getBool(object, kTls);
-    m_fingerprint = Json::getString(object, kFingerprint);
+    if (m_daemon.isValid()) {
+        m_mode           = MODE_SELF_SELECT;
+        m_submitToOrigin = Json::getBool(object, kSubmitToOrigin, m_submitToOrigin);
+    }
+    else if (Json::getBool(object, kDaemon)) {
+        m_mode = MODE_DAEMON;
+    }
 }
 
 
-xmrig::Pool::Pool(const char *host, uint16_t port, const char *user, const char *password, int keepAlive, bool nicehash, bool tls) :
-    m_enabled(true),
-    m_nicehash(nicehash),
-    m_tls(tls),
-    m_keepAlive(keepAlive),
-    m_host(host),
-    m_password(password),
-    m_user(user),
-    m_port(port)
+#ifdef XMRIG_FEATURE_BENCHMARK
+xmrig::Pool::Pool(const std::shared_ptr<BenchConfig> &benchmark) :
+    m_mode(MODE_BENCHMARK),
+    m_flags(1 << FLAG_ENABLED),
+    m_url(BenchConfig::kBenchmark),
+    m_benchmark(benchmark)
 {
-    const size_t size = m_host.size() + 8;
-    assert(size > 8);
-
-    char *url = new char[size]();
-    snprintf(url, size - 1, "%s:%d", m_host.data(), m_port);
-
-    m_url = url;
 }
 
 
-bool xmrig::Pool::isCompatible(const Algorithm &algorithm) const
+xmrig::BenchConfig *xmrig::Pool::benchmark() const
 {
-    if (m_algorithms.empty()) {
-        return true;
-    }
+    assert(m_mode == MODE_BENCHMARK && m_benchmark);
 
-    for (const auto &a : m_algorithms) {
-        if (algorithm == a) {
-            return true;
-        }
-    }
-
-#   ifdef XMRIG_PROXY_PROJECT
-    if (m_algorithm.algo() == xmrig::CRYPTONIGHT && algorithm.algo() == xmrig::CRYPTONIGHT) {
-        return m_algorithm.variant() == xmrig::VARIANT_RWZ || m_algorithm.variant() == xmrig::VARIANT_ZLS;
-    }
-#   endif
-
-    return false;
+    return m_benchmark.get();
 }
+
+
+uint32_t xmrig::Pool::benchSize() const
+{
+    return benchmark()->size();
+}
+#endif
 
 
 bool xmrig::Pool::isEnabled() const
@@ -184,88 +177,86 @@ bool xmrig::Pool::isEnabled() const
     }
 #   endif
 
-    return m_enabled && isValid() && algorithm().isValid();
+#   ifndef XMRIG_FEATURE_HTTP
+    if (m_mode == MODE_DAEMON) {
+        return false;
+    }
+#   endif
+
+#   ifndef XMRIG_FEATURE_HTTP
+    if (m_mode == MODE_SELF_SELECT) {
+        return false;
+    }
+#   endif
+
+    if (m_mode == MODE_DAEMON && (!algorithm().isValid() && !coin().isValid())) {
+        return false;
+    }
+
+    return m_flags.test(FLAG_ENABLED) && isValid();
 }
 
 
 bool xmrig::Pool::isEqual(const Pool &other) const
 {
-    return (m_nicehash       == other.m_nicehash
-            && m_enabled     == other.m_enabled
-            && m_tls         == other.m_tls
-            && m_keepAlive   == other.m_keepAlive
-            && m_port        == other.m_port
-            && m_algorithm   == other.m_algorithm
-            && m_fingerprint == other.m_fingerprint
-            && m_host        == other.m_host
-            && m_password    == other.m_password
-            && m_rigId       == other.m_rigId
-            && m_url         == other.m_url
-            && m_user        == other.m_user);
+    return (m_flags           == other.m_flags
+            && m_keepAlive    == other.m_keepAlive
+            && m_algorithm    == other.m_algorithm
+            && m_coin         == other.m_coin
+            && m_mode         == other.m_mode
+            && m_fingerprint  == other.m_fingerprint
+            && m_password     == other.m_password
+            && m_rigId        == other.m_rigId
+            && m_url          == other.m_url
+            && m_user         == other.m_user
+            && m_pollInterval == other.m_pollInterval
+            && m_daemon       == other.m_daemon
+            && m_proxy        == other.m_proxy
+            );
 }
 
 
-bool xmrig::Pool::parse(const char *url)
+xmrig::IClient *xmrig::Pool::createClient(int id, IClientListener *listener) const
 {
-    assert(url != nullptr);
+    IClient *client = nullptr;
 
-    const char *p = strstr(url, "://");
-    const char *base = url;
-
-    if (p) {
-        if (strncasecmp(url, "stratum+tcp://", 14) == 0) {
-            m_tls = false;
+    if (m_mode == MODE_POOL) {
+#       ifdef XMRIG_ALGO_KAWPOW
+        if ((m_algorithm.family() == Algorithm::KAWPOW) || (m_coin == Coin::RAVEN)) {
+            client = new EthStratumClient(id, Platform::userAgent(), listener);
         }
-        else if (strncasecmp(url, "stratum+ssl://", 14) == 0) {
-            m_tls = true;
+        else
+#       endif
+        {
+            client = new Client(id, Platform::userAgent(), listener);
         }
-        else {
-            return false;
-        }
+    }
+#   ifdef XMRIG_FEATURE_HTTP
+    else if (m_mode == MODE_DAEMON) {
+        client = new DaemonClient(id, listener);
+    }
+    else if (m_mode == MODE_SELF_SELECT) {
+        client = new SelfSelectClient(id, Platform::userAgent(), listener, m_submitToOrigin);
+    }
+#   endif
+#   ifdef XMRIG_ALGO_KAWPOW
+    else if (m_mode == MODE_AUTO_ETH) {
+        client = new AutoClient(id, Platform::userAgent(), listener);
+    }
+#   endif
+#   ifdef XMRIG_FEATURE_BENCHMARK
+    else if (m_mode == MODE_BENCHMARK) {
+        client = new BenchClient(m_benchmark, listener);
+    }
+#   endif
 
-        base = url + 14;
+    assert(client != nullptr);
+
+    if (client) {
+        client->setPool(*this);
     }
 
-    if (!strlen(base) || *base == '/') {
-        return false;
-    }
-
-    m_url = url;
-    if (base[0] == '[') {
-        return parseIPv6(base);
-    }
-
-    const char *port = strchr(base, ':');
-    if (!port) {
-        m_host = base;
-        return true;
-    }
-
-    const size_t size = static_cast<size_t>(port++ - base + 1);
-    char *host        = new char[size]();
-    memcpy(host, base, size - 1);
-
-    m_host = host;
-    m_port = static_cast<uint16_t>(strtol(port, nullptr, 10));
-
-    return true;
-}
-
-
-bool xmrig::Pool::setUserpass(const char *userpass)
-{
-    const char *p = strchr(userpass, ':');
-    if (!p) {
-        return false;
-    }
-
-    char *user = new char[p - userpass + 1]();
-    strncpy(user, userpass, static_cast<size_t>(p - userpass));
-
-    m_user     = user;
-    m_password = p + 1;
-
-    return true;
+    return client;
 }
 
 
@@ -277,232 +268,90 @@ rapidjson::Value xmrig::Pool::toJSON(rapidjson::Document &doc) const
 
     Value obj(kObjectType);
 
-    obj.AddMember(StringRef(kUrl),   m_url.toJSON(), allocator);
+    obj.AddMember(StringRef(kAlgo),  m_algorithm.toJSON(), allocator);
+    obj.AddMember(StringRef(kCoin),  m_coin.toJSON(), allocator);
+    obj.AddMember(StringRef(kUrl),   url().toJSON(), allocator);
     obj.AddMember(StringRef(kUser),  m_user.toJSON(), allocator);
-    obj.AddMember(StringRef(kPass),  m_password.toJSON(), allocator);
-    obj.AddMember(StringRef(kRigId), m_rigId.toJSON(), allocator);
 
-#   ifndef XMRIG_PROXY_PROJECT
-    obj.AddMember(StringRef(kNicehash), isNicehash(), allocator);
-#   endif
+    if (!m_spendSecretKey.isEmpty()) {
+        obj.AddMember(StringRef(kSpendSecretKey), m_spendSecretKey.toJSON(), allocator);
+    }
 
-    if (m_keepAlive == 0 || m_keepAlive == kKeepAliveTimeout) {
-        obj.AddMember(StringRef(kKeepalive), m_keepAlive > 0, allocator);
+    if (m_mode != MODE_DAEMON) {
+        obj.AddMember(StringRef(kPass),  m_password.toJSON(), allocator);
+        obj.AddMember(StringRef(kRigId), m_rigId.toJSON(), allocator);
+
+#       ifndef XMRIG_PROXY_PROJECT
+        obj.AddMember(StringRef(kNicehash), isNicehash(), allocator);
+#       endif
+
+        if (m_keepAlive == 0 || m_keepAlive == kKeepAliveTimeout) {
+            obj.AddMember(StringRef(kKeepalive), m_keepAlive > 0, allocator);
+        }
+        else {
+            obj.AddMember(StringRef(kKeepalive), m_keepAlive, allocator);
+        }
+    }
+
+    obj.AddMember(StringRef(kEnabled),      m_flags.test(FLAG_ENABLED), allocator);
+    obj.AddMember(StringRef(kTls),          isTLS(), allocator);
+    obj.AddMember(StringRef(kFingerprint),  m_fingerprint.toJSON(), allocator);
+    obj.AddMember(StringRef(kDaemon),       m_mode == MODE_DAEMON, allocator);
+    obj.AddMember(StringRef(kSOCKS5),       m_proxy.toJSON(doc), allocator);
+
+    if (m_mode == MODE_DAEMON) {
+        obj.AddMember(StringRef(kDaemonPollInterval), m_pollInterval, allocator);
     }
     else {
-        obj.AddMember(StringRef(kKeepalive), m_keepAlive, allocator);
+        obj.AddMember(StringRef(kSelfSelect),     m_daemon.url().toJSON(), allocator);
+        obj.AddMember(StringRef(kSubmitToOrigin), m_submitToOrigin, allocator);
     }
-
-    switch (m_algorithm.variant()) {
-    case VARIANT_AUTO:
-    case VARIANT_0:
-    case VARIANT_1:
-        obj.AddMember(StringRef(kVariant), m_algorithm.variant(), allocator);
-        break;
-
-    case VARIANT_2:
-        obj.AddMember(StringRef(kVariant), 2, allocator);
-        break;
-
-    default:
-        obj.AddMember(StringRef(kVariant), StringRef(m_algorithm.variantName()), allocator);
-        break;
-    }
-
-    obj.AddMember(StringRef(kEnabled),     m_enabled, allocator);
-    obj.AddMember(StringRef(kTls),         isTLS(), allocator);
-    obj.AddMember(StringRef(kFingerprint), m_fingerprint.toJSON(), allocator);
 
     return obj;
 }
 
 
-void xmrig::Pool::adjust(const Algorithm &algorithm)
+std::string xmrig::Pool::printableName() const
 {
-    if (!isValid()) {
-        return;
+    std::string out(CSI "1;" + std::to_string(isEnabled() ? (isTLS() ? 32 : 36) : 31) + "m" + url().data() + CLEAR);
+
+    if (m_coin.isValid()) {
+        out += std::string(" coin ") + WHITE_BOLD_S + m_coin.name() + CLEAR;
+    }
+    else {
+        out += std::string(" algo ") + WHITE_BOLD_S + (m_algorithm.isValid() ? m_algorithm.shortName() : "auto") + CLEAR;
     }
 
-    if (!m_algorithm.isValid()) {
-        m_algorithm.setAlgo(algorithm.algo());
-        adjustVariant(algorithm.variant());
+    if (m_mode == MODE_SELF_SELECT) {
+        out += std::string(" self-select ") + CSI "1;" + std::to_string(m_daemon.isTLS() ? 32 : 36) + "m" + m_daemon.url().data() + WHITE_BOLD_S + (m_submitToOrigin ? " submit-to-origin" : "") + CLEAR;
     }
 
-    rebuild();
-}
-
-
-void xmrig::Pool::setAlgo(const xmrig::Algorithm &algorithm)
-{
-    m_algorithm = algorithm;
-
-    rebuild();
+    return out;
 }
 
 
 #ifdef APP_DEBUG
 void xmrig::Pool::print() const
 {
-    LOG_NOTICE("url:       %s", m_url.data());
-    LOG_DEBUG ("host:      %s", m_host.data());
-    LOG_DEBUG ("port:      %d", static_cast<int>(m_port));
+    LOG_NOTICE("url:       %s", url().data());
+    LOG_DEBUG ("host:      %s", host().data());
+    LOG_DEBUG ("port:      %d", static_cast<int>(port()));
     LOG_DEBUG ("user:      %s", m_user.data());
     LOG_DEBUG ("pass:      %s", m_password.data());
     LOG_DEBUG ("rig-id     %s", m_rigId.data());
     LOG_DEBUG ("algo:      %s", m_algorithm.name());
-    LOG_DEBUG ("nicehash:  %d", static_cast<int>(m_nicehash));
+    LOG_DEBUG ("nicehash:  %d", static_cast<int>(m_flags.test(FLAG_NICEHASH)));
     LOG_DEBUG ("keepAlive: %d", m_keepAlive);
 }
 #endif
 
 
-bool xmrig::Pool::parseIPv6(const char *addr)
+void xmrig::Pool::setKeepAlive(const rapidjson::Value &value)
 {
-    const char *end = strchr(addr, ']');
-    if (!end) {
-        return false;
+    if (value.IsInt()) {
+        setKeepAlive(value.GetInt());
     }
-
-    const char *port = strchr(end, ':');
-    if (!port) {
-        return false;
+    else if (value.IsBool()) {
+        setKeepAlive(value.GetBool());
     }
-
-    const size_t size = static_cast<size_t>(end - addr);
-    char *host        = new char[size]();
-    memcpy(host, addr + 1, size - 1);
-
-    m_host = host;
-    m_port = static_cast<uint16_t>(strtol(port + 1, nullptr, 10));
-
-    return true;
-}
-
-
-void xmrig::Pool::addVariant(xmrig::Variant variant)
-{
-    const xmrig::Algorithm algorithm(m_algorithm.algo(), variant);
-    if (!algorithm.isValid() || m_algorithm == algorithm) {
-        return;
-    }
-
-    m_algorithms.push_back(algorithm);
-}
-
-
-void xmrig::Pool::adjustVariant(const xmrig::Variant variantHint)
-{
-#   ifndef XMRIG_PROXY_PROJECT
-    using namespace xmrig;
-
-    if (m_host.contains(".nicehash.com")) {
-        m_keepAlive = false;
-        m_nicehash  = true;
-        bool valid  = true;
-
-        switch (m_port) {
-        case 3355:
-        case 33355:
-            valid = m_algorithm.algo() == CRYPTONIGHT && m_host.contains("cryptonight.");
-            m_algorithm.setVariant(VARIANT_0);
-            break;
-
-        case 3363:
-        case 33363:
-            valid = m_algorithm.algo() == CRYPTONIGHT && m_host.contains("cryptonightv7.");
-            m_algorithm.setVariant(VARIANT_1);
-            break;
-
-        case 3364:
-            valid = m_algorithm.algo() == CRYPTONIGHT_HEAVY && m_host.contains("cryptonightheavy.");
-            m_algorithm.setVariant(VARIANT_0);
-            break;
-
-        case 3367:
-        case 33367:
-            valid = m_algorithm.algo() == CRYPTONIGHT && m_host.contains("cryptonightv8.");
-            m_algorithm.setVariant(VARIANT_2);
-            break;
-
-        default:
-            break;
-        }
-
-        if (!valid) {
-            m_algorithm.setAlgo(INVALID_ALGO);
-        }
-
-        m_tls = m_port > 33000;
-        return;
-    }
-
-    if (m_host.contains(".minergate.com")) {
-        m_keepAlive = false;
-        bool valid  = true;
-        m_algorithm.setVariant(VARIANT_1);
-
-        if (m_host.contains("xmr.pool.")) {
-            valid = m_algorithm.algo() == CRYPTONIGHT;
-            m_algorithm.setVariant(m_port == 45700 ? VARIANT_AUTO : VARIANT_0);
-        }
-        else if (m_host.contains("aeon.pool.") && m_port == 45690) {
-            valid = m_algorithm.algo() == CRYPTONIGHT_LITE;
-            m_algorithm.setVariant(VARIANT_1);
-        }
-
-        if (!valid) {
-            m_algorithm.setAlgo(INVALID_ALGO);
-        }
-
-        return;
-    }
-
-    if (variantHint != VARIANT_AUTO) {
-        m_algorithm.setVariant(variantHint);
-        return;
-    }
-
-    if (m_algorithm.variant() != VARIANT_AUTO) {
-        return;
-    }
-
-    if (m_algorithm.algo() == CRYPTONIGHT_HEAVY)  {
-        m_algorithm.setVariant(VARIANT_0);
-    }
-    else if (m_algorithm.algo() == CRYPTONIGHT_LITE) {
-        m_algorithm.setVariant(VARIANT_1);
-    }
-#   endif
-}
-
-
-void xmrig::Pool::rebuild()
-{
-    m_algorithms.clear();
-
-    if (!m_algorithm.isValid()) {
-        return;
-    }
-
-    m_algorithms.push_back(m_algorithm);
-
-#   ifndef XMRIG_PROXY_PROJECT
-    addVariant(VARIANT_4);
-    addVariant(VARIANT_WOW);
-    addVariant(VARIANT_2);
-    addVariant(VARIANT_1);
-    addVariant(VARIANT_0);
-    addVariant(VARIANT_HALF);
-    addVariant(VARIANT_XTL);
-    addVariant(VARIANT_TUBE);
-    addVariant(VARIANT_MSR);
-    addVariant(VARIANT_XHV);
-    addVariant(VARIANT_XAO);
-    addVariant(VARIANT_RTO);
-    addVariant(VARIANT_GPU);
-    addVariant(VARIANT_RWZ);
-    addVariant(VARIANT_ZLS);
-    addVariant(VARIANT_DOUBLE);
-    addVariant(VARIANT_AUTO);
-#   endif
 }

@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,62 +16,66 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <uv.h>
 
 
-#include "api/Api.h"
 #include "App.h"
 #include "base/io/Console.h"
 #include "base/io/log/Log.h"
-#include "base/kernel/Signals.h"
-#include "common/Platform.h"
+#include "base/io/log/Tags.h"
+#include "base/io/Signals.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
-#include "proxy/Proxy.h"
 #include "Summary.h"
 #include "version.h"
 
 
-xmrig::App::App(Process *process) :
-    m_console(nullptr),
-    m_signals(nullptr)
+xmrig::App::App(Process *process)
 {
-    m_controller = new Controller(process);
-    if (m_controller->init() != 0) {
-        return;
-    }
-
-    if (!m_controller->config()->isBackground()) {
-        m_console = new Console(this);
-    }
+    m_controller = std::make_shared<Controller>(process);
 }
 
 
-xmrig::App::~App()
-{
-    delete m_signals;
-    delete m_console;
-    delete m_controller;
-}
+xmrig::App::~App() = default;
 
 
 int xmrig::App::exec()
 {
-    if (!m_controller->config()) {
+    if (!m_controller->isReady()) {
+        LOG_EMERG("no valid configuration found.");
+
         return 2;
     }
 
-    m_signals = new Signals(this);
+    m_signals = std::make_shared<Signals>(this);
 
-    background();
+    int rc = 0;
+    if (background(rc)) {
+        return rc;
+    }
 
-    Summary::print(m_controller);
+    rc = m_controller->init();
+    if (rc != 0) {
+        return rc;
+    }
+
+    if (!m_controller->isBackground()) {
+        m_console = std::make_shared<Console>(this);
+    }
+
+    Summary::print(m_controller.get());
+
+    if (m_controller->config()->isDryRun()) {
+        LOG_NOTICE("%s " WHITE_BOLD("OK"), Tags::config());
+
+        return 0;
+    }
 
     m_controller->start();
 
-    const int rc = uv_run(uv_default_loop(), UV_RUN_DEFAULT);
+    rc = uv_run(uv_default_loop(), UV_RUN_DEFAULT);
     uv_loop_close(uv_default_loop());
 
     return rc;
@@ -86,47 +84,12 @@ int xmrig::App::exec()
 
 void xmrig::App::onConsoleCommand(char command)
 {
-    switch (command) {
-#   ifdef APP_DEVEL
-    case 's':
-    case 'S':
-        m_controller->proxy()->printState();
-        break;
-#   endif
-
-    case 'v':
-    case 'V':
-        m_controller->config()->toggleVerbose();
-        LOG_NOTICE("verbose: %d", m_controller->config()->isVerbose());
-        break;
-
-    case 'h':
-    case 'H':
-        m_controller->proxy()->printHashrate();
-        break;
-
-    case 'c':
-    case 'C':
-        m_controller->proxy()->printConnections();
-        break;
-
-    case 'd':
-    case 'D':
-        m_controller->proxy()->toggleDebug();
-        break;
-
-    case 'w':
-    case 'W':
-        m_controller->proxy()->printWorkers();
-        break;
-
-    case 3:
-        LOG_WARN("Ctrl+C received, exiting");
+    if (command == 3) {
+        LOG_WARN("%s " YELLOW("Ctrl+C received, exiting"), Tags::signal());
         close();
-        break;
-
-    default:
-        break;
+    }
+    else {
+        m_controller->execCommand(command);
     }
 }
 
@@ -136,15 +99,15 @@ void xmrig::App::onSignal(int signum)
     switch (signum)
     {
     case SIGHUP:
-        LOG_WARN("SIGHUP received, exiting");
+        LOG_WARN("%s " YELLOW("SIGHUP received, exiting"), Tags::signal());
         break;
 
     case SIGTERM:
-        LOG_WARN("SIGTERM received, exiting");
+        LOG_WARN("%s " YELLOW("SIGTERM received, exiting"), Tags::signal());
         break;
 
     case SIGINT:
-        LOG_WARN("SIGINT received, exiting");
+        LOG_WARN("%s " YELLOW("SIGINT received, exiting"), Tags::signal());
         break;
 
     default:
@@ -157,8 +120,9 @@ void xmrig::App::onSignal(int signum)
 
 void xmrig::App::close()
 {
-    m_signals->stop();
-    m_console->stop();
+    m_signals.reset();
+    m_console.reset();
+
     m_controller->stop();
 
     Log::destroy();

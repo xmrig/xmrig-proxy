@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,24 +18,13 @@
 
 
 #include "base/tools/String.h"
-#include "rapidjson/document.h"
+#include "3rdparty/rapidjson/document.h"
 
 
-xmrig::String::String(const char *str) :
-    m_data(nullptr),
-    m_size(str == nullptr ? 0 : strlen(str))
-{
-    if (m_size == 0) {
-        return;
-    }
-
-    m_data = new char[m_size + 1];
-    memcpy(m_data, str, m_size + 1);
-}
+#include <cctype>
 
 
 xmrig::String::String(const char *str, size_t size) :
-    m_data(nullptr),
     m_size(size)
 {
     if (str == nullptr) {
@@ -56,8 +39,35 @@ xmrig::String::String(const char *str, size_t size) :
 }
 
 
+xmrig::String::String(const char *str) :
+    m_size(str == nullptr ? 0 : strlen(str))
+{
+    if (str == nullptr) {
+        return;
+    }
+
+    m_data = new char[m_size + 1];
+    memcpy(m_data, str, m_size + 1);
+}
+
+
+xmrig::String::String(const rapidjson::Value &value)
+{
+    if (!value.IsString()) {
+        return;
+    }
+
+    if ((m_size = value.GetStringLength()) == 0) {
+        return;
+    }
+
+    m_data = new char[m_size + 1];
+    memcpy(m_data, value.GetString(), m_size);
+    m_data[m_size] = '\0';
+}
+
+
 xmrig::String::String(const String &other) :
-    m_data(nullptr),
     m_size(other.m_size)
 {
     if (other.m_data == nullptr) {
@@ -103,8 +113,10 @@ rapidjson::Value xmrig::String::toJSON(rapidjson::Document &doc) const
 
 std::vector<xmrig::String> xmrig::String::split(char sep) const
 {
-    std::vector<xmrig::String> out;
+    std::vector<String> out;
     if (m_size == 0) {
+        out.emplace_back(*this);
+
         return out;
     }
 
@@ -113,19 +125,47 @@ std::vector<xmrig::String> xmrig::String::split(char sep) const
 
     for (pos = 0; pos < m_size; ++pos) {
         if (m_data[pos] == sep) {
-            if ((pos - start) > 0) {
-                out.push_back(String(m_data + start, pos - start));
+            if (pos > start) {
+                out.emplace_back(m_data + start, pos - start);
             }
 
             start = pos + 1;
         }
     }
 
-    if ((pos - start) > 0) {
-        out.push_back(String(m_data + start, pos - start));
+    if (pos > start) {
+        out.emplace_back(m_data + start, pos - start);
     }
 
     return out;
+}
+
+
+xmrig::String &xmrig::String::toLower()
+{
+    if (isNull() || isEmpty()) {
+        return *this;
+    }
+
+    for (size_t i = 0; i < size(); ++i) {
+        m_data[i] = static_cast<char>(tolower(m_data[i]));
+    }
+
+    return *this;
+}
+
+
+xmrig::String &xmrig::String::toUpper()
+{
+    if (isNull() || isEmpty()) {
+        return *this;
+    }
+
+    for (size_t i = 0; i < size(); ++i) {
+        m_data[i] = static_cast<char>(toupper(m_data[i]));
+    }
+
+    return *this;
 }
 
 

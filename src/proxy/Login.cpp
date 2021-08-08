@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,19 +22,19 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
-
-
+#include "proxy/Login.h"
 #include "base/io/log/Log.h"
+#include "base/io/log/Tags.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
-#include "proxy/events/LoginEvent.h"
-#include "proxy/Login.h"
-#include "proxy/Miner.h"
 #include "proxy/Error.h"
+#include "proxy/events/LoginEvent.h"
+#include "proxy/Miner.h"
+
+
+#include <climits>
+#include <cstdlib>
+#include <cstring>
 
 
 xmrig::Login::Login(Controller *controller) :
@@ -43,9 +43,7 @@ xmrig::Login::Login(Controller *controller) :
 }
 
 
-xmrig::Login::~Login()
-{
-}
+xmrig::Login::~Login() = default;
 
 
 void xmrig::Login::onEvent(IEvent *event)
@@ -62,36 +60,11 @@ void xmrig::Login::onEvent(IEvent *event)
 }
 
 
-bool xmrig::Login::verifyAlgorithms(LoginEvent *event)
-{
-    if (event->algorithms.empty()) {
-        return true;
-    }
-
-    const xmrig::Algo baseAlgo = m_controller->config()->algorithm().algo();
-    for (const xmrig::Algorithm &algo : event->algorithms) {
-        if (algo.algo() == baseAlgo) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-
 void xmrig::Login::login(LoginEvent *event)
 {
     const String &password = m_controller->config()->password();
     if (!password.isNull() && event->miner()->password() != password) {
         return reject(event, Error::toString(Error::Forbidden));
-    }
-
-    if (event->algorithms.empty()) {
-        return;
-    }
-
-    if (!verifyAlgorithms(event)) {
-        return reject(event, Error::toString(Error::IncompatibleAlgorithm));
     }
 }
 
@@ -106,6 +79,6 @@ void xmrig::Login::reject(LoginEvent *event, const char *message)
         return;
     }
 
-    LOG_INFO(RED_BOLD("deny") " " WHITE_BOLD("\"%s\"") " from " CYAN_BOLD("%s") WHITE_BOLD(" (%s)") " reason " RED("\"%s\""),
-             event->miner()->rigId(true).data(), event->miner()->ip(), event->miner()->agent().data(), message);
+    LOG_INFO("%s " RED_BOLD("deny") " " WHITE_BOLD("\"%s\"") " from " CYAN_BOLD("%s") WHITE_BOLD(" (%s)") " reason " RED("\"%s\""),
+             Tags::proxy(), event->miner()->rigId(true).data(), event->miner()->ip(), event->miner()->agent().data(), message);
 }

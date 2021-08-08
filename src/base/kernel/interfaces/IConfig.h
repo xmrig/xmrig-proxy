@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,8 +20,7 @@
 #define XMRIG_ICONFIG_H
 
 
-#include "common/crypto/Algorithm.h"
-#include "rapidjson/fwd.h"
+#include "3rdparty/rapidjson/fwd.h"
 
 
 namespace xmrig {
@@ -43,6 +36,7 @@ public:
     enum Keys {
         // common
         AlgorithmKey         = 'a',
+        CoinKey              = 1025,
         ApiWorkerIdKey       = 4002,
         ApiIdKey             = 4005,
         HttpPort             = 4100,
@@ -65,18 +59,32 @@ public:
         UserAgentKey         = 1008,
         UserKey              = 'u',
         UserpassKey          = 'O',
-        VariantKey           = 1010,
+        ProxyKey             = 'x',
         VerboseKey           = 1100,
         TlsKey               = 1013,
         FingerprintKey       = 1014,
         ProxyDonateKey       = 1017,
-
-#       ifdef XMRIG_DEPRECATED
-        ApiPort              = 4000,
-        ApiAccessTokenKey    = 4001,
-        ApiIPv6Key           = 4003,
-        ApiRestrictedKey     = 4004,
-#       endif
+        DaemonKey            = 1018,
+        DaemonPollKey        = 1019,
+        SelfSelectKey        = 1028,
+        DataDirKey           = 1035,
+        TitleKey             = 1037,
+        NoTitleKey           = 1038,
+        PauseOnBatteryKey    = 1041,
+        StressKey            = 1042,
+        BenchKey             = 1043,
+        BenchSubmitKey       = 1044,
+        BenchVerifyKey       = 1045,
+        BenchSeedKey         = 1046,
+        BenchHashKey         = 1047,
+        BenchTokenKey        = 1048,
+        DmiKey               = 1049,
+        HugePageSizeKey      = 1050,
+        PauseOnActiveKey     = 1051,
+        SubmitToOriginKey    = 1052,
+        DnsIPv6Key           = 1053,
+        DnsTtlKey            = 1054,
+        SpendSecretKey       = 1055,
 
         // xmrig common
         CPUPriorityKey       = 1021,
@@ -84,15 +92,26 @@ public:
         PrintTimeKey         = 1007,
 
         // xmrig cpu
+        CPUKey               = 1024,
         AVKey                = 'v',
         CPUAffinityKey       = 1020,
         DryRunKey            = 5000,
         HugePagesKey         = 1009,
-        MaxCPUUsageKey       = 1004,
-        SafeKey              = 1005,
         ThreadsKey           = 't',
-//        HardwareAESKey       = 1011,
         AssemblyKey          = 1015,
+        RandomXInitKey       = 1022,
+        RandomXNumaKey       = 1023,
+        RandomXModeKey       = 1029,
+        RandomX1GbPagesKey   = 1031,
+        RandomXWrmsrKey      = 1032,
+        RandomXRdmsrKey      = 1033,
+        CPUMaxThreadsKey     = 1026,
+        MemoryPoolKey        = 1027,
+        YieldKey             = 1030,
+        AstroBWTMaxSizeKey   = 1034,
+        AstroBWTAVX2Key      = 1036,
+        Argon2ImplKey        = 1039,
+        RandomXCacheQoSKey   = 1040,
 
         // xmrig amd
         OclPlatformKey       = 1400,
@@ -106,11 +125,13 @@ public:
         OclMemChunkKey       = 1408,
         OclUnrollKey         = 1409,
         OclCompModeKey       = 1410,
+        OclKey               = 1411,
 
         // xmrig-proxy
         AccessLogFileKey     = 'A',
         BindKey              = 'b',
         CustomDiffKey        = 1102,
+        CustomDiffStatsKey   = 1104,
         DebugKey             = 1101,
         ModeKey              = 'm',
         PoolCoinKey          = 'C',
@@ -124,8 +145,10 @@ public:
         TlsCiphersKey        = 1112,
         TlsCipherSuitesKey   = 1113,
         TlsProtocolsKey      = 1114,
+        TlsGenKey            = 1117,
         AlgoExtKey           = 1115,
         ProxyPasswordKey     = 1116,
+        LoginFileKey         = 'L',
 
         // xmrig nvidia
         CudaMaxThreadsKey    = 1200,
@@ -135,6 +158,10 @@ public:
         CudaLaunchKey        = 1204,
         CudaAffinityKey      = 1205,
         CudaMaxUsageKey      = 1206,
+        CudaKey              = 1207,
+        CudaLoaderKey        = 1208,
+        NvmlKey              = 1209,
+        HealthPrintTimeKey   = 1210,
     };
 
     virtual ~IConfig() = default;
@@ -142,7 +169,6 @@ public:
     virtual bool isWatch() const                                       = 0;
     virtual bool read(const IJsonReader &reader, const char *fileName) = 0;
     virtual bool save()                                                = 0;
-    virtual const Algorithm &algorithm() const                         = 0;
     virtual const String &fileName() const                             = 0;
     virtual void getJSON(rapidjson::Document &doc) const               = 0;
     virtual void setFileName(const char *fileName)                     = 0;

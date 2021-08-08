@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,27 +22,24 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include "base/io/Json.h"
+#include "proxy/splitters/donate/DonateMapper.h"
+#include "base/io/json/Json.h"
+#include "3rdparty/rapidjson/document.h"
 #include "base/net/stratum/Client.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"
 #include "proxy/Miner.h"
-#include "proxy/splitters/donate/DonateMapper.h"
-#include "rapidjson/document.h"
 
 
 xmrig::DonateMapper::DonateMapper(uint64_t id, LoginEvent *event, const Pool &pool) :
-    m_active(true),
     m_miner(event->miner()),
-    m_diff(0),
     m_id(id)
 {
     const rapidjson::Value &algo = event->params["algo"];
     if (algo.IsArray()) {
         for (const rapidjson::Value &value : algo.GetArray()) {
-            m_algorithms.push_back(value.GetString());
+            m_algorithms.emplace_back(value.GetString());
         }
     }
 
@@ -75,7 +72,7 @@ void xmrig::DonateMapper::submit(SubmitEvent *event)
 }
 
 
-void xmrig::DonateMapper::onClose(Client *client, int)
+void xmrig::DonateMapper::onClose(IClient *client, int)
 {
     m_active = false;
 
@@ -84,7 +81,7 @@ void xmrig::DonateMapper::onClose(Client *client, int)
 }
 
 
-void xmrig::DonateMapper::onJobReceived(Client *, const Job &job, const rapidjson::Value &params)
+void xmrig::DonateMapper::onJobReceived(IClient *, const Job &job, const rapidjson::Value &params)
 {
     if (!isActive()) {
         return;
@@ -95,7 +92,7 @@ void xmrig::DonateMapper::onJobReceived(Client *, const Job &job, const rapidjso
 }
 
 
-void xmrig::DonateMapper::onLogin(Client *, rapidjson::Document &doc, rapidjson::Value &params)
+void xmrig::DonateMapper::onLogin(IClient *, rapidjson::Document &doc, rapidjson::Value &params)
 {
     using namespace rapidjson;
     auto &allocator = doc.GetAllocator();
@@ -110,14 +107,14 @@ void xmrig::DonateMapper::onLogin(Client *, rapidjson::Document &doc, rapidjson:
 }
 
 
-void xmrig::DonateMapper::onLoginSuccess(Client *)
+void xmrig::DonateMapper::onLoginSuccess(IClient *)
 {
 }
 
 
-void xmrig::DonateMapper::onResultAccepted(Client *, const SubmitResult &result, const char *error)
+void xmrig::DonateMapper::onResultAccepted(IClient *, const SubmitResult &result, const char *error)
 {
-    AcceptEvent::start(m_id, m_miner, result, true, error);
+    AcceptEvent::start(m_id, m_miner, result, true, false, error);
 
     if (error) {
         m_miner->replyWithError(result.reqId, error);
@@ -125,4 +122,10 @@ void xmrig::DonateMapper::onResultAccepted(Client *, const SubmitResult &result,
     else {
         m_miner->success(result.reqId, "OK");
     }
+}
+
+
+void xmrig::DonateMapper::onVerifyAlgorithm(const IClient *client, const Algorithm &algorithm, bool *ok)
+{
+
 }

@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,80 +22,62 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
-#include <stdio.h>
-#include <string.h>
-
-
-#include "base/io/Json.h"
+#include "proxy/Miner.h"
+#include "3rdparty/rapidjson/document.h"
+#include "3rdparty/rapidjson/error/en.h"
+#include "3rdparty/rapidjson/stringbuffer.h"
+#include "3rdparty/rapidjson/writer.h"
+#include "base/io/json/Json.h"
 #include "base/io/log/Log.h"
 #include "base/net/stratum/Job.h"
-#include "base/tools/Buffer.h"
+#include "base/net/tools/NetBuffer.h"
+#include "base/tools/Cvt.h"
 #include "base/tools/Chrono.h"
 #include "base/tools/Handle.h"
 #include "net/JobResult.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"
 #include "proxy/Events.h"
+#include "proxy/events/AcceptEvent.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"
-#include "proxy/Miner.h"
-#include "proxy/tls/TlsContext.h"
-#include "proxy/Uuid.h"
-#include "rapidjson/document.h"
-#include "rapidjson/error/en.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
 
 
 #ifdef XMRIG_FEATURE_TLS
-#   include "proxy/tls/Tls.h"
+#   include "base/net/tls/TlsContext.h"
+#   include "proxy/tls/MinerTls.h"
+#   include <openssl/bio.h>
 #endif
+
+
+#include <cinttypes>
+#include <cstdio>
+#include <cstring>
 
 
 namespace xmrig {
     static int64_t nextId = 0;
-    char Miner::m_sendBuf[2048] = { 0 };
+    char Miner::m_sendBuf[16384] = { 0 };
     Storage<Miner> Miner::m_storage;
 }
 
 
-xmrig::Miner::Miner(const TlsContext *ctx, bool ipv6, uint16_t port) :
-    m_ipv6(ipv6),
-    m_ip(),
-    m_routeId(-1),
+xmrig::Miner::Miner(const TlsContext *ctx, uint16_t port, bool strictTls) :
+    m_strictTls(strictTls),
+    m_rpcId(Cvt::toHex(Cvt::randomBytes(8))),
+    m_tlsCtx(ctx),
     m_id(++nextId),
-    m_loginId(0),
-    m_recvBufPos(0),
-    m_mapperId(-1),
-    m_state(WaitLoginState),
-    m_tls(nullptr),
     m_localPort(port),
-    m_customDiff(0),
-    m_diff(0),
-    m_expire(Chrono::steadyMSecs() + kLoginTimeout),
-    m_rx(0),
-    m_timestamp(Chrono::currentMSecsSinceEpoch()),
-    m_tx(0),
-    m_fixedByte(0)
+    m_expire(Chrono::currentMSecsSinceEpoch() + kLoginTimeout),
+    m_timestamp(Chrono::currentMSecsSinceEpoch())
 {
+    m_reader.setListener(this);
     m_key = m_storage.add(this);
-
-    Uuid::create(m_rpcId, sizeof(m_rpcId));
 
     m_socket = new uv_tcp_t;
     m_socket->data = m_storage.ptr(m_key);
     uv_tcp_init(uv_default_loop(), m_socket);
-
-    m_recvBuf.base = m_buf;
-    m_recvBuf.len  = sizeof(m_buf);
-
-#   ifdef XMRIG_FEATURE_TLS
-    if (ctx != nullptr) {
-        m_tls = new Tls(ctx->ctx(), this);
-    }
-#   endif
 
     Counters::connections++;
 }
@@ -103,7 +85,12 @@ xmrig::Miner::Miner(const TlsContext *ctx, bool ipv6, uint16_t port) :
 
 xmrig::Miner::~Miner()
 {
-    Handle::close(m_socket);
+    if (uv_is_closing(reinterpret_cast<uv_handle_t *>(m_socket))) {
+        delete m_socket;
+    }
+    else {
+        uv_close(reinterpret_cast<uv_handle_t *>(m_socket), [](uv_handle_t *handle) { delete handle; });
+    }
 
 #   ifdef XMRIG_FEATURE_TLS
     delete m_tls;
@@ -132,13 +119,7 @@ bool xmrig::Miner::accept(uv_stream_t *server)
         uv_ip4_name(reinterpret_cast<sockaddr_in*>(&addr), m_ip, 16);
     }
 
-    uv_read_start(reinterpret_cast<uv_stream_t*>(m_socket), Miner::onAllocBuffer, Miner::onRead);
-
-#   ifdef XMRIG_FEATURE_TLS
-    if (isTLS()) {
-        return m_tls->accept();
-    }
-#   endif
+    uv_read_start(reinterpret_cast<uv_stream_t*>(m_socket), NetBuffer::onAlloc, Miner::onRead);
 
     return true;
 }
@@ -149,7 +130,7 @@ void xmrig::Miner::forwardJob(const Job &job, const char *algo)
     m_diff = job.diff();
     setFixedByte(job.fixedByte());
 
-    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().shortName(), job.height());
+    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().shortName(), job.height(), job.rawSeedHash(), job.rawSigKey());
 }
 
 
@@ -159,7 +140,7 @@ void xmrig::Miner::replyWithError(int64_t id, const char *message)
 }
 
 
-void xmrig::Miner::setJob(Job &job)
+void xmrig::Miner::setJob(Job &job, int64_t extra_nonce)
 {
     using namespace rapidjson;
 
@@ -173,12 +154,31 @@ void xmrig::Miner::setJob(Job &job)
 
     if (m_customDiff && m_customDiff < m_diff) {
         const uint64_t t = 0xFFFFFFFFFFFFFFFFULL / m_customDiff;
-        Buffer::toHex(reinterpret_cast<const unsigned char *>(&t) + 4, 4, m_sendBuf);
-        m_sendBuf[8] = '\0';
+        Cvt::toHex(m_sendBuf, 9, reinterpret_cast<const uint8_t *>(&t) + 4, 4);
         customDiff = true;
     }
 
-    sendJob(job.rawBlob(), job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height());
+    const char* blob = job.rawBlob();
+    String tmp_blob;
+
+    if (job.hasMinerSignature()) {
+        job.generateSignatureData(m_signatureData);
+    }
+    else if (!job.rawSigKey().isNull()) {
+        m_signatureData = job.rawSigKey();
+    }
+
+    if (extra_nonce >= 0) {
+        m_extraNonce = extra_nonce;
+        job.setExtraNonceInMinerTx(static_cast<uint32_t>(m_extraNonce));
+    }
+
+    if (job.hasMinerSignature() || (extra_nonce >= 0)) {
+        job.generateHashingBlob(tmp_blob);
+        blob = tmp_blob;
+    }
+
+    sendJob(blob, job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height(), job.rawSeedHash(), m_signatureData);
 }
 
 
@@ -210,8 +210,15 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
                 const rapidjson::Value &value = params["algo"];
 
                 if (value.IsArray()) {
-                    for (const rapidjson::Value &algo : value.GetArray()) {
-                        algorithms.push_back(algo.GetString());
+                    algorithms.reserve(value.Size());
+
+                    for (const auto &i : value.GetArray()) {
+                        Algorithm algo(i.GetString());
+                        if (!algo.isValid()) {
+                            continue;
+                        }
+
+                        algorithms.emplace_back(algo);
                     }
                 }
             }
@@ -236,22 +243,14 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
         heartbeat();
 
         const char *rpcId = Json::getString(params, "id");
-        if (!rpcId || strncmp(m_rpcId, rpcId, sizeof(m_rpcId)) != 0) {
+        if (!rpcId || m_rpcId != rpcId) {
             replyWithError(id, Error::toString(Error::Unauthenticated));
             return true;
         }
 
-        Algorithm algorithm;
-        if (params.HasMember("algo")) {
-            const char *algo = Json::getString(params, "algo");
+        Algorithm algorithm(Json::getString(params, "algo"));
 
-            algorithm.parseAlgorithm(algo);
-            if (!algorithm.isValid()) {
-                algorithm.parseXmrStakAlgorithm(algo);
-            }
-        }
-
-        SubmitEvent *event = SubmitEvent::create(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm);
+        SubmitEvent *event = SubmitEvent::create(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm, Json::getString(params, "sig"), m_signatureData, m_extraNonce);
 
         if (!event->request.isValid() || event->request.actualDiff() < diff()) {
             event->reject(Error::LowDifficulty);
@@ -262,6 +261,10 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
 
         if (event->error() == Error::NoError && m_customDiff && event->request.actualDiff() < m_diff) {
             success(id, "OK");
+
+            SubmitResult result = SubmitResult(1, m_customDiff, event->request.actualDiff(), event->request.id, 0);
+            AcceptEvent::start(m_mapperId, this, result, false, true);
+
             return true;
         }
 
@@ -319,7 +322,7 @@ bool xmrig::Miner::send(BIO *bio)
 
 void xmrig::Miner::heartbeat()
 {
-    m_expire = Chrono::steadyMSecs() + kSocketTimeout;
+    m_expire = Chrono::currentMSecsSinceEpoch() + kSocketTimeout;
 }
 
 
@@ -328,8 +331,6 @@ void xmrig::Miner::parse(char *line, size_t len)
     if (m_state == ClosingState) {
         return;
     }
-
-    line[len - 1] = '\0';
 
     LOG_DEBUG("[%s] received (%d bytes): \"%s\"", m_ip, len, line);
 
@@ -357,50 +358,32 @@ void xmrig::Miner::parse(char *line, size_t len)
 }
 
 
-void xmrig::Miner::read()
+void xmrig::Miner::read(ssize_t nread, const uv_buf_t *buf)
 {
-    char* end;
-    char* start = m_recvBuf.base;
-    size_t remaining = m_recvBufPos;
+    const auto size = static_cast<size_t>(nread);
 
-    while ((end = static_cast<char*>(memchr(start, '\n', remaining))) != nullptr) {
-        end++;
-        size_t len = end - start;
-        parse(start, len);
-
-        remaining -= len;
-        start = end;
+    if (nread < 0) {
+        return shutdown(nread != UV_EOF);;
     }
 
-    if (remaining == 0) {
-        m_recvBufPos = 0;
-        return;
+    if (size && m_rx == 0) {
+        startTLS(buf->base);
     }
 
-    if (start == m_recvBuf.base) {
-        return;
-    }
+    m_rx += size;
 
-    memcpy(m_recvBuf.base, start, remaining);
-    m_recvBufPos = remaining;
-}
-
-
-void xmrig::Miner::readTLS(int nread)
-{
 #   ifdef XMRIG_FEATURE_TLS
     if (isTLS()) {
         LOG_DEBUG("[%s] TLS received (%d bytes)", m_ip, nread);
 
-        m_tls->read(m_recvBuf.base, m_recvBufPos);
-        m_recvBufPos = 0;
+        m_tls->read(buf->base, size);
     }
     else
     {
-        read();
+        m_reader.parse(buf->base, size);
     }
 #   else
-    read();
+    m_reader.parse(buf->base, size);
 #   endif
 }
 
@@ -457,7 +440,7 @@ void xmrig::Miner::send(int size)
 }
 
 
-void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height)
+void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height, const String &seedHash, const String &signatureKey)
 {
     using namespace rapidjson;
 
@@ -474,6 +457,16 @@ void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *targ
         params.AddMember("height", height, allocator);
     }
 
+    if (!seedHash.isNull()) {
+        params.AddMember("seed_hash", seedHash.toJSON(), allocator);
+    }
+
+    if (!signatureKey.isNull()) {
+        // Skip tx_pubkey (first 32 bytes) because client doesn't need it for signing
+        const char *key = signatureKey.size() == 192 ? (signatureKey.data() + 64) : signatureKey.data();
+        params.AddMember("sig_key", Value(key, allocator), allocator);
+    }
+
     doc.AddMember("jsonrpc", "2.0", allocator);
 
     if (m_state == WaitReadyState) {
@@ -483,7 +476,7 @@ void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *targ
         doc.AddMember("error", kNullType, allocator);
 
         Value result(kObjectType);
-        result.AddMember("id",  StringRef(m_rpcId), allocator);
+        result.AddMember("id",  m_rpcId.toJSON(), allocator);
         result.AddMember("job", params, allocator);
 
         Value extensions(kArrayType);
@@ -567,33 +560,24 @@ void xmrig::Miner::shutdown(bool)
 }
 
 
-void xmrig::Miner::onAllocBuffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
+void xmrig::Miner::startTLS(const char *data)
 {
-    auto miner = getMiner(handle->data);
-    if (!miner) {
-        return;
+#   ifdef XMRIG_FEATURE_TLS
+    if (m_tlsCtx && (m_strictTls || *data != '{')) {
+        m_tls = new Tls(m_tlsCtx->ctx(), this);
     }
-
-    buf->base = &miner->m_recvBuf.base[miner->m_recvBufPos];
-    buf->len  = miner->m_recvBuf.len - miner->m_recvBufPos;
+#   endif
 }
 
 
 void xmrig::Miner::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
 {
-    Miner *miner = getMiner(stream->data);
-    if (!miner) {
-        return;
+    auto miner = getMiner(stream->data);
+    if (miner) {
+        miner->read(nread, buf);
     }
 
-    if (nread < 0 || (size_t) nread > (sizeof(m_buf) - 8 - miner->m_recvBufPos)) {
-        return miner->shutdown(nread != UV_EOF);;
-    }
-
-    miner->m_rx += nread;
-    miner->m_recvBufPos += nread;
-
-    miner->readTLS(static_cast<int>(nread));
+    NetBuffer::release(buf);
 }
 
 
@@ -603,8 +587,6 @@ void xmrig::Miner::onTimeout(uv_timer_t *handle)
     if (!miner) {
         return;
     }
-
-    miner->m_recvBuf.base[sizeof(m_buf) - 1] = '\0';
 
     miner->shutdown(true);
 }

@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ public:
     bool accept(uv_stream_t *server);
     void forwardJob(const Job &job, const char *algo);
     void replyWithError(int64_t id, const char *message);
-    void setJob(Job &job);
+    void setJob(Job &job, int64_t extra_nonce = -1);
     void success(int64_t id, const char *status);
 
     inline bool hasExtension(Extension ext) const noexcept        { return m_extensions.test(ext); }
@@ -122,7 +122,7 @@ private:
     void read(ssize_t nread, const uv_buf_t *buf);
     void send(const rapidjson::Document &doc);
     void send(int size);
-    void sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height, const String &seedHash);
+    void sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height, const String &seedHash, const String &signatureKey);
     void setState(State state);
     void shutdown(bool had_error);
     void startTLS(const char *data);
@@ -149,6 +149,7 @@ private:
     String m_password;
     String m_rigId;
     String m_user;
+    String m_signatureData;
     Tls *m_tls              = nullptr;
     uint16_t m_localPort;
     uint64_t m_customDiff   = 0;
@@ -158,6 +159,7 @@ private:
     uint64_t m_timestamp;
     uint64_t m_tx           = 0;
     uint8_t m_fixedByte     = 0;
+    int64_t m_extraNonce    = -1;
     uintptr_t m_key;
     uv_tcp_t *m_socket;
     Algorithms m_algos;

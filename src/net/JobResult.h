@@ -37,7 +37,7 @@ public:
     static constexpr uint32_t backend = 0;
 
     JobResult() = default;
-    JobResult(int64_t id, const char *jobId, const char *nonce, const char *result, const xmrig::Algorithm &algorithm);
+    JobResult(int64_t id, const char *jobId, const char *nonce, const char *result, const xmrig::Algorithm &algorithm, const char* sig, const char* sig_data, int64_t extra_nonce);
 
     bool isCompatible(uint8_t fixedByte) const;
     bool isValid() const;
@@ -45,14 +45,17 @@ public:
     inline uint64_t actualDiff() const { return m_actualDiff; }
 
     Algorithm algorithm;
-    const char *nonce       = nullptr;
-    const char *result      = nullptr;
-    const int64_t id        = 0;
+    const char *nonce         = nullptr;
+    const char *result        = nullptr;
+    const char *sig           = nullptr;
+    const char *sig_data      = nullptr;
+    const int64_t id          = 0;
+    const int64_t extra_nonce = -1;
     String jobId;
-    uint64_t diff           = 0;
+    uint64_t diff             = 0;
 
 private:
-    uint64_t m_actualDiff   = 0;
+    uint64_t m_actualDiff     = 0;
 };
 
 

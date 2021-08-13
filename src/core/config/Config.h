@@ -44,7 +44,8 @@ class Config : public BaseConfig
 public:
     enum Mode {
         NICEHASH_MODE,
-        SIMPLE_MODE
+        SIMPLE_MODE,
+        EXTRA_NONCE_MODE,
     };
 
     Config() = default;

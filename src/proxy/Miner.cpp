@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -130,7 +130,7 @@ void xmrig::Miner::forwardJob(const Job &job, const char *algo)
     m_diff = job.diff();
     setFixedByte(job.fixedByte());
 
-    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().shortName(), job.height(), job.rawSeedHash());
+    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().shortName(), job.height(), job.rawSeedHash(), job.rawSigKey());
 }
 
 
@@ -140,7 +140,7 @@ void xmrig::Miner::replyWithError(int64_t id, const char *message)
 }
 
 
-void xmrig::Miner::setJob(Job &job)
+void xmrig::Miner::setJob(Job &job, int64_t extra_nonce)
 {
     using namespace rapidjson;
 
@@ -158,7 +158,27 @@ void xmrig::Miner::setJob(Job &job)
         customDiff = true;
     }
 
-    sendJob(job.rawBlob(), job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height(), job.rawSeedHash());
+    const char* blob = job.rawBlob();
+    String tmp_blob;
+
+    if (job.hasMinerSignature()) {
+        job.generateSignatureData(m_signatureData);
+    }
+    else if (!job.rawSigKey().isNull()) {
+        m_signatureData = job.rawSigKey();
+    }
+
+    if (extra_nonce >= 0) {
+        m_extraNonce = extra_nonce;
+        job.setExtraNonceInMinerTx(static_cast<uint32_t>(m_extraNonce));
+    }
+
+    if (job.hasMinerSignature() || (extra_nonce >= 0)) {
+        job.generateHashingBlob(tmp_blob);
+        blob = tmp_blob;
+    }
+
+    sendJob(blob, job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height(), job.rawSeedHash(), m_signatureData);
 }
 
 
@@ -246,7 +266,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
 
         Algorithm algorithm(Json::getString(params, "algo"));
 
-        SubmitEvent *event = SubmitEvent::create(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm);
+        SubmitEvent *event = SubmitEvent::create(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm, Json::getString(params, "sig"), m_signatureData, m_extraNonce);
 
         if (!event->request.isValid() || event->request.actualDiff() < diff()) {
             event->reject(Error::LowDifficulty);
@@ -436,7 +456,7 @@ void xmrig::Miner::send(int size)
 }
 
 
-void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height, const String &seedHash)
+void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *target, const char *algo, uint64_t height, const String &seedHash, const String &signatureKey)
 {
     using namespace rapidjson;
 
@@ -455,6 +475,12 @@ void xmrig::Miner::sendJob(const char *blob, const char *jobId, const char *targ
 
     if (!seedHash.isNull()) {
         params.AddMember("seed_hash", seedHash.toJSON(), allocator);
+    }
+
+    if (!signatureKey.isNull()) {
+        // Skip tx_pubkey (first 32 bytes) because client doesn't need it for signing
+        const char *key = signatureKey.size() == 192 ? (signatureKey.data() + 64) : signatureKey.data();
+        params.AddMember("sig_key", Value(key, allocator), allocator);
     }
 
     doc.AddMember("jsonrpc", "2.0", allocator);

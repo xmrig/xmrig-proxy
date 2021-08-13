@@ -25,11 +25,14 @@
 #include <cstdio>
 
 
-xmrig::JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, const char *result, const xmrig::Algorithm &algorithm) :
+xmrig::JobResult::JobResult(int64_t id, const char *jobId, const char *nonce, const char *result, const xmrig::Algorithm &algorithm, const char* sig, const char* sig_data, int64_t extra_nonce) :
     algorithm(algorithm),
     nonce(nonce),
     result(result),
+    sig(sig),
+    sig_data(sig_data),
     id(id),
+    extra_nonce(extra_nonce),
     jobId(jobId)
 {
     if (result && strlen(result) == 64) {

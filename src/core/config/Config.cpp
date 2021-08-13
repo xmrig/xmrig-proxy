@@ -34,7 +34,7 @@
 namespace xmrig {
 
 
-static const std::array<const char *, 2> modeNames = { "nicehash", "simple" };
+static const std::array<const char *, 3> modeNames = { "nicehash", "simple", "extra_nonce"};
 
 
 } // namespace xmrig

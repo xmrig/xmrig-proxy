@@ -22,50 +22,55 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_SUBMITEVENT_H
-#define XMRIG_SUBMITEVENT_H
+#ifndef XMRIG_EXTRANONCESTORAGE_H
+#define XMRIG_EXTRANONCESTORAGE_H
 
 
-#include "net/JobResult.h"
-#include "proxy/Error.h"
-#include "proxy/events/MinerEvent.h"
+#include <map>
+
+
+#include "base/net/stratum/Job.h"
+#include "base/tools/Object.h"
 
 
 namespace xmrig {
 
 
-class SubmitEvent : public MinerEvent
+class Miner;
+
+
+class ExtraNonceStorage
 {
 public:
-    static inline SubmitEvent *create(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, const Algorithm &algorithm, const char* sig, const char* sig_data, int64_t extra_nonce)
-    {
-        return new (m_buf) SubmitEvent(miner, id, jobId, nonce, result, algorithm, sig, sig_data, extra_nonce);
-    }
+    XMRIG_DISABLE_COPY_MOVE(ExtraNonceStorage)
 
+    ExtraNonceStorage() = default;
 
-    bool expired = false;
-    JobResult request;
+    bool add(Miner *miner);
+    bool isValidJobId(const String &id) const;
+    Miner *miner(int64_t id);
+    void remove(const Miner *miner);
+    void reset();
+    void setJob(const Job &job);
 
+    inline bool isActive() const       { return m_active; }
+    inline const Job &job() const      { return m_job; }
+    inline void setActive(bool active) { m_active = active; }
 
-    inline bool isRejected() const override { return m_error != Error::NoError; }
-    inline const char *message() const      { return Error::toString(m_error); }
-    inline Error::Code error() const        { return m_error; }
-    inline void reject(Error::Code error)   { m_error  = error; }
-
-
-protected:
-    inline SubmitEvent(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, const Algorithm &algorithm, const char* sig, const char* sig_data, int64_t extra_nonce)
-        : MinerEvent(SubmitType, miner),
-          request(id, jobId, nonce, result, algorithm, sig, sig_data, extra_nonce),
-          m_error(Error::NoError)
-    {}
+#   ifdef APP_DEVEL
+    void printState(size_t id);
+#   endif
 
 private:
-    Error::Code m_error;
+    bool m_active = false;
+    Job m_job;
+    Job m_prevJob;
+    std::map<int64_t, Miner*> m_miners;
+    int64_t m_extraNonce = 0;
 };
 
 
 } /* namespace xmrig */
 
 
-#endif /* XMRIG_SUBMITEVENT_H */
+#endif /* XMRIG_EXTRANONCESTORAGE_H */

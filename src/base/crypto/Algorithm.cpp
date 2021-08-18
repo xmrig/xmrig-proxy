@@ -111,6 +111,8 @@ static AlgoName const algorithm_names[] = {
     { "RandomSFX",                 nullptr,            Algorithm::RX_SFX          },
     { "randomx/keva",              "rx/keva",          Algorithm::RX_KEVA         },
     { "RandomKEVA",                nullptr,            Algorithm::RX_KEVA         },
+    { "randomx/graft",             "rx/graft",         Algorithm::RX_GRAFT        },
+    { "RandomX-Graft",             nullptr,            Algorithm::RX_GRAFT        },
     { "panthera",                  "panthera",         Algorithm::RX_XLA        },
     { "Panthera",                  "panthera",         Algorithm::RX_XLA        },
 #   endif
@@ -177,6 +179,7 @@ size_t xmrig::Algorithm::l2() const
 
     case RX_WOW:
     case RX_KEVA:
+    case RX_GRAFT:
     case RX_XLA:
         return 0x20000;
 
@@ -228,6 +231,7 @@ size_t xmrig::Algorithm::l3() const
 
         case RX_WOW:
         case RX_KEVA:
+        case RX_GRAFT:
             return oneMiB;
 
         case RX_ARQ:
@@ -366,6 +370,7 @@ xmrig::Algorithm::Family xmrig::Algorithm::family(Id id)
     case RX_ARQ:
     case RX_SFX:
     case RX_KEVA:
+    case RX_GRAFT:
     case RX_XLA:
         return RANDOM_X;
 #   endif

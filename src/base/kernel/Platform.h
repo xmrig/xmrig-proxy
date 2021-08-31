@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -48,13 +42,15 @@ public:
     }
 
     static bool setThreadAffinity(uint64_t cpu_id);
-    static uint32_t setTimerResolution(uint32_t resolution);
     static void init(const char *userAgent);
-    static void restoreTimerResolution();
     static void setProcessPriority(int priority);
     static void setThreadPriority(int priority);
 
-    static inline const char *userAgent() { return m_userAgent; }
+    static inline bool isUserActive(uint64_t ms)    { return idleTime() < ms; }
+    static inline const String &userAgent()         { return m_userAgent; }
+
+    static bool isOnBatteryPower();
+    static uint64_t idleTime();
 
 private:
     static char *createUserAgent();

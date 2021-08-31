@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,12 +20,12 @@
 #define XMRIG_JOBRESULT_H
 
 
-#include <stdint.h>
-#include <string.h>
+#include <cstdint>
+#include <cstring>
 
 
+#include "base/crypto/Algorithm.h"
 #include "base/tools/String.h"
-#include "crypto/common/Algorithm.h"
 
 
 namespace xmrig {
@@ -40,15 +34,10 @@ namespace xmrig {
 class JobResult
 {
 public:
-    inline JobResult() :
-        nonce(nullptr),
-        result(nullptr),
-        id(0),
-        diff(0)
-    {
-    }
+    static constexpr uint32_t backend = 0;
 
-    JobResult(int64_t id, const char *jobId, const char *nonce, const char *result, const xmrig::Algorithm &algorithm);
+    JobResult() = default;
+    JobResult(int64_t id, const char *jobId, const char *nonce, const char *result, const xmrig::Algorithm &algorithm, const char* sig, const char* sig_data, int64_t extra_nonce);
 
     bool isCompatible(uint8_t fixedByte) const;
     bool isValid() const;
@@ -56,14 +45,17 @@ public:
     inline uint64_t actualDiff() const { return m_actualDiff; }
 
     Algorithm algorithm;
-    const char *nonce;
-    const char *result;
-    const int64_t id;
+    const char *nonce         = nullptr;
+    const char *result        = nullptr;
+    const char *sig           = nullptr;
+    const char *sig_data      = nullptr;
+    const int64_t id          = 0;
+    const int64_t extra_nonce = -1;
     String jobId;
-    uint64_t diff;
+    uint64_t diff             = 0;
 
 private:
-    uint64_t m_actualDiff;
+    uint64_t m_actualDiff     = 0;
 };
 
 

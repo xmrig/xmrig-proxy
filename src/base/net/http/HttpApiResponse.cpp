@@ -1,13 +1,7 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2014-2019 heapwolf    <https://github.com/heapwolf>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2014-2019 heapwolf    <https://github.com/heapwolf>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,10 +18,10 @@
  */
 
 
-#include "3rdparty/http-parser/http_parser.h"
 #include "base/net/http/HttpApiResponse.h"
-#include "rapidjson/prettywriter.h"
-#include "rapidjson/stringbuffer.h"
+#include "3rdparty/rapidjson/prettywriter.h"
+#include "3rdparty/rapidjson/stringbuffer.h"
+#include "base/net/http/HttpData.h"
 
 
 namespace xmrig {
@@ -67,7 +61,7 @@ void xmrig::HttpApiResponse::end()
         }
 
         if (!m_doc.HasMember(kError)) {
-            m_doc.AddMember(StringRef(kError), StringRef(http_status_str(static_cast<http_status>(statusCode()))), m_doc.GetAllocator());
+            m_doc.AddMember(StringRef(kError), StringRef(HttpData::statusName(statusCode())), m_doc.GetAllocator());
         }
     }
 
@@ -75,7 +69,7 @@ void xmrig::HttpApiResponse::end()
         return HttpResponse::end();
     }
 
-    setHeader("Content-Type", "application/json");
+    setHeader(HttpData::kContentType, HttpData::kApplicationJson);
 
     StringBuffer buffer(nullptr, 4096);
     PrettyWriter<StringBuffer> writer(buffer);

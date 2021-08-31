@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,29 +16,27 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+#include "base/net/http/Http.h"
 #include "3rdparty/rapidjson/document.h"
 #include "base/io/json/Json.h"
-#include "base/net/http/Http.h"
 
 
 namespace xmrig {
 
-static const char *kEnabled    = "enabled";
-static const char *kHost       = "host";
-static const char *kLocalhost  = "127.0.0.1";
-static const char *kPort       = "port";
-static const char *kRestricted = "restricted";
-static const char *kToken      = "access-token";
 
-}
+const char *Http::kEnabled    = "enabled";
+const char *Http::kHost       = "host";
+const char *Http::kLocalhost  = "127.0.0.1";
+const char *Http::kPort       = "port";
+const char *Http::kRestricted = "restricted";
+const char *Http::kToken      = "access-token";
+
+
+} // namespace xmrig
 
 
 xmrig::Http::Http() :
-    m_enabled(false),
-    m_restricted(true),
-    m_host(kLocalhost),
-    m_port(0)
+    m_host(kLocalhost)
 {
 }
 

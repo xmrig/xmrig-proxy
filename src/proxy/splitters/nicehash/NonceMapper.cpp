@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,12 +23,14 @@
  */
 
 
-#include <inttypes.h>
+#include <cinttypes>
 #include <memory>
-#include <string.h>
+#include <cstring>
 
 
+#include "proxy/splitters/nicehash/NonceMapper.h"
 #include "base/io/log/Log.h"
+#include "base/io/log/Tags.h"
 #include "base/net/stratum/Client.h"
 #include "base/net/stratum/Pools.h"
 #include "core/config/Config.h"
@@ -40,15 +42,11 @@
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/events/SubmitEvent.h"
 #include "proxy/Miner.h"
-#include "proxy/splitters/nicehash/NonceMapper.h"
 #include "proxy/splitters/nicehash/NonceStorage.h"
 
 
 xmrig::NonceMapper::NonceMapper(size_t id, Controller *controller) :
     m_controller(controller),
-    m_donate(nullptr),
-    m_suspended(0),
-    m_pending(nullptr),
     m_id(id)
 {
     m_storage  = new NonceStorage();
@@ -199,18 +197,18 @@ void xmrig::NonceMapper::onActive(IStrategy *strategy, IClient *client)
     if (m_controller->config()->isVerbose()) {
         const char *tlsVersion = client->tlsVersion();
 
-        LOG_INFO("#%03u " WHITE_BOLD("use %s ") CYAN_BOLD("%s:%d ") GREEN_BOLD("%s") " \x1B[1;30m%s ",
-                 m_id, client->mode(), client->pool().host().data(), client->pool().port(), tlsVersion ? tlsVersion : "", client->ip().data());
+        LOG_INFO("%s " CYAN("%04u ") WHITE_BOLD("use %s ") CYAN_BOLD("%s:%d ") GREEN_BOLD("%s") " \x1B[1;30m%s ",
+                 Tags::network(), m_id, client->mode(), client->pool().host().data(), client->pool().port(), tlsVersion ? tlsVersion : "", client->ip().data());
 
         const char *fingerprint = client->tlsFingerprint();
         if (fingerprint != nullptr) {
-            LOG_INFO("\x1B[1;30mfingerprint (SHA-256): \"%s\"", fingerprint);
+            LOG_INFO("%s \x1B[1;30mfingerprint (SHA-256): \"%s\"", Tags::network(), fingerprint);
         }
     }
 }
 
 
-void xmrig::NonceMapper::onJob(IStrategy *, IClient *client, const Job &job)
+void xmrig::NonceMapper::onJob(IStrategy *, IClient *client, const Job &job, const rapidjson::Value &)
 {
     if (m_donate) {
         if (m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {
@@ -236,7 +234,7 @@ void xmrig::NonceMapper::onPause(IStrategy *)
     m_storage->setActive(false);
 
     if (!isSuspended()) {
-        LOG_ERR("#%03u no active pools, stop", m_id);
+        LOG_ERR("%s " CYAN("%04u ") RED("no active pools, stop"), Tags::network(), m_id);
     }
 }
 
@@ -245,7 +243,7 @@ void xmrig::NonceMapper::onResultAccepted(IStrategy *, IClient *client, const Su
 {
     const SubmitCtx ctx = submitCtx(result.seq);
 
-    AcceptEvent::start(m_id, ctx.miner, result, client->id() == -1, error);
+    AcceptEvent::start(m_id, ctx.miner, result, client->id() == -1, false, error);
 
     if (!ctx.miner) {
         return;
@@ -269,7 +267,7 @@ void xmrig::NonceMapper::onVerifyAlgorithm(IStrategy *strategy, const IClient *c
 xmrig::SubmitCtx xmrig::NonceMapper::submitCtx(int64_t seq)
 {
     if (!m_results.count(seq)) {
-        return SubmitCtx();
+        return {};
     }
 
     SubmitCtx ctx = m_results.at(seq);
@@ -298,14 +296,8 @@ void xmrig::NonceMapper::connect()
 void xmrig::NonceMapper::setJob(const char *host, int port, const Job &job)
 {
     if (m_controller->config()->isVerbose()) {
-        if (job.height()) {
-            LOG_INFO("#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%" PRIu64) " algo " WHITE_BOLD("%s") " height " WHITE_BOLD("%" PRIu64),
-                     m_id, host, port, job.diff(), job.algorithm().shortName(), job.height());
-        }
-        else {
-            LOG_INFO("#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%" PRIu64) " algo " WHITE_BOLD("%s"),
-                     m_id, host, port, job.diff(), job.algorithm().shortName());
-        }
+        LOG_INFO("%s " CYAN("%04u ") MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%" PRIu64) " algo " WHITE_BOLD("%s") " height " WHITE_BOLD("%" PRIu64),
+                 Tags::network(), m_id, host, port, job.diff(), job.algorithm().name(), job.height());
     }
 
     m_storage->setJob(job);

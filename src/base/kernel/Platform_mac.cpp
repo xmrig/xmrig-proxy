@@ -1,11 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2016-2017 XMRig       <support@xmrig.com>
- *
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,20 +17,18 @@
  */
 
 
-#include <mach/thread_act.h>
-#include <mach/thread_policy.h>
+#include <IOKit/IOKitLib.h>
+#include <IOKit/ps/IOPowerSources.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/resource.h>
 #include <uv.h>
+#include <thread>
+#include <fstream>
 
 
 #include "base/kernel/Platform.h"
 #include "version.h"
-
-#ifdef XMRIG_NVIDIA_PROJECT
-#   include "nvidia/cryptonight.h"
-#endif
 
 
 char *xmrig::Platform::createUserAgent()
@@ -43,12 +36,14 @@ char *xmrig::Platform::createUserAgent()
     constexpr const size_t max = 256;
 
     char *buf = new char[max]();
-    int length = snprintf(buf, max, "%s/%s (Macintosh; Intel Mac OS X) libuv/%s", APP_NAME, APP_VERSION, uv_version_string());
-
-#   ifdef XMRIG_NVIDIA_PROJECT
-    const int cudaVersion = cuda_get_runtime_version();
-    length += snprintf(buf + length, max - length, " CUDA/%d.%d", cudaVersion / 1000, cudaVersion % 100);
-#   endif
+    int length = snprintf(buf, max,
+                          "%s/%s (Macintosh; macOS"
+#                         ifdef XMRIG_ARM
+                          "; arm64"
+#                         else
+                          "; x86_64"
+#                         endif
+                          ") libuv/%s", APP_NAME, APP_VERSION, uv_version_string());
 
 #   ifdef __clang__
     length += snprintf(buf + length, max - length, " clang/%d.%d.%d", __clang_major__, __clang_minor__, __clang_patchlevel__);
@@ -60,30 +55,13 @@ char *xmrig::Platform::createUserAgent()
 }
 
 
-#ifndef XMRIG_FEATURE_HWLOC
 bool xmrig::Platform::setThreadAffinity(uint64_t cpu_id)
 {
-    thread_port_t mach_thread;
-    thread_affinity_policy_data_t policy = { static_cast<integer_t>(cpu_id) };
-    mach_thread = pthread_mach_thread_np(pthread_self());
-
-    return thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1) == KERN_SUCCESS;
-}
-#endif
-
-
-uint32_t xmrig::Platform::setTimerResolution(uint32_t resolution)
-{
-    return resolution;
+    return true;
 }
 
 
-void xmrig::Platform::restoreTimerResolution()
-{
-}
-
-
-void xmrig::Platform::setProcessPriority(int priority)
+void xmrig::Platform::setProcessPriority(int)
 {
 }
 
@@ -124,3 +102,23 @@ void xmrig::Platform::setThreadPriority(int priority)
     setpriority(PRIO_PROCESS, 0, prio);
 }
 
+
+bool xmrig::Platform::isOnBatteryPower()
+{
+    return IOPSGetTimeRemainingEstimate() != kIOPSTimeRemainingUnlimited;
+}
+
+
+uint64_t xmrig::Platform::idleTime()
+{
+    uint64_t idle_time  = 0;
+    const auto service  = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("IOHIDSystem"));
+    const auto property = IORegistryEntryCreateCFProperty(service, CFSTR("HIDIdleTime"), kCFAllocatorDefault, 0);
+
+    CFNumberGetValue((CFNumberRef)property, kCFNumberSInt64Type, &idle_time);
+
+    CFRelease(property);
+    IOObjectRelease(service);
+
+    return idle_time / 1000000U;
+}

@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 #define XMRIG_SHARELOG_H
 
 
+#include "base/tools/Object.h"
 #include "proxy/interfaces/IEventListener.h"
 
 
@@ -40,7 +41,9 @@ class Stats;
 class ShareLog : public IEventListener
 {
 public:
-    ShareLog(Controller *controller, const Stats &stats);
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(ShareLog)
+
+    ShareLog(Controller *controller, Stats *stats);
     ~ShareLog() override;
 
 protected:
@@ -51,7 +54,7 @@ private:
     void accept(const AcceptEvent *event);
     void reject(const AcceptEvent *event);
 
-    const Stats &m_stats;
+    Stats *m_stats;
     Controller *m_controller;
 };
 

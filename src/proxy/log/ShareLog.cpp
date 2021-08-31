@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,30 +22,28 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <inttypes.h>
-
-
+#include "proxy/log/ShareLog.h"
 #include "base/io/log/Log.h"
+#include "base/io/log/Tags.h"
 #include "base/net/stratum/SubmitResult.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/events/AcceptEvent.h"
-#include "proxy/log/ShareLog.h"
 #include "proxy/Miner.h"
 #include "proxy/Stats.h"
 
 
-xmrig::ShareLog::ShareLog(Controller *controller, const Stats &stats) :
+#include <cinttypes>
+
+
+xmrig::ShareLog::ShareLog(Controller *controller, Stats *stats) :
     m_stats(stats),
     m_controller(controller)
 {
 }
 
 
-xmrig::ShareLog::~ShareLog()
-{
-}
+xmrig::ShareLog::~ShareLog() = default;
 
 
 void xmrig::ShareLog::onEvent(IEvent *event)
@@ -77,12 +76,12 @@ void xmrig::ShareLog::onRejectedEvent(IEvent *event)
 
 void xmrig::ShareLog::accept(const AcceptEvent *event)
 {
-    if (!m_controller->config()->isVerbose() || event->isDonate()) {
+    if (!m_controller->config()->isVerbose() || event->isDonate() || event->isCustomDiff()) {
         return;
     }
 
-    LOG_INFO("#%03u \x1B[01;32maccepted\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m ip \x1B[01;37m%s \x1B[01;30m(%" PRIu64 " ms)",
-             event->mapperId(), m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, event->result.diff, event->ip(), event->result.elapsed);
+    LOG_INFO("%s " CYAN("%04u ") GREEN_BOLD("accepted") " (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff " WHITE_BOLD("%" PRIu64) " ip " WHITE_BOLD("%s") " " BLACK_BOLD("(%" PRIu64 " ms)"),
+             Tags::proxy(), event->mapperId(), m_stats->data().accepted, m_stats->data().rejected, m_stats->data().invalid, event->result.diff, event->ip(), event->result.elapsed);
 }
 
 
@@ -92,6 +91,6 @@ void xmrig::ShareLog::reject(const AcceptEvent *event)
         return;
     }
 
-    LOG_INFO("#%03u \x1B[01;31mrejected\x1B[0m (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff \x1B[01;37m%u\x1B[0m ip \x1B[01;37m%s \x1B[31m\"%s\"\x1B[0m \x1B[01;30m(%" PRId64 " ms)",
-             event->mapperId(), m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, event->result.diff, event->ip(), event->error(), event->result.elapsed);
+    LOG_INFO("%s " CYAN("%04u ") RED_BOLD("rejected") " (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff " WHITE_BOLD("%" PRIu64) " ip " WHITE_BOLD("%s") " " RED("\"%s\"") " " BLACK_BOLD("(%" PRIu64 " ms)"),
+             Tags::proxy(), event->mapperId(), m_stats->data().accepted, m_stats->data().rejected, m_stats->data().invalid, event->result.diff, event->ip(), event->error(), event->result.elapsed);
 }

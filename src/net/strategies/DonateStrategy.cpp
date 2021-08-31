@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,18 +17,18 @@
  */
 
 
+#include "net/strategies/DonateStrategy.h"
+#include "3rdparty/rapidjson/document.h"
+#include "base/crypto/keccak.h"
 #include "base/kernel/interfaces/IStrategyListener.h"
 #include "base/kernel/Platform.h"
 #include "base/net/stratum/Client.h"
-#include "base/tools/Buffer.h"
+#include "base/tools/Cvt.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
-#include "crypto/common/keccak.h"
 #include "donate.h"
-#include "net/strategies/DonateStrategy.h"
 #include "proxy/Counters.h"
 #include "proxy/StatsData.h"
-#include "rapidjson/document.h"
 
 
 namespace xmrig {
@@ -47,26 +41,22 @@ static inline double randomf(double min, double max)    { return (max - min) * (
 
 
 xmrig::DonateStrategy::DonateStrategy(Controller *controller, IStrategyListener *listener) :
-    m_active(false),
     m_controller(controller),
-    m_listener(listener),
-    m_donateTicks(0),
-    m_target(0),
-    m_ticks(0)
+    m_listener(listener)
 {
     uint8_t hash[200];
     char userId[65] = { 0 };
     const char *user = controller->config()->pools().data().front().user();
 
     keccak(reinterpret_cast<const uint8_t *>(user), strlen(user), hash);
-    Buffer::toHex(hash, 32, userId);
+    Cvt::toHex(userId, sizeof(userId), hash, 32);
 
     m_client = new Client(-1, Platform::userAgent(), this);
 
 #   ifdef XMRIG_FEATURE_TLS
-    m_client->setPool(Pool("donate.ssl.xmrig.com", 8443, userId, nullptr, Pool::kKeepAliveTimeout, false, true));
+    m_client->setPool(Pool("donate.ssl.xmrig.com", 8443, userId, nullptr, nullptr, Pool::kKeepAliveTimeout, false, true, Pool::MODE_DAEMON));
 #   else
-    m_client->setPool(Pool("donate.v2.xmrig.com", 5555, userId, nullptr));
+    m_client->setPool(Pool("donate.v2.xmrig.com", 5555, userId, nullptr, nullptr, Pool::kKeepAliveTimeout, false, false, Pool::MODE_DAEMON));
 #   endif
 
     m_client->setRetryPause(5000);
@@ -157,14 +147,14 @@ void xmrig::DonateStrategy::onClose(IClient *, int)
 }
 
 
-void xmrig::DonateStrategy::onJobReceived(IClient *client, const Job &job, const rapidjson::Value &)
+void xmrig::DonateStrategy::onJobReceived(IClient *client, const Job &job, const rapidjson::Value &params)
 {
     if (!isActive()) {
         m_active = true;
         m_listener->onActive(this, client);
     }
 
-    m_listener->onJob(this, client, job);
+    m_listener->onJob(this, client, job, params);
 }
 
 
@@ -191,7 +181,13 @@ void xmrig::DonateStrategy::onResultAccepted(IClient *client, const SubmitResult
 }
 
 
-void xmrig::DonateStrategy::onVerifyAlgorithm(const IClient *client, const Algorithm &algorithm, bool *ok)
+void xmrig::DonateStrategy::onVerifyAlgorithm(const IClient *, const Algorithm &, bool *)
 {
 
+}
+
+
+void xmrig::DonateStrategy::setProxy(const ProxyUrl &proxy)
+{
+    m_client->setProxy(proxy);
 }

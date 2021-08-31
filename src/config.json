@@ -27,7 +27,9 @@
         }
     ],
     "colors": true,
+    "title": true,
     "custom-diff": 0,
+    "custom-diff-stats": false,
     "donate-level": 0,
     "log-file": null,
     "mode": "nicehash",
@@ -50,6 +52,7 @@
     "retry-pause": 1,
     "reuse-timeout": 0,
     "tls": {
+        "enabled": true,
         "protocols": null,
         "cert": null,
         "cert_key": null,

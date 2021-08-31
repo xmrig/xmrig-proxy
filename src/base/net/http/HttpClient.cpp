@@ -1,13 +1,7 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2014-2019 heapwolf    <https://github.com/heapwolf>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2014-2019 heapwolf    <https://github.com/heapwolf>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,126 +18,91 @@
  */
 
 
-#include <sstream>
-
-
-#include "3rdparty/http-parser/http_parser.h"
+#include "base/net/http/HttpClient.h"
+#include "3rdparty/llhttp/llhttp.h"
 #include "base/io/log/Log.h"
 #include "base/kernel/Platform.h"
 #include "base/net/dns/Dns.h"
-#include "base/net/http/HttpClient.h"
-#include "base/tools/Baton.h"
+#include "base/net/dns/DnsRecords.h"
+#include "base/net/tools/NetBuffer.h"
+#include "base/tools/Timer.h"
+
+
+#include <sstream>
+#include <uv.h>
 
 
 namespace xmrig {
 
+
 static const char *kCRLF = "\r\n";
-
-
-class ClientWriteBaton : public Baton<uv_write_t>
-{
-public:
-    inline ClientWriteBaton(const std::string &header, std::string &&body) :
-        m_body(std::move(body)),
-        m_header(header)
-    {
-        bufs[0].len  = m_header.size();
-        bufs[0].base = const_cast<char *>(m_header.c_str());
-
-        if (!m_body.empty()) {
-            bufs[1].len  = m_body.size();
-            bufs[1].base = const_cast<char *>(m_body.c_str());
-        }
-        else {
-            bufs[1].base = nullptr;
-            bufs[1].len  = 0;
-        }
-    }
-
-
-    inline size_t count() const                      { return bufs[1].base == nullptr ? 1 : 2; }
-    inline size_t size() const                       { return bufs[0].len + bufs[1].len; }
-    inline static void onWrite(uv_write_t *req, int) { delete reinterpret_cast<ClientWriteBaton *>(req->data); }
-
-
-    uv_buf_t bufs[2];
-
-private:
-    std::string m_body;
-    std::string m_header;
-};
 
 
 } // namespace xmrig
 
 
-xmrig::HttpClient::HttpClient(int method, const String &url, IHttpListener *listener, const char *data, size_t size) :
-    HttpContext(HTTP_RESPONSE, listener)
+xmrig::HttpClient::HttpClient(const char *tag, FetchRequest &&req, const std::weak_ptr<IHttpListener> &listener) :
+    HttpContext(HTTP_RESPONSE, listener),
+    m_tag(tag),
+    m_req(std::move(req))
 {
-    this->method = method;
-    this->url    = url;
+    method  = m_req.method;
+    url     = std::move(m_req.path);
+    body    = std::move(m_req.body);
+    headers = std::move(m_req.headers);
 
-    if (data) {
-        body = size ? std::string(data, size) : data;
+    if (m_req.timeout) {
+        m_timer = std::make_shared<Timer>(this, m_req.timeout, 0);
     }
-
-    m_dns = new Dns(this);
 }
 
 
-xmrig::HttpClient::~HttpClient()
+bool xmrig::HttpClient::connect()
 {
-    delete m_dns;
+    m_dns = Dns::resolve(m_req.host, this);
+
+    return true;
 }
 
 
-bool xmrig::HttpClient::connect(const String &host, uint16_t port)
-{
-    m_port = port;
-
-    return m_dns->resolve(host);
-}
-
-
-const xmrig::String &xmrig::HttpClient::host() const
-{
-    return m_dns->host();
-}
-
-
-void xmrig::HttpClient::onResolved(const Dns &dns, int status)
+void xmrig::HttpClient::onResolved(const DnsRecords &records, int status, const char *error)
 {
     this->status = status;
+    m_dns.reset();
 
-    if (status < 0 && dns.isEmpty()) {
-        if (!m_quiet) {
-            LOG_ERR("[%s:%d] DNS error: \"%s\"", dns.host().data(), m_port, uv_strerror(status));
+    if (status < 0 && records.isEmpty()) {
+        if (!isQuiet()) {
+            LOG_ERR("%s " RED("DNS error: ") RED_BOLD("\"%s\""), tag(), error);
         }
 
         return;
     }
 
-    sockaddr *addr = dns.get().addr(m_port);
-
     auto req  = new uv_connect_t;
     req->data = this;
 
-    uv_tcp_connect(req, m_tcp, addr, onConnect);
+    uv_tcp_connect(req, m_tcp, records.get().addr(port()), onConnect);
+}
+
+
+void xmrig::HttpClient::onTimer(const Timer *)
+{
+    close(UV_ETIMEDOUT);
 }
 
 
 void xmrig::HttpClient::handshake()
 {
-    headers.insert({ "Host",       m_dns->host().data() });
+    headers.insert({ "Host",       host() });
     headers.insert({ "Connection", "close" });
-    headers.insert({ "User-Agent", Platform::userAgent() });
+    headers.insert({ "User-Agent", Platform::userAgent().data() });
 
     if (!body.empty()) {
         headers.insert({ "Content-Length", std::to_string(body.size()) });
     }
 
     std::stringstream ss;
-    ss << http_method_str(static_cast<http_method>(method)) << " " << url << " HTTP/1.1" << kCRLF;
+    ss << llhttp_method_name(static_cast<llhttp_method>(method)) << " " << url << " HTTP/1.1" << kCRLF;
 
     for (auto &header : headers) {
         ss << header.first << ": " << header.second << kCRLF;
@@ -153,54 +112,41 @@ void xmrig::HttpClient::handshake()
 
     headers.clear();
 
-    write(ss.str());
+    body.insert(0, ss.str());
+    write(std::move(body), false);
 }
 
 
 void xmrig::HttpClient::read(const char *data, size_t size)
 {
-    if (parse(data, size) < size) {
+    if (!parse(data, size)) {
         close(UV_EPROTO);
     }
-}
-
-
-void xmrig::HttpClient::write(const std::string &header)
-{
-    auto baton = new ClientWriteBaton(header, std::move(body));
-    uv_write(&baton->req, stream(), baton->bufs, baton->count(), ClientWriteBaton::onWrite);
 }
 
 
 void xmrig::HttpClient::onConnect(uv_connect_t *req, int status)
 {
     auto client = static_cast<HttpClient *>(req->data);
+    delete req;
+
     if (!client) {
-        delete req;
         return;
     }
 
     if (status < 0) {
-        if (!client->m_quiet) {
-            LOG_ERR("[%s:%d] connect error: \"%s\"", client->m_dns->host().data(), client->m_port, uv_strerror(status));
+        if (status == UV_ECANCELED) {
+            status = UV_ETIMEDOUT;
         }
 
-        delete req;
-        client->close(status);
-        return;
+        if (!client->isQuiet()) {
+            LOG_ERR("%s " RED("connect error: ") RED_BOLD("\"%s\""), client->tag(), uv_strerror(status));
+        }
+
+        return client->close(status);
     }
 
-    uv_read_start(client->stream(),
-        [](uv_handle_t *, size_t suggested_size, uv_buf_t *buf)
-        {
-            buf->base = new char[suggested_size];
-
-#           ifdef _WIN32
-            buf->len = static_cast<unsigned int>(suggested_size);
-#           else
-            buf->len = suggested_size;
-#           endif
-        },
+    uv_read_start(client->stream(), NetBuffer::onAlloc,
         [](uv_stream_t *tcp, ssize_t nread, const uv_buf_t *buf)
         {
             auto client = static_cast<HttpClient*>(tcp->data);
@@ -208,14 +154,14 @@ void xmrig::HttpClient::onConnect(uv_connect_t *req, int status)
             if (nread >= 0) {
                 client->read(buf->base, static_cast<size_t>(nread));
             } else {
-                if (!client->m_quiet && nread != UV_EOF) {
-                    LOG_ERR("[%s:%d] read error: \"%s\"", client->m_dns->host().data(), client->m_port, uv_strerror(static_cast<int>(nread)));
+                if (!client->isQuiet() && nread != UV_EOF) {
+                    LOG_ERR("%s " RED("read error: ") RED_BOLD("\"%s\""), client->tag(), uv_strerror(static_cast<int>(nread)));
                 }
 
                 client->close(static_cast<int>(nread));
             }
 
-            delete [] buf->base;
+            NetBuffer::release(buf);
         });
 
     client->handshake();

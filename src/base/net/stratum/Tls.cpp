@@ -1,13 +1,7 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018      Lee Clagett <https://github.com/vtnerd>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,14 +17,10 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <assert.h>
-
-
+#include "base/net/stratum/Tls.h"
 #include "base/io/log/Log.h"
 #include "base/net/stratum/Client.h"
-#include "base/net/stratum/Tls.h"
-#include "base/tools/Buffer.h"
+#include "base/tools/Cvt.h"
 
 
 #ifdef _MSC_VER
@@ -38,12 +28,12 @@
 #endif
 
 
+#include <cassert>
+#include <openssl/ssl.h>
+
+
 xmrig::Client::Tls::Tls(Client *client) :
-    m_ready(false),
-    m_buf(),
-    m_fingerprint(),
-    m_client(client),
-    m_ssl(nullptr)
+    m_client(client)
 {
     m_ctx = SSL_CTX_new(SSLv23_method());
     assert(m_ctx != nullptr);
@@ -52,8 +42,8 @@ xmrig::Client::Tls::Tls(Client *client) :
         return;
     }
 
-    m_writeBio = BIO_new(BIO_s_mem());
-    m_readBio  = BIO_new(BIO_s_mem());
+    m_write = BIO_new(BIO_s_mem());
+    m_read  = BIO_new(BIO_s_mem());
     SSL_CTX_set_options(m_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 }
 
@@ -80,7 +70,7 @@ bool xmrig::Client::Tls::handshake()
     }
 
     SSL_set_connect_state(m_ssl);
-    SSL_set_bio(m_ssl, m_readBio, m_writeBio);
+    SSL_set_bio(m_ssl, m_read, m_write);
     SSL_do_handshake(m_ssl);
 
     return send();
@@ -109,7 +99,7 @@ const char *xmrig::Client::Tls::version() const
 
 void xmrig::Client::Tls::read(const char *data, size_t size)
 {
-    BIO_write(m_readBio, data, size);
+    BIO_write(m_read, data, size);
 
     if (!SSL_is_init_finished(m_ssl)) {
         const int rc = SSL_connect(m_ssl);
@@ -133,17 +123,18 @@ void xmrig::Client::Tls::read(const char *data, size_t size)
       return;
     }
 
+    static char buf[16384]{};
     int bytes_read = 0;
-    while ((bytes_read = SSL_read(m_ssl, m_buf, sizeof(m_buf))) > 0) {
-        m_buf[bytes_read - 1] = '\0';
-        m_client->parse(m_buf, static_cast<size_t>(bytes_read));
+
+    while ((bytes_read = SSL_read(m_ssl, buf, sizeof(buf))) > 0) {
+        m_client->m_reader.parse(buf, static_cast<size_t>(bytes_read));
     }
 }
 
 
 bool xmrig::Client::Tls::send()
 {
-    return m_client->send(m_writeBio);
+    return m_client->send(m_write);
 }
 
 
@@ -179,13 +170,13 @@ bool xmrig::Client::Tls::verifyFingerprint(X509 *cert)
     }
 
     unsigned char md[EVP_MAX_MD_SIZE];
-    unsigned int dlen;
+    unsigned int dlen = 0;
 
     if (X509_digest(cert, digest, md, &dlen) != 1) {
         return false;
     }
 
-    Buffer::toHex(md, 32, m_fingerprint);
+    Cvt::toHex(m_fingerprint, sizeof(m_fingerprint), md, 32);
     const char *fingerprint = m_client->m_pool.fingerprint();
 
     return fingerprint == nullptr || strncasecmp(m_fingerprint, fingerprint, 64) == 0;

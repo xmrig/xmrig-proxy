@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,11 +26,12 @@
 #define XMRIG_DONATEMAPPER_H
 
 
-#include <stdint.h>
+#include <cstdint>
 #include <vector>
 
 
 #include "base/kernel/interfaces/IClientListener.h"
+#include "base/tools/Object.h"
 #include "base/tools/String.h"
 
 
@@ -46,6 +47,8 @@ class SubmitEvent;
 class DonateMapper : public IClientListener
 {
 public:
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(DonateMapper)
+
     DonateMapper(uint64_t id, LoginEvent *event, const Pool &pool);
     ~DonateMapper() override;
 
@@ -63,11 +66,11 @@ protected:
     void onVerifyAlgorithm(const IClient *client, const Algorithm &algorithm, bool *ok) override;
 
 private:
-    bool m_active;
+    bool m_active = true;
     IClient *m_client;
     Miner *m_miner;
     std::vector<String> m_algorithms;
-    uint64_t m_diff;
+    uint64_t m_diff = 0;
     uint64_t m_id;
 };
 

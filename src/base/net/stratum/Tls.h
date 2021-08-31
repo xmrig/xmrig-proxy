@@ -1,12 +1,7 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018      Lee Clagett <https://github.com/vtnerd>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,10 +21,14 @@
 #define XMRIG_CLIENT_TLS_H
 
 
-#include <openssl/ssl.h>
+using BIO       = struct bio_st;
+using SSL       = struct ssl_st;
+using SSL_CTX   = struct ssl_ctx_st;
+using X509      = struct x509_st;
 
 
 #include "base/net/stratum/Client.h"
+#include "base/tools/Object.h"
 
 
 namespace xmrig {
@@ -38,6 +37,8 @@ namespace xmrig {
 class Client::Tls
 {
 public:
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(Tls)
+
     Tls(Client *client);
     ~Tls();
 
@@ -52,13 +53,12 @@ private:
     bool verify(X509 *cert);
     bool verifyFingerprint(X509 *cert);
 
-    BIO *m_readBio;
-    BIO *m_writeBio;
-    bool m_ready;
-    char m_buf[1024 * 2];
-    char m_fingerprint[32 * 2 + 8];
+    BIO *m_read     = nullptr;
+    BIO *m_write    = nullptr;
+    bool m_ready    = false;
+    char m_fingerprint[32 * 2 + 8]{};
     Client *m_client;
-    SSL *m_ssl;
+    SSL *m_ssl      = nullptr;
     SSL_CTX *m_ctx;
 };
 

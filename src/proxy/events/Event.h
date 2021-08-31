@@ -38,10 +38,7 @@ namespace xmrig {
 class Event : public IEvent
 {
 public:
-    inline Event(Type type) :
-        m_rejected(false),
-        m_type(type)
-    {}
+    inline Event(Type type) : m_type(type) {}
 
     static bool exec(IEvent *event);
 
@@ -52,8 +49,8 @@ public:
     inline bool start()                     { return exec(this); }
 
 protected:
-    bool m_rejected;
-    Type m_type;
+    bool m_rejected = false;
+    const Type m_type;
 
     static char m_buf[4096];
 };

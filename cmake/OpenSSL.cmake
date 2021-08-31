@@ -5,7 +5,9 @@ if (WITH_TLS)
         set(OPENSSL_USE_STATIC_LIBS TRUE)
         set(OPENSSL_MSVC_STATIC_RT TRUE)
 
-        set(EXTRA_LIBS ${EXTRA_LIBS} Crypt32)
+        set(EXTRA_LIBS ${EXTRA_LIBS} crypt32)
+    elseif (APPLE)
+        set(OPENSSL_USE_STATIC_LIBS TRUE)
     endif()
 
     find_package(OpenSSL)
@@ -14,18 +16,29 @@ if (WITH_TLS)
         set(TLS_SOURCES
             src/base/net/stratum/Tls.cpp
             src/base/net/stratum/Tls.h
-            src/proxy/tls/Tls.cpp
-            src/proxy/tls/Tls.h
-            src/proxy/tls/TlsConfig.cpp
-            src/proxy/tls/TlsConfig.h
-            src/proxy/tls/TlsContext.cpp
-            src/proxy/tls/TlsContext.h
+            src/base/net/tls/ServerTls.cpp
+            src/base/net/tls/ServerTls.h
+            src/base/net/tls/TlsConfig.cpp
+            src/base/net/tls/TlsConfig.h
+            src/base/net/tls/TlsContext.cpp
+            src/base/net/tls/TlsContext.h
+            src/base/net/tls/TlsGen.cpp
+            src/base/net/tls/TlsGen.h
+            src/proxy/tls/MinerTls.cpp
+            src/proxy/tls/MinerTls.h
             )
 
         include_directories(${OPENSSL_INCLUDE_DIR})
 
         if (WITH_HTTP)
-            set(TLS_SOURCES ${TLS_SOURCES} src/base/net/http/HttpsClient.h src/base/net/http/HttpsClient.cpp)
+            set(TLS_SOURCES ${TLS_SOURCES}
+                src/base/net/https/HttpsClient.cpp
+                src/base/net/https/HttpsClient.h
+                src/base/net/https/HttpsContext.cpp
+                src/base/net/https/HttpsContext.h
+                src/base/net/https/HttpsServer.cpp
+                src/base/net/https/HttpsServer.h
+                )
         endif()
     else()
         message(FATAL_ERROR "OpenSSL NOT found: use `-DWITH_TLS=OFF` to build without TLS support")
@@ -36,6 +49,13 @@ else()
     set(TLS_SOURCES "")
     set(OPENSSL_LIBRARIES "")
     remove_definitions(/DXMRIG_FEATURE_TLS)
+
+    if (WITH_HTTP)
+        set(TLS_SOURCES ${TLS_SOURCES}
+            src/base/net/http/HttpServer.cpp
+            src/base/net/http/HttpServer.h
+            )
+    endif()
 
     set(CMAKE_PROJECT_NAME "${CMAKE_PROJECT_NAME}-notls")
 endif()

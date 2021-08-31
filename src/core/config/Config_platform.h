@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@
 namespace xmrig {
 
 
-static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:A:a:C:m:";
+static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:A:a:C:m:L:";
 
 
 static struct option const options[] = {
@@ -58,6 +58,7 @@ static struct option const options[] = {
     { "bind",              1, nullptr, IConfig::BindKey           },
     { "config",            1, nullptr, IConfig::ConfigKey         },
     { "custom-diff",       1, nullptr, IConfig::CustomDiffKey     },
+    { "custom-diff-stats", 0, nullptr, IConfig::CustomDiffStatsKey},
     { "debug",             0, nullptr, IConfig::DebugKey          },
     { "donate-level",      1, nullptr, IConfig::DonateLevelKey    },
     { "keepalive",         2, nullptr, IConfig::KeepAliveKey      },
@@ -87,8 +88,14 @@ static struct option const options[] = {
     { "tls-protocols",     1, nullptr, IConfig::TlsProtocolsKey   },
     { "tls-ciphers",       1, nullptr, IConfig::TlsCiphersKey     },
     { "tls-ciphersuites",  1, nullptr, IConfig::TlsCipherSuitesKey},
+    { "tls-gen",           1, nullptr, IConfig::TlsGenKey         },
     { "no-algo-ext",       0, nullptr, IConfig::AlgoExtKey        },
     { "access-password",   1, nullptr, IConfig::ProxyPasswordKey  },
+    { "login-file",        1, nullptr, IConfig::LoginFileKey      },
+    { "data-dir",          1, nullptr, IConfig::DataDirKey        },
+    { "dns-ipv6",          0, nullptr, IConfig::DnsIPv6Key        },
+    { "dns-ttl",           1, nullptr, IConfig::DnsTtlKey         },
+    { "spend-secret-key",  1, nullptr, IConfig::SpendSecretKey    },
     { nullptr,             0, nullptr, 0 }
 };
 

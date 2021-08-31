@@ -28,14 +28,13 @@
 
 
 #include "App.h"
-#include "core/config/Config.h"
 #include "core/Controller.h"
 
 
-void xmrig::App::background()
+bool xmrig::App::background(int &)
 {
-    if (!m_controller->config()->isBackground()) {
-        return;
+    if (!m_controller->isBackground()) {
+        return false;
     }
 
     HWND hcon = GetConsoleWindow();
@@ -46,4 +45,6 @@ void xmrig::App::background()
         CloseHandle(h);
         FreeConsole();
     }
+
+    return false;
 }

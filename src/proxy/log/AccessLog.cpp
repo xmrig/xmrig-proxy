@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,63 +23,59 @@
  */
 
 
-#include <inttypes.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <time.h>
-
-
+#include "proxy/log/AccessLog.h"
 #include "base/tools/Chrono.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/Counters.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
-#include "proxy/log/AccessLog.h"
 #include "proxy/Miner.h"
-#include "proxy/Stats.h"
 
 
-xmrig::AccessLog::AccessLog(Controller *controller) :
-    m_file(-1)
+#include <algorithm>
+#include <cinttypes>
+#include <cstdarg>
+#include <cstdio>
+#include <ctime>
+
+
+xmrig::AccessLog::AccessLog(Controller *controller)
 {
     const char *fileName = controller->config()->accessLog();
-    if (!fileName) {
-        return;
+    if (fileName) {
+        m_writer.open(fileName);
     }
-
-    uv_fs_t req;
-    m_file = uv_fs_open(uv_default_loop(), &req, fileName, O_CREAT | O_APPEND | O_WRONLY, 0644, nullptr);
-    uv_fs_req_cleanup(&req);
 }
 
 
-xmrig::AccessLog::~AccessLog()
-{
-}
+xmrig::AccessLog::~AccessLog() = default;
 
 
 void xmrig::AccessLog::onEvent(IEvent *event)
 {
-    if (m_file < 0) {
+    if (!m_writer.isOpen()) {
         return;
     }
 
     switch (event->type())
     {
-    case IEvent::LoginType: {
+    case IEvent::LoginType:
+        {
             auto e = static_cast<LoginEvent*>(event);
-            write("#%" PRId64 " login: %s, \"%s\", ua: \"%s\", count: %" PRIu64, e->miner()->id(), e->miner()->ip(), e->miner()->user().data(), e->miner()->agent().data(), Counters::miners());
+            write("#%" PRId64 " login: %s, \"%s\", flow: \"%s\", ua: \"%s\", count: %" PRIu64,
+                  e->miner()->id(), e->miner()->ip(), e->miner()->user().data(), e->flow.data(), e->miner()->agent().data(), Counters::miners());
         }
         break;
 
-    case IEvent::CloseType: {
+    case IEvent::CloseType:
+        {
             auto e = static_cast<CloseEvent*>(event);
             if (e->miner()->mapperId() == -1) {
                 break;
             }
 
-            const double time = (Chrono::currentMSecsSinceEpoch() - e->miner()->timestamp()) / 1000.0;
+            const double time = static_cast<double>(Chrono::currentMSecsSinceEpoch() - e->miner()->timestamp()) / 1000.0;
 
             write("#%" PRId64 " close: %s, \"%s\", time: %03.1fs, rx/tx: %" PRIu64 "/%" PRIu64 ", count: %" PRIu64,
                   e->miner()->id(), e->miner()->ip(), e->miner()->user().data(), time, e->miner()->rx(), e->miner()->tx(), Counters::miners());
@@ -97,22 +93,10 @@ void xmrig::AccessLog::onRejectedEvent(IEvent *)
 }
 
 
-void xmrig::AccessLog::onWrite(uv_fs_t *req)
-{
-    delete [] static_cast<char *>(req->data);
-
-    uv_fs_req_cleanup(req);
-    delete req;
-}
-
-
 void xmrig::AccessLog::write(const char *fmt, ...)
 {
-    va_list args;
-    va_start(args, fmt);
-
     time_t now = time(nullptr);
-    tm stime;
+    tm stime{};
 
 #   ifdef _WIN32
     localtime_s(&stime, &now);
@@ -120,7 +104,7 @@ void xmrig::AccessLog::write(const char *fmt, ...)
     localtime_r(&now, &stime);
 #   endif
 
-    char *buf = new char[1024];
+    static char buf[4096]{};
     int size = snprintf(buf, 23, "[%d-%02d-%02d %02d:%02d:%02d] ",
                         stime.tm_year + 1900,
                         stime.tm_mon + 1,
@@ -129,14 +113,20 @@ void xmrig::AccessLog::write(const char *fmt, ...)
                         stime.tm_min,
                         stime.tm_sec);
 
-    size = vsnprintf(buf + size, 1024 - size - 1, fmt, args) + size;
-    buf[size] = '\n';
+    if (size < 0) {
+        return;
+    }
 
-    uv_buf_t ubuf = uv_buf_init(buf, (unsigned int) size + 1);
-    uv_fs_t *req = new uv_fs_t;
-    req->data = ubuf.base;
+    va_list args;
+    va_start(args, fmt);
 
-    uv_fs_write(uv_default_loop(), req, m_file, &ubuf, 1, 0, AccessLog::onWrite);
+    const int rc = vsnprintf(buf + size, sizeof(buf) - size, fmt, args);
 
     va_end(args);
+
+    if (rc < 0) {
+        return;
+    }
+
+    m_writer.writeLine(buf, std::min<size_t>(sizeof(buf), size + rc));
 }

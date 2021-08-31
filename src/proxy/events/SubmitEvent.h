@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 #define XMRIG_SUBMITEVENT_H
 
 
-#include "crypto/common/Algorithm.h"
 #include "net/JobResult.h"
 #include "proxy/Error.h"
 #include "proxy/events/MinerEvent.h"
@@ -38,12 +37,13 @@ namespace xmrig {
 class SubmitEvent : public MinerEvent
 {
 public:
-    static inline SubmitEvent *create(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, const Algorithm &algorithm)
+    static inline SubmitEvent *create(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, const Algorithm &algorithm, const char* sig, const char* sig_data, int64_t extra_nonce)
     {
-        return new (m_buf) SubmitEvent(miner, id, jobId, nonce, result, algorithm);
+        return new (m_buf) SubmitEvent(miner, id, jobId, nonce, result, algorithm, sig, sig_data, extra_nonce);
     }
 
 
+    bool expired = false;
     JobResult request;
 
 
@@ -54,9 +54,9 @@ public:
 
 
 protected:
-    inline SubmitEvent(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, const Algorithm &algorithm)
+    inline SubmitEvent(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, const Algorithm &algorithm, const char* sig, const char* sig_data, int64_t extra_nonce)
         : MinerEvent(SubmitType, miner),
-          request(id, jobId, nonce, result, algorithm),
+          request(id, jobId, nonce, result, algorithm, sig, sig_data, extra_nonce),
           m_error(Error::NoError)
     {}
 

@@ -1,13 +1,8 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2019      jtgrassie   <https://github.com/jtgrassie>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2019       jtgrassie       <https://github.com/jtgrassie>
+ * Copyright (c) 2021       Hansie Odendaal <https://github.com/hansieodendaal>
+ * Copyright (c) 2018-2021  SChernykh       <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021  XMRig           <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -29,9 +24,12 @@
 
 #include "base/kernel/interfaces/IClient.h"
 #include "base/kernel/interfaces/IClientListener.h"
-#include "base/kernel/interfaces/IHttpListener.h"
+#include "base/net/http/HttpListener.h"
 #include "base/net/stratum/Job.h"
-#include "base/tools/Object.h"
+
+
+#include <map>
+#include <memory>
 
 
 namespace xmrig {
@@ -42,7 +40,7 @@ class SelfSelectClient : public IClient, public IClientListener, public IHttpLis
 public:
     XMRIG_DISABLE_COPY_MOVE_DEFAULT(SelfSelectClient)
 
-    SelfSelectClient(int id, const char *agent, IClientListener *listener);
+    SelfSelectClient(int id, const char *agent, IClientListener *listener, bool submitToOrigin);
     ~SelfSelectClient() override;
 
 protected:
@@ -52,26 +50,28 @@ protected:
     inline bool isEnabled() const override                                          { return m_client->isEnabled(); }
     inline bool isTLS() const override                                              { return m_client->isTLS(); }
     inline const char *mode() const override                                        { return m_client->mode(); }
+    inline const char *tag() const override                                         { return m_client->tag(); }
     inline const char *tlsFingerprint() const override                              { return m_client->tlsFingerprint(); }
     inline const char *tlsVersion() const override                                  { return m_client->tlsVersion(); }
-    inline const Job &job() const override                                          { return m_client->job(); }
+    inline const Job &job() const override                                          { return m_job; }
     inline const Pool &pool() const override                                        { return m_client->pool(); }
     inline const String &ip() const override                                        { return m_client->ip(); }
     inline int id() const override                                                  { return m_client->id(); }
     inline int64_t send(const rapidjson::Value &obj, Callback callback) override    { return m_client->send(obj, callback); }
     inline int64_t send(const rapidjson::Value &obj) override                       { return m_client->send(obj); }
     inline int64_t sequence() const override                                        { return m_client->sequence(); }
-    inline int64_t submit(const JobResult &result) override                         { return m_client->submit(result); }
     inline void connect() override                                                  { m_client->connect(); }
     inline void connect(const Pool &pool) override                                  { m_client->connect(pool); }
     inline void deleteLater() override                                              { m_client->deleteLater(); }
     inline void setAlgo(const Algorithm &algo) override                             { m_client->setAlgo(algo); }
     inline void setEnabled(bool enabled) override                                   { m_client->setEnabled(enabled); }
     inline void setPool(const Pool &pool) override                                  { m_client->setPool(pool); }
+    inline void setProxy(const ProxyUrl &proxy) override                            { m_client->setProxy(proxy); }
     inline void setQuiet(bool quiet) override                                       { m_client->setQuiet(quiet); m_quiet = quiet;  }
     inline void setRetries(int retries) override                                    { m_client->setRetries(retries); m_retries = retries; }
     inline void setRetryPause(uint64_t ms) override                                 { m_client->setRetryPause(ms); m_retryPause = ms; }
 
+    int64_t submit(const JobResult &result) override;
     void tick(uint64_t now) override;
 
     // IClientListener
@@ -98,22 +98,28 @@ private:
     bool parseResponse(int64_t id, rapidjson::Value &result, const rapidjson::Value &error);
     void getBlockTemplate();
     void retry();
-    void send(int method, const char *url, const char *data = nullptr, size_t size = 0);
-    void send(int method, const char *url, const rapidjson::Document &doc);
     void setState(State state);
     void submitBlockTemplate(rapidjson::Value &result);
+    void submitOriginDaemon(const JobResult &result);
 
-    bool m_active           = false;
-    bool m_quiet            = false;
+    bool m_active                   = false;
+    bool m_quiet                    = false;
+    const bool m_submitToOrigin;
     IClient *m_client;
     IClientListener *m_listener;
-    int m_retries           = 5;
-    int64_t m_failures      = 0;
-    int64_t m_sequence      = 1;
+    int m_retries                   = 5;
+    int64_t m_failures              = 0;
+    int64_t m_sequence              = 1;
     Job m_job;
-    State m_state           = IdleState;
-    uint64_t m_retryPause   = 5000;
-    uint64_t m_timestamp    = 0;
+    State m_state                   = IdleState;
+    std::map<int64_t, SubmitResult> m_results;
+    std::shared_ptr<IHttpListener> m_httpListener;
+    String m_blocktemplate;
+    uint64_t m_blockDiff            = 0;
+    uint64_t m_originNotSubmitted   = 0;
+    uint64_t m_originSubmitted      = 0;
+    uint64_t m_retryPause           = 5000;
+    uint64_t m_timestamp            = 0;
 };
 
 

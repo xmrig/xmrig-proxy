@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,23 +22,21 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cmath>
-#include <string.h>
-#include <uv.h>
-#include <thread>
-
-
-#include "base/api/interfaces/IApiRequest.h"
 #include "api/v1/ApiRouter.h"
+#include "3rdparty/rapidjson/document.h"
+#include "base/api/interfaces/IApiRequest.h"
 #include "base/kernel/Platform.h"
 #include "base/tools/Buffer.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
+#include "proxy/Counters.h"
 #include "proxy/Miner.h"
-#include "rapidjson/document.h"
-#include "rapidjson/prettywriter.h"
-#include "rapidjson/stringbuffer.h"
 #include "version.h"
+
+
+#include <cmath>
+#include <cstring>
+#include <uv.h>
 
 
 static inline double normalize(double d)
@@ -57,9 +55,7 @@ xmrig::ApiRouter::ApiRouter(Base *base) :
 }
 
 
-xmrig::ApiRouter::~ApiRouter()
-{
-}
+xmrig::ApiRouter::~ApiRouter() = default;
 
 
 void xmrig::ApiRouter::onRequest(IApiRequest &request)
@@ -69,7 +65,6 @@ void xmrig::ApiRouter::onRequest(IApiRequest &request)
             request.accept();
             getMiner(request.reply(), request.doc());
             getHashrate(request.reply(), request.doc());
-            getResourcesSummary(request.reply(), request.doc());
             getMinersSummary(request.reply(), request.doc());
             getResults(request.reply(), request.doc());
         }
@@ -113,7 +108,7 @@ void xmrig::ApiRouter::getMiner(rapidjson::Value &reply, rapidjson::Document &do
     reply.AddMember("kind",         APP_KIND, allocator);
     reply.AddMember("algo",         "invalid", allocator);
     reply.AddMember("mode",         rapidjson::StringRef(m_base->config()->modeName()), allocator);
-    reply.AddMember("ua",           rapidjson::StringRef(Platform::userAgent()), allocator);
+    reply.AddMember("ua",           Platform::userAgent().toJSON(), allocator);
     reply.AddMember("donate_level", m_base->config()->pools().donateLevel(), allocator);
 
     if (stats.hashes && stats.donateHashes) {
@@ -190,39 +185,9 @@ void xmrig::ApiRouter::getMinersSummary(rapidjson::Value &reply, rapidjson::Docu
     upstreams.AddMember("sleep",  stats.upstreams.sleep, allocator);
     upstreams.AddMember("error",  stats.upstreams.error, allocator);
     upstreams.AddMember("total",  stats.upstreams.total, allocator);
-    upstreams.AddMember("ratio",  normalize(stats.upstreams.ratio), allocator);
+    upstreams.AddMember("ratio",  normalize(stats.upstreams.ratio(Counters::miners())), allocator);
 
     reply.AddMember("upstreams", upstreams, allocator);
-}
-
-
-
-void xmrig::ApiRouter::getResourcesSummary(rapidjson::Value &reply, rapidjson::Document &doc) const
-{
-    using namespace rapidjson;
-    auto &allocator = doc.GetAllocator();
-
-    size_t rss = 0;
-    uv_resident_set_memory(&rss);
-
-    Value resources(kObjectType);
-    Value memory(kObjectType);
-    Value load_average(kArrayType);
-
-    memory.AddMember("total",               uv_get_total_memory(), allocator);
-    memory.AddMember("resident_set_memory", static_cast<uint64_t>(rss), allocator);
-
-    double loadavg[3] = { 1.0 };
-    uv_loadavg(loadavg);
-    load_average.PushBack(loadavg[0], allocator);
-    load_average.PushBack(loadavg[1], allocator);
-    load_average.PushBack(loadavg[2], allocator);
-
-    resources.AddMember("memory", memory, allocator);
-    resources.AddMember("load_average", load_average, allocator);
-    resources.AddMember("hardware_concurrency", std::thread::hardware_concurrency(), allocator);
-
-    reply.AddMember("resources", resources, allocator);
 }
 
 
@@ -243,8 +208,8 @@ void xmrig::ApiRouter::getResults(rapidjson::Value &reply, rapidjson::Document &
     results.AddMember("hashes_donate", stats.donateHashes, allocator);
 
     rapidjson::Value best(rapidjson::kArrayType);
-    for (size_t i = 0; i < stats.topDiff.size(); ++i) {
-        best.PushBack(stats.topDiff[i], allocator);
+    for (uint64_t i : stats.topDiff) {
+        best.PushBack(i, allocator);
     }
 
     results.AddMember("best", best, allocator);

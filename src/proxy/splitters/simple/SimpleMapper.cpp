@@ -181,7 +181,7 @@ void xmrig::SimpleMapper::onJob(IStrategy *, IClient *client, const Job &job, co
 {
     if (m_controller->config()->isVerbose()) {
         LOG_INFO("%s " CYAN("%04u ") MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%" PRIu64) " algo " WHITE_BOLD("%s") " height " WHITE_BOLD("%" PRIu64),
-                 Tags::network(), m_id, client->pool().host().data(), client->pool().port(), job.diff(), job.algorithm().shortName(), job.height());
+                 Tags::network(), m_id, client->pool().host().data(), client->pool().port(), job.diff(), job.algorithm().name(), job.height());
     }
 
     if (m_donate && m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {

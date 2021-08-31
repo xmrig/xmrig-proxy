@@ -130,7 +130,7 @@ void xmrig::Miner::forwardJob(const Job &job, const char *algo)
     m_diff = job.diff();
     setFixedByte(job.fixedByte());
 
-    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().shortName(), job.height(), job.rawSeedHash(), job.rawSigKey());
+    sendJob(job.rawBlob(), job.id().data(), job.rawTarget(), algo ? algo : job.algorithm().name(), job.height(), job.rawSeedHash(), job.rawSigKey());
 }
 
 
@@ -178,7 +178,7 @@ void xmrig::Miner::setJob(Job &job, int64_t extra_nonce)
         blob = tmp_blob;
     }
 
-    sendJob(blob, job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().shortName(), job.height(), job.rawSeedHash(), m_signatureData);
+    sendJob(blob, job.id().data(), customDiff ? m_sendBuf : job.rawTarget(), job.algorithm().name(), job.height(), job.rawSeedHash(), m_signatureData);
 }
 
 

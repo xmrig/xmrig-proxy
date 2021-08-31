@@ -163,6 +163,31 @@ void xmrig::Job::setSigKey(const char *sig_key)
 }
 
 
+uint32_t xmrig::Job::getNumTransactions() const
+{
+    if (!(m_algorithm.isCN() || m_algorithm.family() == Algorithm::RANDOM_X)) {
+        return 0;
+    }
+
+    uint32_t num_transactions = 0;
+
+    // Monero (and some other coins) has the number of transactions encoded as varint in the end of hashing blob
+    const size_t expected_tx_offset = (m_algorithm == Algorithm::RX_WOW) ? 141 : 75;
+
+    if ((m_size > expected_tx_offset) && (m_size <= expected_tx_offset + 4)) {
+        for (size_t i = expected_tx_offset, k = 0; i < m_size; ++i, k += 7) {
+            const uint8_t b = m_blob[i];
+            num_transactions |= static_cast<uint32_t>(b & 0x7F) << k;
+            if ((b & 0x80) == 0) {
+                break;
+            }
+        }
+    }
+
+    return num_transactions;
+}
+
+
 void xmrig::Job::copy(const Job &other)
 {
     m_algorithm  = other.m_algorithm;
@@ -327,16 +352,16 @@ void xmrig::Job::generateHashingBlob(String &blob) const
 {
     uint8_t root_hash[32];
     const uint8_t* p = m_minerTxPrefix.data();
-    BlockTemplate::CalculateRootHash(p, p + m_minerTxPrefix.size(), m_minerTxMerkleTreeBranch, root_hash);
+    BlockTemplate::calculateRootHash(p, p + m_minerTxPrefix.size(), m_minerTxMerkleTreeBranch, root_hash);
 
     uint64_t root_hash_offset = nonceOffset() + nonceSize();
 
     if (m_hasMinerSignature) {
-        root_hash_offset += BlockTemplate::SIGNATURE_SIZE + 2 /* vote */;
+        root_hash_offset += BlockTemplate::kSignatureSize + 2 /* vote */;
     }
 
     blob = rawBlob();
-    Cvt::toHex(blob.data() + root_hash_offset * 2, 64, root_hash, BlockTemplate::HASH_SIZE);
+    Cvt::toHex(blob.data() + root_hash_offset * 2, 64, root_hash, BlockTemplate::kHashSize);
 }
 
 
@@ -349,7 +374,7 @@ void xmrig::Job::generateMinerSignature(const uint8_t* blob, size_t size, uint8_
     memcpy(tmp, blob, size);
 
     // Fill signature with zeros
-    memset(tmp + nonceOffset() + nonceSize(), 0, BlockTemplate::SIGNATURE_SIZE);
+    memset(tmp + nonceOffset() + nonceSize(), 0, BlockTemplate::kSignatureSize);
 
     uint8_t prefix_hash[32];
     xmrig::keccak(tmp, static_cast<int>(size), prefix_hash, sizeof(prefix_hash));

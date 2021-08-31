@@ -1,3 +1,9 @@
+# v6.15.0
+- [#463](https://github.com/xmrig/xmrig-proxy/pull/463) Added `--spend-secret-key` to command line option.
+- [#465](https://github.com/xmrig/xmrig-proxy/pull/465) Added ZeroMQ support for solo mining.
+- [#2548](https://github.com/xmrig/xmrig/pull/2548) Added automatic coin detection for daemon mining.
+- [#2563](https://github.com/xmrig/xmrig/pull/2563) Added new algorithm RandomX Graft (`rx/graft`).
+
 # v6.14.0
 - [#460](https://github.com/xmrig/xmrig-proxy/pull/460) Added new mode: `extra_nonce` for solo mining.
 - Fixed `simple` mode for Wownero.

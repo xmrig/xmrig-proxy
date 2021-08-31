@@ -1,22 +1,38 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(xmrig-proxy)
 
-
-option(WITH_GOOGLE_BREAKPAD "Use Google Breakpad"     OFF)
+option(WITH_TLS             "Enable TLS (Transport Layer Security) support" ON)
+option(WITH_HTTP            "Enable HTTP protocol support (client/server)" ON)
 option(WITH_DEBUG_LOG       "Enable debug log output" OFF)
-option(WITH_HTTP            "HTTP protocol support (client/server)" ON)
-option(WITH_TLS             "Enable OpenSSL support"  ON)
+option(WITH_CRYPTONOTE      "Enable basic CryptoNote tools (block template and wallet address parsers)" ON)
+option(WITH_CRYPTO_OPS      "Enable miner signatures support (Wownero)" ON)
+option(WITH_CN_LITE         "Enable CryptoNight-Lite algorithms family" ON)
+option(WITH_CN_HEAVY        "Enable CryptoNight-Heavy algorithms family" ON)
+option(WITH_CN_PICO         "Enable CryptoNight-Pico algorithm" ON)
+option(WITH_CN_FEMTO        "Enable CryptoNight-UPX2 algorithm" ON)
+option(WITH_RANDOMX         "Enable RandomX algorithms family" ON)
+option(WITH_ARGON2          "Enable Argon2 algorithms family" ON)
+option(WITH_ASTROBWT        "Enable AstroBWT algorithms family" ON)
 option(WITH_ENV_VARS        "Enable environment variables support in config file" ON)
+option(WITH_GOOGLE_BREAKPAD "Use Google Breakpad" OFF)
 
+add_definitions(-DXMRIG_PROXY_PROJECT -DXMRIG_FORCE_TLS -DAPP_DEVEL)
 
-include (CheckIncludeFile)
-include (cmake/os.cmake)
-include (src/base/base.cmake)
+set(WITH_SECURE_JIT OFF)
+set(WITH_HWLOC      OFF)
+set(WITH_SODIUM     OFF)
+set(WITH_CRYPTONOTE ON)
+set(WITH_CRYPTO_OPS ON)
+set(WITH_KAWPOW     OFF)
+set(WITH_BENCHMARK  OFF)
 
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/src/base/cmake")
+set(LIBS base)
+
+include(base)
+add_subdirectory(src/base)
 
 set(HEADERS
-    "${HEADERS_BASE}"
-    "${HEADERS_BASE_HTTP}"
     src/App.h
     src/core/config/Config_platform.h
     src/core/config/Config.h
@@ -70,8 +86,6 @@ set(HEADERS
    )
 
 set(SOURCES
-    "${SOURCES_BASE}"
-    "${SOURCES_BASE_HTTP}"
     src/App.cpp
     src/core/config/Config.cpp
     src/core/config/ConfigTransform.cpp
@@ -112,85 +126,31 @@ set(SOURCES
     src/xmrig.cpp
    )
 
-if (WIN32)
-    set(SOURCES_OS
-        "${SOURCES_OS}"
+if (XMRIG_OS_WIN)
+    list(APPEND SOURCES
         res/app.rc
         src/App_win.cpp
         )
-
-    add_definitions(/DWIN32)
-    set(EXTRA_LIBS ws2_32 psapi iphlpapi userenv)
-elseif (APPLE)
-    set(SOURCES_OS
-        "${SOURCES_OS}"
-        src/App_unix.cpp
-        )
-
-    find_library(IOKIT_LIBRARY IOKit)
-    find_library(CORESERVICES_LIBRARY CoreServices)
-    set(EXTRA_LIBS ${IOKIT_LIBRARY} ${CORESERVICES_LIBRARY})
 else()
-    set(SOURCES_OS
-        "${SOURCES_OS}"
-        src/App_unix.cpp
-        )
-
-    if (CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
-        set(EXTRA_LIBS pthread)
-    else()
-        set(EXTRA_LIBS pthread rt dl)
-    endif()
+    list(APPEND SOURCES src/App_unix.cpp)
 endif()
-
-add_definitions(/DXMRIG_PROXY_PROJECT /DXMRIG_FORCE_TLS)
-add_definitions(/DUNICODE)
-add_definitions(/D__STDC_FORMAT_MACROS)
-add_definitions(/DAPP_DEVEL)
-add_definitions(/DXMRIG_NO_ASM)
-
-add_definitions(/DXMRIG_ALGO_RANDOMX)
-add_definitions(/DXMRIG_ALGO_CN_LITE)
-add_definitions(/DXMRIG_ALGO_CN_HEAVY)
-add_definitions(/DXMRIG_ALGO_CN_PICO)
-add_definitions(/DXMRIG_ALGO_CN_FEMTO)
-add_definitions(/DXMRIG_ALGO_ARGON2)
-add_definitions(/DXMRIG_ALGO_ASTROBWT)
-
-if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$" AND CMAKE_SIZEOF_VOID_P EQUAL 8)
-    add_definitions(/DRAPIDJSON_SSE2)
-endif()
-
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
-
-find_package(UV REQUIRED)
-
-include(cmake/flags.cmake)
-include(cmake/OpenSSL.cmake)
 
 if (WITH_GOOGLE_BREAKPAD)
     include_directories(/usr/local/include/breakpad)
-    set(GOOGLE_BREAKPAD_LIBS breakpad_client)
+    list(APPEND LIBS breakpad_client)
 else()
-    add_definitions(/DXMRIG_NO_GOOGLE_BREAKPAD)
+    add_definitions(-DXMRIG_NO_GOOGLE_BREAKPAD)
 endif()
 
 if (WITH_HTTP)
-    set(HTTP_SOURCES
-        src/api/v1/ApiRouter.cpp
-        src/api/v1/ApiRouter.h
-        )
-else()
-    set(HTTP_SOURCES "")
+    list(APPEND HEADERS src/api/v1/ApiRouter.h)
+    list(APPEND SOURCES src/api/v1/ApiRouter.cpp)
 endif()
 
-if (WITH_DEBUG_LOG)
-    add_definitions(/DAPP_DEBUG)
+if (WITH_TLS)
+    list(APPEND HEADERS src/proxy/tls/MinerTls.h)
+    list(APPEND SOURCES src/proxy/tls/MinerTls.cpp)
 endif()
 
-include_directories(src)
-include_directories(src/3rdparty)
-include_directories(${UV_INCLUDE_DIR})
-
-add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_SYSLOG} ${HTTP_SOURCES} ${TLS_SOURCES})
-target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENSSL_LIBRARIES} ${UV_LIBRARIES} ${EXTRA_LIBS} ${GOOGLE_BREAKPAD_LIBS})
+add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES})
+target_link_libraries(${CMAKE_PROJECT_NAME} ${LIBS})

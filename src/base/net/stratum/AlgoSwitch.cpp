@@ -87,7 +87,7 @@ rapidjson::Value AlgoSwitch::algo_perfs_toJSON(rapidjson::Document& doc) const {
   auto &allocator = doc.GetAllocator();
   rapidjson::Value algo_perfs(rapidjson::kObjectType);
   for (const auto& algo_perf: m_algo_perfs.empty() ? m_default_algo_perfs : m_algo_perfs) {
-    algo_perfs.AddMember(rapidjson::StringRef(Algorithm(algo_perf.first).shortName()), algo_perf.second, allocator);
+    algo_perfs.AddMember(rapidjson::StringRef(Algorithm(algo_perf.first).name()), algo_perf.second, allocator);
   }
   return algo_perfs;
 }

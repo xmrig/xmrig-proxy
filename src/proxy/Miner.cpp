@@ -55,6 +55,9 @@
 #include <cstdio>
 #include <cstring>
 
+#ifdef _MSC_VER
+#undef GetObject
+#endif
 
 namespace xmrig {
     static int64_t nextId = 0;

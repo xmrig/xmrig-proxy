@@ -161,6 +161,13 @@ public:
     static const char *kKAWPOW_RVN;
 #   endif
 
+#   ifdef XMRIG_ALGO_CN_GPU
+    static const char *kCN_GPU;
+#   endif
+#   ifdef XMRIG_ALGO_RANDOMX
+    static const char *kRX_XLA;
+#   endif
+
     inline Algorithm() = default;
     inline Algorithm(const char *algo) : m_id(parse(algo))  {}
     inline Algorithm(Id id) : m_id(id)                      {}

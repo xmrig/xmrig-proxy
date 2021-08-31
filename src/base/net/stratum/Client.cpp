@@ -1,13 +1,7 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2019      jtgrassie   <https://github.com/jtgrassie>
- * Copyright 2018-2021 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2019      jtgrassie   <https://github.com/jtgrassie>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -232,7 +226,7 @@ int64_t xmrig::Client::submit(const JobResult &result)
 #   endif
 
     if (has<EXT_ALGO>() && result.algorithm.isValid()) {
-        params.AddMember("algo", StringRef(result.algorithm.shortName()), allocator);
+        params.AddMember("algo", StringRef(result.algorithm.name()), allocator);
     }
 
     JsonRequest::create(doc, m_sequence, "submit", params);
@@ -355,32 +349,6 @@ bool xmrig::Client::close()
 }
 
 
-bool xmrig::Client::isCriticalError(const char *message)
-{
-    if (!message) {
-        return false;
-    }
-
-    if (strncasecmp(message, "Unauthenticated", 15) == 0) {
-        return true;
-    }
-
-    if (strncasecmp(message, "your IP is banned", 17) == 0) {
-        return true;
-    }
-
-    if (strncasecmp(message, "IP Address currently banned", 27) == 0) {
-        return true;
-    }
-
-    if (strncasecmp(message, "Invalid job id", 14) == 0) {
-        return true;
-    }
-
-    return false;
-}
-
-
 bool xmrig::Client::parseJob(const rapidjson::Value &params, int *code)
 {
     if (!params.IsObject()) {
@@ -471,7 +439,7 @@ bool xmrig::Client::send(BIO *bio)
 {
 #   ifdef XMRIG_FEATURE_TLS
     uv_buf_t buf;
-    buf.len = BIO_get_mem_data(bio, &buf.base);
+    buf.len = BIO_get_mem_data(bio, &buf.base); // NOLINT(cppcoreguidelines-pro-type-cstyle-cast)
 
     if (buf.len == 0) {
         return true;
@@ -515,7 +483,7 @@ bool xmrig::Client::verifyAlgorithm(const Algorithm &algorithm, const char *algo
     m_listener->onVerifyAlgorithm(this, algorithm, &ok);
 
     if (!ok && !isQuiet()) {
-        LOG_ERR("%s " RED("incompatible/disabled algorithm ") RED_BOLD("\"%s\" ") RED("detected, reconnect"), tag(), algorithm.shortName());
+        LOG_ERR("%s " RED("incompatible/disabled algorithm ") RED_BOLD("\"%s\" ") RED("detected, reconnect"), tag(), algorithm.name());
     }
 
     return ok;
@@ -1012,6 +980,32 @@ void xmrig::Client::startTimeout()
 
         m_keepAlive = Chrono::steadyMSecs() + ms;
     }
+}
+
+
+bool xmrig::Client::isCriticalError(const char *message)
+{
+    if (!message) {
+        return false;
+    }
+
+    if (strncasecmp(message, "Unauthenticated", 15) == 0) {
+        return true;
+    }
+
+    if (strncasecmp(message, "your IP is banned", 17) == 0) {
+        return true;
+    }
+
+    if (strncasecmp(message, "IP Address currently banned", 27) == 0) {
+        return true;
+    }
+
+    if (strncasecmp(message, "Invalid job id", 14) == 0) {
+        return true;
+    }
+
+    return false;
 }
 
 

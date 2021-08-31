@@ -306,7 +306,7 @@ void xmrig::NonceMapper::setJob(const char *host, int port, const Job &job)
 {
     if (m_controller->config()->isVerbose()) {
         LOG_INFO("%s " CYAN("%04u ") MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%" PRIu64) " algo " WHITE_BOLD("%s") " height " WHITE_BOLD("%" PRIu64),
-                 Tags::network(), m_id, host, port, job.diff(), job.algorithm().shortName(), job.height());
+                 Tags::network(), m_id, host, port, job.diff(), job.algorithm().name(), job.height());
     }
 
     m_storage->setJob(job);

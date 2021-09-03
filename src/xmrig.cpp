@@ -28,6 +28,7 @@ static bool dumpCallback(const google_breakpad::MinidumpDescriptor &descriptor, 
 #include "App.h"
 #include "base/kernel/Entry.h"
 #include "base/kernel/Process.h"
+#include "core/config/usage.h"
 
 
 int main(int argc, char **argv) {
@@ -39,11 +40,17 @@ int main(int argc, char **argv) {
     using namespace xmrig;
 
     Process process(argc, argv);
-    const auto entry = Entry::get();
-    if (entry) {
-        return Entry::exec(entry);
+
+    {
+        int rc = 0;
+        auto entry = std::make_unique<Entry>(usage);
+
+        if (entry->exec(rc)) {
+            return rc;
+        }
     }
 
     App app;
+
     return app.exec();
 }

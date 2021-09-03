@@ -1,9 +1,4 @@
 /* XMRig
- * Copyright (c) 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright (c) 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright (c) 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright (c) 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright (c) 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
  * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
@@ -25,24 +20,17 @@
 #define XMRIG_USAGE_H
 
 
-#include "../version.h"
-
-
 #include <string>
 
 
 namespace xmrig {
 
 
-static inline const std::string &usage()
+static std::string usage()
 {
-    static std::string u;
+    std::string u;
 
-    if (!u.empty()) {
-        return u;
-    }
-
-    u += "Usage: " APP_ID " [OPTIONS]\n\nNetwork:\n";
+    u += "\nNetwork:\n";
 
     u += "  -o, --url=URL                 URL of mining server\n";
     u += "  -a, --algo=ALGO               mining algorithm https://xmrig.com/docs/algorithms\n";
@@ -119,8 +107,6 @@ static inline const std::string &usage()
     u += "\nMisc:\n";
     u += "  -c, --config=FILE             load a JSON-format configuration file\n";
     u += "  -B, --background              run the proxy in the background\n";
-    u += "  -V, --version                 output version information and exit\n";
-    u += "  -h, --help                    display this help and exit\n";
     u += "      --dry-run                 test configuration and exit\n";
 
     return u;

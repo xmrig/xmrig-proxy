@@ -119,8 +119,6 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember(StringRef(kApi),                  api, allocator);
     doc.AddMember(StringRef(kHttp),                 m_http.toJSON(doc), allocator);
 
-    doc.AddMember(StringRef(kBackground),           isBackground(), allocator);
-
     Value bind(kArrayType);
     for (const auto &host : m_bind) {
         bind.PushBack(host.toJSON(doc), allocator);

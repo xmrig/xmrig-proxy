@@ -127,12 +127,7 @@ set(SOURCES
    )
 
 if (XMRIG_OS_WIN)
-    list(APPEND SOURCES
-        res/app.rc
-        src/App_win.cpp
-        )
-else()
-    list(APPEND SOURCES src/App_unix.cpp)
+    list(APPEND SOURCES res/app.rc)
 endif()
 
 if (WITH_GOOGLE_BREAKPAD)

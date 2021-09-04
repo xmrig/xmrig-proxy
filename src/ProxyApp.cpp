@@ -21,7 +21,7 @@
 #include <uv.h>
 
 
-#include "App.h"
+#include "ProxyApp.h"
 #include "base/io/Console.h"
 #include "base/io/log/Log.h"
 #include "base/io/log/Tags.h"
@@ -32,16 +32,16 @@
 #include "version.h"
 
 
-xmrig::App::App()
+xmrig::ProxyApp::ProxyApp()
 {
     m_controller = std::make_shared<Controller>();
 }
 
 
-xmrig::App::~App() = default;
+xmrig::ProxyApp::~ProxyApp() = default;
 
 
-int xmrig::App::exec()
+int xmrig::ProxyApp::exec()
 {
     if (!m_controller->isReady()) {
         LOG_EMERG("no valid configuration found.");
@@ -77,7 +77,7 @@ int xmrig::App::exec()
 }
 
 
-void xmrig::App::onConsoleCommand(char command)
+void xmrig::ProxyApp::onConsoleCommand(char command)
 {
     if (command == 3) {
         LOG_WARN("%s " YELLOW("Ctrl+C received, exiting"), Tags::signal());
@@ -89,7 +89,7 @@ void xmrig::App::onConsoleCommand(char command)
 }
 
 
-void xmrig::App::onSignal(int signum)
+void xmrig::ProxyApp::onSignal(int signum)
 {
     switch (signum)
     {
@@ -113,7 +113,7 @@ void xmrig::App::onSignal(int signum)
 }
 
 
-void xmrig::App::close()
+void xmrig::ProxyApp::close()
 {
     m_signals.reset();
     m_console.reset();

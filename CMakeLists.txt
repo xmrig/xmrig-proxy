@@ -33,7 +33,6 @@ include(base)
 add_subdirectory(src/base)
 
 set(HEADERS
-    src/App.h
     src/core/config/Config_platform.h
     src/core/config/Config.h
     src/core/config/ConfigTransform.h
@@ -81,12 +80,12 @@ set(HEADERS
     src/proxy/TickingCounter.h
     src/proxy/workers/Worker.h
     src/proxy/workers/Workers.h
+    src/ProxyApp.h
     src/Summary.h
     src/version.h
    )
 
 set(SOURCES
-    src/App.cpp
     src/core/config/Config.cpp
     src/core/config/ConfigTransform.cpp
     src/core/Controller.cpp
@@ -122,6 +121,7 @@ set(SOURCES
     src/proxy/Stats.cpp
     src/proxy/workers/Worker.cpp
     src/proxy/workers/Workers.cpp
+    src/ProxyApp.cpp
     src/Summary.cpp
     src/xmrig.cpp
    )

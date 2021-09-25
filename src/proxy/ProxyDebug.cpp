@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,123 +16,98 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <inttypes.h>
-
-
+#include "proxy/ProxyDebug.h"
 #include "base/io/log/Log.h"
 #include "base/net/stratum/SubmitResult.h"
 #include "net/JobResult.h"
-#include "proxy/Events.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/ConnectionEvent.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"
 #include "proxy/Miner.h"
-#include "proxy/ProxyDebug.h"
 
 
-xmrig::ProxyDebug::ProxyDebug(bool enabled) :
-    m_enabled(enabled)
+#include <cinttypes>
+
+
+namespace xmrig {
+
+
+static const char *tag = "[debug  ]";
+static inline Log::Level level(const IEvent *event) { return event->isRejected() ? Log::ERR : Log::V5; }
+
+
+static inline void print(const ConnectionEvent *e)
 {
-    Events::subscribe(IEvent::ConnectionType, this);
-    Events::subscribe(IEvent::CloseType, this);
-    Events::subscribe(IEvent::LoginType, this);
-    Events::subscribe(IEvent::SubmitType, this);
-    Events::subscribe(IEvent::AcceptType, this);
+    Log::print(level(e), "%s connection <Miner id=%" PRId64 ", ip=%s> via port: %d", tag, e->miner()->id(), e->miner()->ip(), e->port());
 }
 
 
-xmrig::ProxyDebug::~ProxyDebug()
+static inline void print(const CloseEvent *e)
 {
+    Log::print(level(e), "%s close <Miner id=%" PRId64 ", ip=%s>", tag, e->miner()->id(), e->miner()->ip());
 }
 
 
-void xmrig::ProxyDebug::onEvent(IEvent *event)
+static inline void print(const LoginEvent *e)
 {
-    if (!m_enabled) {
+    Log::print(level(e), "%s login <Miner id=%" PRId64 ", ip=%s>, <Request login=%s, agent=%s>",
+               tag, e->miner()->id(), e->miner()->ip(), e->miner()->user().data(), e->miner()->agent().data());
+}
+
+
+static inline void print(const SubmitEvent *e)
+{
+    if (e->isRejected()) {
+        LOG_ERR("%s submit <Miner id=%" PRId64 ", ip=%s>, message=%s", tag, e->miner()->id(), e->miner()->ip(), e->message());
+    }
+    else {
+        LOG_V5("%s submit <Miner id=%" PRId64 ", ip=%s>, <Job actualDiff=%" PRIu64 ">", tag, e->miner()->id(), e->miner()->ip(), e->request.actualDiff());
+    }
+}
+
+
+static inline void print(const AcceptEvent *e)
+{
+    const int64_t id = e->miner() ? e->miner()->id() : -1;
+    const char *ip   = e->miner() ? e->miner()->ip() : "?.?.?.?";
+
+    if (e->isRejected()) {
+        LOG_ERR("%s rejected <Miner id=%" PRId64 ", ip=%s>, <Result diff=%" PRIu64 ", elapsed=%" PRIu64 ">, error=%s",
+                 tag, id, ip, e->result.diff, e->result.elapsed, e->error());
+    }
+    else {
+        LOG_V5("%s accepted <Miner id=%" PRId64 ", ip=%s>, <Result diff=%" PRIu64 ", actualDiff=%" PRIu64 ", elapsed=%" PRIu64 ">",
+               tag, id, ip, e->result.diff, e->result.actualDiff, e->result.elapsed);
+    }
+}
+
+
+} // namespace xmrig
+
+
+void xmrig::ProxyDebug::onEvent(uint32_t type, IEvent *event)
+{
+    if (Log::verbose() < 5) {
         return;
     }
 
-    switch (event->type())
-    {
-    case IEvent::ConnectionType: {
-            auto e = static_cast<ConnectionEvent*>(event);
-            LOG_INFO("[debug] connection <Miner id=%" PRId64 ", ip=%s> via port: %d", e->miner()->id(), e->miner()->ip(), e->port());
-        }
-        break;
+    switch (type) {
+    case CONNECTION_EVENT:
+        return print(static_cast<const ConnectionEvent *>(event));
 
-    case IEvent::LoginType: {
-            auto e = static_cast<LoginEvent*>(event);
-            LOG_INFO("[debug] login <Miner id=%" PRId64 ", ip=%s>, <Request login=%s, agent=%s>", e->miner()->id(), e->miner()->ip(), e->miner()->user().data(), e->miner()->agent().data());
-        }
-        break;
+    case CLOSE_EVENT:
+        return print(static_cast<const CloseEvent *>(event));
 
-    case IEvent::CloseType: {
-            auto e = static_cast<CloseEvent*>(event);
-            LOG_INFO("[debug] close <Miner id=%" PRId64 ", ip=%s>", e->miner()->id(), e->miner()->ip());
-        }
-        break;
+    case LOGIN_EVENT:
+        return print(static_cast<const LoginEvent *>(event));
 
-    case IEvent::SubmitType: {
-            auto e = static_cast<SubmitEvent*>(event);
-            LOG_INFO("[debug] submit <Miner id=%" PRId64 ", ip=%s>, <Job actualDiff=%" PRIu64 ">", e->miner()->id(), e->miner()->ip(), e->request.actualDiff());
-        }
-        break;
+    case SUBMIT_EVENT:
+        return print(static_cast<const SubmitEvent *>(event));
 
-    case IEvent::AcceptType: {
-            auto e = static_cast<AcceptEvent*>(event);
-            LOG_INFO("[debug] accepted <Miner id=%" PRId64 ", ip=%s>, <Result diff=%" PRIu64 ", actualDiff=%" PRIu64 ", elapsed=%" PRIu64 ">",
-                     e->miner() ? e->miner()->id() : -1, e->miner() ? e->miner()->ip() : "?.?.?.?", e->result.diff, e->result.actualDiff, e->result.elapsed);
-        }
-        break;
-
-
-    default:
-        break;
-    }
-}
-
-
-void xmrig::ProxyDebug::onRejectedEvent(IEvent *event)
-{
-    if (!m_enabled) {
-        return;
-    }
-
-    switch (event->type())
-    {
-    case IEvent::ConnectionType: {
-            ConnectionEvent *e = static_cast<ConnectionEvent*>(event);
-            LOG_ERR("[error] connection <Miner id=%" PRId64 ", ip=%s> via port: %d", e->miner()->id(), e->miner()->ip(), e->port());
-        }
-        break;
-
-    case IEvent::LoginType: {
-            auto e = static_cast<LoginEvent*>(event);
-            LOG_ERR("[error] login <Miner id=%" PRId64 ", ip=%s>, <Request login=%s, agent=%s>", e->miner()->id(), e->miner()->ip(), e->miner()->user().data(), e->miner()->agent().data());
-        }
-        break;
-
-    case IEvent::CloseType: {
-            auto e = static_cast<CloseEvent*>(event);
-            LOG_ERR("[error] close <Miner id=%" PRId64 ", ip=%s>", e->miner()->id(), e->miner()->ip());
-        }
-        break;
-
-    case IEvent::SubmitType: {
-            auto e = static_cast<SubmitEvent*>(event);
-            LOG_ERR("[error] submit <Miner id=%" PRId64 ", ip=%s>, message=%s", e->miner()->id(), e->miner()->ip(), e->message());
-        }
-        break;
-
-    case IEvent::AcceptType: {
-            auto e = static_cast<AcceptEvent*>(event);
-            LOG_ERR("[error] rejected <Miner id=%" PRId64 ", ip=%s>, <Result diff=%" PRIu64 ", elapsed=%" PRIu64 ">, error=%s",
-                     e->miner() ? e->miner()->id() : -1, e->miner() ? e->miner()->ip() : "?.?.?.?", e->result.diff, e->result.elapsed, e->error());
-        }
-        break;
+    case ACCEPT_EVENT:
+        return print(static_cast<const AcceptEvent *>(event));
 
     default:
         break;

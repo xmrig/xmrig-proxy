@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -37,35 +31,31 @@ namespace xmrig {
 class SubmitEvent : public MinerEvent
 {
 public:
-    static inline SubmitEvent *create(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, const Algorithm &algorithm, const char* sig, const char* sig_data, int64_t extra_nonce)
-    {
-        return new (m_buf) SubmitEvent(miner, id, jobId, nonce, result, algorithm, sig, sig_data, extra_nonce);
-    }
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(SubmitEvent)
 
+    inline SubmitEvent(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, const Algorithm &algorithm, const char* sig, const char* sig_data, int64_t extra_nonce)
+        : MinerEvent(miner),
+          request(id, jobId, nonce, result, algorithm, sig, sig_data, extra_nonce),
+          m_error(Error::NoError)
+    {}
 
     bool expired = false;
     JobResult request;
-
 
     inline bool isRejected() const override { return m_error != Error::NoError; }
     inline const char *message() const      { return Error::toString(m_error); }
     inline Error::Code error() const        { return m_error; }
     inline void reject(Error::Code error)   { m_error  = error; }
 
-
-protected:
-    inline SubmitEvent(Miner *miner, int64_t id, const char *jobId, const char *nonce, const char *result, const Algorithm &algorithm, const char* sig, const char* sig_data, int64_t extra_nonce)
-        : MinerEvent(SubmitType, miner),
-          request(id, jobId, nonce, result, algorithm, sig, sig_data, extra_nonce),
-          m_error(Error::NoError)
-    {}
+protected:    
+    uint32_t type() const override          { return SUBMIT_EVENT; }
 
 private:
     Error::Code m_error;
 };
 
 
-} /* namespace xmrig */
+} // namespace xmrig
 
 
-#endif /* XMRIG_SUBMITEVENT_H */
+#endif // XMRIG_SUBMITEVENT_H

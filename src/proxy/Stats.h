@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,48 +20,38 @@
 #define XMRIG_STATS_H
 
 
-#include <stdint.h>
-
-
-#include "interfaces/IEventListener.h"
-#include "proxy/StatsData.h"
-#include "proxy/TickingCounter.h"
+#include "base/kernel/EventListener.h"
 
 
 namespace xmrig {
 
 
-class AcceptEvent;
-class Controller;
+class ConfigEvent;
 class ISplitter;
+class StatsData;
 
 
-class Stats : public IEventListener
+class Stats : public EventListener
 {
 public:
-    Stats(Controller *controller);
-    ~Stats() override;
+    XMRIG_DISABLE_COPY_MOVE(Stats)
 
+    Stats(const ConfigEvent *event);
+    ~Stats() override = default;
+
+    const StatsData &data() const;
+    double hashrate(int seconds) const;
     void tick(uint64_t ticks, const ISplitter *splitter);
 
-    inline const StatsData &data() const      { return m_data; }
-    inline double hashrate(int seconds) const { return m_hashrate.calc(seconds); }
-
 protected:
-    void onEvent(IEvent *event) override;
-    void onRejectedEvent(IEvent *event) override;
+    void onEvent(uint32_t type, IEvent *event) override;
 
 private:
-    void accept(const AcceptEvent *event);
-    void reject(const AcceptEvent *event);
-
-    Controller *m_controller;
-    StatsData m_data;
-    TickingCounter<uint32_t> m_hashrate;
+    XMRIG_DECL_PRIVATE()
 };
 
 
-} /* namespace xmrig */
+} // namespace xmrig
 
 
-#endif /* XMRIG_STATS_H */
+#endif // XMRIG_STATS_H

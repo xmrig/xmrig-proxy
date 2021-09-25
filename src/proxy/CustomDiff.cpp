@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,65 +16,87 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
-
-
-#include "core/config/Config.h"
-#include "core/Controller.h"
 #include "proxy/CustomDiff.h"
+#include "base/kernel/events/ConfigEvent.h"
+#include "base/kernel/events/SaveEvent.h"
+#include "base/kernel/Process.h"
+#include "base/tools/Arguments.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/Miner.h"
 
 
-xmrig::CustomDiff::CustomDiff(xmrig::Controller *controller) :
-    m_controller(controller)
+#include <cstdlib>
+#include <cstring>
+
+
+namespace xmrig {
+
+
+class CustomDiff::Private
 {
-}
+public:
+    constexpr static uint32_t kMinDiff  = 100;
+    constexpr static uint32_t kMaxDiff  = std::numeric_limits<uint32_t>::max();
+    constexpr static const char *kDiff  = "custom-diff";
+
+    inline static uint64_t parseDiff(const char *value)     { return (value && strlen(value) >= 3) ? parseDiff(strtoull(value, nullptr, 0)) : 0; }
+    inline static uint64_t parseDiff(const uint64_t value)  { return (value >= kMinDiff && value < kMaxDiff) ? value : 0; }
+    inline void read(const ConfigEvent *event)              { setDiff(event->reader()->getUint64(kDiff, m_diff)); }
+    inline void setDiff(const char *value)                  { setDiff(parseDiff(value)); }
+    inline void setDiff(uint64_t value)                     { m_diff = (value >= kMinDiff && value < kMaxDiff) ? value : 0; }
 
 
-xmrig::CustomDiff::~CustomDiff()
-{
-}
-
-
-void xmrig::CustomDiff::onEvent(IEvent *event)
-{
-    switch (event->type())
+    inline void save(rapidjson::Document &doc) const
     {
-    case IEvent::LoginType:
-        login(static_cast<LoginEvent*>(event));
-        break;
+        using namespace rapidjson;
+        doc.AddMember(StringRef(kDiff), m_diff ? Value(m_diff) : Value(kNullType), doc.GetAllocator());
+    }
 
-    default:
-        break;
+
+    void login(LoginEvent *event) const
+    {
+        event->miner()->setCustomDiff(m_diff);
+
+        if (event->miner()->user().size() >= 5) {
+            const char *str = strrchr(event->miner()->user(), '+');
+            uint64_t value  = 0;
+
+            if (str && (value = parseDiff(str + 1))) {
+                event->miner()->setCustomDiff(value);
+            }
+        }
+    }
+
+private:
+    uint64_t m_diff = 0;
+};
+
+
+} // namespace xmrig
+
+
+xmrig::CustomDiff::CustomDiff(const ConfigEvent *event) :
+    d(std::make_shared<Private>())
+{
+    d->setDiff(Process::arguments().value("--custom-diff"));
+
+    if (!event->isRejected()) {
+        d->read(event);
     }
 }
 
 
-void xmrig::CustomDiff::login(LoginEvent *event)
+void xmrig::CustomDiff::onEvent(uint32_t type, IEvent *event)
 {
-    if (event->miner()->routeId() != -1) {
-        return;
+    if (type == IEvent::CONFIG && event->data() == 0 && !event->isRejected()) {
+        return d->read(static_cast<const ConfigEvent *>(event));
     }
 
-    event->miner()->setCustomDiff(m_controller->config()->diff());
-
-    if (event->miner()->user().isNull()) {
-        return;
+    if (type == IEvent::SAVE && event->data() == 0) {
+        return d->save(static_cast<SaveEvent *>(event)->doc());
     }
 
-    const char *str = strrchr(event->miner()->user(), '+');
-    if (!str) {
-        return;
+    if (type == LOGIN_EVENT && event->route() == -1 && !event->isRejected()) {
+        return d->login(static_cast<LoginEvent*>(event));
     }
-
-    const unsigned long diff = strtoul(str + 1, nullptr, 10);
-    if (diff < 100 || diff >= INT_MAX) {
-        return;
-    }
-
-    event->miner()->setCustomDiff(diff);
 }

@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -38,26 +32,10 @@ namespace xmrig {
 class AcceptEvent : public MinerEvent
 {
 public:
-    static inline bool start(size_t mapperId, Miner *miner, const SubmitResult &result, bool donate, bool customDiff, const char *error = nullptr)
-    {
-        return exec(new (m_buf) AcceptEvent(mapperId, miner, result, donate, customDiff, error));
-    }
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(AcceptEvent)
 
-
-    const SubmitResult &result;
-
-
-    inline bool isCustomDiff() const        { return m_customDiff; }
-    inline bool isDonate() const            { return m_donate; }
-    inline bool isRejected() const override { return m_error != nullptr; }
-    inline const char *error() const        { return m_error; }
-    inline size_t mapperId() const          { return m_mapperId; }
-    inline uint64_t statsDiff() const       { return (miner() && miner()->customDiff() ? std::min(miner()->customDiff(), result.diff) : result.diff); }
-
-
-protected:
-    inline AcceptEvent(size_t mapperId, Miner *miner, const SubmitResult &result, bool donate, bool customDiff, const char *error)
-        : MinerEvent(AcceptType, miner),
+    inline AcceptEvent(size_t mapperId, Miner *miner, const SubmitResult &result, bool donate, bool customDiff, const char *error = nullptr)
+        : MinerEvent(miner),
           result(result),
           m_customDiff(customDiff),
           m_donate(donate),
@@ -65,16 +43,34 @@ protected:
           m_mapperId(mapperId)
     {}
 
+    ~AcceptEvent() override = default;
+
+    const SubmitResult &result;
+
+    inline bool isCustomDiff() const            { return m_customDiff; }
+    inline bool isCustomDiffStats() const       { return m_customDiffStats; }
+    inline bool isDonate() const                { return m_donate; }
+    inline bool isRejected() const override     { return m_error != nullptr; }
+    inline const char *error() const            { return m_error; }
+    inline size_t mapperId() const              { return m_mapperId; }
+    inline uint64_t statsDiff() const           { return (m_customDiffStats && miner() && miner()->customDiff() ? std::min(miner()->customDiff(), result.diff) : result.diff); }
+    inline void setCustomDiffStats(bool enable) { m_customDiffStats = enable; }
+
+//    inline uint64_t statsDiff() const       { return (miner() && miner()->customDiff() ? std::min(miner()->customDiff(), result.diff) : result.diff); }
+
+protected:
+    uint32_t type() const override              { return ACCEPT_EVENT; }
 
 private:
-    bool m_customDiff;
-    bool m_donate;
+    bool m_customDiffStats = 0;
+    const bool m_customDiff;
+    const bool m_donate;
     const char *m_error;
-    size_t m_mapperId;
+    const size_t m_mapperId;
 };
 
 
-} /* namespace xmrig */
+} // namespace xmrig
 
 
-#endif /* XMRIG_ACCEPTEVENT_H */
+#endif // XMRIG_ACCEPTEVENT_H

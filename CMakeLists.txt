@@ -15,6 +15,7 @@ option(WITH_ARGON2          "Enable Argon2 algorithms family" ON)
 option(WITH_ASTROBWT        "Enable AstroBWT algorithms family" ON)
 option(WITH_ENV_VARS        "Enable environment variables support in config file" ON)
 option(WITH_GOOGLE_BREAKPAD "Use Google Breakpad" OFF)
+option(WITH_DEPRECATED      "Enable deprecated config format support" ON)
 
 add_definitions(-DXMRIG_PROXY_PROJECT -DXMRIG_FORCE_TLS -DAPP_DEVEL)
 
@@ -33,11 +34,9 @@ include(base)
 add_subdirectory(src/base)
 
 set(HEADERS
-    src/core/config/Config_platform.h
-    src/core/config/Config.h
-    src/core/config/ConfigTransform.h
-    src/core/config/usage.h
-    src/core/Controller.h
+    src/proxy/config/MainConfig.h
+    src/proxy/config/usage.h
+    src/proxy/Controller.h
     src/donate.h
     src/net/JobResult.h
     src/net/strategies/DonateStrategy.h
@@ -45,16 +44,14 @@ set(HEADERS
     src/proxy/Counters.h
     src/proxy/CustomDiff.h
     src/proxy/Error.h
-    src/proxy/Events.h
     src/proxy/events/AcceptEvent.h
     src/proxy/events/CloseEvent.h
     src/proxy/events/ConnectionEvent.h
-    src/proxy/events/Event.h
+    src/proxy/events/ProxyEvent.h
     src/proxy/events/LoginEvent.h
     src/proxy/events/MinerEvent.h
     src/proxy/events/SubmitEvent.h
     src/proxy/interfaces/IEvent.h
-    src/proxy/interfaces/IEventListener.h
     src/proxy/interfaces/ISplitter.h
     src/proxy/log/AccessLog.h
     src/proxy/log/ShareLog.h
@@ -78,26 +75,24 @@ set(HEADERS
     src/proxy/Stats.h
     src/proxy/StatsData.h
     src/proxy/TickingCounter.h
-    src/proxy/workers/Worker.h
-    src/proxy/workers/Workers.h
-    src/ProxyApp.h
-    src/Summary.h
+#    src/proxy/workers/Worker.h
+#    src/proxy/workers/Workers.h
+#    src/ProxyApp.h
+#    src/Summary.h
     src/version.h
    )
 
 set(SOURCES
-    src/core/config/Config.cpp
-    src/core/config/ConfigTransform.cpp
-    src/core/Controller.cpp
+    src/proxy/config/MainConfig.cpp
+    src/proxy/Controller.cpp
     src/net/JobResult.cpp
     src/net/strategies/DonateStrategy.cpp
     src/proxy/BindHost.cpp
     src/proxy/Counters.cpp
     src/proxy/CustomDiff.cpp
     src/proxy/Error.cpp
-    src/proxy/Events.cpp
     src/proxy/events/ConnectionEvent.h
-    src/proxy/events/Event.cpp
+#    src/proxy/events/ProxyEvent.cpp
     src/proxy/events/MinerEvent.cpp
     src/proxy/log/AccessLog.cpp
     src/proxy/log/ShareLog.cpp
@@ -117,12 +112,11 @@ set(SOURCES
     src/proxy/splitters/nicehash/NonceStorage.cpp
     src/proxy/splitters/simple/SimpleMapper.cpp
     src/proxy/splitters/simple/SimpleSplitter.cpp
-    src/proxy/splitters/Splitter.cpp
     src/proxy/Stats.cpp
-    src/proxy/workers/Worker.cpp
-    src/proxy/workers/Workers.cpp
-    src/ProxyApp.cpp
-    src/Summary.cpp
+#    src/proxy/workers/Worker.cpp
+#    src/proxy/workers/Workers.cpp
+#    src/ProxyApp.cpp
+#    src/Summary.cpp
     src/xmrig.cpp
    )
 
@@ -138,8 +132,8 @@ else()
 endif()
 
 if (WITH_HTTP)
-    list(APPEND HEADERS src/api/v1/ApiRouter.h)
-    list(APPEND SOURCES src/api/v1/ApiRouter.cpp)
+#    list(APPEND HEADERS src/api/v1/ApiRouter.h)
+#    list(APPEND SOURCES src/api/v1/ApiRouter.cpp)
 endif()
 
 if (WITH_TLS)

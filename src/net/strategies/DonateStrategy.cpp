@@ -16,17 +16,16 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include "net/strategies/DonateStrategy.h"
 #include "3rdparty/rapidjson/document.h"
 #include "base/crypto/keccak.h"
 #include "base/kernel/interfaces/IStrategyListener.h"
-#include "base/kernel/Platform.h"
+#include "base/kernel/Process.h"
 #include "base/net/stratum/Client.h"
 #include "base/tools/Cvt.h"
-#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "donate.h"
+#include "proxy/config/MainConfig.h"
 #include "proxy/Counters.h"
 #include "proxy/StatsData.h"
 
@@ -51,7 +50,7 @@ xmrig::DonateStrategy::DonateStrategy(Controller *controller, IStrategyListener 
     keccak(reinterpret_cast<const uint8_t *>(user), strlen(user), hash);
     Cvt::toHex(userId, sizeof(userId), hash, 32);
 
-    m_client = new Client(-1, Platform::userAgent(), this);
+    m_client = new Client(-1, Process::userAgent(), this);
 
 #   ifdef XMRIG_FEATURE_TLS
     m_client->setPool(Pool("donate.ssl.xmrig.com", 8443, userId, nullptr, nullptr, Pool::kKeepAliveTimeout, false, true, Pool::MODE_DAEMON));

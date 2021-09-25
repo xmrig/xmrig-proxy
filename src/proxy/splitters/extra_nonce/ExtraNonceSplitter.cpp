@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2021 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,8 +18,8 @@
 
 #include "proxy/splitters/extra_nonce/ExtraNonceSplitter.h"
 #include "base/io/log/Log.h"
-#include "core/config/Config.h"
 #include "core/Controller.h"
+#include "proxy/config/MainConfig.h"
 #include "proxy/Counters.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
@@ -35,33 +29,30 @@
 #include "Summary.h"
 
 
+#include <stdexcept>
+
+
 #define LABEL(x) " \x1B[01;30m" x ":\x1B[0m "
 
 
-xmrig::ExtraNonceSplitter* xmrig::ExtraNonceSplitter::Create(Controller* controller)
+std::shared_ptr<xmrig::ExtraNonceSplitter> xmrig::ExtraNonceSplitter::create(Controller *controller)
 {
     for (const Pool& pool : controller->config()->pools().data()) {
         if ((pool.algorithm() == Algorithm::ASTROBWT_DERO) || (pool.coin() == Coin::DERO)) {
-            LOG_ERR("extra_nonce mode is incompatible with Dero mining");
-            return nullptr;
+            throw std::runtime_error("extra_nonce mode is incompatible with Dero mining");
         }
+
         if (pool.mode() != Pool::MODE_DAEMON) {
-            LOG_ERR("extra_nonce mode can only be used when mining to daemon");
-            return nullptr;
+            throw std::runtime_error("extra_nonce mode can only be used when mining to daemon");
         }
     }
-    return new ExtraNonceSplitter(controller);
+
+    return std::shared_ptr<ExtraNonceSplitter>(new ExtraNonceSplitter(controller));
 }
 
 
 xmrig::ExtraNonceSplitter::ExtraNonceSplitter(Controller *controller) : Splitter(controller)
 {
-}
-
-
-xmrig::ExtraNonceSplitter::~ExtraNonceSplitter()
-{
-    delete m_upstream;
 }
 
 
@@ -73,7 +64,7 @@ xmrig::Upstreams xmrig::ExtraNonceSplitter::upstreams() const
 
 void xmrig::ExtraNonceSplitter::connect()
 {
-    m_upstream = new ExtraNonceMapper(0, m_controller);
+    m_upstream = std::make_shared<ExtraNonceMapper>(0, m_controller);
     m_upstream->start();
 }
 
@@ -97,9 +88,8 @@ void xmrig::ExtraNonceSplitter::printConnections()
 }
 
 
-void xmrig::ExtraNonceSplitter::tick(uint64_t ticks)
+void xmrig::ExtraNonceSplitter::tick(uint64_t ticks, uint64_t now)
 {
-    const uint64_t now = uv_now(uv_default_loop());
     m_upstream->tick(ticks, now);
 }
 
@@ -112,30 +102,21 @@ void xmrig::ExtraNonceSplitter::printState()
 #endif
 
 
-void xmrig::ExtraNonceSplitter::onConfigChanged(Config *config, Config *previousConfig)
+void xmrig::ExtraNonceSplitter::onEvent(uint32_t type, IEvent *event)
 {
-    if (config->pools() != previousConfig->pools()) {
-        config->pools().print();
-        m_upstream->reload(config->pools());
+    if (event->isRejected()) {
+        return;
     }
-}
 
+    switch (type) {
+    case CLOSE_EVENT:
+        return remove(static_cast<const CloseEvent *>(event)->miner());
 
-void xmrig::ExtraNonceSplitter::onEvent(IEvent *event)
-{
-    switch (event->type())
-    {
-    case IEvent::CloseType:
-        remove(static_cast<CloseEvent*>(event)->miner());
-        break;
+    case LOGIN_EVENT:
+        return login(static_cast<const LoginEvent *>(event));
 
-    case IEvent::LoginType:
-        login(static_cast<LoginEvent*>(event));
-        break;
-
-    case IEvent::SubmitType:
-        submit(static_cast<SubmitEvent*>(event));
-        break;
+    case SUBMIT_EVENT:
+        return submit(static_cast<SubmitEvent *>(event));
 
     default:
         break;
@@ -143,7 +124,7 @@ void xmrig::ExtraNonceSplitter::onEvent(IEvent *event)
 }
 
 
-void xmrig::ExtraNonceSplitter::login(LoginEvent *event)
+void xmrig::ExtraNonceSplitter::login(const LoginEvent *event)
 {
     if (event->miner()->routeId() != -1) {
         return;

@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,15 +18,14 @@
 
 #include "proxy/splitters/nicehash/NonceSplitter.h"
 #include "base/io/log/Log.h"
-#include "core/config/Config.h"
 #include "core/Controller.h"
+#include "proxy/config/MainConfig.h"
 #include "proxy/Counters.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"
 #include "proxy/Miner.h"
 #include "proxy/splitters/nicehash/NonceMapper.h"
-#include "Summary.h"
 
 
 #include <cinttypes>
@@ -41,7 +34,7 @@
 #define LABEL(x) " \x1B[01;30m" x ":\x1B[0m "
 
 
-xmrig::NonceSplitter::NonceSplitter(Controller *controller) : Splitter(controller)
+xmrig::NonceSplitter::NonceSplitter(Controller *controller, const ConfigEvent *event) : Splitter(controller)
 {
 }
 
@@ -111,10 +104,8 @@ void xmrig::NonceSplitter::printConnections()
 }
 
 
-void xmrig::NonceSplitter::tick(uint64_t ticks)
+void xmrig::NonceSplitter::tick(uint64_t ticks, uint64_t now)
 {
-    const uint64_t now = uv_now(uv_default_loop());
-
     for (NonceMapper *mapper : m_upstreams) {
         mapper->tick(ticks, now);
     }
@@ -131,33 +122,21 @@ void xmrig::NonceSplitter::printState()
 #endif
 
 
-void xmrig::NonceSplitter::onConfigChanged(Config *config, Config *previousConfig)
+void xmrig::NonceSplitter::onEvent(uint32_t type, IEvent *event)
 {
-    if (config->pools() != previousConfig->pools()) {
-        config->pools().print();
-
-        for (NonceMapper *mapper : m_upstreams) {
-            mapper->reload(config->pools());
-        }
+    if (event->isRejected()) {
+        return;
     }
-}
 
+    switch (type) {
+    case CLOSE_EVENT:
+        return remove(static_cast<const CloseEvent *>(event)->miner());
 
-void xmrig::NonceSplitter::onEvent(IEvent *event)
-{
-    switch (event->type())
-    {
-    case IEvent::CloseType:
-        remove(static_cast<CloseEvent*>(event)->miner());
-        break;
+    case LOGIN_EVENT:
+        return login(static_cast<const LoginEvent *>(event));
 
-    case IEvent::LoginType:
-        login(static_cast<LoginEvent*>(event));
-        break;
-
-    case IEvent::SubmitType:
-        submit(static_cast<SubmitEvent*>(event));
-        break;
+    case SUBMIT_EVENT:
+        return submit(static_cast<SubmitEvent *>(event));
 
     default:
         break;
@@ -165,7 +144,7 @@ void xmrig::NonceSplitter::onEvent(IEvent *event)
 }
 
 
-void xmrig::NonceSplitter::login(LoginEvent *event)
+void xmrig::NonceSplitter::login(const LoginEvent *event)
 {
     if (event->miner()->routeId() != -1) {
         return;

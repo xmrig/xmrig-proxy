@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2021 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -29,15 +23,16 @@
 #include "3rdparty/rapidjson/writer.h"
 #include "base/io/json/Json.h"
 #include "base/io/log/Log.h"
+#include "base/kernel/Events.h"
+#include "base/kernel/Process.h"
 #include "base/net/stratum/Job.h"
 #include "base/net/tools/NetBuffer.h"
-#include "base/tools/Cvt.h"
 #include "base/tools/Chrono.h"
+#include "base/tools/Cvt.h"
 #include "base/tools/Handle.h"
 #include "net/JobResult.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"
-#include "proxy/Events.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
@@ -228,7 +223,8 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
             m_agent    = Json::getString(params, "agent");
             m_rigId    = Json::getString(params, "rigid");
 
-            LoginEvent::create(this, id, algorithms, params)->start();
+            Process::events().send<LoginEvent>(this, id, algorithms, params);
+
             return true;
         }
 
@@ -250,29 +246,30 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
 
         Algorithm algorithm(Json::getString(params, "algo"));
 
-        SubmitEvent *event = SubmitEvent::create(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm, Json::getString(params, "sig"), m_signatureData, m_extraNonce);
+        SubmitEvent event(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm, Json::getString(params, "sig"), m_signatureData, m_extraNonce);
 
-        if (!event->request.isValid() || event->request.actualDiff() < diff()) {
-            event->reject(Error::LowDifficulty);
+        if (!event.request.isValid() || event.request.actualDiff() < diff()) {
+            event.reject(Error::LowDifficulty);
         }
-        else if (hasExtension(EXT_NICEHASH) && !event->request.isCompatible(m_fixedByte)) {
-            event->reject(Error::InvalidNonce);
+        else if (hasExtension(EXT_NICEHASH) && !event.request.isCompatible(m_fixedByte)) {
+            event.reject(Error::InvalidNonce);
         }
 
-        if (event->error() == Error::NoError && m_customDiff && event->request.actualDiff() < m_diff) {
+        if (event.error() == Error::NoError && m_customDiff && event.request.actualDiff() < m_diff) {
             success(id, "OK");
 
-            SubmitResult result = SubmitResult(1, m_customDiff, event->request.actualDiff(), event->request.id, 0);
-            AcceptEvent::start(m_mapperId, this, result, false, true);
+            SubmitResult result = SubmitResult(1, m_customDiff, event.request.actualDiff(), event.request.id, 0);
+            Process::events().send<AcceptEvent>(m_mapperId, this, result, false, true);
 
             return true;
         }
 
-        if (!event->start()) {
-            replyWithError(id, event->message());
+        Process::events().send(event);
+        if (event.isRejected()) {
+            replyWithError(id, event.message());
         }
 
-        return event->error() != Error::InvalidNonce;
+        return event.error() != Error::InvalidNonce;
     }
 
     if (strcmp(method, "keepalived") == 0) {
@@ -550,7 +547,7 @@ void xmrig::Miner::shutdown(bool)
                     return;
                 }
 
-                CloseEvent::start(miner);
+                Process::events().send<CloseEvent>(miner);
                 m_storage.remove(handle->data);
             });
         }

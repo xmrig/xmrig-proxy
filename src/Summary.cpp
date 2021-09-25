@@ -79,9 +79,9 @@ static void print_commands(xmrig::Controller *)
 
 void Summary::print(xmrig::Controller *controller)
 {
-    controller->config()->printVersions();
+//    controller->config()->printVersions(); // FIXME
     print_mode(controller);
-    controller->config()->pools().print();
+//    controller->config()->pools().print(); // FIXME
     print_bind(controller);
     print_commands(controller);
 }

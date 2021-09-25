@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,11 +16,9 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
-
-
+#include "proxy/splitters/simple/SimpleSplitter.h"
 #include "base/io/log/Log.h"
-#include "core/config/Config.h"
+#include "proxy/config/MainConfig.h"
 #include "core/Controller.h"
 #include "proxy/Counters.h"
 #include "proxy/events/CloseEvent.h"
@@ -34,16 +26,29 @@
 #include "proxy/events/SubmitEvent.h"
 #include "proxy/Miner.h"
 #include "proxy/splitters/simple/SimpleMapper.h"
-#include "proxy/splitters/simple/SimpleSplitter.h"
-#include "Summary.h"
+#include "base/kernel/Process.h"
+#include "base/tools/Arguments.h"
+#include "base/kernel/events/ConfigEvent.h"
+#include "base/kernel/events/SaveEvent.h"
+
+
+#include <cinttypes>
 
 
 #define LABEL(x) " \x1B[01;30m" x ":\x1B[0m "
 
 
-xmrig::SimpleSplitter::SimpleSplitter(xmrig::Controller *controller) : Splitter(controller),
-    m_reuseTimeout(static_cast<uint64_t>(controller->config()->reuseTimeout())),
-    m_sequence(0)
+namespace xmrig {
+
+
+static const char *kReuseTimeout    = "reuse-timeout";
+
+
+} // namespace xmrig
+
+
+xmrig::SimpleSplitter::SimpleSplitter(xmrig::Controller *controller, const ConfigEvent *event) : Splitter(controller),
+    m_reuseTimeout(event->reader()->getUint64(kReuseTimeout, Process::arguments().value("--reuse-timeout").toUint64()))
 {
 }
 
@@ -96,13 +101,12 @@ void xmrig::SimpleSplitter::printConnections()
 }
 
 
-void xmrig::SimpleSplitter::tick(uint64_t ticks)
+void xmrig::SimpleSplitter::tick(uint64_t ticks, uint64_t now)
 {
-    const uint64_t now = uv_now(uv_default_loop());
-
     for (SimpleMapper *mapper : m_released) {
         delete mapper;
     }
+
     m_released.clear();
 
     for (auto const &kv : m_upstreams) {
@@ -131,35 +135,28 @@ void xmrig::SimpleSplitter::printState()
 #endif
 
 
-void xmrig::SimpleSplitter::onConfigChanged(Config *config, Config *previousConfig)
+void xmrig::SimpleSplitter::onEvent(uint32_t type, IEvent *event)
 {
-    m_reuseTimeout = static_cast<uint64_t>(config->reuseTimeout());
-
-    if (config->pools() != previousConfig->pools()) {
-        config->pools().print();
-
-        for (auto const &kv : m_upstreams) {
-            kv.second->reload(config->pools());
-        }
+    if (event->isRejected()) {
+        return;
     }
-}
 
+    switch (type) {
+    case CLOSE_EVENT:
+        return remove(static_cast<const CloseEvent *>(event)->miner());
 
-void xmrig::SimpleSplitter::onEvent(IEvent *event)
-{
-    switch (event->type())
-    {
-    case IEvent::CloseType:
-        remove(static_cast<CloseEvent*>(event)->miner());
+    case LOGIN_EVENT:
+        return login(static_cast<const LoginEvent *>(event));
+
+    case SUBMIT_EVENT:
+        return submit(static_cast<SubmitEvent *>(event));
+
+    case IEvent::CONFIG:
+        m_reuseTimeout = static_cast<const ConfigEvent *>(event)->reader()->getUint64(kReuseTimeout, m_reuseTimeout);
         break;
 
-    case IEvent::LoginType:
-        login(static_cast<LoginEvent*>(event));
-        break;
-
-    case IEvent::SubmitType:
-        submit(static_cast<SubmitEvent*>(event));
-        break;
+    case IEvent::SAVE:
+        return save(static_cast<SaveEvent *>(event)->doc());
 
     default:
         break;
@@ -167,7 +164,7 @@ void xmrig::SimpleSplitter::onEvent(IEvent *event)
 }
 
 
-void xmrig::SimpleSplitter::login(LoginEvent *event)
+void xmrig::SimpleSplitter::login(const LoginEvent *event)
 {
     if (event->miner()->routeId() != -1) {
         return;
@@ -236,6 +233,13 @@ void xmrig::SimpleSplitter::removeUpstream(uint64_t id)
     if (it != m_upstreams.end()) {
         m_upstreams.erase(it);
     }
+}
+
+
+void xmrig::SimpleSplitter::save(rapidjson::Document &doc) const
+{
+    using namespace rapidjson;
+    doc.AddMember(StringRef(kReuseTimeout), m_reuseTimeout ? Value(m_reuseTimeout) : Value(kNullType), doc.GetAllocator());
 }
 
 

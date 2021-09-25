@@ -16,11 +16,41 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_CONTROLLER_LEGACY_H
-#define XMRIG_CONTROLLER_LEGACY_H
+#ifndef XMRIG_CONTROLLER_H
+#define XMRIG_CONTROLLER_H
 
 
-#include "proxy/Controller.h"
+#include "base/kernel/Service.h"
+#include "proxy/workers/Worker.h"
 
 
-#endif /* XMRIG_CONTROLLER_LEGACY_H */
+namespace xmrig {
+
+
+class App;
+class MainConfig;
+
+
+class Controller : public Service
+{
+public:
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(Controller)
+
+    Controller(App *app);
+    ~Controller() override;
+
+    App *app() const;
+    MainConfig *config() const;
+
+protected:
+    void onEvent(uint32_t type, IEvent *event) override;
+
+private:
+    XMRIG_DECL_PRIVATE()
+};
+
+
+} // namespace xmrig
+
+
+#endif // XMRIG_CONTROLLER_H

@@ -25,10 +25,11 @@ static bool dumpCallback(const google_breakpad::MinidumpDescriptor &descriptor, 
 }
 #endif
 
-#include "ProxyApp.h"
+#include "base/kernel/App.h"
 #include "base/kernel/Entry.h"
 #include "base/kernel/Process.h"
-#include "core/config/usage.h"
+#include "proxy/config/usage.h"
+#include "proxy/Controller.h"
 
 
 int main(int argc, char **argv) {
@@ -50,7 +51,8 @@ int main(int argc, char **argv) {
         }
     }
 
-    ProxyApp app;
+    App app;
+    app.add<Controller>(&app);
 
     return app.exec();
 }

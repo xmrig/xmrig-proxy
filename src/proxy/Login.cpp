@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,60 +19,75 @@
 #include "proxy/Login.h"
 #include "base/io/log/Log.h"
 #include "base/io/log/Tags.h"
-#include "core/config/Config.h"
-#include "core/Controller.h"
+#include "base/kernel/events/ConfigEvent.h"
+#include "base/kernel/events/SaveEvent.h"
+#include "base/kernel/Process.h"
+#include "base/tools/Arguments.h"
 #include "proxy/Error.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/Miner.h"
 
 
-#include <climits>
 #include <cstdlib>
 #include <cstring>
 
 
-xmrig::Login::Login(Controller *controller) :
-    m_controller(controller)
+namespace xmrig {
+
+
+class Login::Private
 {
+public:
+    constexpr static const char *kKey   = "access-password";
+
+    inline void read(const ConfigEvent *event)          { password = event->reader()->getString(kKey, password); }
+    inline void save(rapidjson::Document &doc) const    { doc.AddMember(rapidjson::StringRef(kKey), password.toJSON(), doc.GetAllocator()); }
+
+    void login(LoginEvent *event) const;
+
+    String password;
+};
+
+
+} // namespace xmrig
+
+
+xmrig::Login::Login(const ConfigEvent *event) :
+    d(std::make_shared<Private>())
+{
+    d->password = Process::arguments().value("--access-password");
+    d->read(event);
 }
 
 
-xmrig::Login::~Login() = default;
-
-
-void xmrig::Login::onEvent(IEvent *event)
+void xmrig::Login::onEvent(uint32_t type, IEvent *event)
 {
-    switch (event->type())
-    {
-    case IEvent::LoginType:
-        login(static_cast<LoginEvent*>(event));
-        break;
+    if (type == IEvent::CONFIG && event->data() == 0 && !event->isRejected()) {
+        return d->read(static_cast<const ConfigEvent *>(event));
+    }
 
-    default:
-        break;
+    if (type == IEvent::SAVE && event->data() == 0) {
+        return d->save(static_cast<SaveEvent *>(event)->doc());
+    }
+
+    if (type == LOGIN_EVENT && !event->isRejected()) {
+        return d->login(static_cast<LoginEvent *>(event));;
     }
 }
 
 
-void xmrig::Login::login(LoginEvent *event)
+void xmrig::Login::Private::login(LoginEvent *event) const
 {
-    const String &password = m_controller->config()->password();
-    if (!password.isNull() && event->miner()->password() != password) {
-        return reject(event, Error::toString(Error::Forbidden));
+    if (password.isNull() || event->miner()->password() == password) {
+        return;
     }
-}
 
+    const char *message = Error::toString(Error::Forbidden);
 
-void xmrig::Login::reject(LoginEvent *event, const char *message)
-{
     event->reject();
     event->miner()->replyWithError(event->loginId, message);
     event->miner()->close();
 
-    if (!m_controller->config()->isVerbose()) {
-        return;
-    }
-
-    LOG_INFO("%s " RED_BOLD("deny") " " WHITE_BOLD("\"%s\"") " from " CYAN_BOLD("%s") WHITE_BOLD(" (%s)") " reason " RED("\"%s\""),
-             Tags::proxy(), event->miner()->rigId(true).data(), event->miner()->ip(), event->miner()->agent().data(), message);
+    LOG_V1("%s " RED_BOLD("deny") " " WHITE_BOLD("\"%s\"") " from " CYAN_BOLD("%s") WHITE_BOLD(" (%s)") " reason " RED("\"%s\""),
+           Tags::proxy(), event->miner()->rigId(true).data(), event->miner()->ip(), event->miner()->agent().data(), message);
 }

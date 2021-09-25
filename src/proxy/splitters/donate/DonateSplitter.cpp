@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2021 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,8 +19,8 @@
 #include "proxy/splitters/donate/DonateSplitter.h"
 #include "base/io/json/Json.h"
 #include "base/net/stratum/Pool.h"
-#include "core/config/Config.h"
 #include "core/Controller.h"
+#include "proxy/config/MainConfig.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
 #include "proxy/events/SubmitEvent.h"
@@ -34,27 +28,27 @@
 #include "proxy/splitters/donate/DonateMapper.h"
 
 
-xmrig::DonateSplitter::DonateSplitter(xmrig::Controller *controller) :
+xmrig::DonateSplitter::DonateSplitter(Controller *controller) :
     m_controller(controller)
 {
 }
 
 
-void xmrig::DonateSplitter::onEvent(IEvent *event)
+void xmrig::DonateSplitter::onEvent(uint32_t type, IEvent *event)
 {
-    switch (event->type())
-    {
-    case IEvent::CloseType:
-        remove(static_cast<CloseEvent*>(event)->miner());
-        break;
+    if (event->isRejected()) {
+        return;
+    }
 
-    case IEvent::LoginType:
-        login(static_cast<LoginEvent*>(event));
-        break;
+    switch (type) {
+    case CLOSE_EVENT:
+        return remove(static_cast<const CloseEvent *>(event)->miner());
 
-    case IEvent::SubmitType:
-        submit(static_cast<SubmitEvent*>(event));
-        break;
+    case LOGIN_EVENT:
+        return login(static_cast<LoginEvent *>(event));
+
+    case SUBMIT_EVENT:
+        return submit(static_cast<SubmitEvent *>(event));
 
     default:
         break;

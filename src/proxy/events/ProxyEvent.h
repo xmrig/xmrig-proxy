@@ -16,52 +16,26 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_PROXYAPP_H
-#define XMRIG_PROXYAPP_H
+#ifndef XMRIG_PROXYEVENT_H
+#define XMRIG_PROXYEVENT_H
 
 
-#include "base/kernel/interfaces/IConsoleListener.h"
-#include "base/kernel/interfaces/ISignalListener.h"
-#include "base/tools/Object.h"
-
-
-#include <memory>
+#include "base/kernel/events/Event.h"
 
 
 namespace xmrig {
 
 
-class Console;
-class Controller;
-class Process;
-class Signals;
-
-
-class ProxyApp : public IConsoleListener, public ISignalListener
-{
-public:
-    XMRIG_DISABLE_COPY_MOVE(ProxyApp)
-
-    ProxyApp();
-    ~ProxyApp() override;
-
-    int exec();
-
-protected:
-    void onConsoleCommand(char command) override;
-    void onSignal(int signum) override;
-
-private:
-    bool background(int &rc);
-    void close();
-
-    std::shared_ptr<Console> m_console;
-    std::shared_ptr<Controller> m_controller;
-    std::shared_ptr<Signals> m_signals;
+enum ProxyEvent : uint32_t {
+    CONNECTION_EVENT = 0x70000000,
+    CLOSE_EVENT,
+    LOGIN_EVENT,
+    SUBMIT_EVENT,
+    ACCEPT_EVENT
 };
 
 
-} /* namespace xmrig */
+} // namespace xmrig
 
 
-#endif /* XMRIG_PROXYAPP_H */
+#endif // XMRIG_PROXYEVENT_H

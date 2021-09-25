@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,10 +20,6 @@
 #define XMRIG_LOGINEVENT_H
 
 
-#include <cstdint>
-
-
-#include "3rdparty/rapidjson/fwd.h"
 #include "base/crypto/Algorithm.h"
 #include "base/tools/String.h"
 #include "proxy/events/MinerEvent.h"
@@ -41,11 +31,16 @@ namespace xmrig {
 class LoginEvent : public MinerEvent
 {
 public:
-    static inline LoginEvent *create(Miner *miner, int64_t id, const Algorithms &algorithms, const rapidjson::Value &params)
-    {
-        return new (m_buf) LoginEvent(miner, id, algorithms, params);
-    }
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(LoginEvent)
 
+    inline LoginEvent(Miner *miner, int64_t id, const Algorithms &algorithms, const rapidjson::Value &params)
+        : MinerEvent(miner),
+          algorithms(algorithms),
+          loginId(id),
+          params(params)
+    {}
+
+    ~LoginEvent() = default;
 
     const Algorithms &algorithms;
     const int64_t loginId;
@@ -53,18 +48,12 @@ public:
     int error = -1;
     String flow;
 
-
 protected:
-    inline LoginEvent(Miner *miner, int64_t id, const Algorithms &algorithms, const rapidjson::Value &params)
-        : MinerEvent(LoginType, miner),
-          algorithms(algorithms),
-          loginId(id),
-          params(params)
-    {}
+    uint32_t type() const override  { return LOGIN_EVENT; }
 };
 
 
-} /* namespace xmrig */
+} // namespace xmrig
 
 
-#endif /* XMRIG_LOGINEVENT_H */
+#endif // XMRIG_LOGINEVENT_H

@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,11 +16,13 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include "proxy/log/AccessLog.h"
+#include "base/io/log/FileLogWriter.h"
+#include "base/kernel/events/ConfigEvent.h"
+#include "base/kernel/events/SaveEvent.h"
+#include "base/kernel/Process.h"
+#include "base/tools/Arguments.h"
 #include "base/tools/Chrono.h"
-#include "core/config/Config.h"
-#include "core/Controller.h"
 #include "proxy/Counters.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
@@ -40,60 +36,97 @@
 #include <ctime>
 
 
-xmrig::AccessLog::AccessLog(Controller *controller)
+namespace xmrig {
+
+
+class AccessLog::Private
 {
-    const char *fileName = controller->config()->accessLog();
-    if (fileName) {
-        m_writer.open(fileName);
-    }
+public:
+    constexpr static const char *kKey   = "access-log-file";
+
+    inline bool isOpen() const                          { return writer && writer->isOpen(); }
+    inline String read(const ConfigEvent *event) const  { return event->reader()->getString(kKey, fileName); }
+    inline void open()                                  { writer = fileName.isEmpty() ? nullptr : std::make_shared<FileLogWriter>(fileName); }
+    inline void save(rapidjson::Document &doc) const    { doc.AddMember(rapidjson::StringRef(kKey), fileName.toJSON(), doc.GetAllocator()); }
+
+    void apply(const String &next);
+    void close(const CloseEvent *e);
+    void login(const LoginEvent *e);
+    void write(const char *fmt, ...);
+
+    std::shared_ptr<FileLogWriter> writer;
+    String fileName;
+};
+
+
+} // namespace xmrig
+
+
+xmrig::AccessLog::AccessLog(const ConfigEvent *event) :
+    d(std::make_shared<Private>())
+{
+    d->fileName = Process::arguments().value("--access-log-file");
+    d->fileName = d->read(event);
+    d->open();
 }
 
 
-xmrig::AccessLog::~AccessLog() = default;
-
-
-void xmrig::AccessLog::onEvent(IEvent *event)
+void xmrig::AccessLog::onEvent(uint32_t type, IEvent *event)
 {
-    if (!m_writer.isOpen()) {
+    if (type == IEvent::CONFIG && event->data() == 0 && !event->isRejected()) {
+        return d->apply(d->read(static_cast<const ConfigEvent *>(event)));
+    }
+
+    if (type == IEvent::SAVE && event->data() == 0) {
+        return d->save(static_cast<SaveEvent *>(event)->doc());
+    }
+
+    if (!d->isOpen()) {
         return;
     }
 
-    switch (event->type())
-    {
-    case IEvent::LoginType:
-        {
-            auto e = static_cast<LoginEvent*>(event);
-            write("#%" PRId64 " login: %s, \"%s\", flow: \"%s\", ua: \"%s\", count: %" PRIu64,
-                  e->miner()->id(), e->miner()->ip(), e->miner()->user().data(), e->flow.data(), e->miner()->agent().data(), Counters::miners());
-        }
-        break;
+    if (type == LOGIN_EVENT && !event->isRejected()) {
+        return d->login(static_cast<const LoginEvent *>(event));
+    }
 
-    case IEvent::CloseType:
-        {
-            auto e = static_cast<CloseEvent*>(event);
-            if (e->miner()->mapperId() == -1) {
-                break;
-            }
-
-            const double time = static_cast<double>(Chrono::currentMSecsSinceEpoch() - e->miner()->timestamp()) / 1000.0;
-
-            write("#%" PRId64 " close: %s, \"%s\", time: %03.1fs, rx/tx: %" PRIu64 "/%" PRIu64 ", count: %" PRIu64,
-                  e->miner()->id(), e->miner()->ip(), e->miner()->user().data(), time, e->miner()->rx(), e->miner()->tx(), Counters::miners());
-        }
-        break;
-
-    default:
-        break;
+    if (type == CLOSE_EVENT && !event->isRejected()) {
+        return d->close(static_cast<const CloseEvent *>(event));
     }
 }
 
 
-void xmrig::AccessLog::onRejectedEvent(IEvent *)
+void xmrig::AccessLog::Private::apply(const String &next)
 {
+    if (fileName == next) {
+        return;
+    }
+
+    fileName = next;
+    open();
 }
 
 
-void xmrig::AccessLog::write(const char *fmt, ...)
+void xmrig::AccessLog::Private::close(const CloseEvent *e)
+{
+    if (e->miner()->mapperId() == -1) {
+        return;
+    }
+
+    const double time = static_cast<double>(Chrono::currentMSecsSinceEpoch() - e->miner()->timestamp()) / 1000.0;
+
+    write("#%" PRId64 " close: %s, \"%s\", time: %03.1fs, rx/tx: %" PRIu64 "/%" PRIu64 ", count: %" PRIu64,
+          e->miner()->id(), e->miner()->ip(), e->miner()->user().data(), time, e->miner()->rx(), e->miner()->tx(), Counters::miners());
+}
+
+
+void xmrig::AccessLog::Private::login(const LoginEvent *e)
+{
+    write("#%" PRId64 " login: %s, \"%s\", flow: \"%s\", ua: \"%s\", count: %" PRIu64,
+          e->miner()->id(), e->miner()->ip(), e->miner()->user().data(), e->flow.data(), e->miner()->agent().data(), Counters::miners());
+}
+
+
+void xmrig::AccessLog::Private::write(const char *fmt, ...)
 {
     time_t now = time(nullptr);
     tm stime{};
@@ -117,7 +150,7 @@ void xmrig::AccessLog::write(const char *fmt, ...)
         return;
     }
 
-    va_list args;
+    va_list args{};
     va_start(args, fmt);
 
     const int rc = vsnprintf(buf + size, sizeof(buf) - size, fmt, args);
@@ -128,5 +161,5 @@ void xmrig::AccessLog::write(const char *fmt, ...)
         return;
     }
 
-    m_writer.writeLine(buf, std::min<size_t>(sizeof(buf), size + rc));
+    writer->writeLine(buf, std::min<size_t>(sizeof(buf), size + rc));
 }

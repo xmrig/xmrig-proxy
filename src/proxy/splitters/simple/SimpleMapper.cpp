@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,12 +19,14 @@
 #include "proxy/splitters/simple/SimpleMapper.h"
 #include "base/io/log/Log.h"
 #include "base/io/log/Tags.h"
+#include "base/kernel/Events.h"
+#include "base/kernel/Process.h"
 #include "base/net/stratum/Client.h"
 #include "base/net/stratum/Pools.h"
-#include "core/config/Config.h"
 #include "core/Controller.h"
 #include "net/JobResult.h"
 #include "net/strategies/DonateStrategy.h"
+#include "proxy/config/MainConfig.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"
 #include "proxy/events/AcceptEvent.h"
@@ -43,7 +39,7 @@
 #include <cstring>
 
 
-xmrig::SimpleMapper::SimpleMapper(uint64_t id, xmrig::Controller *controller) :
+xmrig::SimpleMapper::SimpleMapper(uint64_t id, Controller *controller) :
     m_controller(controller),
     m_id(id)
 {
@@ -163,15 +159,15 @@ void xmrig::SimpleMapper::onActive(IStrategy *strategy, IClient *client)
         m_pending  = nullptr;
     }
 
-    if (m_controller->config()->isVerbose()) {
+    if (Log::isVerbose()) {
         const char *tlsVersion = client->tlsVersion();
 
-        LOG_INFO("%s " CYAN("%04u ") WHITE_BOLD("use %s ") CYAN_BOLD("%s:%d ") GREEN_BOLD("%s") " \x1B[1;30m%s ",
-                 Tags::network(), m_id, client->mode(), client->pool().host().data(), client->pool().port(), tlsVersion ? tlsVersion : "", client->ip().data());
+        LOG_V1("%s " CYAN("%04u ") WHITE_BOLD("use %s ") CYAN_BOLD("%s:%d ") GREEN_BOLD("%s") " \x1B[1;30m%s ",
+               Tags::network(), m_id, client->mode(), client->pool().host().data(), client->pool().port(), tlsVersion ? tlsVersion : "", client->ip().data());
 
         const char *fingerprint = client->tlsFingerprint();
         if (fingerprint != nullptr) {
-            LOG_INFO("%s \x1B[1;30mfingerprint (SHA-256): \"%s\"", Tags::network(), fingerprint);
+            LOG_V1("%s \x1B[1;30mfingerprint (SHA-256): \"%s\"", Tags::network(), fingerprint);
         }
     }
 }
@@ -179,9 +175,9 @@ void xmrig::SimpleMapper::onActive(IStrategy *strategy, IClient *client)
 
 void xmrig::SimpleMapper::onJob(IStrategy *, IClient *client, const Job &job, const rapidjson::Value &)
 {
-    if (m_controller->config()->isVerbose()) {
-        LOG_INFO("%s " CYAN("%04u ") MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%" PRIu64) " algo " WHITE_BOLD("%s") " height " WHITE_BOLD("%" PRIu64),
-                 Tags::network(), m_id, client->pool().host().data(), client->pool().port(), job.diff(), job.algorithm().name(), job.height());
+    if (Log::isVerbose()) {
+        LOG_V1("%s " CYAN("%04u ") MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%" PRIu64) " algo " WHITE_BOLD("%s") " height " WHITE_BOLD("%" PRIu64),
+               Tags::network(), m_id, client->pool().host().data(), client->pool().port(), job.diff(), job.algorithm().name(), job.height());
     }
 
     if (m_donate && m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {
@@ -208,7 +204,7 @@ void xmrig::SimpleMapper::onPause(IStrategy *strategy)
 
 void xmrig::SimpleMapper::onResultAccepted(IStrategy *, IClient *client, const SubmitResult &result, const char *error)
 {
-    AcceptEvent::start(m_id, m_miner, result, client->id() == -1, false, error);
+    Process::events().send<AcceptEvent>(m_id, m_miner, result, client->id() == -1, false, error);
 
     if (!m_miner) {
         return;

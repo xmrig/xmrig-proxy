@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -27,27 +21,28 @@
 
 
 #include <map>
-#include <stdint.h>
 #include <vector>
 
 
+#include "3rdparty/rapidjson/fwd.h"
 #include "proxy/splitters/Splitter.h"
 
 
 namespace xmrig {
 
+
+class ConfigEvent;
 class Controller;
 class LoginEvent;
 class Miner;
 class SimpleMapper;
-class Stats;
 class SubmitEvent;
 
 
 class SimpleSplitter : public Splitter
 {
 public:
-    SimpleSplitter(Controller *controller);
+    SimpleSplitter(Controller *controller, const ConfigEvent *event);
     ~SimpleSplitter() override;
 
 protected:
@@ -55,21 +50,20 @@ protected:
     void connect() override;
     void gc() override;
     void printConnections() override;
-    void tick(uint64_t ticks) override;
+    void tick(uint64_t ticks, uint64_t now) override;
 
 #   ifdef APP_DEVEL
     void printState() override;
 #   endif
 
-    inline void onRejectedEvent(IEvent *) override {}
-    void onConfigChanged(Config *config, Config *previousConfig) override;
-    void onEvent(IEvent *event) override;
+    void onEvent(uint32_t type, IEvent *event) override;
 
 private:
-    void login(LoginEvent *event);
+    void login(const LoginEvent *event);
     void remove(Miner *miner);
     void removeIdle(uint64_t id);
     void removeUpstream(uint64_t id);
+    void save(rapidjson::Document &doc) const;
     void stop(SimpleMapper *mapper);
     void submit(SubmitEvent *event);
 
@@ -77,11 +71,11 @@ private:
     std::map<uint64_t, SimpleMapper *> m_upstreams;
     std::vector<SimpleMapper *> m_released;
     uint64_t m_reuseTimeout;
-    uint64_t m_sequence;
+    uint64_t m_sequence = 0;
 };
 
 
-} /* namespace xmrig */
+} // namespace xmrig
 
 
-#endif /* XMRIG_SIMPLESPLITTER_H */
+#endif // XMRIG_SIMPLESPLITTER_H

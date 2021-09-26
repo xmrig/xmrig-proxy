@@ -59,7 +59,6 @@ static std::string usage()
 
     u += "  -r, --retries=N               number of times to retry before switch to backup server (default: 5)\n";
     u += "  -R, --retry-pause=N           time to pause between retries (default: 5)\n";
-    u += "      --user-agent              set custom user-agent string for pool\n";
     u += "      --donate-level=N          donate level, default 0%%\n";
 
     u += "\nOptions:\n";
@@ -95,17 +94,10 @@ static std::string usage()
 #   endif
 
     u += "\nLogging:\n";
-#   ifdef HAVE_SYSLOG_H
-    u += "  -S, --syslog                  use system log for output messages\n";
-#   endif
 
-    u += "  -l, --log-file=FILE           log all output to a file\n";
     u += "  -A  --access-log-file=FILE    log all workers access to a file\n";
-    u += "      --no-color                disable colored output\n";
-    u += "      --verbose                 verbose output\n";
 
     u += "\nMisc:\n";
-    u += "  -c, --config=FILE             load a JSON-format configuration file\n";
     u += "      --dry-run                 test configuration and exit\n";
 
     return u;

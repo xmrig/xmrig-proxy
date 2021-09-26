@@ -57,8 +57,6 @@ xmrig::MainConfig::MainConfig(const Arguments &arguments)
 
 xmrig::MainConfig::MainConfig(const IJsonReader &reader, const MainConfig &current)
 {
-    m_printTime = std::min(reader.getUint(kPrintTime, current.m_printTime), 3600U);
-
     setMode(reader.getString(kMode), current.m_mode);
     m_pools.load(reader);
 
@@ -123,7 +121,6 @@ void xmrig::MainConfig::save(rapidjson::Document &doc) const
         bind.PushBack(host.toJSON(doc), allocator);
     }
 
-    doc.AddMember(StringRef(kPrintTime),            m_printTime == 60 ? Value(kNullType) : Value(m_printTime), allocator);
     doc.AddMember(StringRef(kBind),                 bind, allocator);
     doc.AddMember(StringRef(Pools::kDonateLevel),   m_pools.donateLevel(), allocator);
     doc.AddMember(StringRef(kMode),                 m_mode == NICEHASH_MODE ? Value(kNullType) : Value(StringRef(modeName())), allocator);

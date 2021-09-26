@@ -69,7 +69,6 @@ public:
     inline const BindHosts &bind() const            { return m_bind; }
     inline const Pools &pools() const               { return m_pools; }
     inline int mode() const                         { return m_mode; }
-    inline uint32_t printTime() const               { return m_printTime; }
 
 #   ifdef XMRIG_FEATURE_TLS
     inline const TlsConfig &tls() const             { return m_tls; }
@@ -84,7 +83,6 @@ private:
     bool m_upgrade              = false;
     int m_mode                  = NICEHASH_MODE;
     Pools m_pools;
-    uint32_t m_printTime        = 60;
 
 #   ifdef XMRIG_FEATURE_TLS
     TlsConfig m_tls;

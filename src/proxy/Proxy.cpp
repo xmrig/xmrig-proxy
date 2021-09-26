@@ -159,6 +159,10 @@ std::vector<xmrig::Miner*> xmrig::Proxy::miners() const
 
 void xmrig::Proxy::onEvent(uint32_t type, IEvent *event)
 {
+    if (type == IEvent::PRINT) {
+        return d->print();
+    }
+
     if (type == IEvent::IDLE && !d->ready) {
         return d->connect();
     }
@@ -252,11 +256,6 @@ void xmrig::Proxy::Private::tick()
 
     if ((ticks % kGCInterval) == 0) {
         gc();
-    }
-
-    auto seconds = controller->config()->printTime();
-    if (seconds && (ticks % seconds) == 0) {
-        print();
     }
 
     splitter->tick(ticks, now);

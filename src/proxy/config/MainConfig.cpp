@@ -37,7 +37,6 @@ namespace xmrig {
 static const std::array<const char *, 3> modeNames = { "nicehash", "simple", "extra_nonce" };
 static const char *kBind        = "bind";
 static const char *kMode        = "mode";
-static const char *kPrintTime   = "print-time";
 static const char *kTls         = "tls";
 
 
@@ -131,8 +130,6 @@ void xmrig::MainConfig::save(rapidjson::Document &doc) const
 #   ifdef XMRIG_FEATURE_TLS
     doc.AddMember(StringRef(kTls),                  m_tls.toJSON(doc), allocator);
 #   endif
-
-    doc.AddMember(StringRef(DnsConfig::kField),     Dns::config().toJSON(doc), allocator);
 }
 
 

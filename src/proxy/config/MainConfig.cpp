@@ -20,7 +20,7 @@
 #include "3rdparty/rapidjson/document.h"
 #include "base/io/log/Log.h"
 #include "base/kernel/interfaces/IJsonReader.h"
-#include "base/net/dns/Dns.h"
+#include "base/tools/Arguments.h"
 #include "donate.h"
 
 
@@ -35,6 +35,7 @@ namespace xmrig {
 
 
 static const std::array<const char *, 3> modeNames = { "nicehash", "simple", "extra_nonce" };
+static const char *kAlgoExt     = "algo-ext";
 static const char *kBind        = "bind";
 static const char *kMode        = "mode";
 static const char *kTls         = "tls";
@@ -50,7 +51,7 @@ static const char *kTls         = "tls";
 
 xmrig::MainConfig::MainConfig(const Arguments &arguments)
 {
-
+    m_algoExt = !arguments.contains("--no-algo-ext");
 }
 
 
@@ -62,6 +63,8 @@ xmrig::MainConfig::MainConfig(const IJsonReader &reader, const MainConfig &curre
 #   ifdef XMRIG_FEATURE_TLS
     m_tls = reader.getValue(kTls);
 #   endif
+
+    m_algoExt = reader.getBool(kAlgoExt, current.m_algoExt);
 
     const auto &bind = reader.getArray(kBind);
     if (bind.IsArray()) {
@@ -99,21 +102,13 @@ const char *xmrig::MainConfig::modeName() const
 }
 
 
-bool xmrig::MainConfig::read(const IJsonReader &reader, const char *fileName)
-{
-    m_algoExt      = reader.getBool("algo-ext", m_algoExt);
-
-    return true;
-}
-
-
 void xmrig::MainConfig::save(rapidjson::Document &doc) const
 {
     using namespace rapidjson;
 
     auto &allocator = doc.GetAllocator();
 
-    doc.AddMember("algo-ext",                       m_algoExt, allocator);
+    doc.AddMember(StringRef(kAlgoExt),              m_algoExt ? Value(kNullType) : Value(m_algoExt), allocator);
 
     Value bind(kArrayType);
     for (const auto &host : m_bind) {

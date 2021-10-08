@@ -58,8 +58,6 @@ public:
     MainConfig(const IJsonReader &reader, const MainConfig &current);
 
     const char *modeName() const;
-
-    bool read(const IJsonReader &reader, const char *fileName);
     void save(rapidjson::Document &doc) const;
 
     inline bool hasAlgoExt() const                  { return isDonateOverProxy() ? m_algoExt : true; }

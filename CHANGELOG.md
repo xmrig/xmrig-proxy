@@ -1,3 +1,6 @@
+# v6.15.1
+- [#2586](https://github.com/xmrig/xmrig/pull/2586) Fixed Windows 7 compatibility.
+
 # v6.15.0
 - [#463](https://github.com/xmrig/xmrig-proxy/pull/463) Added `--spend-secret-key` to command line option.
 - [#465](https://github.com/xmrig/xmrig-proxy/pull/465) Added ZeroMQ support for solo mining.

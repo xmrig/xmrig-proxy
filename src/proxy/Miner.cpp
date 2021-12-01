@@ -149,7 +149,7 @@ void xmrig::Miner::setJob(Job &job, int64_t extra_nonce)
 
     if (hasExtension(EXT_NICEHASH)) {
         snprintf(m_sendBuf, 4, "%02hhx", m_fixedByte);
-        memcpy(job.rawBlob() + 84, m_sendBuf, 2);
+        memcpy(job.rawBlob() + (job.nonceOffset() + 3)*2, m_sendBuf, 2);
     }
 
     m_diff = job.diff();

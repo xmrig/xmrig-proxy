@@ -100,7 +100,7 @@ public:
         RANDOM_X        = 0x72000000,
         ARGON2          = 0x61000000,
         ASTROBWT        = 0x41000000,
-        KAWPOW          = 0x6b000000
+        KAWPOW          = 0x6b000000,
         GHOSTRIDER      = 0x6c000000
     };
 

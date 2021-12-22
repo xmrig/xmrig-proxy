@@ -64,6 +64,10 @@ bool xmrig::Config::read(const IJsonReader &reader, const char *fileName)
     }
 
     m_customDiffStats = reader.getBool("custom-diff-stats", m_customDiffStats);
+<<<<<<< HEAD
+=======
+    m_targetShareTime = reader.getInt("target-share-time", m_targetShareTime);
+>>>>>>> 9be86cc (update)
     m_debug        = reader.getBool("debug", m_debug);
     m_algoExt      = reader.getBool("algo-ext", m_algoExt);
     m_reuseTimeout = reader.getInt("reuse-timeout", m_reuseTimeout);
@@ -130,6 +134,10 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember(StringRef(kColors),               Log::isColors(), allocator);
     doc.AddMember("custom-diff",                    diff(), allocator);
     doc.AddMember("custom-diff-stats",              m_customDiffStats, allocator);
+<<<<<<< HEAD
+=======
+    doc.AddMember("tartget-share-time",             m_targetShareTime, allocator);
+>>>>>>> 9be86cc (update)
     doc.AddMember(StringRef(Pools::kDonateLevel),   m_pools.donateLevel(), allocator);
     doc.AddMember(StringRef(kLogFile),              m_logFile.toJSON(), allocator);
     doc.AddMember("mode",                           StringRef(modeName()), allocator);

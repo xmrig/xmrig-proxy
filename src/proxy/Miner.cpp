@@ -151,6 +151,7 @@ void xmrig::Miner::setJob(Job &job, int64_t extra_nonce)
 
     m_diff = job.diff();
     bool customDiff = false;
+    if (m_targetDiff > 0) m_customDiff = m_targetDiff;
 
     if (m_customDiff && m_customDiff < m_diff) {
         const uint64_t t = 0xFFFFFFFFFFFFFFFFULL / m_customDiff;

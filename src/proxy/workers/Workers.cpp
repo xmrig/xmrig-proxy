@@ -24,6 +24,7 @@
 
 
 #include <inttypes.h>
+#include <chrono>
 
 
 #include "base/io/log/Log.h"
@@ -305,6 +306,11 @@ void xmrig::Workers::accept(const AcceptEvent *event)
 
     Worker &worker = m_workers[index];
     if (!event->isRejected()) {
+        double newDiff = (worker.hashrate(60) * 1000) * m_controller->config()->targetShareTime();
+        if (newDiff > m_controller->config()->diff()) {
+            event->miner()->setTargetDiff(newDiff);
+        }
+        
         worker.add(m_controller->config()->isCustomDiffStats() ? event->statsDiff() : event->result.diff);
     }
     else {

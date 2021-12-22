@@ -101,6 +101,7 @@ public:
     inline void setFixedByte(uint8_t fixedByte)                   { m_fixedByte = fixedByte; }
     inline void setMapperId(ssize_t mapperId)                     { m_mapperId = mapperId; }
     inline void setRouteId(int32_t id)                            { m_routeId = id; }
+    inline void setTargetDiff(uint64_t diff)                      { m_targetDiff = diff; }
 
 protected:
     inline void onLine(char *line, size_t size) override          { parse(line, size); }
@@ -150,6 +151,7 @@ private:
     Tls *m_tls              = nullptr;
     uint16_t m_localPort;
     uint64_t m_customDiff   = 0;
+    uint64_t m_targetDiff   = 0;
     uint64_t m_diff         = 0;
     uint64_t m_expire;
     uint64_t m_rx           = 0;

@@ -26,7 +26,7 @@
 // since 2019.05.16, Version 1.29.0 (Stable) https://github.com/xmrig/xmrig/pull/1889
 #if (UV_VERSION_MAJOR >= 1) && (UV_VERSION_MINOR >= 29) && defined(__linux__)
 #include <sys/eventfd.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include <unistd.h>
 #include <cstdlib>
 

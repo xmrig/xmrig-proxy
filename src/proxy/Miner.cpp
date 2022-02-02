@@ -89,7 +89,7 @@ xmrig::Miner::~Miner()
         delete m_socket;
     }
     else {
-        uv_close(reinterpret_cast<uv_handle_t *>(m_socket), [](uv_handle_t *handle) { delete handle; });
+        uv_close(reinterpret_cast<uv_handle_t *>(m_socket), [](uv_handle_t *handle) { delete reinterpret_cast<uv_tcp_t *>(handle); });
     }
 
 #   ifdef XMRIG_FEATURE_TLS

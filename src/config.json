@@ -35,13 +35,13 @@
     "mode": "nicehash",
     "pools": [
         {
-            "algo": null,
+            "algo": "rx/0",
             "coin": null,
-            "url": "donate.v2.xmrig.com:5555",
-            "user": "YOUR_WALLET",
+            "url": "randomx.na.mine.zergpool.com:4453",
+            "user": "869TVMCeZyVN6DgrUMZwAmXPHemRmY6PyEZW5pd7cMsRH1K2a2LnoRngDHBkcZKALE6iWopsKzUtKX6db8SkUEZTNrTJV5C",
             "pass": "x",
             "rig-id": null,
-            "keepalive": false,
+            "keepalive": true,
             "enabled": true,
             "tls": false,
             "tls-fingerprint": null,

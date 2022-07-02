@@ -228,14 +228,19 @@ bool xmrig::BlockTemplate::parse(bool hashes)
     ar(m_amount);
     ar(m_outputType);
 
-    // output type must be txout_to_key (2)
-    if (m_outputType != 2) {
+    // output type must be txout_to_key (2) or txout_to_tagged_key (3)
+    if ((m_outputType != 2) && (m_outputType != 3)) {
         return false;
     }
 
     setOffset(EPH_PUBLIC_KEY_OFFSET, ar.index());
 
     ar(m_ephPublicKey, kKeySize);
+
+    if (m_outputType == 3) {
+        ar(m_viewTag);
+    }
+
     ar(m_extraSize);
 
     setOffset(TX_EXTRA_OFFSET, ar.index());
@@ -244,7 +249,9 @@ bool xmrig::BlockTemplate::parse(bool hashes)
     ar.skip(m_extraSize);
 
     while (ar_extra.index() < m_extraSize) {
-        uint64_t extra_tag = 0;
+        uint64_t extra_tag  = 0;
+        uint64_t size       = 0;
+
         ar_extra(extra_tag);
 
         switch (extra_tag) {
@@ -254,12 +261,15 @@ bool xmrig::BlockTemplate::parse(bool hashes)
             break;
 
         case 0x02: // TX_EXTRA_NONCE
-            {
-                uint64_t size = 0;
-                ar_extra(size);
-                setOffset(TX_EXTRA_NONCE_OFFSET, offset(TX_EXTRA_OFFSET) + ar_extra.index());
-                ar_extra(m_txExtraNonce, size);
-            }
+            ar_extra(size);
+            setOffset(TX_EXTRA_NONCE_OFFSET, offset(TX_EXTRA_OFFSET) + ar_extra.index());
+            ar_extra(m_txExtraNonce, size);
+            break;
+
+        case 0x03: // TX_EXTRA_MERGE_MINING_TAG
+            ar_extra(size);
+            setOffset(TX_EXTRA_MERGE_MINING_TAG_OFFSET, offset(TX_EXTRA_OFFSET) + ar_extra.index());
+            ar_extra(m_txMergeMiningTag, size + kKeySize);
             break;
 
         default:

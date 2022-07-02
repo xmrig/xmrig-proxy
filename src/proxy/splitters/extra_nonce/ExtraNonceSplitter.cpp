@@ -41,10 +41,6 @@
 xmrig::ExtraNonceSplitter* xmrig::ExtraNonceSplitter::Create(Controller* controller)
 {
     for (const Pool& pool : controller->config()->pools().data()) {
-        if ((pool.algorithm() == Algorithm::ASTROBWT_DERO) || (pool.coin() == Coin::DERO)) {
-            LOG_ERR("extra_nonce mode is incompatible with Dero mining");
-            return nullptr;
-        }
         if (pool.mode() != Pool::MODE_DAEMON) {
             LOG_ERR("extra_nonce mode can only be used when mining to daemon");
             return nullptr;

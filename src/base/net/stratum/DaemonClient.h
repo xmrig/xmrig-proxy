@@ -39,6 +39,12 @@ using uv_handle_t   = struct uv_handle_s;
 using uv_stream_t   = struct uv_stream_s;
 using uv_tcp_t      = struct uv_tcp_s;
 
+#ifdef XMRIG_FEATURE_TLS
+using BIO           = struct bio_st;
+using SSL           = struct ssl_st;
+using SSL_CTX       = struct ssl_ctx_st;
+#endif
+
 
 namespace xmrig {
 
@@ -88,7 +94,6 @@ private:
     enum {
         API_CRYPTONOTE_DEFAULT,
         API_MONERO,
-        API_DERO,
     } m_apiVersion = API_MONERO;
 
     BlockTemplate m_blocktemplate;

@@ -87,6 +87,7 @@ public:
         SpendSecretKey       = 1055,
         DaemonZMQPortKey     = 1056,
         HugePagesJitKey      = 1057,
+        RotationKey          = 1058,
 
         // xmrig common
         CPUPriorityKey       = 1021,
@@ -110,8 +111,6 @@ public:
         CPUMaxThreadsKey     = 1026,
         MemoryPoolKey        = 1027,
         YieldKey             = 1030,
-        AstroBWTMaxSizeKey   = 1034,
-        AstroBWTAVX2Key      = 1036,
         Argon2ImplKey        = 1039,
         RandomXCacheQoSKey   = 1040,
 

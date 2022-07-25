@@ -26,7 +26,7 @@ This proxy designed and created for handle donation traffic from XMRig. No one o
 ## Usage
 :boom: If you use Linux and want handle more than **1000 connections**, you need [increase limits of open files](https://github.com/xmrig/xmrig-proxy/wiki/Ubuntu-setup).
 
-Use [config.xmrig.com](https://config.xmrig.com/proxy) to generate, edit or share configurations.
+Use [https://xmrig.com/wizard](https://xmrig.com/wizard) to generate, edit or share configurations.
   
 ### Options
 ```

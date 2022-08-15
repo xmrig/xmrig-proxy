@@ -16,24 +16,29 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_BSWAP_64_H
-#define XMRIG_BSWAP_64_H
+#include "Chrono.h"
 
-#ifdef _MSC_VER
 
-#include <stdlib.h>
-#define bswap_64(x) _byteswap_uint64(x)
-#define bswap_32(x) _byteswap_ulong(x)
-
-#elif defined __GNUC__
-
-#define bswap_64(x) __builtin_bswap64(x)
-#define bswap_32(x) __builtin_bswap32(x)
-
-#else
-
-#include <byteswap.h>
-
+#ifdef XMRIG_OS_WIN
+#   include <Windows.h>
 #endif
 
-#endif /* XMRIG_BSWAP_64_H */
+
+namespace xmrig {
+
+
+double Chrono::highResolutionMSecs()
+{
+#   ifdef XMRIG_OS_WIN
+    LARGE_INTEGER f, t;
+    QueryPerformanceFrequency(&f);
+    QueryPerformanceCounter(&t);
+    return static_cast<double>(t.QuadPart) * 1e3 / f.QuadPart;
+#   else
+    using namespace std::chrono;
+    return static_cast<uint64_t>(duration_cast<nanoseconds>(high_resolution_clock::now().time_since_epoch()).count()) / 1e6;
+#   endif
+}
+
+
+} /* namespace xmrig */

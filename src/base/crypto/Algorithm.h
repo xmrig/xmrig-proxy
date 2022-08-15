@@ -65,6 +65,13 @@ public:
         CN_PICO_0       = 0x63120200,   // "cn-pico"          CryptoNight-Pico
         CN_PICO_TLO     = 0x63120274,   // "cn-pico/tlo"      CryptoNight-Pico (TLO)
         CN_UPX2         = 0x63110200,   // "cn/upx2"          Uplexa (UPX2)
+        CN_GR_0         = 0x63130100,   // "cn/dark"          GhostRider
+        CN_GR_1         = 0x63130101,   // "cn/dark-lite"     GhostRider
+        CN_GR_2         = 0x63150102,   // "cn/fast"          GhostRider
+        CN_GR_3         = 0x63140103,   // "cn/lite"          GhostRider
+        CN_GR_4         = 0x63120104,   // "cn/turtle"        GhostRider
+        CN_GR_5         = 0x63120105,   // "cn/turtle-lite"   GhostRider
+        GHOSTRIDER_RTM  = 0x6c150000,   // "ghostrider"       GhostRider
         RX_0            = 0x72151200,   // "rx/0"             RandomX (reference configuration).
         RX_WOW          = 0x72141177,   // "rx/wow"           RandomWOW (Wownero).
         RX_ARQ          = 0x72121061,   // "rx/arq"           RandomARQ (Arqma).
@@ -74,7 +81,6 @@ public:
         AR2_CHUKWA      = 0x61130000,   // "argon2/chukwa"    Argon2id (Chukwa).
         AR2_CHUKWA_V2   = 0x61140000,   // "argon2/chukwav2"  Argon2id (Chukwa v2).
         AR2_WRKZ        = 0x61120000,   // "argon2/wrkz"      Argon2id (WRKZ)
-        ASTROBWT_DERO   = 0x41000000,   // "astrobwt"         AstroBWT (Dero)
         KAWPOW_RVN      = 0x6b0f0000,   // "kawpow/rvn"       KawPow (RVN)
     };
 
@@ -88,8 +94,8 @@ public:
         CN_FEMTO        = 0x63110000,
         RANDOM_X        = 0x72000000,
         ARGON2          = 0x61000000,
-        ASTROBWT        = 0x41000000,
-        KAWPOW          = 0x6b000000
+        KAWPOW          = 0x6b000000,
+        GHOSTRIDER      = 0x6c000000
     };
 
     static const char *kINVALID;
@@ -147,14 +153,14 @@ public:
     static const char *kAR2_WRKZ;
 #   endif
 
-#   ifdef XMRIG_ALGO_ASTROBWT
-    static const char *kASTROBWT;
-    static const char *kASTROBWT_DERO;
-#   endif
-
 #   ifdef XMRIG_ALGO_KAWPOW
     static const char *kKAWPOW;
     static const char *kKAWPOW_RVN;
+#   endif
+
+#   ifdef XMRIG_ALGO_GHOSTRIDER
+    static const char* kGHOSTRIDER;
+    static const char* kGHOSTRIDER_RTM;
 #   endif
 
     inline Algorithm() = default;
@@ -176,16 +182,10 @@ public:
     inline Id id() const                                    { return m_id; }
     inline size_t l2() const                                { return l2(m_id); }
     inline uint32_t family() const                          { return family(m_id); }
-    inline uint32_t maxIntensity() const                    { return isCN() ? 5 : 1; };
+    inline uint32_t minIntensity() const                    { return ((m_id == GHOSTRIDER_RTM) ? 8 : 1); };
+    inline uint32_t maxIntensity() const                    { return isCN() ? 5 : ((m_id == GHOSTRIDER_RTM) ? 8 : 1); };
 
-    inline size_t l3() const
-    {
-#       ifdef XMRIG_ALGO_ASTROBWT
-        return m_id != ASTROBWT_DERO ? l3(m_id) : 0x100000 * 20;
-#       else
-        return l3(m_id);
-#       endif
-    }
+    inline size_t l3() const                                { return l3(m_id); }
 
     inline bool operator!=(Algorithm::Id id) const          { return m_id != id; }
     inline bool operator!=(const Algorithm &other) const    { return !isEqual(other); }

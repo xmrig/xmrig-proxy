@@ -1,3 +1,7 @@
+# v6.18.0
+- Sync changes with XMRig v6.18.0
+- [#499](https://github.com/xmrig/xmrig-proxy/pull/499) Fixed socket and memory leak.
+
 # v6.15.1
 - [#2586](https://github.com/xmrig/xmrig/pull/2586) Fixed Windows 7 compatibility.
 

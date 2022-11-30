@@ -50,7 +50,7 @@ bool xmrig::AutoClient::parseLogin(const rapidjson::Value &result, int *code)
     }
 
     const Algorithm algo(Json::getString(result, "algo"));
-    if (algo.family() != Algorithm::KAWPOW) {
+    if (algo.family() != Algorithm::KAWPOW && algo.family() != Algorithm::GHOSTRIDER) {
         *code = 6;
         return false;
     }
@@ -64,6 +64,12 @@ bool xmrig::AutoClient::parseLogin(const rapidjson::Value &result, int *code)
 
     m_mode = ETH_MODE;
     setAlgo(algo);
+
+#   ifdef XMRIG_ALGO_GHOSTRIDER
+    if (algo.family() == Algorithm::GHOSTRIDER) {
+        setExtraNonce2Size(Json::getUint64(result, "extra_nonce2_size"));
+    }
+#   endif
 
     return true;
 }

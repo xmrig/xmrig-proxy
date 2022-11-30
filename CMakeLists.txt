@@ -7,8 +7,6 @@ option(WITH_DEBUG_LOG       "Enable debug log output" OFF)
 option(WITH_HTTP            "HTTP protocol support (client/server)" ON)
 option(WITH_TLS             "Enable OpenSSL support"  ON)
 option(WITH_ENV_VARS        "Enable environment variables support in config file" ON)
-option(WITH_KAWPOW          "Enable KawPow algorithms family" ON)
-option(WITH_GHOSTRIDER      "Enable GhostRider algorithm" ON)
 
 
 include (CheckIncludeFile)

@@ -218,13 +218,14 @@ xmrig::IClient *xmrig::Pool::createClient(int id, IClientListener *listener) con
     IClient *client = nullptr;
 
     if (m_mode == MODE_POOL) {
-#       if defined XMRIG_ALGO_KAWPOW || defined XMRIG_ALGO_GHOSTRIDER
-        const uint32_t f = m_algorithm.family();
-        if ((f == Algorithm::KAWPOW) || (f == Algorithm::GHOSTRIDER) || (m_coin == Coin::RAVEN)) {
-            client = new EthStratumClient(id, Platform::userAgent(), listener);
-        }
-        else
-#       endif
+// MoneroOcean supports Ghostrider algo using usual client
+//#       if defined XMRIG_ALGO_KAWPOW || defined XMRIG_ALGO_GHOSTRIDER
+//        const uint32_t f = m_algorithm.family();
+//        if ((f == Algorithm::KAWPOW) || (f == Algorithm::GHOSTRIDER) || (m_coin == Coin::RAVEN)) {
+//            client = new EthStratumClient(id, Platform::userAgent(), listener);
+//        }
+//        else
+//#       endif
         {
             client = new Client(id, Platform::userAgent(), listener);
         }
@@ -237,11 +238,12 @@ xmrig::IClient *xmrig::Pool::createClient(int id, IClientListener *listener) con
         client = new SelfSelectClient(id, Platform::userAgent(), listener, m_submitToOrigin);
     }
 #   endif
-#   if defined XMRIG_ALGO_KAWPOW || defined XMRIG_ALGO_GHOSTRIDER
-    else if (m_mode == MODE_AUTO_ETH) {
-        client = new AutoClient(id, Platform::userAgent(), listener);
-    }
-#   endif
+// MoneroOcean supports Ghostrider algo using usual client
+//#   if defined XMRIG_ALGO_KAWPOW || defined XMRIG_ALGO_GHOSTRIDER
+//    else if (m_mode == MODE_AUTO_ETH) {
+//        client = new AutoClient(id, Platform::userAgent(), listener);
+//    }
+//#   endif
 #   ifdef XMRIG_FEATURE_BENCHMARK
     else if (m_mode == MODE_BENCHMARK) {
         client = new BenchClient(m_benchmark, listener);

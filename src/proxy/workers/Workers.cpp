@@ -319,6 +319,8 @@ void xmrig::Workers::login(const LoginEvent *event)
         return;
     }
 
+    event->miner()->setTargetTime(m_controller->config()->targetShareTime());
+
     add(event->miner());
 }
 

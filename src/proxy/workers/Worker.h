@@ -31,7 +31,6 @@
 
 #include "proxy/TickingCounter.h"
 
-
 namespace xmrig {
 
 
@@ -44,19 +43,19 @@ public:
     void add(uint64_t diff);
     void tick(uint64_t ticks);
 
-    inline const char *ip() const             { return m_ip.c_str(); }
-    inline const char *name() const           { return m_name.c_str(); }
-    inline double hashrate(int seconds) const { return m_hashrate.calc(seconds); }
-    inline size_t id() const                  { return m_id; }
-    inline uint64_t accepted() const          { return m_accepted; }
-    inline uint64_t connections() const       { return m_connections; }
-    inline uint64_t hashes() const            { return m_hashes; }
-    inline uint64_t invalid() const           { return m_invalid; }
-    inline uint64_t lastHash() const          { return m_lastHash; }
-    inline uint64_t rejected() const          { return m_rejected; }
-    inline void add(const char *ip)           { m_ip = ip; m_connections++; }
-    inline void reject(bool invalid)          { invalid ? m_invalid++ : m_rejected++; }
-    inline void remove()                      { m_connections--; }
+    inline const char *ip() const                     { return m_ip.c_str(); }
+    inline const char *name() const                   { return m_name.c_str(); }
+    inline double hashrate(int seconds) const         { return m_hashrate.calc(seconds); }
+    inline size_t id() const                          { return m_id; }
+    inline uint64_t accepted() const                  { return m_accepted; }
+    inline uint64_t connections() const               { return m_connections; }
+    inline uint64_t hashes() const                    { return m_hashes; }
+    inline uint64_t invalid() const                   { return m_invalid; }
+    inline uint64_t lastHash() const                  { return m_lastHash; }
+    inline uint64_t rejected() const                  { return m_rejected; }
+    inline void add(const char *ip)                   { m_ip = ip; m_connections++; }
+    inline void reject(bool invalid)                  { invalid ? m_invalid++ : m_rejected++; }
+    inline void remove()                              { m_connections--; }
 
 private:
     size_t m_id;

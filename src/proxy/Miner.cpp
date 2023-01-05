@@ -69,6 +69,7 @@ xmrig::Miner::Miner(const TlsContext *ctx, uint16_t port, bool strictTls) :
     m_tlsCtx(ctx),
     m_id(++nextId),
     m_localPort(port),
+    m_hashrate(1),
     m_expire(Chrono::currentMSecsSinceEpoch() + kLoginTimeout),
     m_timestamp(Chrono::currentMSecsSinceEpoch())
 {
@@ -152,6 +153,17 @@ void xmrig::Miner::setJob(Job &job, int64_t extra_nonce)
     m_diff = job.diff();
     bool customDiff = false;
 
+    // LOG_INFO(BLUE("Pool Diff: ") " %i", m_diff);
+    if(targetTime() > 0){
+        uint64_t newDiff = hashrate(60*5) * 1000 * targetTime();
+        newDiff = newDiff < 3500 ? 3500 : newDiff;
+        newDiff = newDiff > m_diff ? m_diff : newDiff;
+        setCustomDiff(newDiff);
+
+        // LOG_INFO(BLUE("Miner Hashrate: ") " %f", hashrate(60*5) * 1000);
+        // LOG_INFO(BLUE("Custom Diff: ") " %i", m_customDiff);
+    }
+
     if (m_customDiff && m_customDiff < m_diff) {
         const uint64_t t = 0xFFFFFFFFFFFFFFFFULL / m_customDiff;
         Cvt::toHex(m_sendBuf, 9, reinterpret_cast<const uint8_t *>(&t) + 4, 4);
@@ -184,6 +196,10 @@ void xmrig::Miner::setJob(Job &job, int64_t extra_nonce)
 
 void xmrig::Miner::success(int64_t id, const char *status)
 {
+    if(targetTime() > 0){
+        m_hashrate.add(customDiff());
+    }
+    
     send(snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRId64 ",\"jsonrpc\":\"2.0\",\"error\":null,\"result\":{\"status\":\"%s\"}}\n", id, status));
 }
 
@@ -605,4 +621,16 @@ void xmrig::Miner::onTimeout(uv_timer_t *handle)
     }
 
     miner->shutdown(true);
+}
+
+void xmrig::Miner::add(uint64_t diff)
+{
+    m_hashes += diff;
+
+    m_hashrate.add(diff);
+}
+
+void xmrig::Miner::tick()
+{
+    m_hashrate.tick();
 }

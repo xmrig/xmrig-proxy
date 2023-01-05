@@ -107,6 +107,8 @@ void xmrig::Miners::tick()
     for (auto const &kv : m_miners) {
         if (now > kv.second->expire()) {
             expired.push_back(kv.second);
+        }else{
+            kv.second->tick();
         }
     }
 

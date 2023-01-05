@@ -71,6 +71,7 @@ bool xmrig::Config::read(const IJsonReader &reader, const char *fileName)
     m_password     = reader.getString("access-password");
 
     setCustomDiff(reader.getUint64("custom-diff", m_diff));
+    setTargetShareTime(reader.getUint64("target-share-time", m_targetShareTime));
     setMode(reader.getString("mode"));
     setWorkersMode(reader.getValue("workers"));
 
@@ -129,6 +130,7 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember("bind",                           bind, allocator);
     doc.AddMember(StringRef(kColors),               Log::isColors(), allocator);
     doc.AddMember("custom-diff",                    diff(), allocator);
+    doc.AddMember("target-share-time",              targetShareTime(), allocator);
     doc.AddMember("custom-diff-stats",              m_customDiffStats, allocator);
     doc.AddMember(StringRef(Pools::kDonateLevel),   m_pools.donateLevel(), allocator);
     doc.AddMember(StringRef(kLogFile),              m_logFile.toJSON(), allocator);
@@ -161,6 +163,13 @@ void xmrig::Config::setCustomDiff(uint64_t diff)
 {
     if (diff >= 100 && diff < INT_MAX) {
         m_diff = diff;
+    }
+}
+
+void xmrig::Config::setTargetShareTime(uint64_t time)
+{
+    if (time >= 30 && time < INT_MAX) {
+        m_targetShareTime = time;
     }
 }
 

@@ -37,6 +37,7 @@
 #include "base/net/tools/Storage.h"
 #include "base/tools/Object.h"
 #include "base/tools/String.h"
+#include "proxy/TickingCounter.h"
 
 
 using BIO = struct bio_st;
@@ -76,6 +77,8 @@ public:
     void replyWithError(int64_t id, const char *message);
     void setJob(Job &job, int64_t extra_nonce = -1);
     void success(int64_t id, const char *status);
+    void add(uint64_t diff);
+    void tick();
 
     inline bool hasExtension(Extension ext) const noexcept        { return m_extensions.test(ext); }
     inline const char *ip() const                                 { return m_ip; }
@@ -88,7 +91,10 @@ public:
     inline ssize_t mapperId() const                               { return m_mapperId; }
     inline State state() const                                    { return m_state; }
     inline uint16_t localPort() const                             { return m_localPort; }
+    inline double hashrate(int seconds) const                     { return m_hashrate.calc(seconds); }
+    inline uint64_t hashes() const                                { return m_hashes; }
     inline uint64_t customDiff() const                            { return m_customDiff; }
+    inline uint64_t targetTime() const                            { return m_targetTime; }
     inline uint64_t diff() const                                  { return (m_customDiff ? std::min(m_customDiff, m_diff) : m_diff); }
     inline uint64_t expire() const                                { return m_expire; }
     inline uint64_t rx() const                                    { return m_rx; }
@@ -97,6 +103,7 @@ public:
     inline uint8_t fixedByte() const                              { return m_fixedByte; }
     inline void close()                                           { shutdown(true); }
     inline void setCustomDiff(uint64_t diff)                      { m_customDiff = diff; }
+    inline void setTargetTime(uint64_t time)                      { m_targetTime = time; }
     inline void setExtension(Extension ext, bool enable) noexcept { m_extensions.set(ext, enable); }
     inline void setFixedByte(uint8_t fixedByte)                   { m_fixedByte = fixedByte; }
     inline void setMapperId(ssize_t mapperId)                     { m_mapperId = mapperId; }
@@ -149,7 +156,10 @@ private:
     String m_signatureData;
     Tls *m_tls              = nullptr;
     uint16_t m_localPort;
+    TickingCounter<uint32_t> m_hashrate;
+    uint64_t m_hashes;
     uint64_t m_customDiff   = 0;
+    uint64_t m_targetTime   = 0;
     uint64_t m_diff         = 0;
     uint64_t m_expire;
     uint64_t m_rx           = 0;

@@ -68,8 +68,9 @@ void xmrig::Worker::add(uint64_t diff)
     m_lastHash = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 }
 
-
 void xmrig::Worker::tick(uint64_t ticks)
 {
     m_hashrate.tick();
 }
+
+

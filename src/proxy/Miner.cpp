@@ -162,10 +162,14 @@ void xmrig::Miner::setJob(Job &job, int64_t extra_nonce)
     String tmp_blob;
 
     if (job.hasMinerSignature()) {
-        job.generateSignatureData(m_signatureData);
+        job.generateSignatureData(m_signatureData, m_viewTag);
     }
     else if (!job.rawSigKey().isNull()) {
         m_signatureData = job.rawSigKey();
+    }
+
+    if (job.hasViewTag()) {
+        job.setViewTagInMinerTx(m_viewTag);
     }
 
     if (extra_nonce >= 0) {
@@ -250,7 +254,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
 
         Algorithm algorithm(Json::getString(params, "algo"));
 
-        SubmitEvent *event = SubmitEvent::create(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm, Json::getString(params, "sig"), m_signatureData, m_extraNonce);
+        SubmitEvent *event = SubmitEvent::create(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm, Json::getString(params, "sig"), m_signatureData, m_viewTag, m_extraNonce);
 
         if (!event->request.isValid() || event->request.actualDiff() < diff()) {
             event->reject(Error::LowDifficulty);

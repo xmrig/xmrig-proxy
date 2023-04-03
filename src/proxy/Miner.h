@@ -147,6 +147,7 @@ private:
     String m_rigId;
     String m_user;
     String m_signatureData;
+    uint8_t m_viewTag;
     Tls *m_tls              = nullptr;
     uint16_t m_localPort;
     uint64_t m_customDiff   = 0;

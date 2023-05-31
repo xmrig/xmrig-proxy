@@ -66,7 +66,6 @@ Storage<DaemonClient> DaemonClient::m_storage;
 
 static const char* kBlocktemplateBlob       = "blocktemplate_blob";
 static const char* kBlockhashingBlob        = "blockhashing_blob";
-static const char* kLastError               = "lasterror";
 static const char *kGetHeight               = "/getheight";
 static const char *kGetInfo                 = "/getinfo";
 static const char *kHash                    = "hash";
@@ -149,6 +148,11 @@ int64_t xmrig::DaemonClient::submit(const JobResult &result)
         memcpy(data + sig_offset * 2, result.sig, 64 * 2);
         memcpy(data + m_blocktemplate.offset(BlockTemplate::TX_PUBKEY_OFFSET) * 2, result.sig_data, 32 * 2);
         memcpy(data + m_blocktemplate.offset(BlockTemplate::EPH_PUBLIC_KEY_OFFSET) * 2, result.sig_data + 32 * 2, 32 * 2);
+
+        // Handle view tag for txout_to_tagged_key outputs
+        if (m_blocktemplate.outputType() == 3) {
+            Cvt::toHex(data + m_blocktemplate.offset(BlockTemplate::EPH_PUBLIC_KEY_OFFSET) * 2 + 32 * 2, 2, &result.view_tag, 1);
+        }
     }
 
     if (result.extra_nonce >= 0) {
@@ -179,7 +183,10 @@ int64_t xmrig::DaemonClient::submit(const JobResult &result)
     m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff(), 0, result.backend);
 #   endif
 
-    return rpcSend(doc);
+    std::map<std::string, std::string> headers;
+    headers.insert({"X-Hash-Difficulty", std::to_string(result.actualDiff())});
+
+    return rpcSend(doc, headers);
 }
 
 
@@ -304,6 +311,18 @@ void xmrig::DaemonClient::onHttpData(const HttpData &data)
 
 void xmrig::DaemonClient::onTimer(const Timer *)
 {
+    if (m_pool.zmq_port() >= 0) {
+        m_prevHash = nullptr;
+        m_blocktemplateRequestHash = nullptr;
+        send(kGetHeight);
+        return;
+    }
+
+    if (Chrono::steadyMSecs() >= m_jobSteadyMs + m_pool.jobTimeout()) {
+        m_prevHash = nullptr;
+        m_blocktemplateRequestHash = nullptr;
+    }
+
     if (m_state == ConnectingState) {
         connect();
     }
@@ -353,7 +372,7 @@ void xmrig::DaemonClient::onResolved(const DnsRecords &records, int status, cons
 
 bool xmrig::DaemonClient::isOutdated(uint64_t height, const char *hash) const
 {
-    return m_job.height() != height || m_prevHash != hash;
+    return m_job.height() != height || m_prevHash != hash || Chrono::steadyMSecs() >= m_jobSteadyMs + m_pool.jobTimeout();
 }
 
 
@@ -390,7 +409,8 @@ bool xmrig::DaemonClient::parseJob(const rapidjson::Value &params, int *code)
         m_blocktemplate.offset(BlockTemplate::TX_PUBKEY_OFFSET) - k,
         m_blocktemplate.offset(BlockTemplate::TX_EXTRA_NONCE_OFFSET) - k,
         m_blocktemplate.txExtraNonce().size(),
-        m_blocktemplate.minerTxMerkleTreeBranch()
+        m_blocktemplate.minerTxMerkleTreeBranch(),
+        m_blocktemplate.outputType() == 3
     );
 #   endif
 
@@ -427,7 +447,7 @@ bool xmrig::DaemonClient::parseJob(const rapidjson::Value &params, int *code)
         }
 
         uint8_t derivation[32];
-        if (!generate_key_derivation(m_blocktemplate.blob(BlockTemplate::TX_PUBKEY_OFFSET), secret_viewkey, derivation)) {
+        if (!generate_key_derivation(m_blocktemplate.blob(BlockTemplate::TX_PUBKEY_OFFSET), secret_viewkey, derivation, nullptr)) {
             return jobError("Failed to generate key derivation for miner signature.");
         }
 
@@ -469,6 +489,7 @@ bool xmrig::DaemonClient::parseJob(const rapidjson::Value &params, int *code)
     m_job              = std::move(job);
     m_blocktemplateStr = std::move(blocktemplate);
     m_prevHash         = Json::getString(params, "prev_hash");
+    m_jobSteadyMs      = Chrono::steadyMSecs();
 
     if (m_state == ConnectingState) {
         setState(ConnectedState);
@@ -541,9 +562,13 @@ int64_t xmrig::DaemonClient::getBlockTemplate()
 }
 
 
-int64_t xmrig::DaemonClient::rpcSend(const rapidjson::Document &doc)
+int64_t xmrig::DaemonClient::rpcSend(const rapidjson::Document &doc, const std::map<std::string, std::string> &headers)
 {
     FetchRequest req(HTTP_POST, m_pool.host(), m_pool.port(), kJsonRPC, doc, m_pool.isTLS(), isQuiet());
+    for (const auto &header : headers) {
+        req.headers.insert(header);
+    }
+
     fetch(tag(), std::move(req), m_httpListener);
 
     return m_sequence++;
@@ -596,6 +621,10 @@ void xmrig::DaemonClient::setState(SocketState state)
             if (m_pool.zmq_port() < 0) {
                 const uint64_t interval = std::max<uint64_t>(20, m_pool.pollInterval());
                 m_timer->start(interval, interval);
+            }
+            else {
+                const uint64_t t = m_pool.jobTimeout();
+                m_timer->start(t, t);
             }
         }
         break;
@@ -866,7 +895,12 @@ void xmrig::DaemonClient::ZMQParse()
     // Clear previous hash and check daemon height to guarantee that xmrig will call get_block_template RPC later
     // We can't call get_block_template directly because daemon is not ready yet
     m_prevHash = nullptr;
+    m_blocktemplateRequestHash = nullptr;
     send(kGetHeight);
+
+    const uint64_t t = m_pool.jobTimeout();
+    m_timer->stop();
+    m_timer->start(t, t);
 }
 
 

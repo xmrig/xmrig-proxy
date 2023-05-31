@@ -1,3 +1,10 @@
+# v6.19.2
+- [#532](https://github.com/xmrig/xmrig-proxy/pull/532) Added view tag calculation (fixes Wownero solo mining issue).
+- Sync with latest XMRig.
+ 
+# v6.19.0
+- [#530](https://github.com/xmrig/xmrig-proxy/pull/530) Sync with latest XMRig.
+
 # v6.18.0
 - Sync changes with XMRig v6.18.0
 - [#499](https://github.com/xmrig/xmrig-proxy/pull/499) Fixed socket and memory leak.

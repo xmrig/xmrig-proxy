@@ -1,6 +1,6 @@
 /* XMRig
- * Copyright (c) 2018-2022 SChernykh   <https://github.com/SChernykh>
- * Copyright (c) 2016-2022 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2023 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2023 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,18 +22,20 @@
 #define APP_ID        "xmrig-proxy"
 #define APP_NAME      "xmrig-proxy"
 #define APP_DESC      "XMRig Stratum proxy"
-#define APP_VERSION   "6.18.0-mo1"
+#define APP_VERSION   "6.19.2-mo1"
 #define APP_DOMAIN    "xmrig.com"
 #define APP_SITE      "www.xmrig.com"
-#define APP_COPYRIGHT "Copyright (C) 2016-2022 xmrig.com"
+#define APP_COPYRIGHT "Copyright (C) 2016-2023 xmrig.com"
 #define APP_KIND      "proxy"
 
 #define APP_VER_MAJOR  6
-#define APP_VER_MINOR  18
-#define APP_VER_PATCH  0
+#define APP_VER_MINOR  19
+#define APP_VER_PATCH  2
 
 #ifdef _MSC_VER
-#   if (_MSC_VER >= 1920)
+#   if (_MSC_VER >= 1930)
+#       define MSVC_VERSION 2022
+#   elif (_MSC_VER >= 1920 && _MSC_VER < 1930)
 #       define MSVC_VERSION 2019
 #   elif (_MSC_VER >= 1910 && _MSC_VER < 1920)
 #       define MSVC_VERSION 2017
@@ -50,4 +52,4 @@
 #   endif
 #endif
 
-#endif /* XMRIG_VERSION_H */
+#endif // XMRIG_VERSION_H

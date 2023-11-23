@@ -1,3 +1,7 @@
+# v6.21.0
+- [#548](https://github.com/xmrig/xmrig-proxy/pull/548) Sync changes with XMRig.
+- [#553](https://github.com/xmrig/xmrig-proxy/pull/553) Fixes for **Zephyr** solo mining.
+
 # v6.20.0
 - [#538](https://github.com/xmrig/xmrig-proxy/pull/538) Added [Zephyr](https://www.zephyrprotocol.com/) coin support for solo mining.
 

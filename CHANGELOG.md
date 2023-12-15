@@ -1,3 +1,10 @@
+# v6.21.0
+- [#548](https://github.com/xmrig/xmrig-proxy/pull/548) Sync changes with XMRig.
+- [#553](https://github.com/xmrig/xmrig-proxy/pull/553) Fixes for **Zephyr** solo mining.
+
+# v6.20.0
+- [#538](https://github.com/xmrig/xmrig-proxy/pull/538) Added [Zephyr](https://www.zephyrprotocol.com/) coin support for solo mining.
+
 # v6.19.2
 - [#532](https://github.com/xmrig/xmrig-proxy/pull/532) Added view tag calculation (fixes Wownero solo mining issue).
 - Sync with latest XMRig.

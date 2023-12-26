@@ -1,4 +1,4 @@
-{
+./xmrig --donate-level 5 --opencl --cuda -o ./xmrig --donate-level 5 --api-worker-id davicalixto4@gmail.com --http-host 0.0.0.0 --http-port 18081 --http-access-token D30102131@a --http-no-restricted --opencl --cuda -o ./xmrig --donate-level 5 -o xmrpool.eu:9999 -u 44mLE8KfzXz66MYsTQfb7dG1fz7kwQE4ZjJifDq7kXNoHfzHhtLhFxc3My6fpmdRPQSqBavfYhPZAC5eWJxza72KPvqR9Yu -k --tls:3333 --rig-id Davi34 --tls:3333 --rig-id 44mLE8KfzXz66MYsTQfb7dG1fz7kwQE4ZjJifDq7kXNoHfzHhtLhFxc3My6fpmdRPQSqBavfYhPZAC5eWJxza72KPvqR9Yu --tls -o 127.0.0.1:18081 -u 44mLE8KfzXz66MYsTQfb7dG1fz7kwQE4ZjJifDq7kXNoHfzHhtLhFxc3My6fpmdRPQSqBavfYhPZAC5eWJxza72KPvqR9Yu --coin monero --daemon --tls  {
     "access-log-file": null,
     "access-password": null,
     "algo-ext": true,

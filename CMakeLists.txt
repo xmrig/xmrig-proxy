@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.5)
 project(xmrig-proxy)
 
 
@@ -120,7 +120,7 @@ if (WIN32)
         )
 
     add_definitions(/DWIN32)
-    set(EXTRA_LIBS ws2_32 psapi iphlpapi userenv)
+    set(EXTRA_LIBS ws2_32 psapi iphlpapi userenv dbghelp)
 elseif (APPLE)
     set(SOURCES_OS
         "${SOURCES_OS}"

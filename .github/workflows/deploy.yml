@@ -31,7 +31,7 @@ jobs:
 
   build_lin:
     name: Build Ubuntu artifacts
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Prepare Ubuntu tools
         run: |
@@ -80,7 +80,7 @@ jobs:
         run: |
           yum install -y centos-release-scl epel-release
           yum install -y devtoolset-9
-          yum install -y git cmake libstdc++-static openssl-devel libmicrohttpd-devel libuv-devel glibc-static libuv-static
+          yum install -y git cmake3 libstdc++-static openssl-devel libmicrohttpd-devel libuv-devel glibc-static libuv-static
       - name: Checkout code
         run: |
           git clone https://github.com/MoneroOcean/xmrig-proxy.git .
@@ -88,7 +88,7 @@ jobs:
       - name: Build project on CentOS 7
         run: |
           source /opt/rh/devtoolset-9/enable
-          cmake . -DWITH_TLS=OFF
+          cmake3 . -DWITH_TLS=OFF
           make -j$(nproc)
           cp src/config.json .
           mv xmrig-proxy-notls xmrig-proxy

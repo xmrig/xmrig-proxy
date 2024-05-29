@@ -23,6 +23,7 @@
 
 #include <functional>
 #include <vector>
+#include <map>
 
 
 #include "3rdparty/rapidjson/fwd.h"

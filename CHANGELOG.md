@@ -1,3 +1,9 @@
+# v6.21.1
+- The dependencies of all prebuilt releases have been updated. Support for old Ubuntu releases has been dropped.
+- [#3391](https://github.com/xmrig/xmrig/pull/3391) Added support for townforge (monero fork using randomx).
+- [#3420](https://github.com/xmrig/xmrig/pull/3420) Fixed segfault in HTTP API rebind.
+- [#3436](https://github.com/xmrig/xmrig/pull/3436) Fixed, the file log writer was not thread-safe.
+
 # v6.21.0
 - [#548](https://github.com/xmrig/xmrig-proxy/pull/548) Sync changes with XMRig.
 - [#553](https://github.com/xmrig/xmrig-proxy/pull/553) Fixes for **Zephyr** solo mining.

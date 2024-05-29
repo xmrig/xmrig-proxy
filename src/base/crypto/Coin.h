@@ -35,6 +35,7 @@ public:
         MONERO,
         SUMO,
         ARQMA,
+        XEQ,
         GRAFT,
         KEVA,
         RAVEN,

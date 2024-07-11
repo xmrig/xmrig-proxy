@@ -1,0 +1,9 @@
+---
+services:
+  xmrig-proxy:
+    image: xmrig-proxy:latest
+    ports:
+      - 3333:3333
+    volumes:
+      - ./xmrig-proxy.json:/.xmrig-proxy.json
+...

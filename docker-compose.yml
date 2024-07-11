@@ -1,7 +1,7 @@
 ---
 services:
   xmrig-proxy:
-    image: xmrig-proxy:latest
+    image: xmrig/xmrig-proxy:latest
     ports:
       - 3333:3333
     volumes:

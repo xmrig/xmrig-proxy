@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2021 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2024 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2024 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -146,7 +146,7 @@ void xmrig::Miner::setJob(Job &job, int64_t extra_nonce)
 
     if (hasExtension(EXT_NICEHASH)) {
         snprintf(m_sendBuf, 4, "%02hhx", m_fixedByte);
-        memcpy(job.rawBlob() + 84, m_sendBuf, 2);
+        memcpy(job.rawBlob() + (job.nonceOffset() + 3) * 2, m_sendBuf, 2);
     }
 
     m_diff = job.diff();

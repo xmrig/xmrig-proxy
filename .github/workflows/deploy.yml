@@ -71,36 +71,42 @@ jobs:
           name: macos_build
           path: macos_build.tar.gz
 
-  build_lin_rh7:
-    name: Build CentOS 7 artifacts
+  build_lin_ub12:
+    name: Build Ubuntu 12.04 artifacts
     runs-on: ubuntu-latest
-    container: centos:7
+    container: ubuntu:12.04
     steps:
-      - name: Prepare CentOS 7 tools
+      - name: Prepare build tools
         run: |
-          yum install -y centos-release-scl epel-release
-          yum install -y devtoolset-9
-          yum install -y git cmake3 libstdc++-static openssl-devel libmicrohttpd-devel libuv-devel glibc-static libuv-static
+          sed -i -r 's/(archive|security).ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
+          apt-get update
+          apt-get install -y python-software-properties
+          add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          apt-get update
+          apt-get install -y git build-essential automake libtool autoconf wget libgmp-dev libmpfr-dev texinfo bison flex gcc-9 g++-9 curl
+          update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-9
+          curl -sSL https://cmake.org/files/v3.27/cmake-3.27.9-linux-x86_64.tar.gz | tar -xzC /opt
+          git clone --depth 1 git://sourceware.org/git/binutils-gdb.git /tmp/binutils-gdb
+          (cd /tmp/binutils-gdb && git checkout binutils-2_38 && CC=gcc ./configure && make -j$(nproc) && make install)
       - name: Checkout code
         run: |
           git clone https://github.com/MoneroOcean/xmrig-proxy.git .
-          git checkout ${GITHUB_REF:10}
-      - name: Build project on CentOS 7
+          git checkout $GITHUB_REF_NAME
+      - name: Build project on Ubuntu 12.04
         run: |
-          source /opt/rh/devtoolset-9/enable
-          cmake3 . -DWITH_TLS=OFF
+          cd scripts && ./build_deps.sh && cd ..
+          /opt/cmake-3.27.9-linux-x86_64/bin/cmake . -DXMRIG_DEPS=scripts/deps
           make -j$(nproc)
           cp src/config.json .
-          mv xmrig-proxy-notls xmrig-proxy
-          tar cfz centos7_build.tar.gz xmrig-proxy config.json
-      - name: Upload CentOS 7 build artifacts
+          tar cfz ubuntu12_build.tar.gz xmrig-proxy config.json
+      - name: Upload Ubuntu 12.04 build artifacts
         uses: actions/upload-artifact@v1
         with:
-          name: centos7_build
-          path: centos7_build.tar.gz
+          name: ubuntu12_build
+          path: ubuntu12_build.tar.gz
 
   deploy:
-    needs: [build_win, build_lin, build_macos, build_lin_rh7]
+    needs: [build_win, build_lin, build_macos, build_lin_ub12]
     name: Create release and upload artifacts
     runs-on: ubuntu-latest
     steps:
@@ -116,7 +122,7 @@ jobs:
           prerelease: false
       - name: Set version
         id: version
-        run: echo ::set-output name=VERSION::${GITHUB_REF:10}
+        run: echo ::set-output name=VERSION::$GITHUB_REF_NAME
       - name: Download Windows build artifacts
         uses: actions/download-artifact@v1
         with:
@@ -129,10 +135,10 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: macos_build
-      - name: Download CentOS 6 build artifacts
+      - name: Download Ubuntu 12.04 build artifacts
         uses: actions/download-artifact@v1
         with:
-          name: centos7_build
+          name: ubuntu12_build
       - name: Upload Windows build release asset
         uses: actions/upload-release-asset@v1.0.1
         env:
@@ -160,12 +166,12 @@ jobs:
           asset_path: macos_build/macos_build.tar.gz
           asset_name: xmrig-proxy-${{steps.version.outputs.VERSION}}-mac64.tar.gz
           asset_content_type: application/zip
-      - name: Upload CentOS 6 build release asset
+      - name: Upload Ubuntu 12.04 build release asset
         uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: centos7_build/centos7_build.tar.gz
+          asset_path: ubuntu12_build/ubuntu12_build.tar.gz
           asset_name: xmrig-proxy-${{steps.version.outputs.VERSION}}-lin64-compat.tar.gz
           asset_content_type: application/zip

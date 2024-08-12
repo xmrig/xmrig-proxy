@@ -1,6 +1,6 @@
 /* XMRig
- * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
- * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2024 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2024 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -49,12 +49,12 @@ int xmrig::App::exec()
         return 2;
     }
 
-    m_signals = std::make_shared<Signals>(this);
-
     int rc = 0;
     if (background(rc)) {
         return rc;
     }
+
+    m_signals = std::make_shared<Signals>(this);
 
     rc = m_controller->init();
     if (rc != 0) {

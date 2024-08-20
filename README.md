@@ -16,7 +16,7 @@ Extremely high performance Monero (XMR) Stratum protocol proxy, can easily handl
 * [Comparison](https://github.com/xmrig/xmrig-proxy/wiki/Comparison) with other proxies.
 
 ## Why?
-This proxy designed and created for handle donation traffic from XMRig. No one other solution works fine with high connection/disconnection rate.
+This proxy designed and created to handle donation traffic from XMRig. No one other solution works fine with high connection/disconnection rate.
 
 ## Download
 * Binary releases: https://github.com/xmrig/xmrig-proxy/releases
@@ -24,7 +24,7 @@ This proxy designed and created for handle donation traffic from XMRig. No one o
   * Clone with `git clone https://github.com/xmrig/xmrig-proxy.git` :hammer: [Build instructions](https://github.com/xmrig/xmrig-proxy/wiki/Build).
   
 ## Usage
-:boom: If you use Linux and want handle more than **1000 connections**, you need [increase limits of open files](https://github.com/xmrig/xmrig-proxy/wiki/Ubuntu-setup).
+:boom: If you use Linux and want to handle more than **1000 connections**, you need [increase limits of open files](https://github.com/xmrig/xmrig-proxy/wiki/Ubuntu-setup).
 
 Use [config.xmrig.com](https://config.xmrig.com/proxy) to generate, edit or share configurations.
   
@@ -98,7 +98,7 @@ Misc:
 
 ## Donations
 
-Default donation fee is 2% can be reduced to 1% or disabled via `donate-level` option. Donation fee applies only if you use more than 256 miners.
+Default donation fee is 2% but can be reduced to 1% or disabled via `donate-level` option. Donation fee applies only if you use more than 256 miners.
 
 * XMR: `48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzKt52XU5xvqgzYnDK9URnRoJMk1j8nLwEVsaSWJ4fhdUyZijBGUicoD`
 

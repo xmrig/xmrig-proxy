@@ -1,15 +1,13 @@
 # syntax=docker/dockerfile:latest
-FROM alpine:latest AS build
+FROM cgr.dev/chainguard/wolfi-base:latest AS build
 RUN \
 apk add \
-  alpine-sdk \
+  build-base \
   clang \
   cmake \
   libuv-dev \
-  libuv-static \
-  lld \
+  llvm-lld \
   openssl-dev \
-  openssl-libs-static \
   samurai
 RUN \
 --mount=type=bind,readwrite,source=/,target=/src \

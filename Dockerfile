@@ -1,11 +1,13 @@
 # syntax=docker/dockerfile:latest
-FROM cgr.dev/chainguard/wolfi-base:latest AS build
+ARG TARGET_PLATFORM=linux/amd64
+FROM --platform=$TARGET_PLATFORM cgr.dev/chainguard/wolfi-base:latest AS build
 RUN \
 apk add \
   build-base \
   clang \
   cmake \
   libuv-dev \
+  llvm \
   llvm-lld \
   openssl-dev \
   samurai
@@ -28,6 +30,6 @@ cmake --build /src/build
 mv /src/build/xmrig-proxy /xmrig-proxy
 EOF
 
-FROM cgr.dev/chainguard/static:latest AS runtime
+FROM --platform=$TARGET_PLATFORM cgr.dev/chainguard/static:latest AS runtime
 COPY --from=build /xmrig-proxy /xmrig-proxy
 ENTRYPOINT [ "/xmrig-proxy" ]

@@ -137,10 +137,12 @@ else()
         src/App_unix.cpp
         )
 
-    if (CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
-        set(EXTRA_LIBS pthread)
-    else()
+    if (XMRIG_OS_ANDROID)
+        set(EXTRA_LIBS pthread rt dl log)
+    elseif (XMRIG_OS_LINUX)
         set(EXTRA_LIBS pthread rt dl)
+    elseif (XMRIG_OS_FREEBSD)
+        set(EXTRA_LIBS kvm pthread)
     endif()
 endif()
 

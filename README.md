@@ -102,4 +102,6 @@ The default donation fee is 2%, which can be reduced to 1% or completely disable
 
 ## Contacts
 * support@xmrig.com
-* [X](https://x.com/xmrig_dev)
+* [Reddit](https://www.reddit.com/user/XMRig)
+* [X/Twitter](https://x.com/xmrig_dev)
+* [Telegram](https://t.me/xmrig)

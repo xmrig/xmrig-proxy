@@ -76,7 +76,7 @@ static inline const std::string &usage()
 
     u += "\nOptions:\n";
     u += "  -b, --bind=ADDR               bind to specified address, example \"0.0.0.0:3333\"\n";
-    u += "  -m, --mode=MODE               proxy mode, nicehash (default) or simple\n";
+    u += "  -m, --mode=MODE               proxy mode: nicehash (default), simple or extra_nonce\n";
     u += "      --custom-diff=N           override pool diff\n";
     u += "      --custom-diff-stats       calculate stats using custom diff shares instead of pool shares\n";
     u += "      --reuse-timeout=N         timeout in seconds for reuse pool connections in simple mode\n";

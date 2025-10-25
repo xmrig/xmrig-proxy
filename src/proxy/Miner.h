@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2021 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2025 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2025 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,11 +25,9 @@
 #ifndef XMRIG_MINER_H
 #define XMRIG_MINER_H
 
-
 #include <algorithm>
 #include <bitset>
 #include <uv.h>
-
 
 #include "3rdparty/rapidjson/fwd.h"
 #include "base/kernel/interfaces/ILineListener.h"
@@ -147,7 +145,7 @@ private:
     String m_rigId;
     String m_user;
     String m_signatureData;
-    uint8_t m_viewTag;
+    uint8_t m_viewTag       = 0;
     Tls *m_tls              = nullptr;
     uint16_t m_localPort;
     uint64_t m_customDiff   = 0;
@@ -166,6 +164,6 @@ private:
 };
 
 
-} /* namespace xmrig */
+} // namespace xmrig
 
-#endif /* XMRIG_MINER_H */
+#endif // XMRIG_MINER_H

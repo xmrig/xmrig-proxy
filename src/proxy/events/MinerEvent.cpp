@@ -34,3 +34,9 @@ const char *xmrig::MinerEvent::ip() const
 {
     return m_miner ? m_miner->ip() : kDefaultIP;
 }
+
+
+int32_t xmrig::MinerEvent::route() const
+{
+    return m_miner ? m_miner->routeId() : -1;
+}

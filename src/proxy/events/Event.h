@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2025 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2025 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,9 +26,6 @@
 #define XMRIG_EVENT_H
 
 
-#include <new>
-
-
 #include "proxy/interfaces/IEvent.h"
 
 
@@ -38,10 +35,7 @@ namespace xmrig {
 class Event : public IEvent
 {
 public:
-    inline Event(Type type) :
-        m_rejected(false),
-        m_type(type)
-    {}
+    inline Event(Type type) : m_type(type) {}
 
     static bool exec(IEvent *event);
 
@@ -52,8 +46,8 @@ public:
     inline bool start()                     { return exec(this); }
 
 protected:
-    bool m_rejected;
-    Type m_type;
+    bool m_rejected = false;
+    const Type m_type;
 
     static char m_buf[4096];
 };

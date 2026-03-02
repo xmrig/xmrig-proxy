@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +20,8 @@
 #define XMRIG_ICLIENT_H
 
 
-#include "rapidjson/fwd.h"
+#include "3rdparty/rapidjson/fwd.h"
+#include "base/tools/Object.h"
 
 
 #include <functional>
@@ -39,12 +34,15 @@ class Algorithm;
 class Job;
 class JobResult;
 class Pool;
+class ProxyUrl;
 class String;
 
 
 class IClient
 {
 public:
+    XMRIG_DISABLE_COPY_MOVE(IClient)
+
     enum Extension {
         EXT_ALGO,
         EXT_NICEHASH,
@@ -56,13 +54,15 @@ public:
 
     using Callback = std::function<void(const rapidjson::Value &result, bool success, uint64_t elapsed)>;
 
-    virtual ~IClient() = default;
+    IClient()           = default;
+    virtual ~IClient()  = default;
 
     virtual bool disconnect()                                               = 0;
     virtual bool hasExtension(Extension extension) const noexcept           = 0;
     virtual bool isEnabled() const                                          = 0;
     virtual bool isTLS() const                                              = 0;
     virtual const char *mode() const                                        = 0;
+    virtual const char *tag() const                                         = 0;
     virtual const char *tlsFingerprint() const                              = 0;
     virtual const char *tlsVersion() const                                  = 0;
     virtual const Job &job() const                                          = 0;
@@ -79,6 +79,7 @@ public:
     virtual void setAlgo(const Algorithm &algo)                             = 0;
     virtual void setEnabled(bool enabled)                                   = 0;
     virtual void setPool(const Pool &pool)                                  = 0;
+    virtual void setProxy(const ProxyUrl &proxy)                            = 0;
     virtual void setQuiet(bool quiet)                                       = 0;
     virtual void setRetries(int retries)                                    = 0;
     virtual void setRetryPause(uint64_t ms)                                 = 0;

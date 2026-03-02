@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2025 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2025 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,10 +22,9 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
-
-
+#include "proxy/splitters/nicehash/NonceSplitter.h"
 #include "base/io/log/Log.h"
+#include "base/tools/Chrono.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/Counters.h"
@@ -34,8 +33,9 @@
 #include "proxy/events/SubmitEvent.h"
 #include "proxy/Miner.h"
 #include "proxy/splitters/nicehash/NonceMapper.h"
-#include "proxy/splitters/nicehash/NonceSplitter.h"
 #include "Summary.h"
+
+#include <cinttypes>
 
 
 #define LABEL(x) " \x1B[01;30m" x ":\x1B[0m "
@@ -71,13 +71,13 @@ xmrig::Upstreams xmrig::NonceSplitter::upstreams() const
         }
     }
 
-    return Upstreams(active, sleep, m_upstreams.size(), Counters::miners());
+    return { active, sleep, m_upstreams.size() };
 }
 
 
 void xmrig::NonceSplitter::connect()
 {
-    auto upstream = new NonceMapper(m_upstreams.size(), m_controller);
+    auto *upstream = new NonceMapper(m_upstreams.size(), m_controller);
     m_upstreams.push_back(upstream);
 
     upstream->start();
@@ -100,19 +100,20 @@ void xmrig::NonceSplitter::gc()
 
 void xmrig::NonceSplitter::printConnections()
 {
-    const Upstreams info = upstreams();
+    const auto info  = upstreams();
+    const auto ratio = info.ratio(Counters::miners());
 
     LOG_INFO("\x1B[01;32m* \x1B[01;37mupstreams\x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("sleep") "\x1B[01;37m%" PRIu64 "\x1B[0m" LABEL("error") "%s%" PRIu64 "\x1B[0m" LABEL("total") "\x1B[01;37m%" PRIu64,
              info.active ? "\x1B[01;32m" : "\x1B[01;31m", info.active, info.sleep, info.error ? "\x1B[01;31m" : "\x1B[01;37m", info.error, info.total);
 
     LOG_INFO("\x1B[01;32m* \x1B[01;37mminers   \x1B[0m" LABEL("active") "%s%" PRIu64 "\x1B[0m" LABEL("max") "\x1B[01;37m%" PRIu64 "\x1B[0m" LABEL("ratio") "%s1:%3.1f",
-             Counters::miners() ? "\x1B[01;32m" : "\x1B[01;31m", Counters::miners(), Counters::maxMiners(), (info.ratio > 200 ? "\x1B[01;32m" : "\x1B[01;33m"), info.ratio);
+             Counters::miners() ? "\x1B[01;32m" : "\x1B[01;31m", Counters::miners(), Counters::maxMiners(), (ratio > 200 ? "\x1B[01;32m" : "\x1B[01;33m"), ratio);
 }
 
 
 void xmrig::NonceSplitter::tick(uint64_t ticks)
 {
-    const uint64_t now = uv_now(uv_default_loop());
+    const uint64_t now = Chrono::steadyMSecs();
 
     for (NonceMapper *mapper : m_upstreams) {
         mapper->tick(ticks, now);

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.10)
 project(xmrig-proxy)
 
 
@@ -6,10 +6,13 @@ option(WITH_GOOGLE_BREAKPAD "Use Google Breakpad"     OFF)
 option(WITH_DEBUG_LOG       "Enable debug log output" OFF)
 option(WITH_HTTP            "HTTP protocol support (client/server)" ON)
 option(WITH_TLS             "Enable OpenSSL support"  ON)
+option(WITH_ENV_VARS        "Enable environment variables support in config file" ON)
 
 
-include (CheckIncludeFile)
-include (src/base/base.cmake)
+include(CheckIncludeFile)
+include(cmake/cpu.cmake)
+include(cmake/os.cmake)
+include(src/base/base.cmake)
 
 
 set(HEADERS
@@ -21,10 +24,6 @@ set(HEADERS
     src/core/config/ConfigTransform.h
     src/core/config/usage.h
     src/core/Controller.h
-    src/crypto/cn/CnAlgo.h
-    src/crypto/common/Algorithm.h
-    src/crypto/common/Coin.h
-    src/crypto/common/keccak.h
     src/donate.h
     src/net/JobResult.h
     src/net/strategies/DonateStrategy.h
@@ -53,6 +52,9 @@ set(HEADERS
     src/proxy/Server.h
     src/proxy/splitters/donate/DonateMapper.h
     src/proxy/splitters/donate/DonateSplitter.h
+    src/proxy/splitters/extra_nonce/ExtraNonceMapper.h
+    src/proxy/splitters/extra_nonce/ExtraNonceSplitter.h
+    src/proxy/splitters/extra_nonce/ExtraNonceStorage.h
     src/proxy/splitters/nicehash/NonceMapper.h
     src/proxy/splitters/nicehash/NonceSplitter.h
     src/proxy/splitters/nicehash/NonceStorage.h
@@ -62,7 +64,6 @@ set(HEADERS
     src/proxy/Stats.h
     src/proxy/StatsData.h
     src/proxy/TickingCounter.h
-    src/proxy/Uuid.h
     src/proxy/workers/Worker.h
     src/proxy/workers/Workers.h
     src/Summary.h
@@ -76,9 +77,6 @@ set(SOURCES
     src/core/config/Config.cpp
     src/core/config/ConfigTransform.cpp
     src/core/Controller.cpp
-    src/crypto/common/Algorithm.cpp
-    src/crypto/common/Coin.cpp
-    src/crypto/common/keccak.cpp
     src/net/JobResult.cpp
     src/net/strategies/DonateStrategy.cpp
     src/proxy/BindHost.cpp
@@ -99,6 +97,9 @@ set(SOURCES
     src/proxy/Server.cpp
     src/proxy/splitters/donate/DonateMapper.cpp
     src/proxy/splitters/donate/DonateSplitter.cpp
+    src/proxy/splitters/extra_nonce/ExtraNonceMapper.cpp
+    src/proxy/splitters/extra_nonce/ExtraNonceSplitter.cpp
+    src/proxy/splitters/extra_nonce/ExtraNonceStorage.cpp
     src/proxy/splitters/nicehash/NonceMapper.cpp
     src/proxy/splitters/nicehash/NonceSplitter.cpp
     src/proxy/splitters/nicehash/NonceStorage.cpp
@@ -117,35 +118,35 @@ if (WIN32)
         "${SOURCES_OS}"
         res/app.rc
         src/App_win.cpp
-        src/proxy/Uuid_win.cpp
         )
 
     add_definitions(/DWIN32)
-    set(EXTRA_LIBS ws2_32 psapi iphlpapi userenv)
+    set(EXTRA_LIBS ws2_32 psapi iphlpapi userenv dbghelp)
 elseif (APPLE)
     set(SOURCES_OS
         "${SOURCES_OS}"
         src/App_unix.cpp
-        src/proxy/Uuid_mac.cpp
         )
 
-    find_library(CFLIB CoreFoundation)
-    set(EXTRA_LIBS ${CFLIB})
+    find_library(IOKIT_LIBRARY IOKit)
+    find_library(CORESERVICES_LIBRARY CoreServices)
+    set(EXTRA_LIBS ${IOKIT_LIBRARY} ${CORESERVICES_LIBRARY})
 else()
     set(SOURCES_OS
         "${SOURCES_OS}"
         src/App_unix.cpp
-        src/proxy/Uuid_unix.cpp
         )
 
-    if (CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
-        set(EXTRA_LIBS pthread)
-    else()
-        set(EXTRA_LIBS pthread uuid.a rt dl)
+    if (XMRIG_OS_ANDROID)
+        set(EXTRA_LIBS pthread rt dl log)
+    elseif (XMRIG_OS_LINUX)
+        set(EXTRA_LIBS pthread rt dl)
+    elseif (XMRIG_OS_FREEBSD)
+        set(EXTRA_LIBS kvm pthread)
     endif()
 endif()
 
-add_definitions(/DXMRIG_PROXY_PROJECT)
+add_definitions(/DXMRIG_PROXY_PROJECT /DXMRIG_FORCE_TLS)
 add_definitions(/DUNICODE)
 add_definitions(/D__STDC_FORMAT_MACROS)
 add_definitions(/DAPP_DEVEL)
@@ -155,8 +156,9 @@ add_definitions(/DXMRIG_ALGO_RANDOMX)
 add_definitions(/DXMRIG_ALGO_CN_LITE)
 add_definitions(/DXMRIG_ALGO_CN_HEAVY)
 add_definitions(/DXMRIG_ALGO_CN_PICO)
-add_definitions(/DXMRIG_ALGO_CN_GPU)
+add_definitions(/DXMRIG_ALGO_CN_FEMTO)
 add_definitions(/DXMRIG_ALGO_ARGON2)
+add_definitions(/DXMRIG_ALGO_ASTROBWT)
 
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$" AND CMAKE_SIZEOF_VOID_P EQUAL 8)
     add_definitions(/DRAPIDJSON_SSE2)
@@ -166,54 +168,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 find_package(UV REQUIRED)
 
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
-    set(CMAKE_BUILD_TYPE Release)
-endif()
-
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_STANDARD 11)
-
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
-    add_definitions(/DNDEBUG)
-endif()
-
-# https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_COMPILER_ID.html
-if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
-
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-class-memaccess")
-
-    if (WIN32)
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
-    else()
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
-    endif()
-
-    add_definitions(/D_GNU_SOURCE)
-
-    #set(CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -gdwarf-2")
-
-    if (WITH_GOOGLE_BREAKPAD)
-        set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -g")
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g")
-    endif()
-
-elseif (CMAKE_CXX_COMPILER_ID MATCHES MSVC)
-
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT /GL")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT /GL")
-    add_definitions(/D_CRT_SECURE_NO_WARNINGS)
-    add_definitions(/D_CRT_NONSTDC_NO_WARNINGS)
-    add_definitions(/DNOMINMAX)
-
-elseif (CMAKE_CXX_COMPILER_ID MATCHES Clang)
-
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-overloaded-virtual")
-
-endif()
-
+include(cmake/flags.cmake)
 include(cmake/OpenSSL.cmake)
 
 if (WITH_GOOGLE_BREAKPAD)
@@ -242,3 +197,7 @@ include_directories(${UV_INCLUDE_DIR})
 
 add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_SYSLOG} ${HTTP_SOURCES} ${TLS_SOURCES})
 target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENSSL_LIBRARIES} ${UV_LIBRARIES} ${EXTRA_LIBS} ${GOOGLE_BREAKPAD_LIBS})
+
+if (CMAKE_CXX_COMPILER_ID MATCHES Clang AND CMAKE_BUILD_TYPE STREQUAL Release AND NOT CMAKE_GENERATOR STREQUAL Xcode)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_STRIP} "$<TARGET_FILE:${CMAKE_PROJECT_NAME}>")
+endif()

@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,23 +16,25 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <cassert>
 #include <memory>
 
 
+#include "base/kernel/Base.h"
 #include "base/io/json/Json.h"
 #include "base/io/json/JsonChain.h"
 #include "base/io/log/backends/ConsoleLog.h"
 #include "base/io/log/backends/FileLog.h"
 #include "base/io/log/Log.h"
+#include "base/io/log/Tags.h"
 #include "base/io/Watcher.h"
-#include "base/kernel/Base.h"
 #include "base/kernel/interfaces/IBaseListener.h"
 #include "base/kernel/Platform.h"
 #include "base/kernel/Process.h"
+#include "base/net/tools/NetBuffer.h"
 #include "core/config/Config.h"
 #include "core/config/ConfigTransform.h"
+#include "version.h"
 
 
 #ifdef HAVE_SYSLOG_H
@@ -73,7 +69,12 @@ public:
     XMRIG_DISABLE_COPY_MOVE_DEFAULT(BasePrivate)
 
 
-    inline BasePrivate(Process *process) : config(load(process)) {}
+    inline explicit BasePrivate(Process *process)
+    {
+        Log::init();
+
+        config = load(process);
+    }
 
 
     inline ~BasePrivate()
@@ -84,10 +85,12 @@ public:
 
         delete config;
         delete watcher;
+
+        NetBuffer::destroy();
     }
 
 
-    inline bool read(const JsonChain &chain, std::unique_ptr<Config> &config)
+    inline static bool read(const JsonChain &chain, std::unique_ptr<Config> &config)
     {
         config = std::unique_ptr<Config>(new Config());
 
@@ -115,7 +118,7 @@ public:
 
 
 private:
-    inline Config *load(Process *process)
+    inline static Config *load(Process *process)
     {
         JsonChain chain;
         ConfigTransform transform;
@@ -127,8 +130,17 @@ private:
             return config.release();
         }
 
-        chain.addFile(process->location(Process::ExeLocation, "config.json"));
+        chain.addFile(Process::location(Process::DataLocation, "config.json"));
+        if (read(chain, config)) {
+            return config.release();
+        }
 
+        chain.addFile(Process::location(Process::HomeLocation,  "." APP_ID ".json"));
+        if (read(chain, config)) {
+            return config.release();
+        }
+
+        chain.addFile(Process::location(Process::HomeLocation, ".config" XMRIG_DIR_SEPARATOR APP_ID ".json"));
         if (read(chain, config)) {
             return config.release();
         }
@@ -152,6 +164,7 @@ private:
 xmrig::Base::Base(Process *process)
     : d_ptr(new BasePrivate(process))
 {
+
 }
 
 
@@ -176,15 +189,11 @@ int xmrig::Base::init()
 
     Platform::init(config()->userAgent());
 
-#   ifndef XMRIG_PROXY_PROJECT
-    Platform::setProcessPriority(config()->cpu().priority());
-#   endif
-
     if (isBackground()) {
-        Log::background = true;
+        Log::setBackground(true);
     }
     else {
-        Log::add(new ConsoleLog());
+        Log::add(new ConsoleLog(config()->title()));
     }
 
     if (config()->logFile()) {
@@ -286,7 +295,7 @@ void xmrig::Base::addListener(IBaseListener *listener)
 
 void xmrig::Base::onFileChanged(const String &fileName)
 {
-    LOG_WARN("\"%s\" was changed, reloading configuration", fileName.data());
+    LOG_WARN("%s " YELLOW("\"%s\" was changed, reloading configuration"), Tags::config(), fileName.data());
 
     JsonChain chain;
     chain.addFile(fileName);
@@ -294,7 +303,7 @@ void xmrig::Base::onFileChanged(const String &fileName)
     auto config = new Config();
 
     if (!config->read(chain, chain.fileName())) {
-        LOG_ERR("reloading failed");
+        LOG_ERR("%s " RED("reloading failed"), Tags::config());
 
         delete config;
         return;

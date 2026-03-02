@@ -42,10 +42,11 @@ public:
         Unauthenticated,
         IncompatibleAlgorithm,
         IncorrectAlgorithm,
-        Forbidden
+        Forbidden,
+        RouteNotFound
     };
 
-    static const char *toString(Code code);
+    static const char *toString(int code);
 };
 
 

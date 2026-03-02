@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2024 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2024 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -27,11 +21,10 @@
 
 
 #include <vector>
-#include <cstdint>
 
 
 #include "base/kernel/interfaces/IBaseListener.h"
-#include "base/tools/Object.h"
+#include "base/tools/String.h"
 
 
 namespace xmrig {
@@ -50,7 +43,7 @@ class Api : public IBaseListener
 public:
     XMRIG_DISABLE_COPY_MOVE_DEFAULT(Api)
 
-    Api(Base *base);
+    explicit Api(Base *base);
     ~Api() override;
 
     inline const char *id() const                   { return m_id; }
@@ -60,6 +53,7 @@ public:
     void request(const HttpData &req);
     void start();
     void stop();
+    void tick();
 
 protected:
     void onConfigChanged(Config *config, Config *previousConfig) override;
@@ -70,15 +64,16 @@ private:
     void genWorkerId(const String &id);
 
     Base *m_base;
-    char m_id[32];
-    char m_workerId[128];
+    char m_id[32]{};
     const uint64_t m_timestamp;
-    Httpd *m_httpd;
+    Httpd *m_httpd  = nullptr;
     std::vector<IApiListener *> m_listeners;
+    String m_workerId;
+    uint8_t m_ticks = 0;
 };
 
 
 } // namespace xmrig
 
 
-#endif /* XMRIG_API_H */
+#endif // XMRIG_API_H

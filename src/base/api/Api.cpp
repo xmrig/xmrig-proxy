@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2025 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2025 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,25 +16,22 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <uv.h>
 
 
-#ifndef _WIN32
-#   include <unistd.h>
-#endif
-
-
-#include "3rdparty/http-parser/http_parser.h"
 #include "base/api/Api.h"
+#include "3rdparty/rapidjson/writer.h"
 #include "base/api/interfaces/IApiListener.h"
 #include "base/api/requests/HttpApiRequest.h"
+#include "base/crypto/keccak.h"
+#include "base/io/Env.h"
+#include "base/io/json/Json.h"
+#include "base/io/log/Log.h"
+#include "base/io/log/Tags.h"
 #include "base/kernel/Base.h"
-#include "base/tools/Buffer.h"
 #include "base/tools/Chrono.h"
+#include "base/tools/Cvt.h"
 #include "core/config/Config.h"
-#include "core/Controller.h"
-#include "crypto/common/keccak.h"
 #include "version.h"
 
 
@@ -49,12 +40,55 @@
 #endif
 
 
+#include <thread>
+
+
+namespace xmrig {
+
+
+static_assert(
+    RAPIDJSON_WRITE_DEFAULT_FLAGS == (rapidjson::kWriteNanAndInfFlag | rapidjson::kWriteNanAndInfNullFlag),
+    "(rapidjson::kWriteNanAndInfFlag | rapidjson::kWriteNanAndInfNullFlag) required"
+    );
+
+
+static rapidjson::Value getResources(rapidjson::Document &doc)
+{
+    using namespace rapidjson;
+    auto &allocator = doc.GetAllocator();
+
+    size_t rss = 0;
+    uv_resident_set_memory(&rss);
+
+    Value out(kObjectType);
+    Value memory(kObjectType);
+    Value load_average(kArrayType);
+
+    memory.AddMember("free",                uv_get_free_memory(), allocator);
+    memory.AddMember("total",               uv_get_total_memory(), allocator);
+    memory.AddMember("resident_set_memory", static_cast<uint64_t>(rss), allocator);
+
+    double loadavg[3] = { 0.0 };
+    uv_loadavg(loadavg);
+
+    for (double value : loadavg) {
+        load_average.PushBack(Json::normalize(value, true), allocator);
+    }
+
+    out.AddMember("memory",               memory, allocator);
+    out.AddMember("load_average",         load_average, allocator);
+    out.AddMember("hardware_concurrency", std::thread::hardware_concurrency(), allocator);
+
+    return out;
+}
+
+
+} // namespace xmrig
+
+
 xmrig::Api::Api(Base *base) :
     m_base(base),
-    m_id(),
-    m_workerId(),
-    m_timestamp(Chrono::currentMSecsSinceEpoch()),
-    m_httpd(nullptr)
+    m_timestamp(Chrono::currentMSecsSinceEpoch())
 {
     base->addListener(this);
 
@@ -65,7 +99,11 @@ xmrig::Api::Api(Base *base) :
 xmrig::Api::~Api()
 {
 #   ifdef XMRIG_FEATURE_HTTP
-    delete m_httpd;
+    if (m_httpd) {
+        m_httpd->stop();
+        delete m_httpd;
+        m_httpd = nullptr; // Ensure the pointer is set to nullptr after deletion
+    }
 #   endif
 }
 
@@ -83,8 +121,15 @@ void xmrig::Api::start()
     genWorkerId(m_base->config()->apiWorkerId());
 
 #   ifdef XMRIG_FEATURE_HTTP
-    m_httpd = new Httpd(m_base);
-    m_httpd->start();
+    if (!m_httpd) {
+        m_httpd = new Httpd(m_base);
+        if (!m_httpd->start()) {
+            LOG_ERR("%s " RED_BOLD("HTTP API server failed to start."), Tags::network());
+
+            delete m_httpd; // Properly handle failure to start
+            m_httpd = nullptr;
+        }
+    }
 #   endif
 }
 
@@ -92,7 +137,26 @@ void xmrig::Api::start()
 void xmrig::Api::stop()
 {
 #   ifdef XMRIG_FEATURE_HTTP
-    m_httpd->stop();
+    if (m_httpd) {
+        m_httpd->stop();
+    }
+#   endif
+}
+
+
+void xmrig::Api::tick()
+{
+#   ifdef XMRIG_FEATURE_HTTP
+    if (!m_httpd || !m_base->config()->http().isEnabled() || m_httpd->isBound()) {
+        return;
+    }
+
+    if (++m_ticks % 10 == 0) {
+        m_ticks = 0;
+        if (m_httpd) {
+            m_httpd->start();
+        }
+    }
 #   endif
 }
 
@@ -117,10 +181,13 @@ void xmrig::Api::exec(IApiRequest &request)
         auto &allocator = request.doc().GetAllocator();
 
         request.accept();
-        request.reply().AddMember("id",         StringRef(m_id),       allocator);
-        request.reply().AddMember("worker_id",  StringRef(m_workerId), allocator);
-        request.reply().AddMember("uptime",     (Chrono::currentMSecsSinceEpoch() - m_timestamp) / 1000, allocator);
-        request.reply().AddMember("restricted", request.isRestricted(), allocator);
+
+        auto &reply = request.reply();
+        reply.AddMember("id",         StringRef(m_id),       allocator);
+        reply.AddMember("worker_id",  m_workerId.toJSON(), allocator);
+        reply.AddMember("uptime",     (Chrono::currentMSecsSinceEpoch() - m_timestamp) / 1000, allocator);
+        reply.AddMember("restricted", request.isRestricted(), allocator);
+        reply.AddMember("resources",  getResources(request.doc()), allocator);
 
         Value features(kArrayType);
 #       ifdef XMRIG_FEATURE_API
@@ -132,9 +199,6 @@ void xmrig::Api::exec(IApiRequest &request)
 #       ifdef XMRIG_FEATURE_HTTP
         features.PushBack("http", allocator);
 #       endif
-#       ifdef XMRIG_FEATURE_LIBCPUID
-        features.PushBack("cpuid", allocator);
-#       endif
 #       ifdef XMRIG_FEATURE_HWLOC
         features.PushBack("hwloc", allocator);
 #       endif
@@ -144,7 +208,10 @@ void xmrig::Api::exec(IApiRequest &request)
 #       ifdef XMRIG_FEATURE_OPENCL
         features.PushBack("opencl", allocator);
 #       endif
-        request.reply().AddMember("features", features, allocator);
+#       ifdef XMRIG_FEATURE_CUDA
+        features.PushBack("cuda", allocator);
+#       endif
+        reply.AddMember("features", features, allocator);
     }
 
     for (IApiListener *listener : m_listeners) {
@@ -155,7 +222,7 @@ void xmrig::Api::exec(IApiRequest &request)
         }
     }
 
-    request.done(request.isNew() ? HTTP_STATUS_NOT_FOUND : HTTP_STATUS_OK);
+    request.done(request.isNew() ? 404 : 200);
 }
 
 
@@ -168,7 +235,7 @@ void xmrig::Api::genId(const String &id)
         return;
     }
 
-    uv_interface_address_t *interfaces;
+    uv_interface_address_t *interfaces = nullptr;
     int count = 0;
 
     if (uv_interface_addresses(&interfaces, &count) < 0) {
@@ -179,16 +246,16 @@ void xmrig::Api::genId(const String &id)
         if (!interfaces[i].is_internal && interfaces[i].address.address4.sin_family == AF_INET) {
             uint8_t hash[200];
             const size_t addrSize = sizeof(interfaces[i].phys_addr);
-            const size_t inSize   = strlen(APP_KIND) + addrSize + sizeof(uint16_t);
-            const uint16_t port   = static_cast<uint16_t>(m_base->config()->http().port());
+            const size_t inSize   = (sizeof(APP_KIND) - 1) + addrSize + sizeof(uint16_t);
+            const auto port       = static_cast<uint16_t>(m_base->config()->http().port());
 
-            uint8_t *input = new uint8_t[inSize]();
+            auto *input = new uint8_t[inSize]();
             memcpy(input, &port, sizeof(uint16_t));
             memcpy(input + sizeof(uint16_t), interfaces[i].phys_addr, addrSize);
-            memcpy(input + sizeof(uint16_t) + addrSize, APP_KIND, strlen(APP_KIND));
+            memcpy(input + sizeof(uint16_t) + addrSize, APP_KIND, (sizeof(APP_KIND) - 1));
 
             keccak(input, inSize, hash);
-            Buffer::toHex(hash, 8, m_id);
+            Cvt::toHex(m_id, sizeof(m_id), hash, 8);
 
             delete [] input;
             break;
@@ -201,12 +268,8 @@ void xmrig::Api::genId(const String &id)
 
 void xmrig::Api::genWorkerId(const String &id)
 {
-    memset(m_workerId, 0, sizeof(m_workerId));
-
-    if (id.size() > 0) {
-        strncpy(m_workerId, id.data(), sizeof(m_workerId) - 1);
-    }
-    else {
-        gethostname(m_workerId, sizeof(m_workerId) - 1);
+    m_workerId = Env::expand(id);
+    if (m_workerId.isEmpty()) {
+        m_workerId = Env::hostname();
     }
 }

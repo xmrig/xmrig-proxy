@@ -1,13 +1,7 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2014-2019 heapwolf    <https://github.com/heapwolf>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2014-2019 heapwolf    <https://github.com/heapwolf>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -28,6 +22,10 @@
 #define XMRIG_HTTPDATA_H
 
 
+#include "3rdparty/rapidjson/document.h"
+#include "base/tools/Object.h"
+
+
 #include <map>
 #include <string>
 
@@ -38,15 +36,41 @@ namespace xmrig {
 class HttpData
 {
 public:
-    inline HttpData(uint64_t id) : method(0), status(0), m_id(id) {}
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(HttpData)
 
-    inline uint64_t id() const { return m_id; }
+    static const std::string kApplicationJson;
+    static const std::string kContentType;
+    static const std::string kContentTypeL;
+    static const std::string kTextPlain;
 
-    int method;
-    int status;
+
+    inline HttpData(uint64_t id) : m_id(id) {}
+    virtual ~HttpData() = default;
+
+    inline const char *statusName() const   { return statusName(status); }
+    inline uint64_t id() const              { return m_id; }
+
+    virtual bool isRequest() const                      = 0;
+    virtual const char *host() const                    = 0;
+    virtual const char *tlsFingerprint() const          = 0;
+    virtual const char *tlsVersion() const              = 0;
+    virtual std::string ip() const                      = 0;
+    virtual uint16_t port() const                       = 0;
+    virtual void write(std::string &&data, bool close)  = 0;
+
+    bool isJSON() const;
+    const char *methodName() const;
+    rapidjson::Document json() const;
+
+    static const char *statusName(int status);
+
+    int method      = 0;
+    int status      = 0;
+    int userType    = 0;
     std::map<const std::string, const std::string> headers;
     std::string body;
     std::string url;
+    uint64_t rpcId  = 0;
 
 private:
     const uint64_t m_id;

@@ -57,12 +57,12 @@ xmrig::Worker::Worker(size_t id, const std::string &name, const std::string &ip)
 }
 
 
-void xmrig::Worker::add(const SubmitResult &result)
+void xmrig::Worker::add(uint64_t diff)
 {
     m_accepted++;
-    m_hashes += result.diff;
+    m_hashes += diff;
 
-    m_hashrate.add(result.diff);
+    m_hashrate.add(diff);
 
     using namespace std::chrono;
     m_lastHash = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();

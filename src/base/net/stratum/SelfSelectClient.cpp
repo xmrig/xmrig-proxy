@@ -1,13 +1,8 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2019      jtgrassie   <https://github.com/jtgrassie>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2019       jtgrassie       <https://github.com/jtgrassie>
+ * Copyright (c) 2021       Hansie Odendaal <https://github.com/hansieodendaal>
+ * Copyright (c) 2018-2021  SChernykh       <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021  XMRig           <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,21 +20,17 @@
 
 
 #include "base/net/stratum/SelfSelectClient.h"
-#include "3rdparty/http-parser/http_parser.h"
+#include "3rdparty/rapidjson/document.h"
+#include "3rdparty/rapidjson/error/en.h"
 #include "base/io/json/Json.h"
 #include "base/io/json/JsonRequest.h"
 #include "base/io/log/Log.h"
-#include "base/net/http/HttpClient.h"
+#include "base/io/log/Tags.h"
+#include "base/net/http/Fetch.h"
+#include "base/net/http/HttpData.h"
 #include "base/net/stratum/Client.h"
-#include "rapidjson/document.h"
-#include "rapidjson/error/en.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
-
-
-#ifdef XMRIG_FEATURE_TLS
-#   include "base/net/http/HttpsClient.h"
-#endif
+#include "net/JobResult.h"
+#include "base/tools/Cvt.h"
 
 
 namespace xmrig {
@@ -60,16 +51,35 @@ static const char * const required_fields[] = { kBlocktemplateBlob, kBlockhashin
 } /* namespace xmrig */
 
 
-xmrig::SelfSelectClient::SelfSelectClient(int id, const char *agent, IClientListener *listener) :
+xmrig::SelfSelectClient::SelfSelectClient(int id, const char *agent, IClientListener *listener, bool submitToOrigin) :
+    m_submitToOrigin(submitToOrigin),
     m_listener(listener)
 {
-    m_client = new Client(id, agent, this);
+    m_httpListener  = std::make_shared<HttpListener>(this);
+    m_client        = new Client(id, agent, this);
 }
 
 
 xmrig::SelfSelectClient::~SelfSelectClient()
 {
     delete m_client;
+}
+
+
+int64_t xmrig::SelfSelectClient::submit(const JobResult &result)
+{
+    if (m_submitToOrigin) {
+        submitOriginDaemon(result);
+    }
+
+    uint64_t submit_result = m_client->submit(result);
+
+    if (m_submitToOrigin) {
+        // Ensure that the latest block template is available after block submission
+        getBlockTemplate();
+    }
+
+    return submit_result;
 }
 
 
@@ -127,12 +137,17 @@ bool xmrig::SelfSelectClient::parseResponse(int64_t id, rapidjson::Value &result
         }
     }
 
-    if (!m_job.setBlob(result[kBlockhashingBlob].GetString())) {
-        return false;
+    const char *blobData = Json::getString(result, kBlockhashingBlob);
+    if (pool().coin().isValid()) {
+        uint8_t blobVersion = 0;
+        if (blobData) {
+            Cvt::fromHex(&blobVersion, 1, blobData, 2);
+        }
+        m_job.setAlgorithm(pool().coin().algorithm(blobVersion));
     }
 
-    if (pool().coin().isValid()) {
-        m_job.setAlgorithm(pool().coin().algorithm(m_job.blob()[0]));
+    if (!m_job.setBlob(blobData)) {
+        return false;
     }
 
     m_job.setHeight(Json::getUint64(result, kHeight));
@@ -158,51 +173,14 @@ void xmrig::SelfSelectClient::getBlockTemplate()
 
     JsonRequest::create(doc, m_sequence++, "getblocktemplate", params);
 
-    send(HTTP_POST, "/json_rpc", doc);
+    FetchRequest req(HTTP_POST, pool().daemon().host(), pool().daemon().port(), "/json_rpc", doc, pool().daemon().isTLS(), isQuiet());
+    fetch(tag(), std::move(req), m_httpListener);
 }
 
 
 void xmrig::SelfSelectClient::retry()
 {
     setState(RetryState);
-}
-
-
-void xmrig::SelfSelectClient::send(int method, const char *url, const char *data, size_t size)
-{
-    LOG_DEBUG("[%s] " MAGENTA_BOLD("\"%s %s\"") BLACK_BOLD_S " send (%zu bytes): \"%.*s\"",
-              pool().daemon().url().data(),
-              http_method_str(static_cast<http_method>(method)),
-              url,
-              size,
-              static_cast<int>(size),
-              data);
-
-    HttpClient *client;
-#   ifdef XMRIG_FEATURE_TLS
-    if (pool().daemon().isTLS()) {
-        client = new HttpsClient(method, url, this, data, size, String());
-    }
-    else
-#   endif
-    {
-        client = new HttpClient(method, url, this, data, size);
-    }
-
-    client->setQuiet(isQuiet());
-    client->connect(pool().daemon().host(), pool().daemon().port());
-}
-
-
-void xmrig::SelfSelectClient::send(int method, const char *url, const rapidjson::Document &doc)
-{
-    using namespace rapidjson;
-
-    StringBuffer buffer(nullptr, 512);
-    Writer<StringBuffer> writer(buffer);
-    doc.Accept(writer);
-
-    send(method, url, buffer.GetString(), buffer.GetSize());
 }
 
 
@@ -243,6 +221,9 @@ void xmrig::SelfSelectClient::submitBlockTemplate(rapidjson::Value &result)
     Document doc(kObjectType);
     auto &allocator = doc.GetAllocator();
 
+    m_blocktemplate = Json::getString(result,kBlocktemplateBlob);
+    m_blockDiff     = Json::getUint64(result, kDifficulty);
+
     Value params(kObjectType);
     params.AddMember(StringRef(kId),            m_job.clientId().toJSON(), allocator);
     params.AddMember(StringRef(kJobId),         m_job.id().toJSON(), allocator);
@@ -255,7 +236,7 @@ void xmrig::SelfSelectClient::submitBlockTemplate(rapidjson::Value &result)
 
     JsonRequest::create(doc, sequence(), "block_template", params);
 
-    send(doc, [this](const rapidjson::Value &result, bool success, uint64_t elapsed) {
+    send(doc, [this](const rapidjson::Value &result, bool success, uint64_t) {
         if (!success) {
             if (!isQuiet()) {
                 LOG_ERR("[%s] error: " RED_BOLD("\"%s\"") RED_S ", code: %d", pool().daemon().url().data(), Json::getString(result, "message"), Json::getInt(result, "code"));
@@ -278,13 +259,46 @@ void xmrig::SelfSelectClient::submitBlockTemplate(rapidjson::Value &result)
 }
 
 
-void xmrig::SelfSelectClient::onHttpData(const HttpData &data)
+void xmrig::SelfSelectClient::submitOriginDaemon(const JobResult& result)
 {
-    if (data.status != HTTP_STATUS_OK) {
-        return retry();
+    if (result.diff == 0 || m_blockDiff == 0) {
+        return;
     }
 
-    LOG_DEBUG("[%s] received (%d bytes): \"%.*s\"", pool().daemon().url().data(), static_cast<int>(data.body.size()), static_cast<int>(data.body.size()), data.body.c_str());
+    if (result.actualDiff() < m_blockDiff) {
+        m_originNotSubmitted++;
+        LOG_DEBUG("%s " RED_BOLD("not submitted to origin daemon, difficulty too low") " (%" PRId64 "/%" PRId64 ") "
+            BLACK_BOLD(" diff ") BLACK_BOLD("%" PRIu64) BLACK_BOLD(" vs. ") BLACK_BOLD("%" PRIu64),
+            Tags::origin(), m_originSubmitted, m_originNotSubmitted, m_blockDiff, result.actualDiff());
+        return;
+    }
+
+    char *data = m_blocktemplate.data();
+    Cvt::toHex(data + 78, 8, reinterpret_cast<const uint8_t*>(&result.nonce), 4);
+
+    using namespace rapidjson;
+    Document doc(kObjectType);
+
+    Value params(kArrayType);
+    params.PushBack(m_blocktemplate.toJSON(), doc.GetAllocator());
+
+    JsonRequest::create(doc, m_sequence, "submitblock", params);
+    m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff(), 0, result.backend);
+
+    FetchRequest req(HTTP_POST, pool().daemon().host(), pool().daemon().port(), "/json_rpc", doc, pool().daemon().isTLS(), isQuiet());
+    fetch(tag(), std::move(req), m_httpListener);
+
+    m_originSubmitted++;
+    LOG_INFO("%s " GREEN_BOLD("submitted to origin daemon") " (%" PRId64 "/%" PRId64 ") "
+        " diff " WHITE("%" PRIu64) " vs. " WHITE("%" PRIu64),
+        Tags::origin(), m_originSubmitted, m_originNotSubmitted, m_blockDiff, result.actualDiff(), result.diff);
+}
+
+void xmrig::SelfSelectClient::onHttpData(const HttpData &data)
+{
+    if (data.status != 200) {
+        return retry();
+    }
 
     rapidjson::Document doc;
     if (doc.Parse(data.body.c_str()).HasParseError()) {

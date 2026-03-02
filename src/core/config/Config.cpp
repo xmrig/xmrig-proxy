@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,23 +16,28 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <assert.h>
-#include <limits.h>
-#include <string.h>
+#include "core/config/Config.h"
+#include "3rdparty/rapidjson/document.h"
+#include "base/io/log/Log.h"
+#include "base/kernel/interfaces/IJsonReader.h"
+#include "base/net/dns/Dns.h"
+#include "donate.h"
+
+
+#include <array>
+#include <cassert>
+#include <climits>
+#include <cstring>
 #include <uv.h>
 
 
-#include "base/io/log/Log.h"
-#include "core/config/Config.h"
-#include "donate.h"
-#include "rapidjson/document.h"
-#include "base/kernel/interfaces/IJsonReader.h"
+namespace xmrig {
 
 
-static const char *modeNames[] = {
-    "nicehash",
-    "simple"
-};
+static const std::array<const char *, 3> modeNames = { "nicehash", "simple", "extra_nonce"};
+
+
+} // namespace xmrig
 
 
 #if defined(_WIN32) && !defined(strncasecmp)
@@ -46,35 +45,15 @@ static const char *modeNames[] = {
 #endif
 
 
-xmrig::Config::Config() :
-    m_algoExt(true),
-    m_debug(false),
-    m_verbose(false),
-    m_mode(NICEHASH_MODE),
-    m_reuseTimeout(0),
-    m_diff(0),
-    m_workersMode(Workers::RigID)
-{
-}
-
-
-bool xmrig::Config::isTLS() const
-{
-#   ifdef XMRIG_FEATURE_TLS
-    for (const BindHost &host : m_bind) {
-        if (host.isTLS()) {
-            return true;
-        }
-    }
-#   endif
-
-    return false;
-}
-
-
 const char *xmrig::Config::modeName() const
 {
     return modeNames[m_mode];
+}
+
+
+bool xmrig::Config::isVerbose() const
+{
+    return Log::isVerbose();
 }
 
 
@@ -84,7 +63,7 @@ bool xmrig::Config::read(const IJsonReader &reader, const char *fileName)
         return false;
     }
 
-    m_verbose      = reader.getBool("verbose", m_verbose);
+    m_customDiffStats = reader.getBool("custom-diff-stats", m_customDiffStats);
     m_debug        = reader.getBool("debug", m_debug);
     m_algoExt      = reader.getBool("algo-ext", m_algoExt);
     m_reuseTimeout = reader.getInt("reuse-timeout", m_reuseTimeout);
@@ -94,13 +73,6 @@ bool xmrig::Config::read(const IJsonReader &reader, const char *fileName)
     setCustomDiff(reader.getUint64("custom-diff", m_diff));
     setMode(reader.getString("mode"));
     setWorkersMode(reader.getValue("workers"));
-
-#   ifdef XMRIG_FEATURE_TLS
-    const rapidjson::Value &tls = reader.getObject("tls");
-    if (tls.IsObject()) {
-        m_tls = std::move(TlsConfig(tls));
-    }
-#   endif
 
     const rapidjson::Value &bind = reader.getArray("bind");
     if (bind.IsArray()) {
@@ -137,43 +109,51 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
 
     auto &allocator = doc.GetAllocator();
 
-    doc.AddMember("access-log-file", m_accessLog.toJSON(), allocator);
-    doc.AddMember("access-password", m_password.toJSON(), allocator);
-    doc.AddMember("algo-ext",        m_algoExt, allocator);
+    doc.AddMember("access-log-file",                m_accessLog.toJSON(), allocator);
+    doc.AddMember("access-password",                m_password.toJSON(), allocator);
+    doc.AddMember("algo-ext",                       m_algoExt, allocator);
 
     Value api(kObjectType);
-    api.AddMember("id",           m_apiId.toJSON(), allocator);
-    api.AddMember("worker-id",    m_apiWorkerId.toJSON(), allocator);
-    doc.AddMember("api",          api, allocator);
-    doc.AddMember("http",         m_http.toJSON(doc), allocator);
+    api.AddMember(StringRef(kApiId),                m_apiId.toJSON(), allocator);
+    api.AddMember(StringRef(kApiWorkerId),          m_apiWorkerId.toJSON(), allocator);
+    doc.AddMember(StringRef(kApi),                  api, allocator);
+    doc.AddMember(StringRef(kHttp),                 m_http.toJSON(doc), allocator);
 
-    doc.AddMember("background",   isBackground(), allocator);
+    doc.AddMember(StringRef(kBackground),           isBackground(), allocator);
 
     Value bind(kArrayType);
-    for (const xmrig::BindHost &host : m_bind) {
+    for (const auto &host : m_bind) {
         bind.PushBack(host.toJSON(doc), allocator);
     }
 
-    doc.AddMember("bind",          bind, allocator);
-    doc.AddMember("colors",        Log::colors, allocator);
-    doc.AddMember("custom-diff",   diff(), allocator);
-    doc.AddMember("donate-level",  m_pools.donateLevel(), allocator);
-    doc.AddMember("log-file",      m_logFile.toJSON(), allocator);
-    doc.AddMember("mode",          StringRef(modeName()), allocator);
-    doc.AddMember("pools",         m_pools.toJSON(doc), allocator);
-    doc.AddMember("retries",       m_pools.retries(), allocator);
-    doc.AddMember("retry-pause",   m_pools.retryPause(), allocator);
-    doc.AddMember("reuse-timeout", reuseTimeout(), allocator);
+    doc.AddMember("bind",                           bind, allocator);
+    doc.AddMember(StringRef(kColors),               Log::isColors(), allocator);
+    doc.AddMember("custom-diff",                    diff(), allocator);
+    doc.AddMember("custom-diff-stats",              m_customDiffStats, allocator);
+    doc.AddMember(StringRef(Pools::kDonateLevel),   m_pools.donateLevel(), allocator);
+    doc.AddMember(StringRef(kLogFile),              m_logFile.toJSON(), allocator);
+    doc.AddMember("mode",                           StringRef(modeName()), allocator);
+    doc.AddMember(StringRef(Pools::kPools),         m_pools.toJSON(doc), allocator);
+    doc.AddMember(StringRef(Pools::kRetries),       m_pools.retries(), allocator);
+    doc.AddMember(StringRef(Pools::kRetryPause),    m_pools.retryPause(), allocator);
+    doc.AddMember("reuse-timeout",                  reuseTimeout(), allocator);
 
 #   ifdef XMRIG_FEATURE_TLS
-    doc.AddMember("tls", m_tls.toJSON(doc), allocator);
+    doc.AddMember(StringRef(kTls),                  m_tls.toJSON(doc), allocator);
 #   endif
 
-    doc.AddMember("user-agent",   m_userAgent.toJSON(), allocator);
-    doc.AddMember("syslog",       isSyslog(), allocator);
-    doc.AddMember("verbose",      isVerbose(), allocator);
-    doc.AddMember("watch",        m_watch,     allocator);
-    doc.AddMember("workers",      Workers::modeToJSON(workersMode()), allocator);
+    doc.AddMember(StringRef(DnsConfig::kField),     Dns::config().toJSON(doc), allocator);
+    doc.AddMember(StringRef(kUserAgent),            m_userAgent.toJSON(), allocator);
+    doc.AddMember(StringRef(kSyslog),               isSyslog(), allocator);
+    doc.AddMember(StringRef(kVerbose),              isVerbose(), allocator);
+    doc.AddMember(StringRef(kWatch),                m_watch,     allocator);
+    doc.AddMember("workers",                        Workers::modeToJSON(workersMode()), allocator);
+}
+
+
+void xmrig::Config::toggleVerbose()
+{
+    Log::setVerbose(Log::isVerbose() ? 0 : 1);
 }
 
 
@@ -192,11 +172,9 @@ void xmrig::Config::setMode(const char *mode)
         return;
     }
 
-    constexpr const size_t size = sizeof(modeNames) / sizeof((modeNames)[0]);
-
-    for (size_t i = 0; i < size; i++) {
+    for (size_t i = 0; i < modeNames.size(); i++) {
         if (modeNames[i] && !strcmp(mode, modeNames[i])) {
-            m_mode = static_cast<int>(i);
+            m_mode = static_cast<Mode>(i);
             break;
         }
     }

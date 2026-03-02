@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2025 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2025 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,13 +16,10 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_DNSRECORD_H
-#define XMRIG_DNSRECORD_H
-
+#pragma once
 
 struct addrinfo;
 struct sockaddr;
-
 
 #include "base/tools/String.h"
 
@@ -39,28 +30,15 @@ namespace xmrig {
 class DnsRecord
 {
 public:
-    enum Type {
-        Unknown,
-        A,
-        AAAA
-    };
-
-    inline DnsRecord() : m_type(Unknown) {}
+    DnsRecord() {}
     DnsRecord(const addrinfo *addr);
 
-    sockaddr *addr(uint16_t port = 0) const;
-
-    inline bool isValid() const     { return m_type != Unknown; }
-    inline const String &ip() const { return m_ip; }
-    inline Type type() const        { return m_type; }
+    const sockaddr *addr(uint16_t port = 0) const;
+    String ip() const;
 
 private:
-    Type m_type;
-    String m_ip;
+    mutable uint8_t m_data[28]{};
 };
 
 
-} /* namespace xmrig */
-
-
-#endif /* XMRIG_DNSRECORD_H */
+} // namespace xmrig

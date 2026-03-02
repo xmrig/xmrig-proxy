@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2025 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2025 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,9 +16,7 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <stdio.h>
-
+#include <cstdio>
 
 #ifdef _MSC_VER
 #   include "getopt/getopt.h"
@@ -32,43 +24,34 @@
 #   include <getopt.h>
 #endif
 
-
 #include "base/kernel/config/BaseTransform.h"
-#include "base/kernel/Process.h"
-#include "base/io/log/Log.h"
-#include "base/kernel/interfaces/IConfig.h"
 #include "base/io/json/JsonChain.h"
+#include "base/io/log/Log.h"
+#include "base/kernel/config/BaseConfig.h"
+#include "base/kernel/interfaces/IConfig.h"
+#include "base/kernel/Process.h"
+#include "base/net/dns/DnsConfig.h"
+#include "base/net/stratum/Pool.h"
+#include "base/net/stratum/Pools.h"
 #include "core/config/Config_platform.h"
 
-
-namespace xmrig
-{
-
-static const char *kAlgo  = "algo";
-static const char *kApi   = "api";
-static const char *kHttp  = "http";
-static const char *kPools = "pools";
-
-}
-
-
-xmrig::BaseTransform::BaseTransform()
-{
-}
+#ifdef XMRIG_FEATURE_TLS
+#   include "base/net/tls/TlsConfig.h"
+#endif
 
 
 void xmrig::BaseTransform::load(JsonChain &chain, Process *process, IConfigTransform &transform)
 {
     using namespace rapidjson;
 
-    int key;
-    int argc    = process->arguments().argc();
-    char **argv = process->arguments().argv();
+    int key        = 0;
+    const int argc = process->arguments().argc();
+    char **argv    = process->arguments().argv();
 
     Document doc(kObjectType);
 
-    while (1) {
-        key = getopt_long(argc, argv, short_options, options, nullptr);
+    while (true) {
+        key = getopt_long(argc, argv, short_options, options, nullptr); // NOLINT(concurrency-mt-unsafe)
         if (key < 0) {
             break;
         }
@@ -98,13 +81,26 @@ void xmrig::BaseTransform::finalize(rapidjson::Document &doc)
     using namespace rapidjson;
     auto &allocator = doc.GetAllocator();
 
-    if (m_algorithm.isValid() && doc.HasMember(kPools)) {
-        auto &pools = doc[kPools];
+    if (m_algorithm.isValid() && doc.HasMember(Pools::kPools)) {
+        auto &pools = doc[Pools::kPools];
         for (Value &pool : pools.GetArray()) {
-            if (!pool.HasMember(kAlgo)) {
-                pool.AddMember(StringRef(kAlgo), m_algorithm.toJSON(), allocator);
+            if (!pool.HasMember(Pool::kAlgo)) {
+                pool.AddMember(StringRef(Pool::kAlgo), m_algorithm.toJSON(), allocator);
             }
         }
+    }
+
+    if (m_coin.isValid() && doc.HasMember(Pools::kPools)) {
+        auto &pools = doc[Pools::kPools];
+        for (Value &pool : pools.GetArray()) {
+            if (!pool.HasMember(Pool::kCoin)) {
+                pool.AddMember(StringRef(Pool::kCoin), m_coin.toJSON(), allocator);
+            }
+        }
+    }
+
+    if (m_http) {
+        set(doc, BaseConfig::kHttp, Http::kEnabled, true);
     }
 }
 
@@ -113,11 +109,20 @@ void xmrig::BaseTransform::transform(rapidjson::Document &doc, int key, const ch
 {
     switch (key) {
     case IConfig::AlgorithmKey: /* --algo */
-        if (!doc.HasMember(kPools)) {
+        if (!doc.HasMember(Pools::kPools)) {
             m_algorithm = arg;
         }
         else {
-            return add(doc, kPools, kAlgo, arg);
+            return add(doc, Pools::kPools, Pool::kAlgo, arg);
+        }
+        break;
+
+    case IConfig::CoinKey: /* --coin */
+        if (!doc.HasMember(Pools::kPools)) {
+            m_coin = arg;
+        }
+        else {
+            return add(doc, Pools::kPools, Pool::kCoin, arg);
         }
         break;
 
@@ -131,51 +136,117 @@ void xmrig::BaseTransform::transform(rapidjson::Document &doc, int key, const ch
             char *user = new char[p - arg + 1]();
             strncpy(user, arg, static_cast<size_t>(p - arg));
 
-            add<const char *>(doc, kPools, "user", user);
-            add(doc, kPools, "pass", p + 1);
+            add<const char *>(doc, Pools::kPools, Pool::kUser, user);
+            add(doc, Pools::kPools, Pool::kPass, p + 1);
             delete [] user;
         }
         break;
 
-    case IConfig::UrlKey: /* --url */
-        return add(doc, kPools, "url", arg, true);
+    case IConfig::UrlKey:    /* --url */
+    case IConfig::StressKey: /* --stress */
+    {
+        if (!doc.HasMember(Pools::kPools)) {
+            doc.AddMember(rapidjson::StringRef(Pools::kPools), rapidjson::kArrayType, doc.GetAllocator());
+        }
+
+        rapidjson::Value &array = doc[Pools::kPools];
+        if (array.Size() == 0 || Pool(array[array.Size() - 1]).isValid()) {
+            array.PushBack(rapidjson::kObjectType, doc.GetAllocator());
+        }
+
+#       ifdef XMRIG_FEATURE_BENCHMARK
+        if (key != IConfig::UrlKey) {
+            set(doc, array[array.Size() - 1], Pool::kUrl,
+#           ifdef XMRIG_FEATURE_TLS
+                "stratum+ssl://randomx.xmrig.com:443"
+#           else
+                "randomx.xmrig.com:3333"
+#           endif
+            );
+        } else
+#       endif
+        {
+            set(doc, array[array.Size() - 1], Pool::kUrl, arg);
+        }
+        break;
+    }
 
     case IConfig::UserKey: /* --user */
-        return add(doc, kPools, "user", arg);
+        return add(doc, Pools::kPools, Pool::kUser, arg);
 
     case IConfig::PasswordKey: /* --pass */
-        return add(doc, kPools, "pass", arg);
+        return add(doc, Pools::kPools, Pool::kPass, arg);
+
+    case IConfig::SpendSecretKey: /* --spend-secret-key */
+        return add(doc, Pools::kPools, Pool::kSpendSecretKey, arg);
 
     case IConfig::RigIdKey: /* --rig-id */
-        return add(doc, kPools, "rig-id", arg);
+        return add(doc, Pools::kPools, Pool::kRigId, arg);
 
     case IConfig::FingerprintKey: /* --tls-fingerprint */
-        return add(doc, kPools, "tls-fingerprint", arg);
+        return add(doc, Pools::kPools, Pool::kFingerprint, arg);
+
+    case IConfig::SelfSelectKey: /* --self-select */
+        return add(doc, Pools::kPools, Pool::kSelfSelect, arg);
+
+    case IConfig::ProxyKey: /* --proxy */
+        return add(doc, Pools::kPools, Pool::kSOCKS5, arg);
 
     case IConfig::LogFileKey: /* --log-file */
-        return set(doc, "log-file", arg);
+        return set(doc, BaseConfig::kLogFile, arg);
 
     case IConfig::HttpAccessTokenKey: /* --http-access-token */
-        return set(doc, kHttp, "access-token", arg);
+        m_http = true;
+        return set(doc, BaseConfig::kHttp, Http::kToken, arg);
 
     case IConfig::HttpHostKey: /* --http-host */
-        return set(doc, kHttp, "host", arg);
+        m_http = true;
+        return set(doc, BaseConfig::kHttp, Http::kHost, arg);
 
     case IConfig::ApiWorkerIdKey: /* --api-worker-id */
-        return set(doc, kApi, "worker-id", arg);
+        return set(doc, BaseConfig::kApi, BaseConfig::kApiWorkerId, arg);
 
     case IConfig::ApiIdKey: /* --api-id */
-        return set(doc, kApi, "id", arg);
+        return set(doc, BaseConfig::kApi, BaseConfig::kApiId, arg);
 
     case IConfig::UserAgentKey: /* --user-agent */
-        return set(doc, "user-agent", arg);
+        return set(doc, BaseConfig::kUserAgent, arg);
 
-    case IConfig::RetriesKey:     /* --retries */
-    case IConfig::RetryPauseKey:  /* --retry-pause */
-    case IConfig::PrintTimeKey:   /* --print-time */
-    case IConfig::HttpPort:       /* --http-port */
-    case IConfig::DonateLevelKey: /* --donate-level */
-    case IConfig::DaemonPollKey:  /* --daemon-poll-interval */
+    case IConfig::TitleKey: /* --title */
+        return set(doc, BaseConfig::kTitle, arg);
+
+#   ifdef XMRIG_FEATURE_TLS
+    case IConfig::TlsCertKey: /* --tls-cert */
+        return set(doc, BaseConfig::kTls, TlsConfig::kCert, arg);
+
+    case IConfig::TlsCertKeyKey: /* --tls-cert-key */
+        return set(doc, BaseConfig::kTls, TlsConfig::kCertKey, arg);
+
+    case IConfig::TlsDHparamKey: /* --tls-dhparam */
+        return set(doc, BaseConfig::kTls, TlsConfig::kDhparam, arg);
+
+    case IConfig::TlsCiphersKey: /* --tls-ciphers */
+        return set(doc, BaseConfig::kTls, TlsConfig::kCiphers, arg);
+
+    case IConfig::TlsCipherSuitesKey: /* --tls-ciphersuites */
+        return set(doc, BaseConfig::kTls, TlsConfig::kCipherSuites, arg);
+
+    case IConfig::TlsProtocolsKey: /* --tls-protocols */
+        return set(doc, BaseConfig::kTls, TlsConfig::kProtocols, arg);
+
+    case IConfig::TlsGenKey: /* --tls-gen */
+        return set(doc, BaseConfig::kTls, TlsConfig::kGen, arg);
+#   endif
+
+    case IConfig::RetriesKey:       /* --retries */
+    case IConfig::RetryPauseKey:    /* --retry-pause */
+    case IConfig::PrintTimeKey:     /* --print-time */
+    case IConfig::HttpPort:         /* --http-port */
+    case IConfig::DonateLevelKey:   /* --donate-level */
+    case IConfig::DaemonPollKey:    /* --daemon-poll-interval */
+    case IConfig::DaemonJobTimeoutKey: /* --daemon-job-timeout */
+    case IConfig::DnsTtlKey:        /* --dns-ttl */
+    case IConfig::DaemonZMQPortKey: /* --daemon-zmq-port */
         return transformUint64(doc, key, static_cast<uint64_t>(strtol(arg, nullptr, 10)));
 
     case IConfig::BackgroundKey:  /* --background */
@@ -186,10 +257,15 @@ void xmrig::BaseTransform::transform(rapidjson::Document &doc, int key, const ch
     case IConfig::DryRunKey:      /* --dry-run */
     case IConfig::HttpEnabledKey: /* --http-enabled */
     case IConfig::DaemonKey:      /* --daemon */
+    case IConfig::SubmitToOriginKey: /* --submit-to-origin */
+    case IConfig::VerboseKey:     /* --verbose */
+    case IConfig::DnsIPv4Key:     /* --ipv4 */
+    case IConfig::DnsIPv6Key:     /* --ipv6 */
         return transformBoolean(doc, key, true);
 
     case IConfig::ColorKey:          /* --no-color */
     case IConfig::HttpRestrictedKey: /* --http-no-restricted */
+    case IConfig::NoTitleKey:        /* --no-title */
         return transformBoolean(doc, key, false);
 
     default:
@@ -202,36 +278,54 @@ void xmrig::BaseTransform::transformBoolean(rapidjson::Document &doc, int key, b
 {
     switch (key) {
     case IConfig::BackgroundKey: /* --background */
-        return set(doc, "background", enable);
+        return set(doc, BaseConfig::kBackground, enable);
 
     case IConfig::SyslogKey: /* --syslog */
-        return set(doc, "syslog", enable);
+        return set(doc, BaseConfig::kSyslog, enable);
 
     case IConfig::KeepAliveKey: /* --keepalive */
-        return add(doc, kPools, "keepalive", enable);
+        return add(doc, Pools::kPools, Pool::kKeepalive, enable);
 
     case IConfig::TlsKey: /* --tls */
-        return add(doc, kPools, "tls", enable);
+        return add(doc, Pools::kPools, Pool::kTls, enable);
 
+    case IConfig::SubmitToOriginKey: /* --submit-to-origin */
+        return add(doc, Pools::kPools, Pool::kSubmitToOrigin, enable);
+#   ifdef XMRIG_FEATURE_HTTP
     case IConfig::DaemonKey: /* --daemon */
-        return add(doc, kPools, "daemon", enable);
+        return add(doc, Pools::kPools, Pool::kDaemon, enable);
+#   endif
 
 #   ifndef XMRIG_PROXY_PROJECT
     case IConfig::NicehashKey: /* --nicehash */
-        return add<bool>(doc, kPools, "nicehash", enable);
+        return add<bool>(doc, Pools::kPools, Pool::kNicehash, enable);
 #   endif
 
     case IConfig::ColorKey: /* --no-color */
-        return set(doc, "colors", enable);
+        return set(doc, BaseConfig::kColors, enable);
 
     case IConfig::HttpRestrictedKey: /* --http-no-restricted */
-        return set(doc, kHttp, "restricted", enable);
+        m_http = true;
+        return set(doc, BaseConfig::kHttp, Http::kRestricted, enable);
 
     case IConfig::HttpEnabledKey: /* --http-enabled */
-        return set(doc, kHttp, "enabled", enable);
+        m_http = true;
+        break;
 
     case IConfig::DryRunKey: /* --dry-run */
-        return set(doc, "dry-run", enable);
+        return set(doc, BaseConfig::kDryRun, enable);
+
+    case IConfig::VerboseKey: /* --verbose */
+        return set(doc, BaseConfig::kVerbose, enable);
+
+    case IConfig::NoTitleKey: /* --no-title */
+        return set(doc, BaseConfig::kTitle, enable);
+
+    case IConfig::DnsIPv4Key: /* --ipv4 */
+        return set(doc, DnsConfig::kField, DnsConfig::kIPv, 4);
+
+    case IConfig::DnsIPv6Key: /* --ipv6 */
+        return set(doc, DnsConfig::kField, DnsConfig::kIPv, 6);
 
     default:
         break;
@@ -243,25 +337,37 @@ void xmrig::BaseTransform::transformUint64(rapidjson::Document &doc, int key, ui
 {
     switch (key) {
     case IConfig::RetriesKey: /* --retries */
-        return set(doc, "retries", arg);
+        return set(doc, Pools::kRetries, arg);
 
     case IConfig::RetryPauseKey: /* --retry-pause */
-        return set(doc, "retry-pause", arg);
+        return set(doc, Pools::kRetryPause, arg);
 
     case IConfig::DonateLevelKey: /* --donate-level */
-        return set(doc, "donate-level", arg);
+        return set(doc, Pools::kDonateLevel, arg);
 
     case IConfig::ProxyDonateKey: /* --donate-over-proxy */
-        return set(doc, "donate-over-proxy", arg);
+        return set(doc, Pools::kDonateOverProxy, arg);
 
     case IConfig::HttpPort: /* --http-port */
-        return set(doc, kHttp, "port", arg);
+        m_http = true;
+        return set(doc, BaseConfig::kHttp, Http::kPort, arg);
 
     case IConfig::PrintTimeKey: /* --print-time */
-        return set(doc, "print-time", arg);
+        return set(doc, BaseConfig::kPrintTime, arg);
 
+    case IConfig::DnsTtlKey: /* --dns-ttl */
+        return set(doc, DnsConfig::kField, DnsConfig::kTTL, arg);
+
+#   ifdef XMRIG_FEATURE_HTTP
     case IConfig::DaemonPollKey:  /* --daemon-poll-interval */
-        return add(doc, kPools, "daemon-poll-interval", arg);
+        return add(doc, Pools::kPools, Pool::kDaemonPollInterval, arg);
+
+    case IConfig::DaemonJobTimeoutKey:  /* --daemon-job-timeout */
+        return add(doc, Pools::kPools, Pool::kDaemonJobTimeout, arg);
+
+    case IConfig::DaemonZMQPortKey:  /* --daemon-zmq-port */
+        return add(doc, Pools::kPools, Pool::kDaemonZMQPort, arg);
+#   endif
 
     default:
         break;

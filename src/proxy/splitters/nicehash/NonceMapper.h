@@ -5,7 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -32,6 +33,7 @@
 
 #include "base/kernel/interfaces/IStrategyListener.h"
 #include "base/net/stratum/Job.h"
+#include "base/tools/Object.h"
 
 
 namespace xmrig {
@@ -62,6 +64,8 @@ public:
 class NonceMapper : public IStrategyListener
 {
 public:
+    XMRIG_DISABLE_COPY_MOVE_DEFAULT(NonceMapper)
+
     NonceMapper(size_t id, Controller *controller);
     ~NonceMapper() override;
 
@@ -83,7 +87,7 @@ public:
 
 protected:
     void onActive(IStrategy *strategy, IClient *client) override;
-    void onJob(IStrategy *strategy, IClient *client, const Job &job) override;
+    void onJob(IStrategy *strategy, IClient *client, const Job &job, const rapidjson::Value &params) override;
     void onLogin(IStrategy *strategy, IClient *client, rapidjson::Document &doc, rapidjson::Value &params) override;
     void onPause(IStrategy *strategy) override;
     void onResultAccepted(IStrategy *strategy, IClient *client, const SubmitResult &result, const char *error) override;
@@ -96,9 +100,9 @@ private:
     void suspend();
 
     Controller *m_controller;
-    DonateStrategy *m_donate;
-    int m_suspended;
-    IStrategy *m_pending;
+    DonateStrategy *m_donate    = nullptr;
+    int m_suspended             = 0;
+    IStrategy *m_pending        = nullptr;
     IStrategy *m_strategy;
     NonceStorage *m_storage;
     size_t m_id;

@@ -26,6 +26,9 @@
 #define XMRIG_IEVENT_H
 
 
+#include <cstdint>
+
+
 namespace xmrig {
 
 
@@ -43,6 +46,7 @@ public:
     virtual ~IEvent() = default;
 
     virtual bool isRejected() const = 0;
+    virtual int32_t route() const   = 0;
     virtual Type type() const       = 0;
     virtual void reject()           = 0;
 };

@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+#include "proxy/splitters/donate/DonateSplitter.h"
 #include "base/io/json/Json.h"
 #include "base/net/stratum/Pool.h"
 #include "core/config/Config.h"
@@ -32,12 +32,10 @@
 #include "proxy/events/SubmitEvent.h"
 #include "proxy/Miner.h"
 #include "proxy/splitters/donate/DonateMapper.h"
-#include "proxy/splitters/donate/DonateSplitter.h"
 
 
 xmrig::DonateSplitter::DonateSplitter(xmrig::Controller *controller) :
-    m_controller(controller),
-    m_sequence(0)
+    m_controller(controller)
 {
 }
 
@@ -78,9 +76,11 @@ void xmrig::DonateSplitter::login(LoginEvent *event)
         return;
     }
 
+#   ifdef NDEBUG
     if (!url.contains("xmrig.com")) {
         return reject(event);
     }
+#   endif
 
     Pool pool(url);
     if (!pool.isValid()) {
@@ -91,7 +91,7 @@ void xmrig::DonateSplitter::login(LoginEvent *event)
     pool.setRigId(miner->rigId());
     pool.setPassword("proxy");
 
-    DonateMapper *mapper = new DonateMapper(m_sequence++, event, pool);
+    auto mapper = new DonateMapper(m_sequence++, event, pool);
     m_mappers[mapper->id()] = mapper;
 }
 
@@ -106,7 +106,7 @@ void xmrig::DonateSplitter::reject(LoginEvent *event)
 
 void xmrig::DonateSplitter::remove(Miner *miner)
 {
-    const size_t id = static_cast<size_t>(miner->mapperId());
+    const auto id = static_cast<size_t>(miner->mapperId());
     if (miner->mapperId() < 0 || miner->routeId() != 0 || m_mappers.count(id) == 0) {
         return;
     }

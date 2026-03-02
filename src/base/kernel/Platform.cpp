@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2023 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2023 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,8 +16,10 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "base/kernel/Platform.h"
 
-#include <string.h>
+
+#include <cstring>
 #include <uv.h>
 
 
@@ -33,20 +29,24 @@
 #endif
 
 
-#include "Platform.h"
+namespace xmrig {
+
+String Platform::m_userAgent;
+
+} // namespace xmrig
 
 
-xmrig::String Platform::m_userAgent;
-
-
-void Platform::init(const char *userAgent)
+void xmrig::Platform::init(const char *userAgent)
 {
 #   ifdef XMRIG_FEATURE_TLS
     SSL_library_init();
     SSL_load_error_strings();
+
+#   if OPENSSL_VERSION_NUMBER < 0x30000000L || defined(LIBRESSL_VERSION_NUMBER)
     ERR_load_BIO_strings();
     ERR_load_crypto_strings();
-    SSL_load_error_strings();
+#   endif
+
     OpenSSL_add_all_digests();
 #   endif
 

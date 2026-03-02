@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,12 +23,14 @@
  */
 
 
-#include <assert.h>
-
-
-#include "core/config/Config.h"
 #include "core/Controller.h"
+#include "base/io/log/Log.h"
+#include "base/io/log/Tags.h"
+#include "core/config/Config.h"
 #include "proxy/Proxy.h"
+
+
+#include <cassert>
 
 
 xmrig::Controller::Controller(Process *process)
@@ -94,4 +96,46 @@ xmrig::Proxy *xmrig::Controller::proxy() const
 std::vector<xmrig::Miner*> xmrig::Controller::miners() const
 {
     return proxy()->miners();
+}
+
+
+void xmrig::Controller::execCommand(char command)
+{
+    switch (command) {
+#   ifdef APP_DEVEL
+    case 's':
+    case 'S':
+        proxy()->printState();
+        break;
+#   endif
+
+    case 'v':
+    case 'V':
+        config()->toggleVerbose();
+        LOG_NOTICE("%s " WHITE_BOLD("verbose: ") CYAN_BOLD("%d"), Tags::config(), config()->isVerbose());
+        break;
+
+    case 'h':
+    case 'H':
+        proxy()->printHashrate();
+        break;
+
+    case 'c':
+    case 'C':
+        proxy()->printConnections();
+        break;
+
+    case 'd':
+    case 'D':
+        proxy()->toggleDebug();
+        break;
+
+    case 'w':
+    case 'W':
+        proxy()->printWorkers();
+        break;
+
+    default:
+        break;
+    }
 }

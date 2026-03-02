@@ -38,13 +38,14 @@ namespace xmrig {
 
 
 class AcceptEvent;
+class Controller;
 class ISplitter;
 
 
 class Stats : public IEventListener
 {
 public:
-    Stats();
+    Stats(Controller *controller);
     ~Stats() override;
 
     void tick(uint64_t ticks, const ISplitter *splitter);
@@ -60,6 +61,7 @@ private:
     void accept(const AcceptEvent *event);
     void reject(const AcceptEvent *event);
 
+    Controller *m_controller;
     StatsData m_data;
     TickingCounter<uint32_t> m_hashrate;
 };

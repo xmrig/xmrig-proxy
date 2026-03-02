@@ -23,7 +23,7 @@
  */
 
 
-#include <stdio.h>
+#include <cstdio>
 #include <uv.h>
 
 
@@ -35,18 +35,21 @@
 #include "version.h"
 
 
+namespace xmrig {
+
+
 static void print_mode(xmrig::Controller *controller)
 {
-    xmrig::Log::print(GREEN_BOLD(" * ") WHITE_BOLD("%-13s") MAGENTA_BOLD("%s"), "MODE", controller->config()->modeName());
+    Log::print(GREEN_BOLD(" * ") WHITE_BOLD("%-13s") MAGENTA_BOLD("%s"), "MODE", controller->config()->modeName());
 }
 
 
 static void print_bind(xmrig::Controller *controller)
 {
-    const xmrig::BindHosts &bind = controller->config()->bind();
+    const BindHosts &bind = controller->config()->bind();
 
     for (size_t i = 0; i < bind.size(); ++i) {
-        xmrig::Log::print(GREEN_BOLD(" * ") WHITE_BOLD("BIND #%-7zu") CYAN("%s%s%s:") "\x1B[1;%dm%d\x1B[0m",
+        Log::print(GREEN_BOLD(" * ") WHITE_BOLD("BIND #%-7zu") CYAN("%s%s%s:") "\x1B[1;%dm%d\x1B[0m",
                           i + 1,
                           bind[i].isIPv6() ? "[" : "",
                           bind[i].host(),
@@ -59,16 +62,19 @@ static void print_bind(xmrig::Controller *controller)
 
 static void print_commands(xmrig::Controller *)
 {
-    if (xmrig::Log::colors) {
-        xmrig::Log::print(GREEN_BOLD(" * ") WHITE_BOLD("COMMANDS     ") MAGENTA_BOLD("h") WHITE_BOLD("ashrate, ")
+    if (Log::isColors()) {
+        Log::print(GREEN_BOLD(" * ") WHITE_BOLD("COMMANDS     ") MAGENTA_BOLD("h") WHITE_BOLD("ashrate, ")
                                                                         MAGENTA_BOLD("c") WHITE_BOLD("onnections, ")
                                                                         MAGENTA_BOLD("v") WHITE_BOLD("erbose, ")
                                                                         MAGENTA_BOLD("w") WHITE_BOLD("orkers"));
     }
     else {
-        xmrig::Log::print(" * COMMANDS    'h' hashrate, 'c' connections, 'v' verbose, 'w' workers");
+        Log::print(" * COMMANDS    'h' hashrate, 'c' connections, 'v' verbose, 'w' workers");
     }
 }
+
+
+} // namespace xmrig
 
 
 void Summary::print(xmrig::Controller *controller)

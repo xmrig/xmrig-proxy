@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018      SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2025 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2025 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,39 +16,28 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <algorithm>
 #include <winsock2.h>
 #include <windows.h>
 #include <uv.h>
+#include <limits>
 
 
-#include "base/io/log/Log.h"
-#include "Platform.h"
+#include "base/kernel/Platform.h"
 #include "version.h"
-
-
-#ifdef XMRIG_NVIDIA_PROJECT
-#   include "nvidia/cryptonight.h"
-#endif
-
-
-#ifdef XMRIG_AMD_PROJECT
-static uint32_t timerResolution = 0;
-#endif
 
 
 static inline OSVERSIONINFOEX winOsVersion()
 {
-    typedef NTSTATUS (NTAPI *RtlGetVersionFunction)(LPOSVERSIONINFO);
+    typedef NTSTATUS (NTAPI *RtlGetVersionFunction)(LPOSVERSIONINFO); // NOLINT(modernize-use-using)
     OSVERSIONINFOEX result = { sizeof(OSVERSIONINFOEX), 0, 0, 0, 0, {'\0'}, 0, 0, 0, 0, 0};
 
     HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
     if (ntdll ) {
-        RtlGetVersionFunction pRtlGetVersion = reinterpret_cast<RtlGetVersionFunction>(GetProcAddress(ntdll, "RtlGetVersion"));
+        auto pRtlGetVersion = reinterpret_cast<RtlGetVersionFunction>(GetProcAddress(ntdll, "RtlGetVersion"));
 
         if (pRtlGetVersion) {
-            pRtlGetVersion((LPOSVERSIONINFO) &result);
+            pRtlGetVersion(reinterpret_cast<LPOSVERSIONINFO>(&result));
         }
     }
 
@@ -62,7 +45,7 @@ static inline OSVERSIONINFOEX winOsVersion()
 }
 
 
-char *Platform::createUserAgent()
+char *xmrig::Platform::createUserAgent()
 {
     const auto osver = winOsVersion();
     constexpr const size_t max = 256;
@@ -70,66 +53,47 @@ char *Platform::createUserAgent()
     char *buf = new char[max]();
     int length = snprintf(buf, max, "%s/%s (Windows NT %lu.%lu", APP_NAME, APP_VERSION, osver.dwMajorVersion, osver.dwMinorVersion);
 
-#   if defined(__x86_64__) || defined(_M_AMD64)
-    length += snprintf(buf + length, max - length, "; Win64; x64) libuv/%s", uv_version_string());
+#   if defined(XMRIG_64_BIT)
+    length += snprintf(buf + length, max - length, "; Win64; "
+#   if defined(XMRIG_ARM)
+    "arm64"
+#   else
+    "x64"
+#   endif
+    ") libuv/%s", uv_version_string());
 #   else
     length += snprintf(buf + length, max - length, ") libuv/%s", uv_version_string());
 #   endif
 
-#   ifdef XMRIG_NVIDIA_PROJECT
-    const int cudaVersion = cuda_get_runtime_version();
-    length += snprintf(buf + length, max - length, " CUDA/%d.%d", cudaVersion / 1000, cudaVersion % 100);
-#   endif
-
-#   ifdef __GNUC__
-    length += snprintf(buf + length, max - length, " gcc/%d.%d.%d", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+#   ifdef __clang__
+    snprintf(buf + length, max - length, " clang/%d.%d.%d", __clang_major__, __clang_minor__, __clang_patchlevel__);
+#   elif defined(__GNUC__)
+    snprintf(buf + length, max - length, " gcc/%d.%d.%d", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
 #   elif _MSC_VER
-    length += snprintf(buf + length, max - length, " msvc/%d", MSVC_VERSION);
+    snprintf(buf + length, max - length, " msvc/%d", MSVC_VERSION);
 #   endif
 
     return buf;
 }
 
 
-bool Platform::setThreadAffinity(uint64_t cpu_id)
+bool xmrig::Platform::hasKeepalive()
 {
-    if (cpu_id >= 64) {
-        LOG_ERR("Unable to set affinity. Windows supports only affinity up to 63.");
-    }
-
-    return SetThreadAffinityMask(GetCurrentThread(), 1ULL << cpu_id) != 0;
+    return winOsVersion().dwMajorVersion >= 6;
 }
 
 
-uint32_t Platform::setTimerResolution(uint32_t resolution)
+#ifndef XMRIG_FEATURE_HWLOC
+bool xmrig::Platform::setThreadAffinity(uint64_t cpu_id)
 {
-#   ifdef XMRIG_AMD_PROJECT
-    TIMECAPS tc;
-
-    if (timeGetDevCaps(&tc, sizeof(TIMECAPS)) != TIMERR_NOERROR) {
-        return 0;
-    }
-
-    timerResolution = std::min<uint32_t>(std::max<uint32_t>(tc.wPeriodMin, resolution), tc.wPeriodMax);
-
-    return timeBeginPeriod(timerResolution) == TIMERR_NOERROR ? timerResolution : 0;
-#   else
-    return resolution;
-#   endif
+    const bool result = (SetThreadAffinityMask(GetCurrentThread(), 1ULL << cpu_id) != 0);
+    Sleep(1);
+    return result;
 }
+#endif
 
 
-void Platform::restoreTimerResolution()
-{
-#   ifdef XMRIG_AMD_PROJECT
-    if (timerResolution) {
-        timeEndPeriod(timerResolution);
-    }
-#   endif
-}
-
-
-void Platform::setProcessPriority(int priority)
+void xmrig::Platform::setProcessPriority(int priority)
 {
     if (priority == -1) {
         return;
@@ -166,7 +130,7 @@ void Platform::setProcessPriority(int priority)
 }
 
 
-void Platform::setThreadPriority(int priority)
+void xmrig::Platform::setThreadPriority(int priority)
 {
     if (priority == -1) {
         return;
@@ -202,3 +166,25 @@ void Platform::setThreadPriority(int priority)
     SetThreadPriority(GetCurrentThread(), prio);
 }
 
+
+bool xmrig::Platform::isOnBatteryPower()
+{
+    SYSTEM_POWER_STATUS st;
+    if (GetSystemPowerStatus(&st)) {
+        return (st.ACLineStatus == 0);
+    }
+    return false;
+}
+
+
+uint64_t xmrig::Platform::idleTime()
+{
+    LASTINPUTINFO info{};
+    info.cbSize = sizeof(LASTINPUTINFO);
+
+    if (!GetLastInputInfo(&info)) {
+        return std::numeric_limits<uint64_t>::max();
+    }
+
+    return static_cast<uint64_t>(GetTickCount() - info.dwTime);
+}

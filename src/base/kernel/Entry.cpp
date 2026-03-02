@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2024 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2024 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,10 +22,8 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <stdio.h>
+#include <cstdio>
 #include <uv.h>
-
 
 #ifdef XMRIG_FEATURE_TLS
 #   include <openssl/opensslv.h>
@@ -33,6 +31,11 @@
 
 #ifdef XMRIG_FEATURE_HWLOC
 #   include <hwloc.h>
+#endif
+
+#ifdef XMRIG_FEATURE_OPENCL
+#   include "backend/opencl/wrappers/OclLib.h"
+#   include "backend/opencl/wrappers/OclPlatform.h"
 #endif
 
 #include "base/kernel/Entry.h"
@@ -61,23 +64,27 @@ static int showVersion()
 #   endif
 
     printf("\n features:"
-#   if defined(__i386__) || defined(_M_IX86)
-    " 32-bit"
-#   elif defined(__x86_64__) || defined(_M_AMD64)
+#   if defined(__x86_64__) || defined(_M_AMD64) || defined (__arm64__) || defined (__aarch64__)
     " 64-bit"
+#   else
+    " 32-bit"
 #   endif
 
-#   if defined(__AES__) || defined(_MSC_VER)
+#   if defined(__AES__) || defined(_MSC_VER) || defined(__ARM_FEATURE_CRYPTO)
     " AES"
 #   endif
     "\n");
 
     printf("\nlibuv/%s\n", uv_version_string());
 
-#   if defined(XMRIG_FEATURE_TLS) && defined(OPENSSL_VERSION_TEXT)
+#   if defined(XMRIG_FEATURE_TLS)
     {
-        constexpr const char *v = OPENSSL_VERSION_TEXT + 8;
+#       if defined(LIBRESSL_VERSION_TEXT)
+        printf("LibreSSL/%s\n", LIBRESSL_VERSION_TEXT + 9);
+#       elif defined(OPENSSL_VERSION_TEXT)
+        constexpr const char *v = &OPENSSL_VERSION_TEXT[8];
         printf("OpenSSL/%.*s\n", static_cast<int>(strchr(v, ' ') - v), v);
+#       endif
     }
 #   endif
 
@@ -96,11 +103,11 @@ static int showVersion()
 
 
 #ifdef XMRIG_FEATURE_HWLOC
-static int exportTopology(const Process &process)
+static int exportTopology(const Process &)
 {
-    const String path = process.location(Process::ExeLocation, "topology.xml");
+    const String path = Process::location(Process::ExeLocation, "topology.xml");
 
-    hwloc_topology_t topology;
+    hwloc_topology_t topology = nullptr;
     hwloc_topology_init(&topology);
     hwloc_topology_load(topology);
 
@@ -132,13 +139,19 @@ xmrig::Entry::Id xmrig::Entry::get(const Process &process)
          return Usage;
     }
 
-    if (args.hasArg("-V") || args.hasArg("--version")) {
+    if (args.hasArg("-V") || args.hasArg("--version") || args.hasArg("--versions")) {
          return Version;
     }
 
 #   ifdef XMRIG_FEATURE_HWLOC
     if (args.hasArg("--export-topology")) {
         return Topo;
+    }
+#   endif
+
+#   ifdef XMRIG_FEATURE_OPENCL
+    if (args.hasArg("--print-platforms")) {
+        return Platforms;
     }
 #   endif
 
@@ -150,7 +163,7 @@ int xmrig::Entry::exec(const Process &process, Id id)
 {
     switch (id) {
     case Usage:
-        printf(usage);
+        printf("%s\n", usage().c_str());
         return 0;
 
     case Version:
@@ -159,6 +172,14 @@ int xmrig::Entry::exec(const Process &process, Id id)
 #   ifdef XMRIG_FEATURE_HWLOC
     case Topo:
         return exportTopology(process);
+#   endif
+
+#   ifdef XMRIG_FEATURE_OPENCL
+    case Platforms:
+        if (OclLib::init()) {
+            OclPlatform::print();
+        }
+        return 0;
 #   endif
 
     default:

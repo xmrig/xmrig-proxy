@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2020 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,24 +17,18 @@
  */
 
 
+#include "base/net/stratum/strategies/FailoverStrategy.h"
+#include "3rdparty/rapidjson/document.h"
+#include "base/kernel/interfaces/IClient.h"
 #include "base/kernel/interfaces/IStrategyListener.h"
 #include "base/kernel/Platform.h"
-#include "base/net/stratum/Client.h"
-#include "base/net/stratum/strategies/FailoverStrategy.h"
-
-
-#ifdef XMRIG_FEATURE_HTTP
-#   include "base/net/stratum/DaemonClient.h"
-#endif
 
 
 xmrig::FailoverStrategy::FailoverStrategy(const std::vector<Pool> &pools, int retryPause, int retries, IStrategyListener *listener, bool quiet) :
     m_quiet(quiet),
     m_retries(retries),
     m_retryPause(retryPause),
-    m_active(-1),
-    m_listener(listener),
-    m_index(0)
+    m_listener(listener)
 {
     for (const Pool &pool : pools) {
         add(pool);
@@ -52,9 +40,7 @@ xmrig::FailoverStrategy::FailoverStrategy(int retryPause, int retries, IStrategy
     m_quiet(quiet),
     m_retries(retries),
     m_retryPause(retryPause),
-    m_active(-1),
-    m_listener(listener),
-    m_index(0)
+    m_listener(listener)
 {
 }
 
@@ -69,16 +55,8 @@ xmrig::FailoverStrategy::~FailoverStrategy()
 
 void xmrig::FailoverStrategy::add(const Pool &pool)
 {
-    const int id = static_cast<int>(m_pools.size());
+    IClient *client = pool.createClient(static_cast<int>(m_pools.size()), this);
 
-#   ifdef XMRIG_FEATURE_HTTP
-    IClient *client = !pool.isDaemon() ? static_cast<IClient *>(new Client(id, Platform::userAgent(), this))
-                                       : static_cast<IClient *>(new DaemonClient(id, this));
-#   else
-    IClient *client = new Client(id, Platform::userAgent(), this);
-#   endif
-
-    client->setPool(pool);
     client->setRetries(m_retries);
     client->setRetryPause(m_retryPause * 1000);
     client->setQuiet(m_quiet);
@@ -109,7 +87,7 @@ void xmrig::FailoverStrategy::resume()
         return;
     }
 
-    m_listener->onJob(this, active(), active()->job());
+    m_listener->onJob(this, active(), active()->job(), rapidjson::Value(rapidjson::kNullType));
 }
 
 
@@ -121,10 +99,18 @@ void xmrig::FailoverStrategy::setAlgo(const Algorithm &algo)
 }
 
 
+void xmrig::FailoverStrategy::setProxy(const ProxyUrl &proxy)
+{
+    for (IClient *client : m_pools) {
+        client->setProxy(proxy);
+    }
+}
+
+
 void xmrig::FailoverStrategy::stop()
 {
-    for (size_t i = 0; i < m_pools.size(); ++i) {
-        m_pools[i]->disconnect();
+    for (auto &pool : m_pools) {
+        pool->disconnect();
     }
 
     m_index  = 0;
@@ -169,10 +155,10 @@ void xmrig::FailoverStrategy::onLogin(IClient *client, rapidjson::Document &doc,
 }
 
 
-void xmrig::FailoverStrategy::onJobReceived(IClient *client, const Job &job, const rapidjson::Value &)
+void xmrig::FailoverStrategy::onJobReceived(IClient *client, const Job &job, const rapidjson::Value &params)
 {
     if (m_active == client->id()) {
-        m_listener->onJob(this, client, job);
+        m_listener->onJob(this, client, job, params);
     }
 }
 

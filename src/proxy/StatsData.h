@@ -41,10 +41,7 @@ namespace xmrig {
 class StatsData
 {
 public:
-    inline StatsData()
-    {
-        startTime = Chrono::currentMSecsSinceEpoch();
-    }
+    inline StatsData() : startTime(Chrono::currentMSecsSinceEpoch()) {}
 
 
     inline uint32_t avgTime() const
@@ -71,9 +68,26 @@ public:
     }
 
 
-    inline uint64_t uptime() const
+    inline double ratio() const    { return upstreams.ratio(miners); }
+    inline uint64_t uptime() const { return (Chrono::currentMSecsSinceEpoch() - startTime) / 1000; }
+
+
+    inline StatsData &operator+=(const StatsData &other)
     {
-        return (Chrono::currentMSecsSinceEpoch() - startTime) / 1000;
+        upstreams    += other.upstreams;
+        accepted     += other.accepted;
+        connections  += other.connections;
+        donateHashes += other.donateHashes;
+        expired      += other.expired;
+        hashes       += other.hashes;
+        invalid      += other.invalid;
+        rejected     += other.rejected;
+
+        for (size_t i = 0; i < 6; ++i) {
+            hashrate[i] += other.hashrate[i];
+        }
+
+        return *this;
     }
 
 

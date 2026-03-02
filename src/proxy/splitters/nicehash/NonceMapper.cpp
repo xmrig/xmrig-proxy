@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2025 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2025 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,33 +22,28 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <inttypes.h>
-#include <memory>
-#include <string.h>
+#include <cinttypes>
+#include <cstring>
 
 
+#include "proxy/splitters/nicehash/NonceMapper.h"
 #include "base/io/log/Log.h"
+#include "base/io/log/Tags.h"
 #include "base/net/stratum/Client.h"
 #include "base/net/stratum/Pools.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
 #include "net/JobResult.h"
 #include "net/strategies/DonateStrategy.h"
-#include "proxy/Counters.h"
 #include "proxy/Error.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/events/SubmitEvent.h"
 #include "proxy/Miner.h"
-#include "proxy/splitters/nicehash/NonceMapper.h"
 #include "proxy/splitters/nicehash/NonceStorage.h"
 
 
 xmrig::NonceMapper::NonceMapper(size_t id, Controller *controller) :
     m_controller(controller),
-    m_donate(nullptr),
-    m_suspended(0),
-    m_pending(nullptr),
     m_id(id)
 {
     m_storage  = new NonceStorage();
@@ -134,15 +129,15 @@ void xmrig::NonceMapper::start()
 void xmrig::NonceMapper::submit(SubmitEvent *event)
 {
     if (!m_storage->isActive()) {
-        return event->reject(Error::BadGateway);
+        return event->setError(Error::BadGateway);
     }
 
     if (!m_storage->isValidJobId(event->request.jobId)) {
-        return event->reject(Error::InvalidJobId);
+        return event->setError(Error::InvalidJobId);
     }
 
     if (event->request.algorithm.isValid() && event->request.algorithm != m_storage->job().algorithm()) {
-        return event->reject(Error::IncorrectAlgorithm);
+        return event->setError(Error::IncorrectAlgorithm);
     }
 
     JobResult req = event->request;
@@ -181,7 +176,7 @@ void xmrig::NonceMapper::printState()
 #endif
 
 
-void xmrig::NonceMapper::onActive(IStrategy *strategy, Client *client)
+void xmrig::NonceMapper::onActive(IStrategy *strategy, IClient *client)
 {
     m_storage->setActive(true);
 
@@ -199,18 +194,18 @@ void xmrig::NonceMapper::onActive(IStrategy *strategy, Client *client)
     if (m_controller->config()->isVerbose()) {
         const char *tlsVersion = client->tlsVersion();
 
-        LOG_INFO("#%03u " WHITE_BOLD("use pool ") CYAN_BOLD("%s:%d ") GREEN_BOLD("%s") " \x1B[1;30m%s ",
-                 m_id, client->host(), client->port(), tlsVersion ? tlsVersion : "", client->ip());
+        LOG_INFO("%s " CYAN("%04u ") WHITE_BOLD("use %s ") CYAN_BOLD("%s:%d ") GREEN_BOLD("%s") " \x1B[1;30m%s ",
+                 Tags::network(), m_id, client->mode(), client->pool().host().data(), client->pool().port(), tlsVersion ? tlsVersion : "", client->ip().data());
 
         const char *fingerprint = client->tlsFingerprint();
         if (fingerprint != nullptr) {
-            LOG_INFO("\x1B[1;30mfingerprint (SHA-256): \"%s\"", fingerprint);
+            LOG_INFO("%s \x1B[1;30mfingerprint (SHA-256): \"%s\"", Tags::network(), fingerprint);
         }
     }
 }
 
 
-void xmrig::NonceMapper::onJob(IStrategy *, Client *client, const Job &job)
+void xmrig::NonceMapper::onJob(IStrategy *, IClient *client, const Job &job, const rapidjson::Value &)
 {
     if (m_donate) {
         if (m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {
@@ -221,7 +216,13 @@ void xmrig::NonceMapper::onJob(IStrategy *, Client *client, const Job &job)
         m_donate->setAlgo(job.algorithm());
     }
 
-    setJob(client->host(), client->port(), job);
+    setJob(client->pool().host(), client->pool().port(), job);
+}
+
+
+void xmrig::NonceMapper::onLogin(IStrategy *strategy, IClient *client, rapidjson::Document &doc, rapidjson::Value &params)
+{
+
 }
 
 
@@ -230,16 +231,16 @@ void xmrig::NonceMapper::onPause(IStrategy *)
     m_storage->setActive(false);
 
     if (!isSuspended()) {
-        LOG_ERR("#%03u no active pools, stop", m_id);
+        LOG_ERR("%s " CYAN("%04u ") RED("no active pools, stop"), Tags::network(), m_id);
     }
 }
 
 
-void xmrig::NonceMapper::onResultAccepted(IStrategy *, Client *client, const SubmitResult &result, const char *error)
+void xmrig::NonceMapper::onResultAccepted(IStrategy *, IClient *client, const SubmitResult &result, const char *error)
 {
     const SubmitCtx ctx = submitCtx(result.seq);
 
-    AcceptEvent::start(m_id, ctx.miner, result, client->id() == -1, error);
+    AcceptEvent::start(m_id, ctx.miner, result, client->id() == -1, false, error);
 
     if (!ctx.miner) {
         return;
@@ -254,10 +255,16 @@ void xmrig::NonceMapper::onResultAccepted(IStrategy *, Client *client, const Sub
 }
 
 
+void xmrig::NonceMapper::onVerifyAlgorithm(IStrategy *strategy, const IClient *client, const Algorithm &algorithm, bool *ok)
+{
+
+}
+
+
 xmrig::SubmitCtx xmrig::NonceMapper::submitCtx(int64_t seq)
 {
     if (!m_results.count(seq)) {
-        return SubmitCtx();
+        return {};
     }
 
     SubmitCtx ctx = m_results.at(seq);
@@ -286,14 +293,8 @@ void xmrig::NonceMapper::connect()
 void xmrig::NonceMapper::setJob(const char *host, int port, const Job &job)
 {
     if (m_controller->config()->isVerbose()) {
-        if (job.height()) {
-            LOG_INFO("#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s") " height " WHITE_BOLD("%" PRIu64),
-                     m_id, host, port, job.diff(), job.algorithm().shortName(), job.height());
-        }
-        else {
-            LOG_INFO("#%03u " MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%d") " algo " WHITE_BOLD("%s"),
-                     m_id, host, port, job.diff(), job.algorithm().shortName());
-        }
+        LOG_INFO("%s " CYAN("%04u ") MAGENTA_BOLD("new job") " from " WHITE_BOLD("%s:%d") " diff " WHITE_BOLD("%" PRIu64) " algo " WHITE_BOLD("%s") " height " WHITE_BOLD("%" PRIu64),
+                 Tags::network(), m_id, host, port, job.diff(), job.algorithm().name(), job.height());
     }
 
     m_storage->setJob(job);

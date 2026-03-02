@@ -1,15 +1,15 @@
 // Tencent is pleased to support the open source community by making RapidJSON available.
-// 
-// Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip. All rights reserved.
+//
+// Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip.
 //
 // Licensed under the MIT License (the "License"); you may not use this file except
 // in compliance with the License. You may obtain a copy of the License at
 //
 // http://opensource.org/licenses/MIT
 //
-// Unless required by applicable law or agreed to in writing, software distributed 
-// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
-// CONDITIONS OF ANY KIND, either express or implied. See the License for the 
+// Unless required by applicable law or agreed to in writing, software distributed
+// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
 #ifndef RAPIDJSON_FILEWRITESTREAM_H_
@@ -25,7 +25,7 @@ RAPIDJSON_DIAG_OFF(unreachable-code)
 
 RAPIDJSON_NAMESPACE_BEGIN
 
-//! Wrapper of C file stream for input using fread().
+//! Wrapper of C file stream for output using fwrite().
 /*!
     \note implements Stream concept
 */
@@ -33,11 +33,11 @@ class FileWriteStream {
 public:
     typedef char Ch;    //!< Character type. Only support char.
 
-    FileWriteStream(std::FILE* fp, char* buffer, size_t bufferSize) : fp_(fp), buffer_(buffer), bufferEnd_(buffer + bufferSize), current_(buffer_) { 
+    FileWriteStream(std::FILE* fp, char* buffer, size_t bufferSize) : fp_(fp), buffer_(buffer), bufferEnd_(buffer + bufferSize), current_(buffer_) {
         RAPIDJSON_ASSERT(fp_ != 0);
     }
 
-    void Put(char c) { 
+    void Put(char c) {
         if (current_ >= bufferEnd_)
             Flush();
 
@@ -62,7 +62,7 @@ public:
 
     void Flush() {
         if (current_ != buffer_) {
-            size_t result = fwrite(buffer_, 1, static_cast<size_t>(current_ - buffer_), fp_);
+            size_t result = std::fwrite(buffer_, 1, static_cast<size_t>(current_ - buffer_), fp_);
             if (result < static_cast<size_t>(current_ - buffer_)) {
                 // failure deliberately ignored at this time
                 // added to avoid warn_unused_result build errors

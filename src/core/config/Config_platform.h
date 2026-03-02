@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2025 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2025 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_CONFIG_PLATFORM_H
-#define XMRIG_CONFIG_PLATFORM_H
-
+#pragma once
 
 #ifdef _MSC_VER
 #   include "getopt/getopt.h"
@@ -32,20 +30,19 @@
 #   include <getopt.h>
 #endif
 
-
 #include "base/kernel/interfaces/IConfig.h"
-#include "version.h"
 
 
 namespace xmrig {
 
 
-static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:A:a:C:m:";
+static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:A:a:C:m:L:46";
 
 
 static struct option const options[] = {
     { "access-log-file",   1, nullptr, IConfig::AccessLogFileKey  },
     { "algo",              1, nullptr, IConfig::AlgorithmKey      },
+    { "coin",              1, nullptr, IConfig::CoinKey           },
     { "api-worker-id",     1, nullptr, IConfig::ApiWorkerIdKey    },
     { "api-id",            1, nullptr, IConfig::ApiIdKey          },
     { "http-enabled",      0, nullptr, IConfig::HttpEnabledKey    },
@@ -53,10 +50,17 @@ static struct option const options[] = {
     { "http-access-token", 1, nullptr, IConfig::HttpAccessTokenKey},
     { "http-port",         1, nullptr, IConfig::HttpPort          },
     { "http-no-restricted",0, nullptr, IConfig::HttpRestrictedKey },
+    { "daemon",            0, nullptr, IConfig::DaemonKey         },
+    { "daemon-poll-interval", 1, nullptr, IConfig::DaemonPollKey  },
+    { "daemon-job-timeout", 1, nullptr, IConfig::DaemonJobTimeoutKey },
+    { "self-select",       1, nullptr, IConfig::SelfSelectKey     },
+    { "submit-to-origin",  0, nullptr, IConfig::SubmitToOriginKey },
+    { "daemon-zmq-port",   1, nullptr, IConfig::DaemonZMQPortKey  },
     { "background",        0, nullptr, IConfig::BackgroundKey     },
     { "bind",              1, nullptr, IConfig::BindKey           },
     { "config",            1, nullptr, IConfig::ConfigKey         },
     { "custom-diff",       1, nullptr, IConfig::CustomDiffKey     },
+    { "custom-diff-stats", 0, nullptr, IConfig::CustomDiffStatsKey},
     { "debug",             0, nullptr, IConfig::DebugKey          },
     { "donate-level",      1, nullptr, IConfig::DonateLevelKey    },
     { "keepalive",         2, nullptr, IConfig::KeepAliveKey      },
@@ -74,7 +78,6 @@ static struct option const options[] = {
     { "user-agent",        1, nullptr, IConfig::UserAgentKey      },
     { "userpass",          1, nullptr, IConfig::UserpassKey       },
     { "verbose",           0, nullptr, IConfig::VerboseKey        },
-    { "variant",           1, nullptr, IConfig::VariantKey        },
     { "reuse-timeout",     1, nullptr, IConfig::ReuseTimeoutKey   },
     { "mode",              1, nullptr, IConfig::ModeKey           },
     { "rig-id",            1, nullptr, IConfig::RigIdKey          },
@@ -87,44 +90,17 @@ static struct option const options[] = {
     { "tls-protocols",     1, nullptr, IConfig::TlsProtocolsKey   },
     { "tls-ciphers",       1, nullptr, IConfig::TlsCiphersKey     },
     { "tls-ciphersuites",  1, nullptr, IConfig::TlsCipherSuitesKey},
+    { "tls-gen",           1, nullptr, IConfig::TlsGenKey         },
     { "no-algo-ext",       0, nullptr, IConfig::AlgoExtKey        },
     { "access-password",   1, nullptr, IConfig::ProxyPasswordKey  },
-
-#   ifdef XMRIG_DEPRECATED
-    { "api-port",              1, nullptr, IConfig::ApiPort               },
-    { "api-access-token",      1, nullptr, IConfig::ApiAccessTokenKey     },
-    { "api-no-restricted",     0, nullptr, IConfig::ApiRestrictedKey      },
-    { "api-ipv6",              0, nullptr, IConfig::ApiIPv6Key            },
-#   endif
-
+    { "login-file",        1, nullptr, IConfig::LoginFileKey      },
+    { "data-dir",          1, nullptr, IConfig::DataDirKey        },
+    { "ipv4",              0, nullptr, IConfig::DnsIPv4Key        },
+    { "ipv6",              0, nullptr, IConfig::DnsIPv6Key        },
+    { "dns-ttl",           1, nullptr, IConfig::DnsTtlKey         },
+    { "spend-secret-key",  1, nullptr, IConfig::SpendSecretKey    },
     { nullptr,             0, nullptr, 0 }
 };
 
 
-static struct option const config_options[] = {
-    { "access-log-file",  1, nullptr, IConfig::AccessLogFileKey  },
-    { "algo",             1, nullptr, IConfig::AlgorithmKey      },
-    { "background",       0, nullptr, IConfig::BackgroundKey     },
-    { "colors",           0, nullptr, IConfig::ColorKey          },
-    { "custom-diff",      1, nullptr, IConfig::CustomDiffKey     },
-    { "debug",            0, nullptr, IConfig::DebugKey          },
-    { "donate-level",     1, nullptr, IConfig::DonateLevelKey    },
-    { "log-file",         1, nullptr, IConfig::LogFileKey        },
-    { "retries",          1, nullptr, IConfig::RetriesKey        },
-    { "retry-pause",      1, nullptr, IConfig::RetryPauseKey     },
-    { "syslog",           0, nullptr, IConfig::SyslogKey         },
-    { "user-agent",       1, nullptr, IConfig::UserAgentKey      },
-    { "verbose",          0, nullptr, IConfig::VerboseKey        },
-    { "workers",          1, nullptr, IConfig::WorkersAdvKey     },
-    { "reuse-timeout",    1, nullptr, IConfig::ReuseTimeoutKey   },
-    { "mode",             1, nullptr, IConfig::ModeKey           },
-    { "algo-ext",         0, nullptr, IConfig::AlgoExtKey        },
-    { "access-password",  1, nullptr, IConfig::ProxyPasswordKey  },
-    { nullptr,            0, nullptr, 0 }
-};
-
-
-} /* namespace xmrig */
-
-
-#endif /* XMRIG_CONFIG_PLATFORM_H */
+} // namespace xmrig

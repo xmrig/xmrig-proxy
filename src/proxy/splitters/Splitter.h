@@ -27,8 +27,8 @@
 
 
 #include "base/kernel/interfaces/IBaseListener.h"
-#include "interfaces/IEventListener.h"
-#include "interfaces/ISplitter.h"
+#include "proxy/interfaces/IEventListener.h"
+#include "proxy/interfaces/ISplitter.h"
 
 
 namespace xmrig {

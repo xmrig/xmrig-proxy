@@ -1,12 +1,6 @@
 /* XMRig
- * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
- * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
- * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
- * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
- * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2019 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2019 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,20 +20,15 @@
 #define XMRIG_CONFIG_H
 
 
-#include <stdint.h>
-#include <vector>
-
-
+#include "3rdparty/rapidjson/fwd.h"
 #include "base/kernel/config/BaseConfig.h"
 #include "base/tools/String.h"
 #include "proxy/BindHost.h"
 #include "proxy/workers/Workers.h"
-#include "rapidjson/fwd.h"
 
 
-#ifdef XMRIG_FEATURE_TLS
-#   include "proxy/tls/TlsConfig.h"
-#endif
+#include <cstdint>
+#include <vector>
 
 
 namespace xmrig {
@@ -50,52 +39,37 @@ class IConfigListener;
 class Process;
 
 
-/**
- * @brief The Config class
- *
- * Options with dynamic reload:
- *   colors
- *   debug
- *   verbose
- *   custom-diff (only for new connections)
- *   api/worker-id
- *   pools/
- */
 class Config : public BaseConfig
 {
 public:
     enum Mode {
         NICEHASH_MODE,
-        SIMPLE_MODE
+        SIMPLE_MODE,
+        EXTRA_NONCE_MODE,
     };
 
-    Config();
+    Config() = default;
 
-    bool isTLS() const;
     const char *modeName() const;
 
+    bool isVerbose() const;
     bool read(const IJsonReader &reader, const char *fileName) override;
     void getJSON(rapidjson::Document &doc) const override;
+    void toggleVerbose();
 
     inline bool hasAlgoExt() const                 { return isDonateOverProxy() ? m_algoExt : true; }
+    inline bool isCustomDiffStats() const          { return m_customDiffStats; }
     inline bool isDebug() const                    { return m_debug; }
     inline bool isDonateOverProxy() const          { return m_pools.donateLevel() == 0 || m_mode == SIMPLE_MODE; }
     inline bool isShouldSave() const               { return m_upgrade && isAutoSave(); }
-    inline bool isVerbose() const                  { return m_verbose; }
+    inline const BindHosts &bind() const           { return m_bind; }
     inline const String &accessLog() const         { return m_accessLog; }
     inline const String &password() const          { return m_password; }
-    inline const xmrig::BindHosts &bind() const    { return m_bind; }
     inline int mode() const                        { return m_mode; }
     inline int reuseTimeout() const                { return m_reuseTimeout; }
     inline static IConfig *create()                { return new Config(); }
     inline uint64_t diff() const                   { return m_diff; }
-    inline void setVerbose(bool verbose)           { m_verbose = verbose; }
-    inline void toggleVerbose()                    { m_verbose = !m_verbose; }
     inline Workers::Mode workersMode() const       { return m_workersMode; }
-
-#   ifdef XMRIG_FEATURE_TLS
-    inline const xmrig::TlsConfig &tls() const { return m_tls; }
-#   endif
 
 private:
     void setCustomDiff(uint64_t diff);
@@ -103,19 +77,15 @@ private:
     void setWorkersMode(const rapidjson::Value &value);
 
     BindHosts m_bind;
-    bool m_algoExt;
-    bool m_debug;
-    bool m_verbose;
-    int m_mode;
-    int m_reuseTimeout;
+    bool m_algoExt              = true;
+    bool m_customDiffStats      = false;
+    bool m_debug                = false;
+    int m_mode                  = NICEHASH_MODE;
+    int m_reuseTimeout          = 0;
     String m_accessLog;
     String m_password;
-    uint64_t m_diff;
-    Workers::Mode m_workersMode;
-
-#   ifdef XMRIG_FEATURE_TLS
-    TlsConfig m_tls;
-#   endif
+    uint64_t m_diff             = 0;
+    Workers::Mode m_workersMode = Workers::RigID;
 };
 
 

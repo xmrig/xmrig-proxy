@@ -45,10 +45,9 @@ public:
 
 
 protected:
-    inline MinerEvent(Type type, Miner *miner) :
-        Event(type),
-        m_miner(miner)
-    {}
+    inline MinerEvent(Type type, Miner *miner) : Event(type), m_miner(miner) {}
+
+    int32_t route() const override;
 
 
 private:

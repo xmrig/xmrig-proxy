@@ -23,18 +23,19 @@
  */
 
 
-#include "api/Api.h"
 #include "base/net/stratum/SubmitResult.h"
+#include "core/config/Config.h"
+#include "core/Controller.h"
 #include "Counters.h"
 #include "interfaces/ISplitter.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/Stats.h"
 
 
-xmrig::Stats::Stats() :
+xmrig::Stats::Stats(Controller *controller) :
+    m_controller(controller),
     m_hashrate(4)
 {
-    m_data.startTime = uv_now(uv_default_loop());
 }
 
 
@@ -56,7 +57,7 @@ void xmrig::Stats::tick(uint64_t ticks, const ISplitter *splitter)
         m_data.hashrate[2] = hashrate(3600);
         m_data.hashrate[3] = hashrate(3600 * 12);
         m_data.hashrate[4] = hashrate(3600 * 24);
-        m_data.hashrate[5] = hashrate(m_data.uptime());
+        m_data.hashrate[5] = hashrate(static_cast<int>(m_data.uptime()));
 
         m_data.upstreams = splitter->upstreams();
         m_data.miners    = Counters::miners();
@@ -109,7 +110,15 @@ void xmrig::Stats::onRejectedEvent(IEvent *event)
 
 void xmrig::Stats::accept(const AcceptEvent *event)
 {
-    m_hashrate.add(event->result.diff);
+    if (event->isCustomDiff() && !m_controller->config()->isCustomDiffStats()) {
+        return;
+    }
+
+    m_hashrate.add(m_controller->config()->isCustomDiffStats() ? event->statsDiff() : event->result.diff);
+
+    if (event->isCustomDiff()) {
+        return;
+    }
 
     m_data.accepted++;
     m_data.hashes += event->result.diff;

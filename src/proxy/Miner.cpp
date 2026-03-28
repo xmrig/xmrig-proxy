@@ -58,7 +58,7 @@ namespace xmrig {
     static int64_t nextId = 0;
     char Miner::m_sendBuf[16384] = { 0 };
     Storage<Miner> Miner::m_storage;
-}
+} // namespace xmrig
 
 
 xmrig::Miner::Miner(const TlsContext *ctx, uint16_t port, bool strictTls) :
@@ -67,7 +67,7 @@ xmrig::Miner::Miner(const TlsContext *ctx, uint16_t port, bool strictTls) :
     m_tlsCtx(ctx),
     m_id(++nextId),
     m_localPort(port),
-    m_expire(Chrono::currentMSecsSinceEpoch() + kLoginTimeout),
+    m_expire(Chrono::steadyMSecs() + kLoginTimeout),
     m_timestamp(Chrono::currentMSecsSinceEpoch())
 {
     m_reader.setListener(this);
@@ -215,7 +215,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
                     algorithms.reserve(value.Size());
 
                     for (const auto &i : value.GetArray()) {
-                        Algorithm algo(i.GetString());
+                        const Algorithm algo(i.GetString());
                         if (!algo.isValid()) {
                             continue;
                         }
@@ -252,7 +252,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
 
         Algorithm algorithm(Json::getString(params, "algo"));
 
-        SubmitEvent *event = SubmitEvent::create(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm, Json::getString(params, "sig"), m_signatureData, m_viewTag, m_extraNonce);
+        SubmitEvent *event = SubmitEvent::create(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm, Json::getString(params, "sig"), m_signatureData, Json::getString(params, "commitment"), m_viewTag, m_extraNonce);
 
         if (!event->request.isValid() || event->request.actualDiff() < diff()) {
             event->setError(Error::LowDifficulty);
@@ -324,7 +324,7 @@ bool xmrig::Miner::send(BIO *bio)
 
 void xmrig::Miner::heartbeat()
 {
-    m_expire = Chrono::currentMSecsSinceEpoch() + kSocketTimeout;
+    m_expire = Chrono::steadyMSecs() + kSocketTimeout;
 }
 
 

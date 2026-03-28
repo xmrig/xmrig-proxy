@@ -1,3 +1,8 @@
+# v6.26.0
+- [#598](https://github.com/xmrig/xmrig-proxy/pull/598) **Added support for RandomX v2.**
+- [#590](https://github.com/xmrig/xmrig-proxy/pull/590) Solo mining: added support for FCMP++ hardfork.
+- [#597](https://github.com/xmrig/xmrig-proxy/pull/597) Fixed keepalive timer logic.
+
 # v6.24.0
 - [#3678](https://github.com/xmrig/xmrig/pull/3678) Improved IPv6 support: the new default settings use IPv6 equally with IPv4.
 

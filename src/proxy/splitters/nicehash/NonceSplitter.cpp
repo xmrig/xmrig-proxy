@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2025 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2025 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 
 #include "proxy/splitters/nicehash/NonceSplitter.h"
 #include "base/io/log/Log.h"
+#include "base/tools/Chrono.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/Counters.h"
@@ -33,7 +34,6 @@
 #include "proxy/Miner.h"
 #include "proxy/splitters/nicehash/NonceMapper.h"
 #include "Summary.h"
-
 
 #include <cinttypes>
 
@@ -77,7 +77,7 @@ xmrig::Upstreams xmrig::NonceSplitter::upstreams() const
 
 void xmrig::NonceSplitter::connect()
 {
-    auto upstream = new NonceMapper(m_upstreams.size(), m_controller);
+    auto *upstream = new NonceMapper(m_upstreams.size(), m_controller);
     m_upstreams.push_back(upstream);
 
     upstream->start();
@@ -113,7 +113,7 @@ void xmrig::NonceSplitter::printConnections()
 
 void xmrig::NonceSplitter::tick(uint64_t ticks)
 {
-    const uint64_t now = uv_now(uv_default_loop());
+    const uint64_t now = Chrono::steadyMSecs();
 
     for (NonceMapper *mapper : m_upstreams) {
         mapper->tick(ticks, now);

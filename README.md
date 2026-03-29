@@ -50,7 +50,7 @@ Network:
   -r, --retries=N               number of times to retry before switch to backup server (default: 5)
   -R, --retry-pause=N           time to pause between retries (default: 5)
       --user-agent              set custom user-agent string for pool
-      --donate-level=N          donate level, default 0%%
+      --donate-level=N          donate level, default 0%
 
 Options:
   -b, --bind=ADDR               bind to specified address, example "0.0.0.0:3333"

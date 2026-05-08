@@ -102,6 +102,106 @@ jobs:
           retention-days: 7
           if-no-files-found: error
 
+  ubuntu-compat:
+    name: Build glibc 2.12 compatible artifact
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Prepare source archive
+        run: tar --exclude=.git -czf /tmp/xmrig-proxy-source.tar.gz .
+
+      - name: Run build inside manylinux2010
+        run: |
+          mkdir -p /tmp/xmrig-proxy-docker
+          cp /tmp/xmrig-proxy-source.tar.gz /tmp/xmrig-proxy-docker/source.tar.gz
+          cat >/tmp/xmrig-proxy-docker/build.sh <<'EOF'
+          set -eux
+
+          export PATH="/opt/rh/devtoolset-8/root/usr/bin:${PATH}"
+          export CC=gcc
+          export CXX=g++
+          JOBS="$(nproc)"
+          DEPS=/tmp/xmrig-proxy/deps
+          UV_VERSION=1.44.2
+          OPENSSL_VERSION=1.1.1u
+          OPENSSL_TAG=OpenSSL_1_1_1u
+
+          gcc --version
+          g++ --version
+          ldd --version | head -n 1
+          if ! command -v wget >/dev/null 2>&1; then
+            cat >/usr/local/bin/wget <<'EOS'
+          #!/bin/sh
+          if [ "$2" = "-O" ] && [ -n "$3" ]; then
+            exec curl -fsSL "$1" -o "$3"
+          fi
+          exec curl -fsSLO "$1"
+          EOS
+            chmod +x /usr/local/bin/wget
+          fi
+
+          curl -fsSL https://cmake.org/files/v3.16/cmake-3.16.9.tar.gz | tar -xzC /tmp
+          (cd /tmp/cmake-3.16.9 && ./bootstrap --parallel="${JOBS}" -- -DCMAKE_USE_OPENSSL=OFF && make -j"${JOBS}" && make install)
+
+          mkdir -p /tmp/xmrig-proxy
+          tar -xzf /tmp/xmrig-proxy-docker/source.tar.gz -C /tmp/xmrig-proxy
+          cd /tmp/xmrig-proxy
+          mkdir -p "${DEPS}/include" "${DEPS}/lib" deps-build
+
+          wget "https://dist.libuv.org/dist/v${UV_VERSION}/libuv-v${UV_VERSION}.tar.gz" -O "deps-build/libuv-v${UV_VERSION}.tar.gz"
+          tar -xzf "deps-build/libuv-v${UV_VERSION}.tar.gz" -C deps-build
+          (cd "deps-build/libuv-v${UV_VERSION}" && sh autogen.sh && ./configure --disable-shared && make -j"${JOBS}")
+          cp -fr "deps-build/libuv-v${UV_VERSION}/include" "${DEPS}/"
+          cp "deps-build/libuv-v${UV_VERSION}/.libs/libuv.a" "${DEPS}/lib/"
+
+          wget "https://github.com/openssl/openssl/releases/download/${OPENSSL_TAG}/openssl-${OPENSSL_VERSION}.tar.gz" -O "deps-build/openssl-${OPENSSL_VERSION}.tar.gz"
+          tar -xzf "deps-build/openssl-${OPENSSL_VERSION}.tar.gz" -C deps-build
+          (cd "deps-build/openssl-${OPENSSL_VERSION}" && ./config -no-shared -no-asm -no-zlib -no-comp -no-dgram -no-filenames -no-cms no-tests && make build_libs -j"${JOBS}")
+          cp -fr "deps-build/openssl-${OPENSSL_VERSION}/include" "${DEPS}/"
+          cp "deps-build/openssl-${OPENSSL_VERSION}/libcrypto.a" "${DEPS}/lib/"
+          cp "deps-build/openssl-${OPENSSL_VERSION}/libssl.a" "${DEPS}/lib/"
+
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DXMRIG_DEPS="${DEPS}"
+          cmake --build build --parallel "${JOBS}"
+
+          if readelf --version-info build/xmrig-proxy | grep -E 'Name: GLIBC_2\.(1[3-9]|[2-9][0-9])'; then
+            echo "compat binary requires a newer glibc than 2.12"
+            exit 1
+          fi
+
+          if readelf --version-info build/xmrig-proxy | grep -E 'Name: (GLIBCXX_|CXXABI_)'; then
+            echo "compat binary must not depend on dynamic libstdc++"
+            exit 1
+          fi
+
+          mkdir -p /tmp/package
+          cp build/xmrig-proxy /tmp/package/
+          cp src/config.json /tmp/package/
+          cp build/xmrig-proxy /tmp/xmrig-proxy-docker/xmrig-proxy-compat
+          tar -C /tmp/package -czf "/tmp/xmrig-proxy-docker/xmrig-proxy-${VERSION}-lin64-compat.tar.gz" xmrig-proxy config.json
+          EOF
+          chmod +x /tmp/xmrig-proxy-docker/build.sh
+          docker run --rm \
+            -e VERSION="${VERSION}" \
+            -v /tmp/xmrig-proxy-docker:/tmp/xmrig-proxy-docker \
+            quay.io/pypa/manylinux2010_x86_64 \
+            /bin/bash /tmp/xmrig-proxy-docker/build.sh
+
+      - name: Run compat artifact test suite
+        run: node run_tests.js --skip-build --binary /tmp/xmrig-proxy-docker/xmrig-proxy-compat
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ubuntu-compat
+          path: /tmp/xmrig-proxy-docker/xmrig-proxy-${{ env.VERSION }}-lin64-compat.tar.gz
+          retention-days: 7
+          if-no-files-found: error
+
   macos:
     name: Build macOS ${{ matrix.suffix }} artifact
     runs-on: ${{ matrix.runner }}
@@ -154,6 +254,7 @@ jobs:
     needs:
       - windows
       - ubuntu
+      - ubuntu-compat
       - macos
 
     steps:

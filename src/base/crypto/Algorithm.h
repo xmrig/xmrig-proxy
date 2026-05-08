@@ -22,6 +22,9 @@
 
 
 #include <functional>
+/* MoneroOcean change: begin Algo switching stores miner algo-perf maps alongside upstream algorithm lists. */
+#include <map>
+/* MoneroOcean change: end */
 #include <vector>
 
 
@@ -65,6 +68,9 @@ public:
         CN_PICO_0       = 0x63120200,   // "cn-pico"          CryptoNight-Pico
         CN_PICO_TLO     = 0x63120274,   // "cn-pico/tlo"      CryptoNight-Pico (TLO)
         CN_UPX2         = 0x63110200,   // "cn/upx2"          Uplexa (UPX2)
+        /* MoneroOcean change: begin MoneroOcean still receives cn/gpu jobs and must pass the exact algorithm id through proxy validation. */
+        CN_GPU          = 0x63150300,   // "cn/gpu"           CryptoNight-GPU (Ryo).
+        /* MoneroOcean change: end */
         CN_GR_0         = 0x63130100,   // "cn/dark"          GhostRider
         CN_GR_1         = 0x63130101,   // "cn/dark-lite"     GhostRider
         CN_GR_2         = 0x63150102,   // "cn/fast"          GhostRider
@@ -72,6 +78,9 @@ public:
         CN_GR_4         = 0x63120104,   // "cn/turtle"        GhostRider
         CN_GR_5         = 0x63120105,   // "cn/turtle-lite"   GhostRider
         GHOSTRIDER_RTM  = 0x6c150000,   // "ghostrider"       GhostRider
+        /* MoneroOcean change: begin Flex uses the Ghostrider algorithm family but normal stratum framing on MoneroOcean. */
+        FLEX_KCN        = 0x6c150001,   // "flex"             Flex
+        /* MoneroOcean change: end */
         RX_0            = 0x72151200,   // "rx/0"             RandomX (reference configuration).
         RX_V2           = 0x72151202,   // "rx/2"             RandomX (Monero v2).
         RX_WOW          = 0x72141177,   // "rx/wow"           RandomWOW (Wownero).
@@ -83,6 +92,9 @@ public:
         AR2_CHUKWA_V2   = 0x61140000,   // "argon2/chukwav2"  Argon2id (Chukwa v2).
         AR2_WRKZ        = 0x61120000,   // "argon2/wrkz"      Argon2id (WRKZ)
         KAWPOW_RVN      = 0x6b0f0000,   // "kawpow/rvn"       KawPow (RVN)
+        /* MoneroOcean change: begin Panthera is the RandomX-family name MoneroOcean forwards for Scala jobs. */
+        RX_XLA          = 0x721211ff,   // "panthera"         Panthera (Scala2).
+        /* MoneroOcean change: end */
     };
 
     enum Family : uint32_t {
@@ -137,6 +149,12 @@ public:
     static const char *kCN_UPX2;
 #   endif
 
+    /* MoneroOcean change: begin Make cn/gpu serializable for login capability lists and job validation. */
+#   ifdef XMRIG_ALGO_CN_GPU
+    static const char *kCN_GPU;
+#   endif
+    /* MoneroOcean change: end */
+
 #   ifdef XMRIG_ALGO_RANDOMX
     static const char *kRX;
     static const char *kRX_0;
@@ -145,6 +163,9 @@ public:
     static const char *kRX_ARQ;
     static const char *kRX_GRAFT;
     static const char *kRX_SFX;
+    /* MoneroOcean change: begin Make MoneroOcean RandomX variants serializable for algo-perf negotiation. */
+    static const char *kRX_XLA;
+    /* MoneroOcean change: end */
     static const char *kRX_YADA;
 #   endif
 
@@ -163,6 +184,10 @@ public:
 #   ifdef XMRIG_ALGO_GHOSTRIDER
     static const char* kGHOSTRIDER;
     static const char* kGHOSTRIDER_RTM;
+    /* MoneroOcean change: begin Flex shares the Ghostrider family id space and needs its own public name. */
+    static const char* kFLEX;
+    static const char* kFLEX_KCN;
+    /* MoneroOcean change: end */
 #   endif
 
     inline Algorithm() = default;
@@ -209,6 +234,10 @@ private:
 
 
 using Algorithms = std::vector<Algorithm>;
+/* MoneroOcean change: begin Miner grouping needs per-algorithm performance maps keyed by normalized Algorithm ids. */
+using algo_perf = std::pair<Algorithm::Id, float>;
+using algo_perfs = std::map<Algorithm::Id, float>;
+/* MoneroOcean change: end */
 
 
 } /* namespace xmrig */

@@ -34,7 +34,7 @@ public:
         INVALID,
         MONERO,
         SUMO,
-        ARQMA,
+        ARQ,
         GRAFT,
         RAVEN,
         WOWNERO,

@@ -82,6 +82,9 @@ void xmrig::ConfigTransform::transform(rapidjson::Document &doc, int key, const 
 
     case IConfig::CustomDiffKey: /* --custom-diff */
     case IConfig::ReuseTimeoutKey: /* --reuse-timeout */
+    /* MoneroOcean change: begin Accept CLI override for MoneroOcean miner grouping tolerance. */
+    case IConfig::AlgoPerfSameThresholdKey: /* --algo-perf-same-threshold */
+    /* MoneroOcean change: end */
         return transformUint64(doc, key, static_cast<uint64_t>(strtol(arg, nullptr, 10)));
 
     case IConfig::LoginFileKey: /* --login-file */
@@ -122,6 +125,11 @@ void xmrig::ConfigTransform::transformUint64(rapidjson::Document &doc, int key, 
 
     case IConfig::ReuseTimeoutKey: /* --reuse-timeout */
         return set(doc, "reuse-timeout", arg);
+
+    /* MoneroOcean change: begin Store CLI grouping tolerance under the JSON key consumed by Config::read. */
+    case IConfig::AlgoPerfSameThresholdKey: /* --algo-perf-same-threshold */
+        return set(doc, "algo-perf-same-threshold", arg);
+    /* MoneroOcean change: end */
 
     default:
         break;

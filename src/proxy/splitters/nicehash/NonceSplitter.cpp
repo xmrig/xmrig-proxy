@@ -78,6 +78,9 @@ xmrig::Upstreams xmrig::NonceSplitter::upstreams() const
 void xmrig::NonceSplitter::connect()
 {
     auto *upstream = new NonceMapper(m_upstreams.size(), m_controller);
+    /* MoneroOcean change: begin Apply configured algo-perf grouping tolerance to new MoneroOcean upstream groups. */
+    upstream->setAlgoPerfSameThreshold(m_controller->config()->algoPerfSameThreshold());
+    /* MoneroOcean change: end */
     m_upstreams.push_back(upstream);
 
     upstream->start();
@@ -138,6 +141,9 @@ void xmrig::NonceSplitter::onConfigChanged(Config *config, Config *previousConfi
 
         for (NonceMapper *mapper : m_upstreams) {
             mapper->reload(config->pools());
+            /* MoneroOcean change: begin Keep pending replacement clients on the updated MoneroOcean grouping tolerance. */
+            mapper->setAlgoPerfSameThreshold(config->algoPerfSameThreshold());
+            /* MoneroOcean change: end */
         }
     }
 }
@@ -173,16 +179,20 @@ void xmrig::NonceSplitter::login(LoginEvent *event)
 
     // try reuse active upstreams.
     for (NonceMapper *mapper : m_upstreams) {
-        if (!mapper->isSuspended() && mapper->add(event->miner())) {
+        /* MoneroOcean change: begin Reuse an upstream only when the miner's normalized algo/algo-perf set fits that group. */
+        if (mapper->tryMiner(event->miner(), m_upstreams.size()) && !mapper->isSuspended() && mapper->add(event->miner())) {
             return;
         }
+        /* MoneroOcean change: end */
     }
 
     // try reuse suspended upstreams.
     for (NonceMapper *mapper : m_upstreams) {
-        if (mapper->isSuspended() && mapper->add(event->miner())) {
+        /* MoneroOcean change: begin Suspended upstreams are also checked for algo/perf compatibility before reuse. */
+        if (mapper->tryMiner(event->miner(), m_upstreams.size()) && mapper->isSuspended() && mapper->add(event->miner())) {
             return;
         }
+        /* MoneroOcean change: end */
     }
 
     connect();

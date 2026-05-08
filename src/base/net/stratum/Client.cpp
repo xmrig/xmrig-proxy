@@ -322,6 +322,41 @@ void xmrig::Client::tick(uint64_t now)
 }
 
 
+/* MoneroOcean change: begin These wrappers keep miner algo switching on concrete normal stratum clients instead of adding MoneroOcean methods to IClient. */
+bool xmrig::Client::tryMiner(const Miner *miner, int upstreamCount) const
+{
+    return AlgoSwitch::tryMiner(miner, upstreamCount);
+}
+
+
+void xmrig::Client::addMiner(const Miner *miner)
+{
+    AlgoSwitch::addMiner(miner);
+    getjob();
+}
+
+
+void xmrig::Client::removeMiner(const Miner *miner)
+{
+    AlgoSwitch::removeMiner(miner);
+    getjob();
+}
+
+
+void xmrig::Client::setAlgoPerfSameThreshold(uint64_t percent)
+{
+    AlgoSwitch::setSameThreshold(percent);
+}
+
+
+void xmrig::Client::setPool(const Pool &pool)
+{
+    BaseClient::setPool(pool);
+    AlgoSwitch::setDefaultAlgo(pool.algorithm());
+}
+/* MoneroOcean change: end */
+
+
 void xmrig::Client::onResolved(const DnsRecords &records, int status, const char *error)
 {
     m_dns.reset();
@@ -632,6 +667,22 @@ bool xmrig::Client::parseLogin(const rapidjson::Value &result, int *code)
 }
 
 
+/* MoneroOcean change: begin getjob returns a top-level job object, so parsing it separately avoids treating refreshed jobs as new logins. */
+bool xmrig::Client::parseGetjob(const rapidjson::Value &result, int *code)
+{
+    setRpcId(Json::getString(result, "id"));
+    if (rpcId().isNull()) {
+        *code = 1;
+        return false;
+    }
+
+    parseExtensions(result);
+
+    return parseJob(result, code);
+}
+/* MoneroOcean change: end */
+
+
 void xmrig::Client::login()
 {
     using namespace rapidjson;
@@ -644,6 +695,10 @@ void xmrig::Client::login()
     params.AddMember("login", m_user.toJSON(),     allocator);
     params.AddMember("pass",  m_password.toJSON(), allocator);
     params.AddMember("agent", StringRef(m_agent),  allocator);
+    /* MoneroOcean change: begin Advertise normalized miner algo/algo-perf capabilities so MoneroOcean can choose compatible work. */
+    params.AddMember("algo", AlgoSwitch::algosToJSON(doc), allocator);
+    params.AddMember("algo-perf", AlgoSwitch::algoPerfsToJSON(doc), allocator);
+    /* MoneroOcean change: end */
 
     if (!m_rigId.isNull()) {
         params.AddMember("rigid", m_rigId.toJSON(), allocator);
@@ -655,6 +710,30 @@ void xmrig::Client::login()
 
     send(doc);
 }
+
+
+/* MoneroOcean change: begin Refresh the upstream job when miner capabilities change instead of reconnecting the pool client. */
+void xmrig::Client::getjob()
+{
+    using namespace rapidjson;
+
+    if (!m_rpcId) {
+        return;
+    }
+
+    Document doc(kObjectType);
+    auto &allocator = doc.GetAllocator();
+
+    Value params(kObjectType);
+    params.AddMember("id", StringRef(m_rpcId.data()), allocator);
+    params.AddMember("algo", AlgoSwitch::algosToJSON(doc), allocator);
+    params.AddMember("algo-perf", AlgoSwitch::algoPerfsToJSON(doc), allocator);
+
+    JsonRequest::create(doc, 1, "getjob", params);
+
+    send(doc);
+}
+/* MoneroOcean change: end */
 
 
 void xmrig::Client::onClose()
@@ -845,6 +924,12 @@ void xmrig::Client::parseResponse(int64_t id, const rapidjson::Value &result, co
 
     if (id == 1) {
         int code = -1;
+        /* MoneroOcean change: begin A getjob response also uses id 1, and should update the current job without replaying login success. */
+        if (parseGetjob(result, &code)) {
+            m_listener->onJobReceived(this, m_job, result);
+            return;
+        }
+        /* MoneroOcean change: end */
         if (!parseLogin(result, &code)) {
             if (!isQuiet()) {
                 LOG_ERR("%s " RED("login error code: ") RED_BOLD("%d"), tag(), code);

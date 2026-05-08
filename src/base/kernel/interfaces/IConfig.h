@@ -137,6 +137,9 @@ public:
         ModeKey              = 'm',
         PoolCoinKey          = 'C',
         ReuseTimeoutKey      = 1106,
+        /* MoneroOcean change: begin CLI/config key controls how tightly miners must match before sharing a MoneroOcean algo-switching upstream. */
+        AlgoPerfSameThresholdKey = 1196,
+        /* MoneroOcean change: end */
         WorkersKey           = 1103,
         WorkersAdvKey        = 1107,
         TlsBindKey           = 1108,

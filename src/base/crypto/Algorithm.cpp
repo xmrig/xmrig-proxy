@@ -74,6 +74,12 @@ const char *Algorithm::kCN_PICO_TLO     = "cn-pico/tlo";
 const char *Algorithm::kCN_UPX2         = "cn/upx2";
 #endif
 
+/* MoneroOcean change: begin MoneroOcean can forward cn/gpu work and must serialize the same name back to miners. */
+#ifdef XMRIG_ALGO_CN_GPU
+const char *Algorithm::kCN_GPU          = "cn/gpu";
+#endif
+/* MoneroOcean change: end */
+
 #ifdef XMRIG_ALGO_RANDOMX
 const char *Algorithm::kRX              = "rx";
 const char *Algorithm::kRX_0            = "rx/0";
@@ -82,6 +88,9 @@ const char *Algorithm::kRX_WOW          = "rx/wow";
 const char *Algorithm::kRX_ARQ          = "rx/arq";
 const char *Algorithm::kRX_GRAFT        = "rx/graft";
 const char *Algorithm::kRX_SFX          = "rx/sfx";
+/* MoneroOcean change: begin Panthera name is needed for MoneroOcean algo switching and pool job validation. */
+const char *Algorithm::kRX_XLA          = "panthera";
+/* MoneroOcean change: end */
 const char *Algorithm::kRX_YADA         = "rx/yada";
 #endif
 
@@ -100,6 +109,10 @@ const char *Algorithm::kKAWPOW_RVN      = "kawpow";
 #ifdef XMRIG_ALGO_GHOSTRIDER
 const char* Algorithm::kGHOSTRIDER      = "ghostrider";
 const char* Algorithm::kGHOSTRIDER_RTM  = "ghostrider";
+/* MoneroOcean change: begin Flex is a Ghostrider-family pool algorithm but uses normal stratum in this proxy. */
+const char* Algorithm::kFLEX            = "flex";
+const char* Algorithm::kFLEX_KCN        = "flex";
+/* MoneroOcean change: end */
 #endif
 
 
@@ -142,6 +155,12 @@ static const std::map<uint32_t, const char *> kAlgorithmNames = {
     ALGO_NAME(CN_UPX2),
 #   endif
 
+#   ifdef XMRIG_ALGO_CN_GPU
+    /* MoneroOcean change: begin Include cn/gpu in the canonical algorithm table so advertised jobs do not become invalid. */
+    ALGO_NAME(CN_GPU),
+    /* MoneroOcean change: end */
+#   endif
+
 #   ifdef XMRIG_ALGO_RANDOMX
     ALGO_NAME(RX_0),
     ALGO_NAME(RX_V2),
@@ -149,6 +168,9 @@ static const std::map<uint32_t, const char *> kAlgorithmNames = {
     ALGO_NAME(RX_ARQ),
     ALGO_NAME(RX_GRAFT),
     ALGO_NAME(RX_SFX),
+    /* MoneroOcean change: begin Include Panthera in the canonical algorithm table for MoneroOcean jobs. */
+    ALGO_NAME(RX_XLA),
+    /* MoneroOcean change: end */
     ALGO_NAME(RX_YADA),
 #   endif
 
@@ -164,6 +186,9 @@ static const std::map<uint32_t, const char *> kAlgorithmNames = {
 
 #   ifdef XMRIG_ALGO_GHOSTRIDER
     ALGO_NAME(GHOSTRIDER_RTM),
+    /* MoneroOcean change: begin Include Flex in the canonical Ghostrider-family algorithm table. */
+    ALGO_NAME(FLEX_KCN),
+    /* MoneroOcean change: end */
 #   endif
 };
 
@@ -249,6 +274,13 @@ static const std::map<const char *, Algorithm::Id, aliasCompare> kAlgorithmAlias
                                     ALGO_ALIAS(CN_UPX2,         "cryptonight-upx/2"),
 #   endif
 
+#   ifdef XMRIG_ALGO_CN_GPU
+    /* MoneroOcean change: begin Accept common cn/gpu spellings used by miners and MoneroOcean jobs. */
+    ALGO_ALIAS_AUTO(CN_GPU),        ALGO_ALIAS(CN_GPU,          "cryptonight/gpu"),
+                                    ALGO_ALIAS(CN_GPU,          "cryptonight_gpu"),
+    /* MoneroOcean change: end */
+#   endif
+
 #   ifdef XMRIG_ALGO_RANDOMX
     ALGO_ALIAS_AUTO(RX_0),          ALGO_ALIAS(RX_0,            "randomx/0"),
                                     ALGO_ALIAS(RX_0,            "randomx/test"),
@@ -265,6 +297,9 @@ static const std::map<const char *, Algorithm::Id, aliasCompare> kAlgorithmAlias
                                     ALGO_ALIAS(RX_GRAFT,        "randomgraft"),
     ALGO_ALIAS_AUTO(RX_SFX),        ALGO_ALIAS(RX_SFX,          "randomx/sfx"),
                                     ALGO_ALIAS(RX_SFX,          "randomsfx"),
+    /* MoneroOcean change: begin Accept Panthera aliases from miner algo-perf and upstream jobs. */
+    ALGO_ALIAS_AUTO(RX_XLA),        ALGO_ALIAS(RX_XLA,          "Panthera"),
+    /* MoneroOcean change: end */
     ALGO_ALIAS_AUTO(RX_YADA),       ALGO_ALIAS(RX_YADA,         "randomx/yada"),
                                     ALGO_ALIAS(RX_YADA,         "randomyada"),
 #   endif
@@ -282,6 +317,10 @@ static const std::map<const char *, Algorithm::Id, aliasCompare> kAlgorithmAlias
 #   ifdef XMRIG_ALGO_GHOSTRIDER
     ALGO_ALIAS_AUTO(GHOSTRIDER_RTM), ALGO_ALIAS(GHOSTRIDER_RTM, "ghostrider/rtm"),
                                      ALGO_ALIAS(GHOSTRIDER_RTM, "gr"),
+    /* MoneroOcean change: begin Accept Flex names while preserving the Ghostrider-family id for routing. */
+    ALGO_ALIAS_AUTO(FLEX_KCN),       ALGO_ALIAS(FLEX_KCN,       "flex/kcn"),
+                                     ALGO_ALIAS(FLEX_KCN,       "flex"),
+    /* MoneroOcean change: end */
 #   endif
 };
 
@@ -354,10 +393,15 @@ std::vector<xmrig::Algorithm> xmrig::Algorithm::all(const std::function<bool(con
         CN_HEAVY_0, CN_HEAVY_TUBE, CN_HEAVY_XHV,
         CN_PICO_0, CN_PICO_TLO,
         CN_UPX2,
-        RX_0, RX_V2, RX_WOW, RX_ARQ, RX_GRAFT, RX_SFX, RX_YADA,
+        /* MoneroOcean change: begin Keep MoneroOcean-only algorithms in the advertised order while preserving upstream rx/2 support. */
+        CN_GPU,
+        RX_0, RX_V2, RX_WOW, RX_ARQ, RX_GRAFT, RX_SFX, RX_YADA, RX_XLA,
+        /* MoneroOcean change: end */
         AR2_CHUKWA, AR2_CHUKWA_V2, AR2_WRKZ,
         KAWPOW_RVN,
-        GHOSTRIDER_RTM
+        /* MoneroOcean change: begin Flex must be included in full algorithm iteration for config/help serialization paths. */
+        GHOSTRIDER_RTM, FLEX_KCN
+        /* MoneroOcean change: end */
     };
 
     Algorithms out;

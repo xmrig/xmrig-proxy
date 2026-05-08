@@ -31,6 +31,9 @@
 
 #include "3rdparty/rapidjson/fwd.h"
 #include "base/kernel/interfaces/ILineListener.h"
+/* MoneroOcean change: begin Miners carry normalized algo/algo-perf capabilities so upstream grouping does not depend on raw login JSON. */
+#include "base/crypto/Algorithm.h"
+/* MoneroOcean change: end */
 #include "base/net/tools/LineReader.h"
 #include "base/net/tools/Storage.h"
 #include "base/tools/Object.h"
@@ -83,6 +86,10 @@ public:
     inline const String &user() const                             { return m_user; }
     inline int32_t routeId() const                                { return m_routeId; }
     inline int64_t id() const                                     { return m_id; }
+    /* MoneroOcean change: begin Expose normalized capabilities to Client-side algo switching without reparsing miner login JSON. */
+    inline const Algorithms &get_algos() const                    { return m_algos; }
+    inline const algo_perfs &get_algo_perfs() const               { return m_algoPerfs; }
+    /* MoneroOcean change: end */
     inline ssize_t mapperId() const                               { return m_mapperId; }
     inline State state() const                                    { return m_state; }
     inline uint16_t localPort() const                             { return m_localPort; }
@@ -110,6 +117,9 @@ private:
     constexpr static size_t kSocketTimeout = 60 * 10 * 1000;
 
     bool isWritable() const;
+    /* MoneroOcean change: begin Keep miner algo and algo-perf keys aligned so MoneroOcean grouping never falls back to unrelated defaults. */
+    void normalizeAlgoCapabilities();
+    /* MoneroOcean change: end */
     bool parseRequest(int64_t id, const char *method, const rapidjson::Value &params);
     bool send(BIO *bio);
     void heartbeat();
@@ -158,6 +168,10 @@ private:
     int64_t m_extraNonce    = -1;
     uintptr_t m_key;
     uv_tcp_t *m_socket;
+    /* MoneroOcean change: begin Normalized per-miner capabilities drive upstream algo-switch grouping and getjob refreshes. */
+    Algorithms m_algos;
+    algo_perfs m_algoPerfs;
+    /* MoneroOcean change: end */
 
     static char m_sendBuf[16384];
     static Storage<Miner> m_storage;

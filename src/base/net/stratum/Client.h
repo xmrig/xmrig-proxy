@@ -29,6 +29,9 @@
 
 #include "base/kernel/interfaces/IDnsListener.h"
 #include "base/kernel/interfaces/ILineListener.h"
+/* MoneroOcean change: begin Normal stratum clients own MoneroOcean algo/algo-perf negotiation state without changing the generic IClient contract. */
+#include "base/net/stratum/AlgoSwitch.h"
+/* MoneroOcean change: end */
 #include "base/net/stratum/BaseClient.h"
 #include "base/net/stratum/Job.h"
 #include "base/net/stratum/Pool.h"
@@ -47,9 +50,14 @@ namespace xmrig {
 class DnsRequest;
 class IClientListener;
 class JobResult;
+/* MoneroOcean change: begin Client exposes concrete wrappers used by nonce splitters after they verify the upstream is a normal Client. */
+class Miner;
+/* MoneroOcean change: end */
 
 
-class Client : public BaseClient, public IDnsListener, public ILineListener
+/* MoneroOcean change: begin AlgoSwitch stays private to Client so MoneroOcean-only methods do not leak into IClient or other upstream types. */
+class Client : public BaseClient, public IDnsListener, public ILineListener, private AlgoSwitch
+/* MoneroOcean change: end */
 {
 public:
     XMRIG_DISABLE_COPY_MOVE_DEFAULT(Client)
@@ -60,6 +68,13 @@ public:
 
     Client(int id, const char *agent, IClientListener *listener);
     ~Client() override;
+
+    /* MoneroOcean change: begin Public wrappers let nonce splitters update normal stratum clients while avoiding MO-specific IClient methods. */
+    bool tryMiner(const Miner *miner, int upstreamCount) const;
+    void addMiner(const Miner *miner);
+    void removeMiner(const Miner *miner);
+    void setAlgoPerfSameThreshold(uint64_t percent);
+    /* MoneroOcean change: end */
 
 protected:
     bool disconnect() override;
@@ -72,6 +87,9 @@ protected:
     void connect() override;
     void connect(const Pool &pool) override;
     void deleteLater() override;
+    /* MoneroOcean change: begin Reset default algo-switch capabilities when a client is pointed at a new pool. */
+    void setPool(const Pool &pool) override;
+    /* MoneroOcean change: end */
     void tick(uint64_t now) override;
 
     void onResolved(const DnsRecords &records, int status, const char *error) override;
@@ -87,7 +105,13 @@ protected:
     inline void setPoolUrl(const char *url)                                 { m_pool.setUrl(url); }
 
     virtual bool parseLogin(const rapidjson::Value &result, int *code);
+    /* MoneroOcean change: begin MoneroOcean getjob responses use the same request id as login but return a job-shaped result with refreshed algo data. */
+    virtual bool parseGetjob(const rapidjson::Value &result, int *code);
+    /* MoneroOcean change: end */
     virtual void login();
+    /* MoneroOcean change: begin getjob refreshes upstream work after miner capability changes without reconnecting the pool client. */
+    virtual void getjob();
+    /* MoneroOcean change: end */
     virtual void parseNotification(const char* method, const rapidjson::Value& params, const rapidjson::Value& error);
 
     bool close();

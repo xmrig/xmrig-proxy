@@ -67,6 +67,9 @@ public:
     inline const String &password() const          { return m_password; }
     inline int mode() const                        { return m_mode; }
     inline int reuseTimeout() const                { return m_reuseTimeout; }
+    /* MoneroOcean change: begin Expose miner grouping tolerance to the nonce splitter without adding global state. */
+    inline int algoPerfSameThreshold() const       { return m_algoPerfSameThreshold; }
+    /* MoneroOcean change: end */
     inline static IConfig *create()                { return new Config(); }
     inline uint64_t diff() const                   { return m_diff; }
     inline Workers::Mode workersMode() const       { return m_workersMode; }
@@ -82,6 +85,9 @@ private:
     bool m_debug                = false;
     int m_mode                  = NICEHASH_MODE;
     int m_reuseTimeout          = 0;
+    /* MoneroOcean change: begin Default to the historical 20 percent tolerance for grouping similar miner algo-perf maps. */
+    int m_algoPerfSameThreshold = 20;
+    /* MoneroOcean change: end */
     String m_accessLog;
     String m_password;
     uint64_t m_diff             = 0;

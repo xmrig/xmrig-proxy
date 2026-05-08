@@ -196,6 +196,35 @@ bool xmrig::Miner::isWritable() const
 }
 
 
+/* MoneroOcean change: begin Normalize miner algo/algo-perf data so each advertised algorithm has a matching performance entry and vice versa. */
+void xmrig::Miner::normalizeAlgoCapabilities()
+{
+    std::map<Algorithm::Id, float> normalizedPerfs;
+
+    for (const auto &algoPerf : m_algoPerfs) {
+        const Algorithm algo(algoPerf.first);
+        if (algo.isValid()) {
+            normalizedPerfs[algo.id()] = algoPerf.second;
+        }
+    }
+
+    for (const Algorithm &algo : m_algos) {
+        if (algo.isValid() && normalizedPerfs.count(algo.id()) == 0) {
+            normalizedPerfs[algo.id()] = 1.0F;
+        }
+    }
+
+    m_algos.clear();
+    m_algoPerfs.clear();
+
+    for (const auto &algoPerf : normalizedPerfs) {
+        m_algos.emplace_back(algoPerf.first);
+        m_algoPerfs.insert(algoPerf);
+    }
+}
+/* MoneroOcean change: end */
+
+
 bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson::Value &params)
 {
     if (!method || !params.IsObject()) {
@@ -215,6 +244,12 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
                     algorithms.reserve(value.Size());
 
                     for (const auto &i : value.GetArray()) {
+                        /* MoneroOcean change: begin Ignore malformed algo array entries instead of letting bad miner login JSON poison grouping state. */
+                        if (!i.IsString()) {
+                            continue;
+                        }
+                        /* MoneroOcean change: end */
+
                         const Algorithm algo(i.GetString());
                         if (!algo.isValid()) {
                             continue;
@@ -229,6 +264,29 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
             m_password = Json::getString(params, "pass");
             m_agent    = Json::getString(params, "agent");
             m_rigId    = Json::getString(params, "rigid");
+
+            /* MoneroOcean change: begin Parse and normalize miner algo-perf so upstream grouping uses compatible capability sets only. */
+            m_algos = algorithms;
+            m_algoPerfs.clear();
+            if (params.HasMember("algo-perf") && params["algo-perf"].IsObject()) {
+                const rapidjson::Value &algoPerf = params["algo-perf"];
+                for (rapidjson::Value::ConstMemberIterator member = algoPerf.MemberBegin(); member != algoPerf.MemberEnd(); ++member) {
+                    if (!member->value.IsNumber()) {
+                        continue;
+                    }
+
+                    const Algorithm algo(member->name.GetString());
+                    const double perf = member->value.GetDouble();
+                    if (!algo.isValid() || perf < 0.0) {
+                        continue;
+                    }
+
+                    m_algoPerfs[algo.id()] = static_cast<float>(perf);
+                }
+            }
+            normalizeAlgoCapabilities();
+            algorithms = m_algos;
+            /* MoneroOcean change: end */
 
             LoginEvent::create(this, id, algorithms, params)->start();
             return true;

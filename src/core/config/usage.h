@@ -120,6 +120,10 @@ static inline const std::string &usage()
     u += "  -c, --config=FILE             load a JSON-format configuration file\n";
     u += "  -B, --background              run the proxy in the background\n";
     u += "  -V, --version                 output version information and exit\n";
+    /* MoneroOcean change: begin Document runtime grouping tolerance for operators tuning MoneroOcean algo-perf upstream sharing. */
+    u += "      --algo-perf-same-threshold=N\n";
+    u += "                                  algo-perf percentage tolerance for grouping miners on one upstream\n";
+    /* MoneroOcean change: end */
     u += "  -h, --help                    display this help and exit\n";
     u += "      --dry-run                 test configuration and exit\n";
 

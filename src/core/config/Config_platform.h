@@ -62,6 +62,9 @@ static struct option const options[] = {
     { "custom-diff",       1, nullptr, IConfig::CustomDiffKey     },
     { "custom-diff-stats", 0, nullptr, IConfig::CustomDiffStatsKey},
     { "debug",             0, nullptr, IConfig::DebugKey          },
+    /* MoneroOcean change: begin Keep the documented dry-run option usable so config validation can run without opening pool or miner sockets. */
+    { "dry-run",           0, nullptr, IConfig::DryRunKey         },
+    /* MoneroOcean change: end */
     { "donate-level",      1, nullptr, IConfig::DonateLevelKey    },
     { "keepalive",         2, nullptr, IConfig::KeepAliveKey      },
     { "log-file",          1, nullptr, IConfig::LogFileKey        },
@@ -79,6 +82,9 @@ static struct option const options[] = {
     { "userpass",          1, nullptr, IConfig::UserpassKey       },
     { "verbose",           0, nullptr, IConfig::VerboseKey        },
     { "reuse-timeout",     1, nullptr, IConfig::ReuseTimeoutKey   },
+    /* MoneroOcean change: begin Register CLI control for algo-perf grouping tolerance. */
+    { "algo-perf-same-threshold", 1, nullptr, IConfig::AlgoPerfSameThresholdKey },
+    /* MoneroOcean change: end */
     { "mode",              1, nullptr, IConfig::ModeKey           },
     { "rig-id",            1, nullptr, IConfig::RigIdKey          },
     { "tls",               0, nullptr, IConfig::TlsKey            },

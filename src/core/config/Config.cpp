@@ -67,6 +67,12 @@ bool xmrig::Config::read(const IJsonReader &reader, const char *fileName)
     m_debug        = reader.getBool("debug", m_debug);
     m_algoExt      = reader.getBool("algo-ext", m_algoExt);
     m_reuseTimeout = reader.getInt("reuse-timeout", m_reuseTimeout);
+    /* MoneroOcean change: begin Read grouping tolerance used for MoneroOcean algo-perf upstream sharing. */
+    const int algoPerfSameThreshold = reader.getInt("algo-perf-same-threshold", m_algoPerfSameThreshold);
+    if (algoPerfSameThreshold >= 0) {
+        m_algoPerfSameThreshold = algoPerfSameThreshold;
+    }
+    /* MoneroOcean change: end */
     m_accessLog    = reader.getString("access-log-file");
     m_password     = reader.getString("access-password");
 
@@ -137,6 +143,9 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember(StringRef(Pools::kRetries),       m_pools.retries(), allocator);
     doc.AddMember(StringRef(Pools::kRetryPause),    m_pools.retryPause(), allocator);
     doc.AddMember("reuse-timeout",                  reuseTimeout(), allocator);
+    /* MoneroOcean change: begin Persist grouping tolerance so generated configs preserve MoneroOcean runtime behavior. */
+    doc.AddMember("algo-perf-same-threshold",       algoPerfSameThreshold(), allocator);
+    /* MoneroOcean change: end */
 
 #   ifdef XMRIG_FEATURE_TLS
     doc.AddMember(StringRef(kTls),                  m_tls.toJSON(doc), allocator);

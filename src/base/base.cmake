@@ -51,6 +51,9 @@ set(HEADERS_BASE
     src/base/net/dns/DnsUvBackend.h
     src/base/net/http/Http.h
     src/base/net/http/HttpListener.h
+# MoneroOcean change: begin AlgoSwitch is a runtime proxy helper, not a miner backend, and is only exposed through Client wrappers.
+    src/base/net/stratum/AlgoSwitch.h
+# MoneroOcean change: end
     src/base/net/stratum/BaseClient.h
     src/base/net/stratum/Client.h
     src/base/net/stratum/Job.h
@@ -119,6 +122,9 @@ set(SOURCES_BASE
     src/base/net/dns/DnsRecords.cpp
     src/base/net/dns/DnsUvBackend.cpp
     src/base/net/http/Http.cpp
+# MoneroOcean change: begin AlgoSwitch is compiled into the proxy so normal stratum clients can refresh MoneroOcean algo/algo-perf capabilities with getjob.
+    src/base/net/stratum/AlgoSwitch.cpp
+# MoneroOcean change: end
     src/base/net/stratum/BaseClient.cpp
     src/base/net/stratum/Client.cpp
     src/base/net/stratum/Job.cpp

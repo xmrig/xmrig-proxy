@@ -31,10 +31,12 @@
 #include "base/kernel/Platform.h"
 #include "base/net/stratum/Client.h"
 
-#if defined XMRIG_ALGO_KAWPOW || defined XMRIG_ALGO_GHOSTRIDER
+/* MoneroOcean change: begin Ghostrider-family MoneroOcean jobs use normal stratum here, so Eth/Auto clients remain reserved for upstream KawPow behavior. */
+#if defined XMRIG_ALGO_KAWPOW
 #   include "base/net/stratum/AutoClient.h"
 #   include "base/net/stratum/EthStratumClient.h"
 #endif
+/* MoneroOcean change: end */
 
 
 #ifdef XMRIG_FEATURE_HTTP
@@ -226,13 +228,15 @@ xmrig::IClient *xmrig::Pool::createClient(int id, IClientListener *listener) con
     IClient *client = nullptr;
 
     if (m_mode == MODE_POOL) {
-#       if defined XMRIG_ALGO_KAWPOW || defined XMRIG_ALGO_GHOSTRIDER
+        /* MoneroOcean change: begin Leave EthStratumClient routing for KawPow/Raven only; Ghostrider and Flex need normal Client negotiation with algo-perf. */
+#       if defined XMRIG_ALGO_KAWPOW
         const uint32_t f = m_algorithm.family();
-        if ((f == Algorithm::KAWPOW) || (f == Algorithm::GHOSTRIDER) || (m_coin == Coin::RAVEN)) {
+        if ((f == Algorithm::KAWPOW) || (m_coin == Coin::RAVEN)) {
             client = new EthStratumClient(id, Platform::userAgent(), listener);
         }
         else
 #       endif
+        /* MoneroOcean change: end */
         {
             client = new Client(id, Platform::userAgent(), listener);
         }
@@ -245,11 +249,13 @@ xmrig::IClient *xmrig::Pool::createClient(int id, IClientListener *listener) con
         client = new SelfSelectClient(id, Platform::userAgent(), listener, m_submitToOrigin);
     }
 #   endif
-#   if defined XMRIG_ALGO_KAWPOW || defined XMRIG_ALGO_GHOSTRIDER
+    /* MoneroOcean change: begin MODE_AUTO_ETH is kept for KawPow-style upstreams and not used for MoneroOcean Ghostrider/Flex normal stratum. */
+#   if defined XMRIG_ALGO_KAWPOW
     else if (m_mode == MODE_AUTO_ETH) {
         client = new AutoClient(id, Platform::userAgent(), listener);
     }
 #   endif
+    /* MoneroOcean change: end */
 #   ifdef XMRIG_FEATURE_BENCHMARK
     else if (m_mode == MODE_BENCHMARK) {
         client = new BenchClient(m_benchmark, listener);

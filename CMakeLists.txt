@@ -159,6 +159,10 @@ add_definitions(/DXMRIG_ALGO_CN_PICO)
 add_definitions(/DXMRIG_ALGO_CN_FEMTO)
 add_definitions(/DXMRIG_ALGO_ARGON2)
 add_definitions(/DXMRIG_ALGO_ASTROBWT)
+# MoneroOcean change: begin MoneroOcean advertises cn/gpu and normal-stratum Ghostrider-family jobs to miners, so the proxy must know these algorithm names even though it does not mine them locally.
+add_definitions(/DXMRIG_ALGO_CN_GPU)
+add_definitions(/DXMRIG_ALGO_GHOSTRIDER)
+# MoneroOcean change: end
 
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$" AND CMAKE_SIZEOF_VOID_P EQUAL 8)
     add_definitions(/DRAPIDJSON_SSE2)

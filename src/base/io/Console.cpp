@@ -52,7 +52,7 @@ xmrig::Console::~Console()
 bool xmrig::Console::isSupported()
 {
     const uv_handle_type type = uv_guess_handle(0);
-    return type == UV_TTY || type == UV_NAMED_PIPE;
+    return type == UV_TTY;
 }
 
 

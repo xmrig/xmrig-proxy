@@ -24,6 +24,23 @@ This proxy is designed to handle donation traffic from XMRig. No other solution 
   
 ## Usage
 :boom: If you are using Linux and need to manage over **1000 connections**, you must [increase the limits on open files](https://github.com/xmrig/xmrig-proxy/wiki/Ubuntu-setup).
+
+### Offline tests
+The offline integration suites build `xmrig-proxy` if needed, start a local fake MoneroOcean-style pool and fake miners, then verify that the real proxy binary negotiates `algo`/`algo-perf`, refreshes work with `getjob`, reuses an upstream for compatible miners, splits incompatible algo-perf groups, and handles normalization/config edge cases. They do not connect to any external pool or miner.
+
+```
+node run_tests.js
+```
+
+Useful options:
+
+```
+node run_tests.js --binary build/xmrig-proxy --skip-build
+node run_tests.js --build-dir build-ci --cmake-generator Ninja
+node run_tests.js --cmake-arg -DWITH_TLS=OFF
+```
+
+The tests require Node.js, CMake, a C/C++ toolchain, libuv, and OpenSSL unless TLS is disabled.
   
 ### Options
 ```
@@ -54,13 +71,15 @@ Network:
 
 Options:
   -b, --bind=ADDR               bind to specified address, example "0.0.0.0:3333"
-  -m, --mode=MODE               proxy mode, nicehash (default) or simple
+  -m, --mode=MODE               proxy mode: nicehash (default), simple or extra_nonce
       --custom-diff=N           override pool diff
       --custom-diff-stats       calculate stats using custom diff shares instead of pool shares
       --reuse-timeout=N         timeout in seconds for reuse pool connections in simple mode
       --no-workers              disable per worker statistics
       --access-password=P       set password to restrict connections to the proxy
       --no-algo-ext             disable "algo" protocol extension
+      --algo-perf-same-threshold=N
+                                  algo-perf percentage tolerance for grouping miners on one upstream
 
 API:
       --api-worker-id=ID        custom worker-id for API

@@ -1,0 +1,109 @@
+name: Test builds
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    name: Ubuntu ${{ matrix.arch }} build and offline proxy test
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            cmake \
+            git \
+            libssl-dev \
+            libuv1-dev
+
+      - name: Build and run offline proxy integration test
+        run: node run_tests.js
+
+  macos:
+    name: macOS ${{ matrix.arch }} build and offline proxy test
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 75
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install build dependencies
+        run: |
+          missing=()
+          for formula in cmake libuv openssl@3; do
+            brew list --formula "$formula" >/dev/null 2>&1 || missing+=("$formula")
+          done
+          if ((${#missing[@]})); then
+            brew install "${missing[@]}"
+          fi
+
+      - name: Build and run offline proxy integration test
+        run: OPENSSL_ROOT_DIR="$(brew --prefix openssl@3)" node run_tests.js
+
+  windows:
+    name: Windows build and offline proxy test
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 60
+
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup MSYS2 UCRT64
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          cache: true
+          install: >-
+            base-devel
+            git
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-nodejs
+
+      - name: Checkout XMRig deps
+        run: git clone --depth 1 https://github.com/xmrig/xmrig-deps.git
+
+      - name: Build and run offline proxy integration test
+        run: XMRIG_DEPS="$PWD/xmrig-deps/gcc/x64" node run_tests.js --cmake-generator Ninja

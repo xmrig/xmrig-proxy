@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2021 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2025 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2025 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 
 #include "proxy/splitters/extra_nonce/ExtraNonceSplitter.h"
 #include "base/io/log/Log.h"
+#include "base/tools/Chrono.h"
 #include "core/config/Config.h"
 #include "core/Controller.h"
 #include "proxy/Counters.h"
@@ -95,8 +96,7 @@ void xmrig::ExtraNonceSplitter::printConnections()
 
 void xmrig::ExtraNonceSplitter::tick(uint64_t ticks)
 {
-    const uint64_t now = uv_now(uv_default_loop());
-    m_upstream->tick(ticks, now);
+    m_upstream->tick(ticks, Chrono::steadyMSecs());
 }
 
 

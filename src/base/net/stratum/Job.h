@@ -7,8 +7,8 @@
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
  * Copyright 2019      Howard Chu  <https://github.com/hyc>
- * Copyright 2018-2024 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2024 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2025 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2025 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -67,7 +67,7 @@ public:
 
     inline bool isNicehash() const                      { return m_nicehash; }
     inline bool isValid() const                         { return (m_size > 0 && m_diff > 0) || !m_poolWallet.isEmpty(); }
-    inline bool setId(const char *id)                   { return m_id = id; }
+    inline bool setId(const char *id)                   { return (m_id = id); }
     inline const Algorithm &algorithm() const           { return m_algorithm; }
     inline const Buffer &seed() const                   { return m_seed; }
     inline const String &clientId() const               { return m_clientId; }
@@ -121,7 +121,7 @@ public:
     inline bool hasViewTag() const                      { return m_hasViewTag; }
 
     void setSpendSecretKey(const uint8_t* key);
-    void setMinerTx(const uint8_t* begin, const uint8_t* end, size_t minerTxEphPubKeyOffset, size_t minerTxPubKeyOffset, size_t minerTxExtraNonceOffset, size_t minerTxExtraNonceSize, const Buffer& minerTxMerkleTreeBranch, bool hasViewTag);
+    void setMinerTx(const uint8_t* begin, const uint8_t* end, size_t minerTxEphPubKeyOffset, size_t minerTxPubKeyOffset, size_t minerTxExtraNonceOffset, size_t minerTxExtraNonceSize, const Buffer& minerTxMerkleTreeBranch, uint32_t minerTxMerkleTreePath, bool hasViewTag);
     void setViewTagInMinerTx(uint8_t view_tag);
     void setExtraNonceInMinerTx(uint32_t extra_nonce);
     void generateSignatureData(String& signatureData, uint8_t& view_tag) const;
@@ -179,6 +179,7 @@ private:
     size_t m_minerTxExtraNonceOffset = 0;
     size_t m_minerTxExtraNonceSize = 0;
     Buffer m_minerTxMerkleTreeBranch;
+    uint32_t m_minerTxMerkleTreePath = 0;
     bool m_hasViewTag = false;
 #   else
     // Miner signatures

@@ -119,7 +119,6 @@ set(SOURCES_BASE
     src/base/net/dns/DnsRecords.cpp
     src/base/net/dns/DnsUvBackend.cpp
     src/base/net/http/Http.cpp
-    src/base/net/stratum/AlgoSwitch.cpp
     src/base/net/stratum/BaseClient.cpp
     src/base/net/stratum/Client.cpp
     src/base/net/stratum/Job.cpp

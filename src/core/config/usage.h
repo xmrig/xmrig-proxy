@@ -4,8 +4,8 @@
  * Copyright (c) 2014      Lucas Jones <https://github.com/lucasjones>
  * Copyright (c) 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright (c) 2016      Jay D Dee   <jayddee246@gmail.com>
- * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
- * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2025 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2025 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,12 +21,9 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_USAGE_H
-#define XMRIG_USAGE_H
-
+#pragma once
 
 #include "version.h"
-
 
 #include <string>
 
@@ -59,7 +56,8 @@ static inline const std::string &usage()
     u += "      --tls-fingerprint=HEX     pool TLS certificate fingerprint for strict certificate pinning\n";
 #   endif
 
-    u += "      --dns-ipv6                prefer IPv6 records from DNS responses\n";
+    u += "  -4, --ipv4                    resolve names to IPv4 addresses\n";
+    u += "  -6, --ipv6                    resolve names to IPv6 addresses\n";
     u += "      --dns-ttl=N               N seconds (default: 30) TTL for internal DNS cache\n";
 
 #   ifdef XMRIG_FEATURE_HTTP
@@ -78,7 +76,7 @@ static inline const std::string &usage()
 
     u += "\nOptions:\n";
     u += "  -b, --bind=ADDR               bind to specified address, example \"0.0.0.0:3333\"\n";
-    u += "  -m, --mode=MODE               proxy mode, nicehash (default) or simple\n";
+    u += "  -m, --mode=MODE               proxy mode: nicehash (default), simple or extra_nonce\n";
     u += "      --custom-diff=N           override pool diff\n";
     u += "      --custom-diff-stats       calculate stats using custom diff shares instead of pool shares\n";
     u += "      --reuse-timeout=N         timeout in seconds for reuse pool connections in simple mode\n";
@@ -122,7 +120,6 @@ static inline const std::string &usage()
     u += "  -c, --config=FILE             load a JSON-format configuration file\n";
     u += "  -B, --background              run the proxy in the background\n";
     u += "  -V, --version                 output version information and exit\n";
-    u += "  --algo-perf-same-threshold=N  algo perf threshold in percent that proxy uses to group miners into one upstream\n";
     u += "  -h, --help                    display this help and exit\n";
     u += "      --dry-run                 test configuration and exit\n";
 
@@ -130,6 +127,4 @@ static inline const std::string &usage()
 }
 
 
-} /* namespace xmrig */
-
-#endif /* XMRIG_USAGE_H */
+} // namespace xmrig

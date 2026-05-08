@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2025 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2025 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef XMRIG_CONFIG_PLATFORM_H
-#define XMRIG_CONFIG_PLATFORM_H
-
+#pragma once
 
 #ifdef _MSC_VER
 #   include "getopt/getopt.h"
@@ -32,15 +30,13 @@
 #   include <getopt.h>
 #endif
 
-
 #include "base/kernel/interfaces/IConfig.h"
-#include "version.h"
 
 
 namespace xmrig {
 
 
-static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:A:a:C:m:L:";
+static char const short_options[] = "c:khBp:Px:r:R:s:T:o:u:O:Vl:Sb:A:a:C:m:L:46";
 
 
 static struct option const options[] = {
@@ -83,7 +79,6 @@ static struct option const options[] = {
     { "userpass",          1, nullptr, IConfig::UserpassKey       },
     { "verbose",           0, nullptr, IConfig::VerboseKey        },
     { "reuse-timeout",     1, nullptr, IConfig::ReuseTimeoutKey   },
-    { "algo-perf-same-threshold",     1, nullptr, IConfig::AlgoPerfSameThresholdKey   },
     { "mode",              1, nullptr, IConfig::ModeKey           },
     { "rig-id",            1, nullptr, IConfig::RigIdKey          },
     { "tls",               0, nullptr, IConfig::TlsKey            },
@@ -100,14 +95,12 @@ static struct option const options[] = {
     { "access-password",   1, nullptr, IConfig::ProxyPasswordKey  },
     { "login-file",        1, nullptr, IConfig::LoginFileKey      },
     { "data-dir",          1, nullptr, IConfig::DataDirKey        },
-    { "dns-ipv6",          0, nullptr, IConfig::DnsIPv6Key        },
+    { "ipv4",              0, nullptr, IConfig::DnsIPv4Key        },
+    { "ipv6",              0, nullptr, IConfig::DnsIPv6Key        },
     { "dns-ttl",           1, nullptr, IConfig::DnsTtlKey         },
     { "spend-secret-key",  1, nullptr, IConfig::SpendSecretKey    },
     { nullptr,             0, nullptr, 0 }
 };
 
 
-} /* namespace xmrig */
-
-
-#endif /* XMRIG_CONFIG_PLATFORM_H */
+} // namespace xmrig

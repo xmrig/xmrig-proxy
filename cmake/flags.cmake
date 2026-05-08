@@ -52,8 +52,10 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES MSVC)
     add_definitions(/DHAVE_ROTR)
 
 elseif (CMAKE_CXX_COMPILER_ID MATCHES Clang)
-
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-overloaded-virtual")
 
+    if ((WIN32 AND ARM_TARGET) OR BUILD_STATIC)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+    endif()
 endif()

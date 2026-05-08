@@ -27,7 +27,6 @@
         }
     ],
     "colors": true,
-    "title": true,
     "custom-diff": 0,
     "custom-diff-stats": false,
     "donate-level": 0,
@@ -37,21 +36,24 @@
         {
             "algo": null,
             "coin": null,
-            "url": "gulf.moneroocean.stream:11024",
-            "user": "YOUR_XMR_WALLET",
+            "url": "donate.v2.xmrig.com:5555",
+            "user": "YOUR_WALLET",
             "pass": "x",
             "rig-id": null,
-            "keepalive": true,
+            "keepalive": false,
             "enabled": true,
             "tls": false,
+            "sni": false,
             "tls-fingerprint": null,
-            "daemon": false
+            "daemon": false,
+            "socks5": null,
+            "self-select": null,
+            "submit-to-origin": false
         }
     ],
     "retries": 2,
     "retry-pause": 1,
     "reuse-timeout": 0,
-    "algo-perf-same-threshold": 50,
     "tls": {
         "enabled": true,
         "protocols": null,
@@ -60,6 +62,10 @@
         "ciphers": null,
         "ciphersuites": null,
         "dhparam": null
+    },
+    "dns": {
+        "ip_version": 0,
+        "ttl": 30
     },
     "user-agent": null,
     "syslog": false,

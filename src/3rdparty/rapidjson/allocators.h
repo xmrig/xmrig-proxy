@@ -1,5 +1,5 @@
 // Tencent is pleased to support the open source community by making RapidJSON available.
-// 
+//
 // Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip.
 //
 // Licensed under the MIT License (the "License"); you may not use this file except
@@ -7,9 +7,9 @@
 //
 // http://opensource.org/licenses/MIT
 //
-// Unless required by applicable law or agreed to in writing, software distributed 
-// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
-// CONDITIONS OF ANY KIND, either express or implied. See the License for the 
+// Unless required by applicable law or agreed to in writing, software distributed
+// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
 #ifndef RAPIDJSON_ALLOCATORS_H_
@@ -19,6 +19,7 @@
 #include "internal/meta.h"
 
 #include <memory>
+#include <limits>
 
 #if RAPIDJSON_HAS_CXX11
 #include <type_traits>
@@ -31,10 +32,10 @@ RAPIDJSON_NAMESPACE_BEGIN
 
 /*! \class rapidjson::Allocator
     \brief Concept for allocating, resizing and freeing memory block.
-    
+
     Note that Malloc() and Realloc() are non-static but Free() is static.
-    
-    So if an allocator need to support Free(), it needs to put its pointer in 
+
+    So if an allocator need to support Free(), it needs to put its pointer in
     the header of memory block.
 
 \code
@@ -82,7 +83,7 @@ concept Allocator {
 class CrtAllocator {
 public:
     static const bool kNeedFree = true;
-    void* Malloc(size_t size) { 
+    void* Malloc(size_t size) {
         if (size) //  behavior of malloc(0) is implementation defined.
             return RAPIDJSON_MALLOC(size);
         else
@@ -110,7 +111,7 @@ public:
 // MemoryPoolAllocator
 
 //! Default memory allocator used by the parser and DOM.
-/*! This allocator allocate memory blocks from pre-allocated memory chunks. 
+/*! This allocator allocate memory blocks from pre-allocated memory chunks.
 
     It does not free memory blocks. And Realloc() only allocate new memory.
 
@@ -166,7 +167,7 @@ public:
         \param baseAllocator The allocator for allocating memory chunks.
     */
     explicit
-    MemoryPoolAllocator(size_t chunkSize = kDefaultChunkCapacity, BaseAllocator* baseAllocator = 0) : 
+    MemoryPoolAllocator(size_t chunkSize = kDefaultChunkCapacity, BaseAllocator* baseAllocator = 0) :
         chunk_capacity_(chunkSize),
         baseAllocator_(baseAllocator ? baseAllocator : RAPIDJSON_NEW(BaseAllocator)()),
         shared_(static_cast<SharedData*>(baseAllocator_ ? baseAllocator_->Malloc(SIZEOF_SHARED_DATA + SIZEOF_CHUNK_HEADER) : 0))
@@ -433,7 +434,7 @@ namespace internal {
 template<typename T, typename A>
 inline T* Realloc(A& a, T* old_p, size_t old_n, size_t new_n)
 {
-    RAPIDJSON_NOEXCEPT_ASSERT(old_n <= SIZE_MAX / sizeof(T) && new_n <= SIZE_MAX / sizeof(T));
+    RAPIDJSON_NOEXCEPT_ASSERT(old_n <= (std::numeric_limits<size_t>::max)() / sizeof(T) && new_n <= (std::numeric_limits<size_t>::max)() / sizeof(T));
     return static_cast<T*>(a.Realloc(old_p, old_n * sizeof(T), new_n * sizeof(T)));
 }
 
@@ -496,9 +497,9 @@ public:
 #endif
 
     /* implicit */
-    StdAllocator(const BaseAllocator& allocator) RAPIDJSON_NOEXCEPT :
+    StdAllocator(const BaseAllocator& baseAllocator) RAPIDJSON_NOEXCEPT :
         allocator_type(),
-        baseAllocator_(allocator)
+        baseAllocator_(baseAllocator)
     { }
 
     ~StdAllocator() RAPIDJSON_NOEXCEPT

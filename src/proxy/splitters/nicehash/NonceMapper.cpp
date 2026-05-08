@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2025 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2025 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <cinttypes>
-#include <memory>
 #include <cstring>
 
 
@@ -37,7 +35,6 @@
 #include "core/Controller.h"
 #include "net/JobResult.h"
 #include "net/strategies/DonateStrategy.h"
-#include "proxy/Counters.h"
 #include "proxy/Error.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/events/SubmitEvent.h"
@@ -83,8 +80,6 @@ bool xmrig::NonceMapper::add(Miner *miner)
     }
 
     miner->setMapperId(static_cast<ssize_t>(m_id));
-    client()->add_miner(miner);
-    if (m_donate) m_donate->client()->add_miner(miner);
     return true;
 }
 
@@ -122,8 +117,6 @@ void xmrig::NonceMapper::reload(const Pools &pools)
 void xmrig::NonceMapper::remove(const Miner *miner)
 {
     m_storage->remove(miner);
-    client()->del_miner(miner);
-    if (m_donate) m_donate->client()->del_miner(miner);
 }
 
 
@@ -136,15 +129,15 @@ void xmrig::NonceMapper::start()
 void xmrig::NonceMapper::submit(SubmitEvent *event)
 {
     if (!m_storage->isActive()) {
-        return event->reject(Error::BadGateway);
+        return event->setError(Error::BadGateway);
     }
 
     if (!m_storage->isValidJobId(event->request.jobId)) {
-        return event->reject(Error::InvalidJobId);
+        return event->setError(Error::InvalidJobId);
     }
 
     if (event->request.algorithm.isValid() && event->request.algorithm != m_storage->job().algorithm()) {
-        return event->reject(Error::IncorrectAlgorithm);
+        return event->setError(Error::IncorrectAlgorithm);
     }
 
     JobResult req = event->request;
@@ -168,11 +161,6 @@ void xmrig::NonceMapper::tick(uint64_t, uint64_t now)
             setJob(pending.host.data(), pending.port, pending.job);
         }
     }
-}
-
-
-xmrig::IClient* xmrig::NonceMapper::client() const {
-  return m_strategy->client();
 }
 
 

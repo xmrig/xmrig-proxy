@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2024 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2024 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2025 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2025 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -33,11 +33,9 @@
 #include "base/net/tools/NetBuffer.h"
 #include "base/tools/Cvt.h"
 #include "base/tools/Chrono.h"
-#include "base/tools/Handle.h"
 #include "net/JobResult.h"
 #include "proxy/Counters.h"
 #include "proxy/Error.h"
-#include "proxy/Events.h"
 #include "proxy/events/AcceptEvent.h"
 #include "proxy/events/CloseEvent.h"
 #include "proxy/events/LoginEvent.h"
@@ -55,15 +53,12 @@
 #include <cstdio>
 #include <cstring>
 
-#ifdef _MSC_VER
-#undef GetObject
-#endif
 
 namespace xmrig {
     static int64_t nextId = 0;
     char Miner::m_sendBuf[16384] = { 0 };
     Storage<Miner> Miner::m_storage;
-}
+} // namespace xmrig
 
 
 xmrig::Miner::Miner(const TlsContext *ctx, uint16_t port, bool strictTls) :
@@ -72,7 +67,7 @@ xmrig::Miner::Miner(const TlsContext *ctx, uint16_t port, bool strictTls) :
     m_tlsCtx(ctx),
     m_id(++nextId),
     m_localPort(port),
-    m_expire(Chrono::currentMSecsSinceEpoch() + kLoginTimeout),
+    m_expire(Chrono::steadyMSecs() + kLoginTimeout),
     m_timestamp(Chrono::currentMSecsSinceEpoch())
 {
     m_reader.setListener(this);
@@ -220,7 +215,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
                     algorithms.reserve(value.Size());
 
                     for (const auto &i : value.GetArray()) {
-                        Algorithm algo(i.GetString());
+                        const Algorithm algo(i.GetString());
                         if (!algo.isValid()) {
                             continue;
                         }
@@ -234,22 +229,6 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
             m_password = Json::getString(params, "pass");
             m_agent    = Json::getString(params, "agent");
             m_rigId    = Json::getString(params, "rigid");
-
-            m_algos    = algorithms;
-            m_algo_perfs.clear();
-            if (params.HasMember("algo-perf")) {
-                const rapidjson::Value &value = params["algo-perf"];
-                if (value.IsObject()) for (auto &member : value.GetObject()) {
-                    if (member.value.IsArray() || member.value.IsObject()) continue;
-                    const Algorithm algo(member.name.GetString());
-                    if (!algo.isValid()) continue;
-                    float perf;
-                    if (member.value.IsFloat()) perf = member.value.GetFloat();
-                    else if (member.value.IsInt()) perf = member.value.GetInt();
-                    else continue;
-                    m_algo_perfs.insert(algo_perf(algo.id(), perf));
-                }
-            }
 
             LoginEvent::create(this, id, algorithms, params)->start();
             return true;
@@ -273,13 +252,13 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
 
         Algorithm algorithm(Json::getString(params, "algo"));
 
-        SubmitEvent *event = SubmitEvent::create(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm, Json::getString(params, "sig"), m_signatureData, m_viewTag, m_extraNonce);
+        SubmitEvent *event = SubmitEvent::create(this, id, Json::getString(params, "job_id"), Json::getString(params, "nonce"), Json::getString(params, "result"), algorithm, Json::getString(params, "sig"), m_signatureData, Json::getString(params, "commitment"), m_viewTag, m_extraNonce);
 
         if (!event->request.isValid() || event->request.actualDiff() < diff()) {
-            event->reject(Error::LowDifficulty);
+            event->setError(Error::LowDifficulty);
         }
         else if (hasExtension(EXT_NICEHASH) && !event->request.isCompatible(m_fixedByte)) {
-            event->reject(Error::InvalidNonce);
+            event->setError(Error::InvalidNonce);
         }
 
         if (event->error() == Error::NoError && m_customDiff && event->request.actualDiff() < m_diff) {
@@ -345,7 +324,7 @@ bool xmrig::Miner::send(BIO *bio)
 
 void xmrig::Miner::heartbeat()
 {
-    m_expire = Chrono::currentMSecsSinceEpoch() + kSocketTimeout;
+    m_expire = Chrono::steadyMSecs() + kSocketTimeout;
 }
 
 

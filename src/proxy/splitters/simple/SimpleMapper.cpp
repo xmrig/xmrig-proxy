@@ -5,8 +5,8 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
- * Copyright 2018-2020 SChernykh   <https://github.com/SChernykh>
- * Copyright 2016-2020 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018-2025 SChernykh   <https://github.com/SChernykh>
+ * Copyright 2016-2025 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -39,8 +39,6 @@
 
 
 #include <cinttypes>
-#include <memory>
-#include <cstring>
 
 
 xmrig::SimpleMapper::SimpleMapper(uint64_t id, xmrig::Controller *controller) :
@@ -112,15 +110,15 @@ void xmrig::SimpleMapper::stop()
 void xmrig::SimpleMapper::submit(SubmitEvent *event)
 {
     if (!isActive()) {
-        return event->reject(Error::BadGateway);
+        return event->setError(Error::BadGateway);
     }
 
     if (!isValidJobId(event->request.jobId)) {
-        return event->reject(Error::InvalidJobId);
+        return event->setError(Error::InvalidJobId);
     }
 
     if (event->request.algorithm.isValid() && event->request.algorithm != m_job.algorithm()) {
-        return event->reject(Error::IncorrectAlgorithm);
+        return event->setError(Error::IncorrectAlgorithm);
     }
 
     JobResult req = event->request;

@@ -55,13 +55,13 @@ jobs:
           mkdir -p package
           cp build/xmrig-proxy.exe package/
           cp src/config.json package/
-          (cd package && 7z a -tzip -mx=9 "../xmrig-proxy-${VERSION}-win64.zip" xmrig-proxy.exe config.json)
+          (cd package && 7z a -tzip -mx=9 "../xmrig-proxy-${VERSION}-win.zip" xmrig-proxy.exe config.json)
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
-          name: windows
-          path: xmrig-proxy-${{ env.VERSION }}-win64.zip
+          name: win
+          path: xmrig-proxy-${{ env.VERSION }}-win.zip
           retention-days: 7
           if-no-files-found: error
 
@@ -92,13 +92,13 @@ jobs:
           mkdir -p package
           cp build/xmrig-proxy package/
           cp src/config.json package/
-          tar -C package -czf "xmrig-proxy-${VERSION}-lin64.tar.gz" xmrig-proxy config.json
+          tar -C package -czf "xmrig-proxy-${VERSION}-lin.tar.gz" xmrig-proxy config.json
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
-          name: ubuntu
-          path: xmrig-proxy-${{ env.VERSION }}-lin64.tar.gz
+          name: lin
+          path: xmrig-proxy-${{ env.VERSION }}-lin.tar.gz
           retention-days: 7
           if-no-files-found: error
 
@@ -182,7 +182,7 @@ jobs:
           cp build/xmrig-proxy /tmp/package/
           cp src/config.json /tmp/package/
           cp build/xmrig-proxy /tmp/xmrig-proxy-docker/xmrig-proxy-compat
-          tar -C /tmp/package -czf "/tmp/xmrig-proxy-docker/xmrig-proxy-${VERSION}-lin64-compat.tar.gz" xmrig-proxy config.json
+          tar -C /tmp/package -czf "/tmp/xmrig-proxy-docker/xmrig-proxy-${VERSION}-lin-compat.tar.gz" xmrig-proxy config.json
           EOF
           chmod +x /tmp/xmrig-proxy-docker/build.sh
           docker run --rm \
@@ -197,8 +197,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
-          name: ubuntu-compat
-          path: /tmp/xmrig-proxy-docker/xmrig-proxy-${{ env.VERSION }}-lin64-compat.tar.gz
+          name: lin-compat
+          path: /tmp/xmrig-proxy-docker/xmrig-proxy-${{ env.VERSION }}-lin-compat.tar.gz
           retention-days: 7
           if-no-files-found: error
 
@@ -212,7 +212,7 @@ jobs:
       matrix:
         include:
           - runner: macos-15
-            suffix: mac-arm64
+            suffix: mac
           - runner: macos-15-intel
             suffix: mac-intel
 

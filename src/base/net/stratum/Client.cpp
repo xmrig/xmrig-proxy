@@ -386,7 +386,12 @@ bool xmrig::Client::parseJob(const rapidjson::Value &params, int *code)
     const char *algo = Json::getString(params, "algo");
     const char *blobData = Json::getString(params, "blob");
     if (algo) {
-        job.setAlgorithm(algo);
+        Algorithm poolAlgo(algo);
+        if (m_pool.algorithm().isValid() && poolAlgo.isCompat(m_pool.algorithm())) {
+            job.setAlgorithm(m_pool.algorithm());
+        } else {
+            job.setAlgorithm(algo);
+        }
     }
     else if (m_pool.coin().isValid()) {
         uint8_t blobVersion = 0;

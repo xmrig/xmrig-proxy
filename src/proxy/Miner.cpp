@@ -265,6 +265,7 @@ bool xmrig::Miner::parseRequest(int64_t id, const char *method, const rapidjson:
             success(id, "OK");
 
             SubmitResult result = SubmitResult(1, m_customDiff, event->request.actualDiff(), event->request.id, 0);
+            event->~IEvent();
             AcceptEvent::start(m_mapperId, this, result, false, true);
 
             return true;

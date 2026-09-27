@@ -80,6 +80,7 @@ namespace {
 constexpr const char *kUnsupportedAlgoError = "algo array must include at least one supported pool algo:";
 
 xmrig::CapabilityErrorLog g_capabilityErrorLog;
+xmrig::CapabilityErrorLog g_poolErrorLog;
 
 inline bool isUnsupportedAlgoError(const char *message)
 {
@@ -95,6 +96,20 @@ inline std::string capabilityErrorKey(const xmrig::Pool &pool, const char *messa
     key += message;
 
     return key;
+}
+
+inline std::string poolErrorKey(const xmrig::Pool &pool, const char *kind, const char *message)
+{
+    std::string key(kind ? kind : "error");
+    key.push_back('\n');
+    key += capabilityErrorKey(pool, message ? message : "unknown");
+
+    return key;
+}
+
+inline bool isNoBlockTemplateError(const char *message)
+{
+    return message && strcmp(message, "No block template yet. Please wait.") == 0;
 }
 
 } /* namespace */
@@ -1296,8 +1311,11 @@ void xmrig::Client::parseResponse(int64_t id, const rapidjson::Value &result, co
             const bool duplicateCapabilityError = id == 1
                 && isUnsupportedAlgoError(message)
                 && !g_capabilityErrorLog.allows(Chrono::steadyMSecs(), capabilityErrorKey(m_pool, message));
+            const bool duplicatePoolError = id == 1
+                && isNoBlockTemplateError(message)
+                && !g_poolErrorLog.allows(Chrono::steadyMSecs(), poolErrorKey(m_pool, "response", message));
 
-            if (!duplicateCapabilityError) {
+            if (!duplicateCapabilityError && !duplicatePoolError) {
                 LOG_ERR("%s " RED("error: ") RED_BOLD("\"%s\"") RED(", code: ") RED_BOLD("%d"), tag(), logText(message).c_str(), Json::getInt(error, "code"));
             }
         }
@@ -1420,11 +1438,15 @@ void xmrig::Client::read(ssize_t nread, const uv_buf_t *buf)
 {
     const auto size = static_cast<size_t>(nread);
     if (nread < 0) {
-        if (!isQuiet()) {
-            LOG_ERR("%s " RED("read error: ") RED_BOLD("\"%s\""), tag(), uv_strerror(static_cast<int>(nread)));
+        const char *error = uv_strerror(static_cast<int>(nread));
+        const bool duplicateEof = strcmp(error, "end of file") == 0
+            && !g_poolErrorLog.allows(Chrono::steadyMSecs(), poolErrorKey(m_pool, "read", error));
+
+        if (!isQuiet() && !duplicateEof) {
+            LOG_ERR("%s " RED("read error: ") RED_BOLD("\"%s\""), tag(), error);
         }
 
-        close(uv_strerror(static_cast<int>(nread)));
+        close(error);
         return;
     }
 

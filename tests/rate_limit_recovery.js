@@ -336,6 +336,54 @@ test.describe("upstream request pacing and reconnect recovery", { concurrency: f
         });
     });
 
+    test("rate-limits repeated template login errors and their EOFs", async () => {
+        await withProxy(async ({ config, pool, proxy }) => {
+            await pool.waitForLogins(2);
+            await delay(250);
+
+            const lines = outputLines(proxy);
+            assert.equal(
+                lines.filter(line => line.includes(TEMPLATE_WAIT_ERROR)).length,
+                1,
+                "repeated template login errors should be logged once per endpoint"
+            );
+            assert.equal(
+                lines.filter(line => line.includes("read error: \"end of file\"")).length,
+                1,
+                "repeated EOFs following the template error should be logged once per endpoint"
+            );
+        }, {
+            poolFactory: timeout => new TemplateEofPool(timeout, {
+                failLogin: true,
+                closeDelayMs: 10
+            })
+        });
+    });
+
+    test("rate-limits repeated paused-group reports for the same upstream error", async () => {
+        await withProxy(async ({ addMiner, config, pool, proxy }) => {
+            await addMiner("miner-paused-repeat", CAPABILITIES.base);
+            await pool.waitForGetjobs(1);
+            await waitFor(
+                () => outputLines(proxy).some(line => line.includes("paused: no active upstream")),
+                config.timeoutMs,
+                "first paused-group report"
+            );
+            await pool.waitForLogins(2);
+            await delay(250);
+
+            assert.equal(
+                outputLines(proxy).filter(line => line.includes("paused: no active upstream")).length,
+                1,
+                "the same paused group and close reason should be logged once per cooldown"
+            );
+        }, {
+            poolFactory: timeout => new TemplateEofPool(timeout, {
+                closeDelayMs: 10
+            })
+        });
+    });
+
     test("keeps in-flight offered algorithms stable and identifies distinct nonempty groups", async () => {
         await withProxy(async ({ addMiner, config, pool, proxy }) => {
             await addMiner("miner-wide-inflight", CAPABILITIES.superset);

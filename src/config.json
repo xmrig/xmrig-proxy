@@ -29,6 +29,7 @@
     "colors": true,
     "custom-diff": 0,
     "custom-diff-stats": false,
+    "ip-ban-hours": 24,
     "donate-level": 0,
     "log-file": null,
     "mode": "nicehash",

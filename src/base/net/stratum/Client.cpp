@@ -42,6 +42,7 @@
 #include "base/io/json/Json.h"
 #include "base/io/json/JsonRequest.h"
 #include "base/io/log/Log.h"
+#include "base/kernel/constants.h"
 #include "base/kernel/interfaces/IClientListener.h"
 #include "base/kernel/Platform.h"
 #include "base/net/dns/Dns.h"
@@ -200,6 +201,12 @@ int64_t xmrig::Client::send(const rapidjson::Value &obj, Callback callback)
 
 int64_t xmrig::Client::send(const rapidjson::Value &obj)
 {
+    return send(obj, false);
+}
+
+
+int64_t xmrig::Client::send(const rapidjson::Value &obj, bool pearl)
+{
     if (m_state != ConnectedState || m_socket == nullptr || uv_is_writable(stream()) != 1) {
         return -1;
     }
@@ -211,7 +218,8 @@ int64_t xmrig::Client::send(const rapidjson::Value &obj)
     obj.Accept(writer);
 
     const size_t size = buffer.GetSize();
-    if (size > kMaxSendBufferSize) {
+    const size_t maxSendBufferSize = pearl ? XMRIG_PEARL_MAX_FRAME_SIZE : kMaxSendBufferSize;
+    if (size > maxSendBufferSize) {
         LOG_ERR("%s " RED("send failed: ") RED_BOLD("\"max send buffer size exceeded: %zu\""), tag(), size);
         close("send buffer limit");
 
@@ -225,6 +233,11 @@ int64_t xmrig::Client::send(const rapidjson::Value &obj)
     memcpy(m_sendBuf.data(), buffer.GetString(), size);
     m_sendBuf[size]     = '\n';
     m_sendBuf[size + 1] = '\0';
+
+    if (pearl) {
+        // Keep control messages usable while a large claim is still queued on this connection.
+        m_maxWriteQueueSize = XMRIG_PEARL_MAX_WRITE_QUEUE_SIZE;
+    }
 
     return send(size + 1);
 }
@@ -732,8 +745,8 @@ bool xmrig::Client::verifyAlgorithm(const Algorithm &algorithm, const char *algo
 
 bool xmrig::Client::write(const uv_buf_t &buf)
 {
-    if (buf.len > kMaxSendBufferSize ||
-        uv_stream_get_write_queue_size(stream()) > kMaxSendBufferSize - buf.len) {
+    if (buf.len > m_maxWriteQueueSize ||
+        uv_stream_get_write_queue_size(stream()) > m_maxWriteQueueSize - buf.len) {
         if (!isQuiet()) {
             LOG_ERR("%s " RED("write error: ") RED_BOLD("\"write queue limit exceeded\""), tag());
         }
@@ -1060,6 +1073,7 @@ void xmrig::Client::sendGetjobRequest()
 
 void xmrig::Client::onClose()
 {
+    m_maxWriteQueueSize = kMaxSendBufferSize;
     delete m_socket;
 
     m_socket = nullptr;

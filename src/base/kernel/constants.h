@@ -26,6 +26,10 @@
 
 constexpr size_t      XMRIG_NET_BUFFER_CHUNK_SIZE           = 64 * 1024;
 constexpr size_t      XMRIG_NET_BUFFER_INIT_CHUNKS          = 4;
+// Pearl proof claims use bounded JSON frames larger than ordinary Stratum lines.
+constexpr size_t      XMRIG_PEARL_MAX_FRAME_SIZE             = 12 * 1024 * 1024;
+// Leave bounded headroom for the newline, TLS records and pending control messages.
+constexpr size_t      XMRIG_PEARL_MAX_WRITE_QUEUE_SIZE       = 16 * 1024 * 1024;
 
 
 #endif /* XMRIG_CONSTANTS_H */

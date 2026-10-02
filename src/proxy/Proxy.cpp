@@ -72,6 +72,7 @@ xmrig::Proxy::Proxy(Controller *controller) :
     m_customDiff(controller)
 {
     m_miners = new Miners();
+    m_miners->setIpBanHours(controller->config()->ipBanHours());
     m_login  = new Login(controller);
 
     Splitter *splitter = nullptr;
@@ -243,6 +244,7 @@ void xmrig::Proxy::printState()
 
 void xmrig::Proxy::onConfigChanged(xmrig::Config *config, xmrig::Config *)
 {
+    m_miners->setIpBanHours(config->ipBanHours());
     m_debug->setEnabled(config->isDebug());
 }
 

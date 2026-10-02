@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <limits>
 #include <string>
 
 #include "proxy/IpBan.h"
@@ -46,6 +47,70 @@ void testDuplicateDoesNotExtend()
     CHECK(!bans.add("192.0.2.2", now + 5000));
     CHECK(bans.isBanned("192.0.2.2", now + xmrig::IpBan::kDurationMs - 1));
     CHECK(!bans.isBanned("192.0.2.2", now + xmrig::IpBan::kDurationMs));
+}
+
+
+void testCustomDuration()
+{
+    xmrig::IpBan bans;
+    constexpr uint64_t now = 2000;
+    constexpr uint64_t duration = 3ULL * 60 * 60 * 1000;
+    bans.setDurationMs(duration);
+
+    CHECK(bans.durationMs() == duration);
+    CHECK(bans.add("192.0.2.10", now));
+    CHECK(!bans.add("192.0.2.10", now + 5000));
+    CHECK(bans.isBanned("192.0.2.10", now + duration - 1));
+    CHECK(!bans.isBanned("192.0.2.10", now + duration));
+}
+
+
+void testDurationChanges()
+{
+    xmrig::IpBan bans;
+    constexpr uint64_t now = 3000;
+    constexpr uint64_t duration = 2ULL * 60 * 60 * 1000;
+
+    CHECK(bans.durationMs() == xmrig::IpBan::kDurationMs);
+    CHECK(bans.add("192.0.2.11", now));
+    bans.setDurationMs(xmrig::IpBan::kDurationMs);
+    CHECK(bans.isBanned("192.0.2.11", now + 1));
+
+    bans.setDurationMs(duration);
+    CHECK(bans.size() == 0);
+    CHECK(!bans.isBanned("192.0.2.11", now + 1));
+    CHECK(bans.add("192.0.2.12", now + 1));
+    bans.setDurationMs(duration);
+    CHECK(bans.isBanned("192.0.2.12", now + duration));
+    CHECK(!bans.isBanned("192.0.2.12", now + duration + 1));
+
+    CHECK(bans.add("192.0.2.13", now + duration + 2));
+    bans.setDurationMs(0);
+    CHECK(bans.durationMs() == 0);
+    CHECK(bans.size() == 0);
+    CHECK(!bans.isBanned("192.0.2.13", now + duration + 3));
+    CHECK(!bans.add("192.0.2.13", now + duration + 3));
+    CHECK(bans.size() == 0);
+
+    bans.setDurationMs(duration);
+    CHECK(bans.add("192.0.2.13", now + duration + 4));
+    CHECK(bans.isBanned("192.0.2.13", now + duration + 4));
+}
+
+
+void testExpiryDoesNotWrap()
+{
+    xmrig::IpBan bans;
+    constexpr uint64_t maximum = std::numeric_limits<uint64_t>::max();
+    constexpr uint64_t duration = static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) * 60 * 60 * 1000;
+    constexpr uint64_t now = maximum - 5000;
+    bans.setDurationMs(duration);
+
+    CHECK(bans.add("192.0.2.14", now));
+    CHECK(bans.isBanned("192.0.2.14", now));
+    CHECK(bans.isBanned("192.0.2.14", maximum - 1));
+    CHECK(!bans.isBanned("192.0.2.14", maximum));
+    CHECK(bans.size() == 0);
 }
 
 
@@ -108,6 +173,9 @@ int main()
 {
     testExpiryBoundary();
     testDuplicateDoesNotExtend();
+    testCustomDuration();
+    testDurationChanges();
+    testExpiryDoesNotWrap();
     testExpiryPruneAndReadd();
     testBoundedEviction();
     testRejectionMatching();

@@ -659,5 +659,6 @@ int64_t xmrig::Client::submitNative(const JobResult &result)
     m_results[m_sequence].assignedDiff = result.assignedDiff;
     m_results[m_sequence].minerIp = result.minerIp;
 
-    return send(doc);
+    // Use the submitted job's algorithm: a reused upstream may have logged in before Pearl was offered.
+    return send(doc, result.algorithm == Algorithm::PEARLHASH);
 }

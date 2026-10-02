@@ -80,6 +80,7 @@ static inline const std::string &usage()
     u += "      --custom-diff=N           override pool diff\n";
     u += "      --custom-diff-stats       calculate stats using custom diff shares instead of pool shares\n";
     u += "      --reuse-timeout=N         timeout in seconds for reuse pool connections in simple mode\n";
+    u += "      --ip-ban-hours=N          IP ban hours after pool low difficulty rejection (default: 24, 0 disables)\n";
     u += "      --no-workers              disable per worker statistics\n";
     u += "      --access-password=P       set password to restrict connections to the proxy\n";
     u += "      --no-algo-ext             disable \"algo\" protocol extension\n";

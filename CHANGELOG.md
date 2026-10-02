@@ -1,3 +1,9 @@
+# v6.26.0-mo18
+- Added `--ip-ban-hours=N` and JSON `"ip-ban-hours": N` (default: 24). Use 0 to disable pool-triggered low-difficulty IP bans while retaining a warning with the source IP and 0h duration.
+- Raised Pearl proof frame limits to 12 MiB, including mixed-algorithm upstreams, with a bounded 16 MiB write queue for TLS and pending control messages. Fixed fragmented frames at the size boundary.
+- Throttled repeated upstream template error logs while keeping error recovery active.
+- Existing configurations retain the 24-hour ban default. Changing the configured duration clears existing in-memory bans.
+
 # v6.26.0
 - [#598](https://github.com/xmrig/xmrig-proxy/pull/598) **Added support for RandomX v2.**
 - [#590](https://github.com/xmrig/xmrig-proxy/pull/590) Solo mining: added support for FCMP++ hardfork.

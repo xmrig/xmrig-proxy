@@ -29,6 +29,7 @@
 #include "3rdparty/rapidjson/writer.h"
 #include "base/io/json/Json.h"
 #include "base/io/log/Log.h"
+#include "base/kernel/constants.h"
 #include "base/net/stratum/Job.h"
 #include "base/net/tools/NetBuffer.h"
 #include "base/tools/Cvt.h"
@@ -58,7 +59,6 @@
 
 
 namespace xmrig {
-    constexpr size_t kPearlMaxLineSize = 256 * 1024;
     static int64_t nextId = 0;
     char Miner::m_sendBuf[16384] = { 0 };
     Storage<Miner> Miner::m_storage;
@@ -130,7 +130,7 @@ bool xmrig::Miner::accept(uv_stream_t *server)
 void xmrig::Miner::forwardJob(const Job &job, const char *algo)
 {
     if (job.algorithm() == Algorithm::PEARLHASH) {
-        m_reader.setMaxSize(kPearlMaxLineSize);
+        m_reader.setMaxSize(XMRIG_PEARL_MAX_FRAME_SIZE);
     }
     rememberJob(job);
     if (hasExtension(EXT_NATIVE) && Algorithm::isNativeOnly(job.algorithm().id())) { sendNative(job); return; }
@@ -146,7 +146,7 @@ void xmrig::Miner::setJob(Job &job, int64_t extra_nonce)
     using namespace rapidjson;
 
     if (job.algorithm() == Algorithm::PEARLHASH) {
-        m_reader.setMaxSize(kPearlMaxLineSize);
+        m_reader.setMaxSize(XMRIG_PEARL_MAX_FRAME_SIZE);
     }
     if (hasExtension(EXT_NATIVE) && !m_algos.empty() && std::find(m_algos.begin(), m_algos.end(), job.algorithm()) == m_algos.end()) return;
     rememberJob(job);

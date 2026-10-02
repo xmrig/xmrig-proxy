@@ -27,6 +27,10 @@
 #include "base/kernel/interfaces/IConfig.h"
 #include "proxy/BindHost.h"
 
+#include <cerrno>
+#include <cstdlib>
+#include <limits>
+
 
 namespace xmrig
 {
@@ -45,6 +49,20 @@ void xmrig::ConfigTransform::transform(rapidjson::Document &doc, int key, const 
     BaseTransform::transform(doc, key, arg);
 
     switch (key) {
+    case IConfig::IpBanHoursKey: /* --ip-ban-hours */
+        {
+            // Keep malformed values invalid so a typo cannot silently disable bans.
+            char *end = nullptr;
+            errno = 0;
+            const auto hours = std::strtoull(arg, &end, 10);
+            if (*arg < '0' || *arg > '9' || *end || errno == ERANGE ||
+                hours > std::numeric_limits<uint32_t>::max()) {
+                return set(doc, "ip-ban-hours", arg);
+            }
+
+            return set(doc, "ip-ban-hours", static_cast<uint64_t>(hours));
+        }
+
     case IConfig::ModeKey: /* --mode */
         return set(doc, "mode", arg);
 

@@ -82,6 +82,7 @@ static struct option const options[] = {
     { "userpass",          1, nullptr, IConfig::UserpassKey       },
     { "verbose",           0, nullptr, IConfig::VerboseKey        },
     { "reuse-timeout",     1, nullptr, IConfig::ReuseTimeoutKey   },
+    { "ip-ban-hours",      1, nullptr, IConfig::IpBanHoursKey     },
     /* MoneroOcean change: begin Register CLI control for algo-perf grouping tolerance. */
     { "algo-perf-same-threshold", 1, nullptr, IConfig::AlgoPerfSameThresholdKey },
     /* MoneroOcean change: end */

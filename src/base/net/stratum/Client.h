@@ -144,6 +144,7 @@ private:
     void setLogCloseReason(const char *reason);
     void clearLogCloseReason();
     static std::string logText(const char *text);
+    int64_t send(const rapidjson::Value &obj, bool pearl);
     bool send(BIO *bio);
     void subscribeNative();
     bool verifyAlgorithm(const Algorithm &algorithm, const char *algo) const;
@@ -182,6 +183,7 @@ private:
     std::shared_ptr<DnsRequest> m_dns;
     std::vector<char> m_sendBuf;
     std::vector<char> m_tempBuf;
+    size_t m_maxWriteQueueSize  = kMaxSendBufferSize;
     String m_nativeControl;
     String m_nativeControlAlgo;
     String m_nativePrefix;

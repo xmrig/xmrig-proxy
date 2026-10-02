@@ -488,7 +488,7 @@ test.describe("native MoneroOcean algorithms", { concurrency: false }, () => {
             assert.deepEqual(pool.submits[0].message.params, claim);
             assert.equal(Object.hasOwn(pool.submits[0].message.params, "id"), false);
 
-            const largeClaim = { ...claim, job_id: job.job_id, plain_proof: "A".repeat(180000) };
+            const largeClaim = { ...claim, job_id: job.job_id, plain_proof: "A".repeat(400000) };
             miner.peer.send({ id: "pearl-large", method: "mining.submit", params: largeClaim });
             const largeAccepted = await miner.peer.waitForMessage(
                 message => message.id === "pearl-large", config.timeoutMs, "large Pearl claim response");
@@ -516,6 +516,62 @@ test.describe("native MoneroOcean algorithms", { concurrency: false }, () => {
             assert.equal(pool.submits.length, 3);
         }, { poolFactory: timeout => new PearlLoginPool(timeout),
             proxyArgs: ["--algo=pearlhash"] });
+    });
+
+    test("large Pearl claims use the submitted algorithm on a reused mixed upstream", async () => {
+        await withProxy(async ({ addMiner, pool, config }) => {
+            assert.equal(pool.logins[0].message.params.algo.includes("pearlhash"), false);
+            const miner = await addMiner("pearl-mixed", {
+                algos: ["rx/0", "cn-heavy/xhv", "pearlhash"],
+                params: { extensions: ["mo-native"] }
+            });
+            await waitForInitialGetjob(pool, miner);
+            assert.equal(pool.logins.length, 1, "mixed miner reuses the non-Pearl login");
+            const job = await pushAndReceive(pool, miner, "pearlhash", "mixed-pearl");
+            const claim = { job_id: job.params.job_id, plain_proof: "A".repeat(400000) };
+            miner.peer.send({ id: "mixed-large-claim", method: "mining.submit", params: claim });
+            const reply = await miner.peer.waitForMessage(message => message.id === "mixed-large-claim",
+                config.timeoutMs, "mixed upstream large Pearl claim response");
+            assert.equal(reply.error, null);
+            await pool.waitForSubmits(1);
+            assert.deepEqual(pool.submits[0].message.params, claim);
+        }, options);
+    });
+
+    test("Pearl frame limit accepts fragmented boundary claims and discards oversized frames", async () => {
+        await withProxy(async ({ addMiner, pool, config }) => {
+            const miner = await addMiner("pearl-frame-limit", {
+                algos: ["pearlhash"], params: { extensions: ["mo-native"] }
+            });
+            const job = await miner.peer.waitForMessage(pearlJobMessage, config.timeoutMs, "Pearl boundary job");
+            const maxFrame = 12 * 1024 * 1024;
+            const message = { id: "pearl-at-frame-limit", method: "mining.submit",
+                params: { job_id: job.params.job_id, plain_proof: "" } };
+            message.params.plain_proof = "A".repeat(maxFrame - Buffer.byteLength(JSON.stringify(message)));
+            const line = JSON.stringify(message);
+            assert.equal(Buffer.byteLength(line), maxFrame);
+            // Force fragmentation even on systems whose TCP buffers could hold the whole line.
+            miner.peer.socket.write(line.slice(0, 32));
+            await new Promise(resolve => setImmediate(resolve));
+            miner.peer.socket.write(`${line.slice(32)}\n`);
+            const accepted = await miner.peer.waitForMessage(reply => reply.id === message.id,
+                config.timeoutMs, "Pearl frame boundary response");
+            assert.equal(accepted.error, null);
+            await pool.waitForSubmits(1);
+            assert.deepEqual(pool.submits[0].message.params, message.params);
+
+            miner.peer.send({ ...message, id: "pearl-over-frame-limit", params: {
+                ...message.params, plain_proof: "A".repeat(maxFrame)
+            } });
+            const recovery = { job_id: job.params.job_id, plain_proof: "cmVjb3Zlcnk=" };
+            miner.peer.send({ id: "pearl-after-oversized", method: "mining.submit", params: recovery });
+            const recovered = await miner.peer.waitForMessage(reply => reply.id === "pearl-after-oversized",
+                config.timeoutMs, "Pearl response after oversized frame");
+            assert.equal(recovered.error, null);
+            await pool.waitForSubmits(2);
+            assert.deepEqual(pool.submits[1].message.params, recovery);
+            assert.equal(pool.submits.length, 2, "oversized claim was not forwarded");
+        }, { poolFactory: timeout => new PearlLoginPool(timeout), proxyArgs: ["--algo=pearlhash"] });
     });
 
     test("first Pearl miner starts a capability-seeded upstream", async () => {

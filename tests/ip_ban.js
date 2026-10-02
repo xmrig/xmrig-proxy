@@ -1,7 +1,10 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 const net = require("node:net");
+const os = require("node:os");
+const path = require("node:path");
 const test = require("node:test");
 
 const { FakeMiner, FakePool, delay, waitFor, withProxy } = require("./common/proxy_harness.js");
@@ -219,7 +222,7 @@ test.describe("proxy IP bans", { concurrency: false }, () => {
             return;
         }
 
-        await withProxy(async ({ addMiner, miners, pool, config, proxyPort }) => {
+        await withProxy(async ({ addMiner, miners, pool, config, proxy, proxyPort }) => {
             const sameA = await addMiner("ban-simple-a", legacyCapabilities(), { localAddress: "127.0.0.1" });
             const sameB = await addMiner("ban-simple-b", legacyCapabilities(), { localAddress: "127.0.0.1" });
             const other = await addMiner("ban-simple-other", legacyCapabilities(), { localAddress: "127.0.0.2" });
@@ -232,6 +235,8 @@ test.describe("proxy IP bans", { concurrency: false }, () => {
                 waitClosed(sameA, "low-difficulty miner close"),
                 waitClosed(sameB, "same-IP miner close")
             ]);
+            await waitFor(() => proxy.output.join("").includes('banned IP "127.0.0.1" for 24h after low difficulty share'),
+                config.timeoutMs, "default IP ban warning");
             assert.equal(other.peer.closed, false, "different source IP was disconnected");
 
             sendLegacyShare(other, 21, 20000);
@@ -250,6 +255,72 @@ test.describe("proxy IP bans", { concurrency: false }, () => {
             waitForInitialPoolLogin: false
         });
     });
+
+    test("custom CLI duration bans the source IP and reports the configured hours", async () => {
+        await withProxy(async ({ addMiner, miners, pool, config, proxy, proxyPort }) => {
+            const miner = await addMiner("ban-custom", legacyCapabilities(), { localAddress: "127.0.0.1" });
+            sendLegacyShare(miner, 22, 20000);
+            await pool.waitForSubmits(1);
+            pool.replySubmit(0, "LOW DIFFICULTY SHARE");
+            await waitClosed(miner, "custom-duration miner close");
+            await waitFor(() => proxy.output.join("").includes('banned IP "127.0.0.1" for 7h after low difficulty share'),
+                config.timeoutMs, "custom IP ban warning");
+
+            const reconnect = await connectOnly(miners, "ban-custom-reconnect", proxyPort,
+                config.timeoutMs, "127.0.0.1");
+            await waitClosed(reconnect, "custom-duration source reconnect close");
+        }, {
+            poolFactory: timeout => new DelayedSharePool(timeout),
+            proxyArgs: ["--ip-ban-hours=7"]
+        });
+    });
+
+    for (const source of ["CLI", "JSON"]) {
+        test(`${source} zero duration warns without disconnecting miners or blocking reconnect`, async () => {
+            const dir = fs.mkdtempSync(path.join(os.tmpdir(), "proxy-ip-ban-config-"));
+            const configPath = path.join(dir, "config.json");
+            fs.writeFileSync(configPath, JSON.stringify({ "ip-ban-hours": 0, watch: false }));
+            const proxyArgs = source === "CLI" ? ["--ip-ban-hours=0"] : ["--config", configPath];
+
+            try {
+                await withProxy(async ({ addMiner, miners, pool, config, proxy, proxyPort }) => {
+                    const miner = await addMiner(`ban-disabled-${source}-a`, legacyCapabilities(), { localAddress: "127.0.0.1" });
+                    const sameIp = await addMiner(`ban-disabled-${source}-b`, legacyCapabilities(), { localAddress: "127.0.0.1" });
+                    const job = pool.broadcastJob()[0];
+                    await Promise.all([
+                        miner.waitForJob(value => value.job_id === job.job_id),
+                        sameIp.waitForJob(value => value.job_id === job.job_id)
+                    ]);
+                    sendLegacyShare(miner, 23, 20000);
+                    await pool.waitForSubmits(1);
+                    pool.replySubmit(0, LOW_DIFFICULTY);
+                    const rejected = await miner.peer.waitForMessage(message => message.id === 23,
+                        config.timeoutMs, "ban-disabled rejected share response");
+                    assert.equal(rejected.error.message, LOW_DIFFICULTY);
+                    await waitFor(() => proxy.output.join("").includes('bad share from IP "127.0.0.1": low difficulty share; will be banned for 0h (IP ban disabled)'),
+                        config.timeoutMs, "disabled IP ban warning");
+
+                    for (const [index, active] of [miner, sameIp].entries()) {
+                        assert.equal(active.peer.closed, false, "zero ban duration disconnected a same-IP miner");
+                        sendLegacyShare(active, 24 + index, 20000);
+                        await pool.waitForSubmits(2 + index);
+                        pool.replySubmit(1 + index, "accepted");
+                        const accepted = await active.peer.waitForMessage(message => message.id === 24 + index,
+                            config.timeoutMs, "accepted share with IP bans disabled");
+                        assert.equal(accepted.error, null);
+                    }
+
+                    const reconnect = await connectOnly(miners, `ban-disabled-${source}-reconnect`, proxyPort,
+                        config.timeoutMs, "127.0.0.1");
+                    await reconnect.login(legacyCapabilities());
+                    assert.equal(reconnect.peer.closed, false, "zero ban duration blocked reconnect");
+                }, { poolFactory: timeout => new DelayedSharePool(timeout), proxyArgs });
+            }
+            finally {
+                fs.rmSync(dir, { recursive: true, force: true });
+            }
+        });
+    }
 
     test("reversed pool replies are attributed to the submitting source IP", async t => {
         if (!await requireDistinctLoopback(t)) {

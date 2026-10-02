@@ -137,6 +137,7 @@ public:
         ModeKey              = 'm',
         PoolCoinKey          = 'C',
         ReuseTimeoutKey      = 1106,
+        IpBanHoursKey        = 1118,
         /* MoneroOcean change: begin CLI/config key controls how tightly miners must match before sharing a MoneroOcean algo-switching upstream. */
         AlgoPerfSameThresholdKey = 1196,
         /* MoneroOcean change: end */

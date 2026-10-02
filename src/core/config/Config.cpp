@@ -63,6 +63,16 @@ bool xmrig::Config::read(const IJsonReader &reader, const char *fileName)
         return false;
     }
 
+    const auto &ipBanHours = reader.getValue("ip-ban-hours");
+    if (!ipBanHours.IsNull()) {
+        if (!ipBanHours.IsUint()) {
+            LOG_ERR("ip-ban-hours must be an integer between 0 and 4294967295");
+            return false;
+        }
+
+        m_ipBanHours = ipBanHours.GetUint();
+    }
+
     m_customDiffStats = reader.getBool("custom-diff-stats", m_customDiffStats);
     m_debug        = reader.getBool("debug", m_debug);
     m_algoExt      = reader.getBool("algo-ext", m_algoExt);
@@ -133,6 +143,7 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     }
 
     doc.AddMember("bind",                           bind, allocator);
+    doc.AddMember("ip-ban-hours",                   ipBanHours(), allocator);
     doc.AddMember(StringRef(kColors),               Log::isColors(), allocator);
     doc.AddMember("custom-diff",                    diff(), allocator);
     doc.AddMember("custom-diff-stats",              m_customDiffStats, allocator);

@@ -48,6 +48,7 @@ public:
     ~Miners() override;
 
     std::vector<Miner*> miners() const;
+    inline void setIpBanHours(uint32_t hours) { m_ipBan.setDurationMs(static_cast<uint64_t>(hours) * 60 * 60 * 1000); }
 
 protected:
     void onEvent(IEvent *event) override;

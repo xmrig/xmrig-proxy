@@ -67,6 +67,7 @@ public:
     inline const String &password() const          { return m_password; }
     inline int mode() const                        { return m_mode; }
     inline int reuseTimeout() const                { return m_reuseTimeout; }
+    inline uint32_t ipBanHours() const             { return m_ipBanHours; }
     /* MoneroOcean change: begin Expose miner grouping tolerance to the nonce splitter without adding global state. */
     inline int algoPerfSameThreshold() const       { return m_algoPerfSameThreshold; }
     /* MoneroOcean change: end */
@@ -85,6 +86,7 @@ private:
     bool m_debug                = false;
     int m_mode                  = NICEHASH_MODE;
     int m_reuseTimeout          = 0;
+    uint32_t m_ipBanHours       = 24;
     /* MoneroOcean change: begin Default to the historical 20 percent tolerance for grouping similar miner algo-perf maps. */
     int m_algoPerfSameThreshold = 20;
     /* MoneroOcean change: end */

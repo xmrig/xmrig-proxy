@@ -75,8 +75,10 @@ void xmrig::LineReader::getline(char *data, size_t size)
             reset();
         }
         else if (!m_buf.empty()) {
-            add(start, len);
+            add(start, len - 1);
             if (!m_discard) {
+                // The size limit excludes the delimiter, just as for an unfragmented line.
+                m_buf.push_back('\0');
                 m_listener->onLine(m_buf.data(), m_buf.size() - 1);
             }
             reset();

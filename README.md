@@ -14,6 +14,8 @@ The codebase is shared with the [XMRig](https://github.com/xmrig/xmrig) miner.
 ## Compatibility
 Compatible with any pool and any miner that supports NiceHash.
 
+XMRig Proxy speaks the CryptoNote Stratum protocol directly. Stratum is not HTTP or WebSocket, so HTTP/WebSocket-only reverse proxies and tunnels cannot forward miner connections to the proxy. For encrypted miner connections, use the proxy's native TLS listener (for example, `--tls-bind`) instead.
+
 ## Why?
 This proxy is designed to handle donation traffic from XMRig. No other solution works well with high connection and disconnection rates.
 
@@ -22,6 +24,24 @@ This proxy is designed to handle donation traffic from XMRig. No other solution 
 * Git tree: https://github.com/xmrig/xmrig-proxy.git
   * Clone with `git clone https://github.com/xmrig/xmrig-proxy.git` :hammer: [Build instructions](https://xmrig.com/docs/proxy).
   
+## Building on ARM64 (aarch64)
+
+The build steps on aarch64 are the same as on other Linux systems once the required development packages are installed:
+
+```bash
+git clone https://github.com/xmrig/xmrig-proxy.git
+mkdir xmrig-proxy/build
+cd xmrig-proxy/build
+cmake ..
+make
+```
+
+Package names for the build dependencies may differ between distributions.
+
+## TLS direction
+
+TLS for miner-to-proxy connections is configured on the proxy listener, for example with `--tls-bind` or the corresponding `bind` configuration. TLS settings inside a `pools` entry control the separate proxy-to-pool connection. These two TLS settings are independent.
+
 ## Usage
 :boom: If you are using Linux and need to manage over **1000 connections**, you must [increase the limits on open files](https://github.com/xmrig/xmrig-proxy/wiki/Ubuntu-setup).
   
@@ -93,6 +113,30 @@ Misc:
   -h, --help                    display this help and exit
       --dry-run                 test configuration and exit
 ```
+
+## HTTP API
+
+When the HTTP API is enabled, XMRig Proxy exposes these read endpoints:
+
+- `/1/summary` — proxy version, mode, total hashrate, miner/worker counts, upstream status, and share statistics.
+- `/1/workers` — per-worker statistics and aggregate hashrate.
+- `/1/miners` — connected miner connection details.
+
+The legacy summary aliases `/2/summary` and `/api.json` are also accepted.
+
+The `/1/workers` endpoint returns worker rows using the following field order:
+
+```text
+["name", "ip", "connections", "accepted", "rejected", "invalid",
+ "hashes", "last_hash", "hashrate_1m", "hashrate_10m",
+ "hashrate_1h", "hashrate_12h", "hashrate_24h"]
+```
+
+Hashrate values are reported in H/s.
+
+## Console controls
+
+Press `w` in the proxy console to display the currently connected workers.
 
 ## Donations
 

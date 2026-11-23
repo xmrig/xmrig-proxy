@@ -1,3 +1,8 @@
+# v6.27.0-mo1
+- Synced upstream v6.27.0, including FCMP++ updates, daemon TLS fingerprint verification and SOCKS5 support, and OpenSSL and Windows build fixes.
+- Preserved MoneroOcean native Stratum algorithms, Pearl proof forwarding, and configurable source-IP bans.
+- No configuration migration required. Existing `ip-ban-hours` remains 24 by default; set it to 0 to disable pool-triggered bans.
+
 # v6.27.0
 - [#600](https://github.com/xmrig/xmrig-proxy/pull/600) Updated FCMP++ block template layout.
 - [#604](https://github.com/xmrig/xmrig-proxy/pull/604) Fixed `SubmitEvent` memory leak in custom-diff submit.

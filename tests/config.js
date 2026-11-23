@@ -3,7 +3,6 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const http = require("node:http");
-const net = require("node:net");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
@@ -14,17 +13,6 @@ const {
     waitFor,
     withProxy
 } = require("./common/proxy_harness.js");
-
-async function freePort() {
-    const server = net.createServer();
-    await new Promise((resolve, reject) => {
-        server.once("error", reject);
-        server.listen(0, "127.0.0.1", resolve);
-    });
-    const port = server.address().port;
-    await new Promise(resolve => server.close(resolve));
-    return port;
-}
 
 function configRequest(port, timeoutMs, method = "GET", config) {
     return new Promise((resolve, reject) => {
@@ -108,16 +96,21 @@ test.describe("MoneroOcean config edge cases", { concurrency: false }, () => {
         for (const variant of variants) {
             const dir = fs.mkdtempSync(path.join(os.tmpdir(), "proxy-saved-ip-ban-"));
             const configPath = path.join(dir, "config.json");
-            const port = await freePort();
             const input = {
                 watch: false,
-                http: { enabled: true, host: "127.0.0.1", port, "access-token": "offline-ip-ban-test", restricted: false }
+                http: { enabled: true, host: "127.0.0.1", port: 0, "access-token": "offline-ip-ban-test", restricted: false }
             };
             if (variant.hours !== undefined) input["ip-ban-hours"] = variant.hours;
             fs.writeFileSync(configPath, JSON.stringify(input));
 
             try {
-                await withProxy(async ({ config }) => {
+                await withProxy(async ({ config, proxy }) => {
+                    let address;
+                    await waitFor(() => {
+                        address = proxy.output.join("").match(/^ \* HTTP API +127\.0\.0\.1:([1-9]\d*) *\r?$/m);
+                        return address !== null;
+                    }, config.timeoutMs, `${variant.name} HTTP API bind`);
+                    const port = Number(address[1]);
                     const response = await configRequest(port, config.timeoutMs);
                     assert.equal(response.status, 200, `${variant.name} config API response`);
                     const effective = JSON.parse(response.body);

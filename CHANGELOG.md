@@ -1,3 +1,13 @@
+# v6.27.0
+- [#600](https://github.com/xmrig/xmrig-proxy/pull/600) Updated FCMP++ block template layout.
+- [#604](https://github.com/xmrig/xmrig-proxy/pull/604) Fixed `SubmitEvent` memory leak in custom-diff submit.
+- [#605](https://github.com/xmrig/xmrig-proxy/pull/605) Updated FCMP++ solo mining code for beta stressnet v3.
+- [#3808](https://github.com/xmrig/xmrig/pull/3808) Fixed build with OpenSSL 4.0.
+- [#3857](https://github.com/xmrig/xmrig/pull/3857) DaemonClient: check TLS fingerprint, use SOCKS5 if configured, fixed socket leak when ZMQ connect fails.
+- Fixed build with OpenSSL 3 and newer built without the deprecated API.
+- Fixed build with libuv 1.53.0 on Windows.
+- Fixed build with Clang on Windows ARM64 (MSYS2).
+
 # v6.26.0-mo18
 - Added `--ip-ban-hours=N` and JSON `"ip-ban-hours": N` (default: 24). Use 0 to disable pool-triggered low-difficulty IP bans while retaining a warning with the source IP and 0h duration.
 - Raised Pearl proof frame limits to 12 MiB, including mixed-algorithm upstreams, with a bounded 16 MiB write queue for TLS and pending control messages. Fixed fragmented frames at the size boundary.

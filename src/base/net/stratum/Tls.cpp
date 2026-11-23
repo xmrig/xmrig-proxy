@@ -1,7 +1,7 @@
 /* XMRig
  * Copyright (c) 2018      Lee Clagett <https://github.com/vtnerd>
- * Copyright (c) 2018-2021 SChernykh   <https://github.com/SChernykh>
- * Copyright (c) 2016-2021 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2018-2026 SChernykh   <https://github.com/SChernykh>
+ * Copyright (c) 2016-2026 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -119,7 +119,11 @@ void xmrig::Client::Tls::read(const char *data, size_t size)
             m_client->close();
         }
         else {
+#           if OPENSSL_VERSION_NUMBER < 0x30000000L || defined(LIBRESSL_VERSION_NUMBER)
             X509 *cert = SSL_get_peer_certificate(m_ssl);
+#           else
+            X509 *cert = SSL_get1_peer_certificate(m_ssl);
+#           endif
             if (!verify(cert)) {
                 X509_free(cert);
                 m_client->close();

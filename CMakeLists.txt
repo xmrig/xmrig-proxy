@@ -124,7 +124,7 @@ if (WIN32)
         )
 
     add_definitions(/DWIN32)
-    set(EXTRA_LIBS ws2_32 psapi iphlpapi userenv dbghelp)
+    set(EXTRA_LIBS ws2_32 psapi iphlpapi userenv dbghelp synchronization)
 elseif (APPLE)
     set(SOURCES_OS
         "${SOURCES_OS}"

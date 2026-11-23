@@ -89,7 +89,7 @@ class JsonPeer extends EventEmitter {
         super();
         this.socket = socket;
         this.name = name;
-        this.buffer = "";
+        this.lineChunks = [];
         this.messages = [];
         this.closed = false;
 
@@ -103,16 +103,14 @@ class JsonPeer extends EventEmitter {
     }
 
     onData(data) {
-        this.buffer += data;
-
-        while (true) {
-            const index = this.buffer.indexOf("\n");
-            if (index < 0) {
-                return;
-            }
-
-            const line = this.buffer.slice(0, index).trim();
-            this.buffer = this.buffer.slice(index + 1);
+        let start = 0;
+        let end;
+        // Search only new bytes so a fragmented Pearl frame is assembled once.
+        while ((end = data.indexOf("\n", start)) !== -1) {
+            this.lineChunks.push(data.slice(start, end));
+            const line = this.lineChunks.join("").trim();
+            this.lineChunks.length = 0;
+            start = end + 1;
             if (!line) {
                 continue;
             }
@@ -129,6 +127,10 @@ class JsonPeer extends EventEmitter {
 
             this.messages.push(message);
             this.emit("message", message);
+        }
+
+        if (start < data.length) {
+            this.lineChunks.push(data.slice(start));
         }
     }
 
